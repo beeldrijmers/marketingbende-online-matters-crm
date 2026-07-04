@@ -150,12 +150,16 @@ Deno.serve(async (req) => {
     }'
 
   To register the real webhook once the CRM is deployed to a public URL:
+  Note: the custom domain (crm.marketingbende.nl) only serves the static
+  frontend via GitHub Pages - it does not proxy to Supabase. Edge functions
+  are only reachable at the project's own Supabase URL
+  (https://<project-ref>.supabase.co/functions/v1/<name>).
   curl -i --location --request POST 'https://api.trello.com/1/webhooks' \
     --header 'Content-Type: application/json' \
     --data '{
       "key": "<TRELLO_API_KEY>",
       "token": "<TRELLO_TOKEN>",
-      "callbackURL": "https://crm.marketingbende.nl/functions/v1/trello-sync?secret=<TRELLO_WEBHOOK_SHARED_SECRET>",
+      "callbackURL": "https://<project-ref>.supabase.co/functions/v1/trello-sync?secret=<TRELLO_WEBHOOK_SHARED_SECRET>",
       "idModel": "6979f9a8a825b6ff46306e8a",
       "description": "Marketingbende CRM sync"
     }'
@@ -163,6 +167,6 @@ Deno.serve(async (req) => {
   To (re-)run the one-time historical-card backfill against a deployed
   environment, without ever needing that environment's Supabase service role
   key locally (the deployed function already has it injected):
-  curl -i --location --request POST 'https://crm.marketingbende.nl/functions/v1/trello-sync' \
+  curl -i --location --request POST 'https://<project-ref>.supabase.co/functions/v1/trello-sync' \
     --header 'x-admin-backfill-secret: <ADMIN_BACKFILL_SECRET>'
 */

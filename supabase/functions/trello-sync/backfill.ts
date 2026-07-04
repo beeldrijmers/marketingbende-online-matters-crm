@@ -16,6 +16,9 @@ import { fetchTrelloBoardCards } from "./fetchTrelloBoardCards.ts";
 import { fetchTrelloCardComments } from "./fetchTrelloCardComments.ts";
 import { upsertDealFromCard } from "./upsertDealFromCard.ts";
 import { addTrelloCommentAsDealNote } from "./addTrelloCommentAsDealNote.ts";
+import { resolveCompanyName } from "./companyNameOverrides.ts";
+import { findOrCreateCompany } from "./findOrCreateCompany.ts";
+import { resolveDefaultSalesId } from "./resolveDefaultSalesId.ts";
 
 const BOARD_ID = "6979f9a8a825b6ff46306e8a"; // SEO - Online Matters
 
@@ -73,6 +76,29 @@ const backfillCard = async (
   return { cardId: card.id, dealId, commentCount: comments.length };
 };
 
+// Cards are processed with bounded concurrency rather than one at a time:
+// sequentially, ~40 cards' worth of Trello API calls and Supabase round
+// trips comfortably exceeds the Supabase Edge Function idle timeout (150s).
+const CARD_CONCURRENCY = 8;
+
+const runWithConcurrency = async <T>(
+  items: T[],
+  worker: (item: T, index: number) => Promise<void>,
+  concurrency: number,
+): Promise<void> => {
+  let nextIndex = 0;
+  const runNext = async (): Promise<void> => {
+    while (nextIndex < items.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      await worker(items[index], index);
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, runNext),
+  );
+};
+
 export const run = async (): Promise<{
   cardCount: number;
   synced: number;
@@ -86,17 +112,33 @@ export const run = async (): Promise<{
   // eslint-disable-next-line no-console
   console.log(`Fetched ${cards.length} cards from Trello board ${BOARD_ID}`);
 
+  // Pre-create every distinct company sequentially, before the concurrent
+  // card loop below. Otherwise two cards for the same not-yet-existing
+  // company could both pass findOrCreateCompany's "not found" check at the
+  // same time and each insert a duplicate row.
+  const salesId = await resolveDefaultSalesId();
+  const uniqueCompanyNames = [
+    ...new Set(cards.map((card) => resolveCompanyName(card))),
+  ];
+  for (const name of uniqueCompanyNames) {
+    await findOrCreateCompany({ name, salesId });
+  }
+
   let synced = 0;
   let totalComments = 0;
-  for (const card of cards) {
-    const result = await backfillCard(card);
-    synced += 1;
-    totalComments += result.commentCount;
-    // eslint-disable-next-line no-console
-    console.log(
-      `[${synced}/${cards.length}] "${card.name}" -> deal ${result.dealId} (${result.commentCount} comments)`,
-    );
-  }
+  await runWithConcurrency(
+    cards,
+    async (card) => {
+      const result = await backfillCard(card);
+      synced += 1;
+      totalComments += result.commentCount;
+      // eslint-disable-next-line no-console
+      console.log(
+        `[${synced}/${cards.length}] "${card.name}" -> deal ${result.dealId} (${result.commentCount} comments)`,
+      );
+    },
+    CARD_CONCURRENCY,
+  );
 
   // eslint-disable-next-line no-console
   console.log(`Done. Synced ${synced} deals, ${totalComments} comments.`);
