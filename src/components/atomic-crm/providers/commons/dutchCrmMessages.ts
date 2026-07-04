@@ -224,34 +224,50 @@ export const dutchCrmMessages = {
         view: "Gearchiveerde deals bekijken",
       },
       moneybird: {
-        action: "Offerte in Moneybird",
-        view: "Bekijk offerte in Moneybird",
-        pending: "Offerte wordt aangemaakt...",
-        dialog_title: "Moneybird-offerte aanmaken",
-        dialog_description:
-          "Controleer de gegevens en maak een concept-offerte aan in Moneybird voor dit deal.",
+        estimate: {
+          action: "Offerte in Moneybird",
+          view: "Bekijk offerte in Moneybird",
+          pending: "Offerte wordt aangemaakt...",
+          dialog_title: "Moneybird-offerte aanmaken",
+          dialog_description:
+            "Controleer de gegevens en maak een concept-offerte aan in Moneybird voor dit deal.",
+          confirm: "Offerte aanmaken",
+          warning:
+            "Dit maakt een echte concept-offerte aan in de Moneybird-administratie van Marketingbende. Het wordt niet automatisch naar de klant gemaild.",
+          success: "Offerte aangemaakt in Moneybird",
+          error: "Aanmaken van de offerte is mislukt",
+        },
+        invoice: {
+          action: "Factuur in Moneybird",
+          view: "Bekijk factuur in Moneybird",
+          pending: "Factuur wordt aangemaakt...",
+          dialog_title: "Moneybird-factuur aanmaken",
+          dialog_description:
+            "Controleer de gegevens en maak een concept-factuur aan in Moneybird voor dit deal.",
+          confirm: "Factuur aanmaken",
+          warning:
+            "Dit maakt een echte concept-factuur aan in de Moneybird-administratie van Marketingbende. De factuur wordt NIET automatisch verzonden; verstuur hem zelf vanuit Moneybird.",
+          success: "Factuur aangemaakt in Moneybird",
+          error: "Aanmaken van de factuur is mislukt",
+        },
         company: "Bedrijf",
         amount: "Bedrag",
         no_address: "Geen adres bekend voor dit bedrijf",
-        description_label: "Omschrijving op de offerte",
+        description_label: "Omschrijving op het document",
         tax_rate: "BTW-tarief",
         tax_rate_placeholder: "Kies een btw-tarief",
         tax_rate_loading: "Tarieven laden...",
         no_contact_hint:
-          "Er is geen contactpersoon gekoppeld; de offerte gaat naar het bedrijf.",
+          "Er is geen contactpersoon gekoppeld; het document gaat naar het bedrijf.",
         multiple_contacts_hint:
-          "Er zijn meerdere contactpersonen gekoppeld; de offerte gaat naar het bedrijf, niet naar een specifiek contact.",
+          "Er zijn meerdere contactpersonen gekoppeld; het document gaat naar het bedrijf, niet naar een specifiek contact.",
         warning_title: "Let op: echt document",
-        warning:
-          "Dit maakt een echt concept-document aan in de Moneybird-administratie van Marketingbende. Het wordt niet automatisch naar de klant gemaild.",
         no_company:
           "Dit deal heeft geen gekoppeld bedrijf; koppel eerst een bedrijf.",
         no_amount: "Dit deal heeft geen bedrag; stel eerst een bedrag in.",
-        wrong_currency: "De offertekoppeling werkt alleen met de valuta EUR.",
-        confirm: "Offerte aanmaken",
+        wrong_currency:
+          "De Moneybird-koppeling werkt alleen met de valuta EUR.",
         creating: "Bezig met aanmaken...",
-        success: "Offerte aangemaakt in Moneybird",
-        error: "Aanmaken van de offerte is mislukt",
       },
       inbound: {
         title: "Inkomende e-mail",

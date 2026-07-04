@@ -305,7 +305,7 @@ export const createDataProvider = ({
       { id: "9", name: "9% btw", percentage: "9.0" },
       { id: "0", name: "0% btw", percentage: "0.0" },
     ],
-    createMoneybirdEstimate: async () => {
+    createMoneybirdDocument: async (_kind: "estimate" | "invoice") => {
       throw new Error(
         "De Moneybird-koppeling is niet beschikbaar in de demomodus.",
       );

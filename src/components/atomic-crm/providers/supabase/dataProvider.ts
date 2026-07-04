@@ -239,14 +239,17 @@ const getDataProviderWithCustomMethods = () => {
 
       return data.data;
     },
-    async createMoneybirdEstimate(params: {
-      dealId: Identifier;
-      taxRateId: string;
-      description: string;
-    }) {
+    async createMoneybirdDocument(
+      kind: "estimate" | "invoice",
+      params: {
+        dealId: Identifier;
+        taxRateId: string;
+        description: string;
+      },
+    ) {
       const { data, error } = await getSupabaseClient().functions.invoke<{
-        data: { estimateId: string; status: string; alreadyExisted: boolean };
-      }>("moneybird_estimate", {
+        data: { documentId: string; status: string; alreadyExisted: boolean };
+      }>(`moneybird_${kind}`, {
         method: "POST",
         body: {
           dealId: params.dealId,
@@ -256,7 +259,7 @@ const getDataProviderWithCustomMethods = () => {
       });
 
       if (!data || error) {
-        console.error("moneybird_estimate.create.error", error);
+        console.error(`moneybird_${kind}.create.error`, error);
         // The edge function returns a useful message (e.g. a 409 "already in
         // progress" or a Moneybird validation error); surface it to the UI.
         const errorDetails = await (async () => {
@@ -267,7 +270,7 @@ const getDataProviderWithCustomMethods = () => {
           }
         })();
         throw new Error(
-          errorDetails?.message || "Failed to create Moneybird estimate",
+          errorDetails?.message || `Failed to create Moneybird ${kind}`,
         );
       }
 

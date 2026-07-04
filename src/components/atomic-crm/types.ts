@@ -131,6 +131,11 @@ export type Deal = {
   moneybird_estimate_claimed_at?: string;
   moneybird_estimate_created_by?: Identifier;
   moneybird_estimate_error?: string;
+  moneybird_invoice_id?: string;
+  moneybird_invoice_status?: "pending" | "completed" | "failed";
+  moneybird_invoice_claimed_at?: string;
+  moneybird_invoice_created_by?: Identifier;
+  moneybird_invoice_error?: string;
 } & Pick<RaRecord, "id">;
 
 export type DealNote = {

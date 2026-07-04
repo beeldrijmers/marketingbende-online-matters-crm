@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ExternalLink, Receipt } from "lucide-react";
+import { ExternalLink, FileText, Receipt } from "lucide-react";
 import {
   useGetOne,
   useNotify,
@@ -36,16 +36,35 @@ import type { Company, Deal } from "../types";
 // The 21% btw rate is pre-selected by default (still overridable).
 const DEFAULT_TAX_PERCENTAGE = "21.0";
 
-const formatAmount = (amount: number, currency: string) =>
-  amount.toLocaleString("nl-NL", {
-    style: "currency",
-    currency,
-  });
+type DocumentKind = "estimate" | "invoice";
 
-export const MoneybirdEstimateButton = ({ record }: { record: Deal }) => {
+const statusOf = (record: Deal, kind: DocumentKind) =>
+  kind === "estimate"
+    ? record.moneybird_estimate_status
+    : record.moneybird_invoice_status;
+
+const idOf = (record: Deal, kind: DocumentKind) =>
+  kind === "estimate"
+    ? record.moneybird_estimate_id
+    : record.moneybird_invoice_id;
+
+const iconFor = (kind: DocumentKind) =>
+  kind === "estimate" ? Receipt : FileText;
+
+const formatAmount = (amount: number, currency: string) =>
+  amount.toLocaleString("nl-NL", { style: "currency", currency });
+
+const MoneybirdDocumentButton = ({
+  record,
+  kind,
+}: {
+  record: Deal;
+  kind: DocumentKind;
+}) => {
   const translate = useTranslate();
   const [open, setOpen] = useState(false);
-  const isPending = record.moneybird_estimate_status === "pending";
+  const isPending = statusOf(record, kind) === "pending";
+  const Icon = iconFor(kind);
 
   return (
     <>
@@ -56,14 +75,15 @@ export const MoneybirdEstimateButton = ({ record }: { record: Deal }) => {
         className="flex items-center gap-2 h-9"
         disabled={isPending}
       >
-        <Receipt className="w-4 h-4" />
+        <Icon className="w-4 h-4" />
         {isPending
-          ? translate("resources.deals.moneybird.pending")
-          : translate("resources.deals.moneybird.action")}
+          ? translate(`resources.deals.moneybird.${kind}.pending`)
+          : translate(`resources.deals.moneybird.${kind}.action`)}
       </Button>
       {open ? (
-        <MoneybirdEstimateDialog
+        <MoneybirdDocumentDialog
           record={record}
+          kind={kind}
           open={open}
           onClose={() => setOpen(false)}
         />
@@ -72,12 +92,14 @@ export const MoneybirdEstimateButton = ({ record }: { record: Deal }) => {
   );
 };
 
-const MoneybirdEstimateDialog = ({
+const MoneybirdDocumentDialog = ({
   record,
+  kind,
   open,
   onClose,
 }: {
   record: Deal;
+  kind: DocumentKind;
   open: boolean;
   onClose: () => void;
 }) => {
@@ -106,7 +128,6 @@ const MoneybirdEstimateDialog = ({
     staleTime: 5 * 60 * 1000,
   });
 
-  // Pre-select the 21% rate once the rates have loaded.
   useEffect(() => {
     if (!taxRateId && taxRates?.length) {
       const preferred =
@@ -116,8 +137,6 @@ const MoneybirdEstimateDialog = ({
     }
   }, [taxRates, taxRateId]);
 
-  // Hard blocks: no safe default exists for a missing company, amount, or a
-  // non-EUR currency (the administration is EUR-only).
   const missingCompany = !record.company_id;
   const missingAmount = !record.amount || record.amount <= 0;
   const wrongCurrency = currency !== "EUR";
@@ -126,9 +145,9 @@ const MoneybirdEstimateDialog = ({
   const contactCount = record.contact_ids?.length ?? 0;
 
   const { mutateAsync } = useMutation({
-    mutationKey: ["deals", "moneybird_estimate", record.id],
+    mutationKey: ["deals", "moneybird", kind, record.id],
     mutationFn: () =>
-      dataProvider.createMoneybirdEstimate({
+      dataProvider.createMoneybirdDocument(kind, {
         dealId: record.id,
         taxRateId,
         description,
@@ -139,14 +158,14 @@ const MoneybirdEstimateDialog = ({
     try {
       setIsCreating(true);
       await mutateAsync();
-      notify("resources.deals.moneybird.success", { type: "success" });
+      notify(`resources.deals.moneybird.${kind}.success`, { type: "success" });
       refresh();
       onClose();
     } catch (error) {
       notify(
         error instanceof Error
           ? error.message
-          : translate("resources.deals.moneybird.error"),
+          : translate(`resources.deals.moneybird.${kind}.error`),
         { type: "error" },
       );
     } finally {
@@ -159,10 +178,10 @@ const MoneybirdEstimateDialog = ({
       <DialogContent className="md:min-w-lg max-w-xl">
         <DialogHeader>
           <DialogTitle>
-            {translate("resources.deals.moneybird.dialog_title")}
+            {translate(`resources.deals.moneybird.${kind}.dialog_title`)}
           </DialogTitle>
           <DialogDescription>
-            {translate("resources.deals.moneybird.dialog_description")}
+            {translate(`resources.deals.moneybird.${kind}.dialog_description`)}
           </DialogDescription>
         </DialogHeader>
 
@@ -269,7 +288,7 @@ const MoneybirdEstimateDialog = ({
                 {translate("resources.deals.moneybird.warning_title")}
               </AlertTitle>
               <AlertDescription>
-                {translate("resources.deals.moneybird.warning")}
+                {translate(`resources.deals.moneybird.${kind}.warning`)}
               </AlertDescription>
             </Alert>
           </div>
@@ -283,10 +302,13 @@ const MoneybirdEstimateDialog = ({
             onClick={handleCreate}
             disabled={blocked || isCreating || !taxRateId}
           >
-            <Receipt className="w-4 h-4" />
+            {(() => {
+              const Icon = iconFor(kind);
+              return <Icon className="w-4 h-4" />;
+            })()}
             {isCreating
               ? translate("resources.deals.moneybird.creating")
-              : translate("resources.deals.moneybird.confirm")}
+              : translate(`resources.deals.moneybird.${kind}.confirm`)}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -294,8 +316,15 @@ const MoneybirdEstimateDialog = ({
   );
 };
 
-export const ViewMoneybirdEstimateButton = ({ record }: { record: Deal }) => {
+const ViewMoneybirdDocumentButton = ({
+  record,
+  kind,
+}: {
+  record: Deal;
+  kind: DocumentKind;
+}) => {
   const translate = useTranslate();
+  const documentId = idOf(record, kind);
 
   // The administration id is not a secret (it appears in Moneybird URLs); it is
   // exposed as a public build env var so the deep link can be built client-side.
@@ -303,11 +332,12 @@ export const ViewMoneybirdEstimateButton = ({ record }: { record: Deal }) => {
     const adminId = import.meta.env.VITE_MONEYBIRD_ADMIN_ID as
       | string
       | undefined;
-    if (adminId && record.moneybird_estimate_id) {
-      return `https://moneybird.com/${adminId}/estimates/${record.moneybird_estimate_id}`;
+    const path = kind === "estimate" ? "estimates" : "sales_invoices";
+    if (adminId && documentId) {
+      return `https://moneybird.com/${adminId}/${path}/${documentId}`;
     }
     return "https://moneybird.com";
-  }, [record.moneybird_estimate_id]);
+  }, [documentId, kind]);
 
   return (
     <Button
@@ -318,8 +348,22 @@ export const ViewMoneybirdEstimateButton = ({ record }: { record: Deal }) => {
     >
       <a href={href} target="_blank" rel="noreferrer">
         <ExternalLink className="w-4 h-4" />
-        {translate("resources.deals.moneybird.view")}
+        {translate(`resources.deals.moneybird.${kind}.view`)}
       </a>
     </Button>
   );
 };
+
+// Renders the create-or-view control for one document kind on a deal.
+export const MoneybirdDocumentControl = ({
+  record,
+  kind,
+}: {
+  record: Deal;
+  kind: DocumentKind;
+}) =>
+  idOf(record, kind) ? (
+    <ViewMoneybirdDocumentButton record={record} kind={kind} />
+  ) : (
+    <MoneybirdDocumentButton record={record} kind={kind} />
+  );

@@ -1,21 +1,18 @@
 // Resolve the Moneybird contact for a CRM company, creating it when needed.
+// Shared by estimates and invoices — both use the same companies.moneybird_
+// contact_id cache, so a company's contact is created at most once.
 //
 // Resolution order:
-//   1. companies.moneybird_contact_id cache hit  -> reuse (no API call)
+//   1. companies.moneybird_contact_id cache hit -> reuse (no API call)
 //   2. find an existing Moneybird contact by company name -> adopt + cache
 //   3. create a new Moneybird contact -> cache
 //
-// The resolved id is written back to companies.moneybird_contact_id IMMEDIATELY,
-// independent of whether the estimate that follows succeeds. That way a retry
-// after a failed estimate call reuses the same contact instead of creating a
-// duplicate one.
+// The id is cached IMMEDIATELY, independent of whether the document that follows
+// succeeds, so a retry after a failed document call reuses the same contact.
 
-import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
-import { createContact, findContactByCompanyName } from "./moneybirdClient.ts";
-import {
-  buildContactPayload,
-  type CompanyForContact,
-} from "./buildEstimatePayload.ts";
+import { supabaseAdmin } from "../supabaseAdmin.ts";
+import { createContact, findContactByCompanyName } from "./client.ts";
+import { buildContactPayload, type CompanyForContact } from "./payload.ts";
 
 interface CompanyRow extends CompanyForContact {
   id: number;
@@ -34,10 +31,10 @@ export const findOrCreateMoneybirdContact = async (
     ? existing.id
     : (await createContact(buildContactPayload(company))).id;
 
-  // Conditional cache write-back. The per-deal claim in claimDealForEstimate.ts
-  // serializes per DEAL, not per COMPANY, so two deals of the same company can
-  // resolve a contact concurrently and both arrive here with a null cache. The
-  // .is(..., null) guard makes exactly one write win.
+  // Conditional cache write-back. The per-deal claim serializes per DEAL, not
+  // per COMPANY, so two deals of the same company can resolve a contact
+  // concurrently and both arrive here with a null cache. The .is(..., null)
+  // guard makes exactly one write win.
   const { data: won, error } = await supabaseAdmin
     .from("companies")
     .update({ moneybird_contact_id: contactId })
@@ -52,11 +49,10 @@ export const findOrCreateMoneybirdContact = async (
   }
   if (won) return contactId;
 
-  // We lost the race: a concurrent request cached a contact first. Reuse THAT
-  // id so both estimates reference the same Moneybird contact. If we had just
-  // created a new contact it is now an orphan (no estimate attached). We do NOT
-  // auto-delete from the live administration — a rare empty contact is logged
-  // for manual cleanup instead (matches the plan's accepted known limitation).
+  // We lost the race: reuse the winner's contact so both documents reference the
+  // same one. A freshly created loser contact is an orphan (no document
+  // attached); we do NOT auto-delete from the live administration — a rare empty
+  // contact is logged for manual cleanup.
   const { data: winner, error: reselectError } = await supabaseAdmin
     .from("companies")
     .select("moneybird_contact_id")
@@ -69,7 +65,7 @@ export const findOrCreateMoneybirdContact = async (
   }
   if (!existing && winner.moneybird_contact_id !== contactId) {
     console.error(
-      `Orphaned Moneybird contact ${contactId} created for company ${company.id} due to a concurrent estimate; reusing ${winner.moneybird_contact_id}. Manual cleanup of the orphan may be needed.`,
+      `Orphaned Moneybird contact ${contactId} created for company ${company.id} due to a concurrent document; reusing ${winner.moneybird_contact_id}. Manual cleanup of the orphan may be needed.`,
     );
   }
   return winner.moneybird_contact_id;

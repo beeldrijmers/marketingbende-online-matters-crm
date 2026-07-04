@@ -91,9 +91,11 @@ grant all on table public.deals to anon;
 grant all on table public.deals to authenticated;
 grant all on table public.deals to service_role;
 
--- Moneybird bookkeeping columns are written exclusively by the moneybird_estimate
--- edge function (service role), so client roles must not be able to reset them
--- and bypass its claim/idempotency logic. A column-level REVOKE alone is not
+-- Moneybird bookkeeping columns (both moneybird_estimate_* and moneybird_invoice_*)
+-- are written exclusively by the moneybird edge functions (service role), so
+-- client roles must not be able to reset them and bypass the claim/idempotency
+-- logic. They are simply omitted from the re-granted column list below. A
+-- column-level REVOKE alone would not be
 -- enough: "grant all on table" above already grants UPDATE on every column, and
 -- a table-level grant always wins over a column-level revoke in Postgres. So the
 -- table-level UPDATE grant must be revoked and re-granted for the remaining

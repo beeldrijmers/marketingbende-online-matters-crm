@@ -219,34 +219,49 @@ export const englishCrmMessages = {
         view: "View archived deals",
       },
       moneybird: {
-        action: "Estimate in Moneybird",
-        view: "View estimate in Moneybird",
-        pending: "Creating estimate...",
-        dialog_title: "Create Moneybird estimate",
-        dialog_description:
-          "Check the details and create a draft estimate in Moneybird for this deal.",
+        estimate: {
+          action: "Estimate in Moneybird",
+          view: "View estimate in Moneybird",
+          pending: "Creating estimate...",
+          dialog_title: "Create Moneybird estimate",
+          dialog_description:
+            "Check the details and create a draft estimate in Moneybird for this deal.",
+          confirm: "Create estimate",
+          warning:
+            "This creates a real draft estimate in Marketingbende's Moneybird administration. It is not automatically emailed to the client.",
+          success: "Estimate created in Moneybird",
+          error: "Failed to create the estimate",
+        },
+        invoice: {
+          action: "Invoice in Moneybird",
+          view: "View invoice in Moneybird",
+          pending: "Creating invoice...",
+          dialog_title: "Create Moneybird invoice",
+          dialog_description:
+            "Check the details and create a draft invoice in Moneybird for this deal.",
+          confirm: "Create invoice",
+          warning:
+            "This creates a real draft invoice in Marketingbende's Moneybird administration. It is NOT sent automatically; send it yourself from Moneybird.",
+          success: "Invoice created in Moneybird",
+          error: "Failed to create the invoice",
+        },
         company: "Company",
         amount: "Amount",
         no_address: "No address known for this company",
-        description_label: "Description on the estimate",
+        description_label: "Description on the document",
         tax_rate: "VAT rate",
         tax_rate_placeholder: "Choose a VAT rate",
         tax_rate_loading: "Loading rates...",
         no_contact_hint:
-          "No contact is linked; the estimate goes to the company.",
+          "No contact is linked; the document goes to the company.",
         multiple_contacts_hint:
-          "Multiple contacts are linked; the estimate goes to the company, not a specific contact.",
+          "Multiple contacts are linked; the document goes to the company, not a specific contact.",
         warning_title: "Note: real document",
-        warning:
-          "This creates a real draft document in Marketingbende's Moneybird administration. It is not automatically emailed to the client.",
         no_company: "This deal has no linked company; link a company first.",
         no_amount: "This deal has no amount; set an amount first.",
         wrong_currency:
-          "The estimate integration only works with the EUR currency.",
-        confirm: "Create estimate",
+          "The Moneybird integration only works with the EUR currency.",
         creating: "Creating...",
-        success: "Estimate created in Moneybird",
-        error: "Failed to create the estimate",
       },
       inbound: {
         title: "Inbound email",

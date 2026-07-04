@@ -1,49 +1,45 @@
-// Orchestrates creating a Moneybird estimate for a CRM deal. Kept out of
-// index.ts so the HTTP layer stays thin. Sequence:
+// Orchestrates creating a Moneybird document (estimate or invoice) for a CRM
+// deal. Shared by both edge functions. Sequence:
 //   claim (atomic) -> load company -> resolve contact (+cache) -> reconcile by
-//   reference -> create estimate -> record result on the deal.
+//   reference -> create document -> record result on the deal.
 // Any failure after the claim is recorded on the deal as 'failed' with the
 // message, so the UI can show it and the user can retry.
 
-import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
+import { supabaseAdmin } from "../supabaseAdmin.ts";
 import {
-  claimDealForEstimate,
-  markEstimateCompleted,
-  markEstimateFailed,
-} from "./claimDealForEstimate.ts";
-import { findOrCreateMoneybirdContact } from "./findOrCreateMoneybirdContact.ts";
-import { createEstimate, findEstimateByReference } from "./moneybirdClient.ts";
-import {
-  buildEstimatePayload,
-  estimateReference,
-} from "./buildEstimatePayload.ts";
+  claimDealForDocument,
+  markDocumentCompleted,
+  markDocumentFailed,
+} from "./claim.ts";
+import { findOrCreateMoneybirdContact } from "./contact.ts";
+import { createDocument, findDocumentByReference } from "./client.ts";
+import { buildDocumentPayload, documentReference } from "./payload.ts";
+import type { DocumentKind } from "./types.ts";
 
-export type CreateEstimateOutcome =
-  | {
-      kind: "created";
-      estimateId: string;
-      alreadyExisted: boolean;
-    }
-  | { kind: "already_completed"; estimateId: string }
+export type CreateDocumentOutcome =
+  | { kind: "created"; documentId: string; alreadyExisted: boolean }
+  | { kind: "already_completed"; documentId: string }
   | { kind: "in_progress" }
   | { kind: "not_found" };
 
-export const createEstimateForDeal = async ({
+export const createDocumentForDeal = async ({
+  documentKind,
   dealId,
   taxRateId,
   description,
   currency,
   salesId,
 }: {
+  documentKind: DocumentKind;
   dealId: number;
   taxRateId: string;
   description: string;
   currency: string;
   salesId: number;
-}): Promise<CreateEstimateOutcome> => {
-  const claim = await claimDealForEstimate(dealId, salesId);
+}): Promise<CreateDocumentOutcome> => {
+  const claim = await claimDealForDocument(documentKind, dealId, salesId);
   if (claim.outcome === "already_completed") {
-    return { kind: "already_completed", estimateId: claim.estimateId };
+    return { kind: "already_completed", documentId: claim.documentId };
   }
   if (claim.outcome === "in_progress") return { kind: "in_progress" };
   if (claim.outcome === "not_found") return { kind: "not_found" };
@@ -52,7 +48,7 @@ export const createEstimateForDeal = async ({
   try {
     if (!deal.company_id) {
       throw new Error(
-        "Dit deal heeft geen gekoppeld bedrijf; kan geen offerte aanmaken.",
+        "Dit deal heeft geen gekoppeld bedrijf; kan geen document aanmaken.",
       );
     }
 
@@ -74,16 +70,18 @@ export const createEstimateForDeal = async ({
 
     const contactId = await findOrCreateMoneybirdContact(company);
 
-    // Reconciliation: adopt an estimate a prior attempt may already have created
+    // Reconciliation: adopt a document a prior attempt may already have created
     // for this deal (network-timeout case) instead of creating a duplicate.
-    const reference = estimateReference(dealId);
-    const existing = await findEstimateByReference(reference);
+    const reference = documentReference(documentKind, dealId);
+    const existing = await findDocumentByReference(documentKind, reference);
 
-    const estimateId = existing
+    const documentId = existing
       ? existing.id
       : (
-          await createEstimate(
-            buildEstimatePayload({
+          await createDocument(
+            documentKind,
+            buildDocumentPayload({
+              kind: documentKind,
               deal: { id: deal.id, amount: deal.amount },
               contactId,
               taxRateId,
@@ -93,15 +91,15 @@ export const createEstimateForDeal = async ({
           )
         ).id;
 
-    await markEstimateCompleted(dealId, estimateId);
+    await markDocumentCompleted(documentKind, dealId, documentId);
     return {
       kind: "created",
-      estimateId,
+      documentId,
       alreadyExisted: Boolean(existing),
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    await markEstimateFailed(dealId, message);
+    await markDocumentFailed(documentKind, dealId, message);
     throw error;
   }
 };
