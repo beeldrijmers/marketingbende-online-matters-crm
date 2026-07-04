@@ -1,6 +1,6 @@
 # MEMORY
 
-Durable Atomic CRM knowledge. One sentence per bullet, freshest first.
+Durable Marketingbende x Online Matters CRM knowledge. One sentence per bullet, freshest first.
 
 ## Business Knowledge
 

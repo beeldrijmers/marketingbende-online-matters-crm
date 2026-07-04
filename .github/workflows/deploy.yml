@@ -62,12 +62,27 @@ jobs:
               run: npx supabase link --project-ref $SUPABASE_PROJECT_ID
 
             - if: ${{ env.IS_SUPABASE_CONFIGURED }}
-              name: 🔐 Sync Supabase auth URL config
+              name: 🔐 Sync Supabase auth URL + email template config
               run: |
+                  jq -n \
+                      --arg site_url "https://crm.marketingbende.nl" \
+                      --arg uri_allow_list "https://crm.marketingbende.nl/**,https://beeldrijmers.github.io/marketingbende-online-matters-crm/**" \
+                      --arg invite_subject "You've been invited to Marketingbende x Online Matters CRM" \
+                      --rawfile invite_content supabase/templates/invite.html \
+                      --arg recovery_subject "Reset your Marketingbende x Online Matters CRM Password" \
+                      --rawfile recovery_content supabase/templates/recovery.html \
+                      '{
+                          site_url: $site_url,
+                          uri_allow_list: $uri_allow_list,
+                          mailer_subjects_invite: $invite_subject,
+                          mailer_templates_invite_content: $invite_content,
+                          mailer_subjects_recovery: $recovery_subject,
+                          mailer_templates_recovery_content: $recovery_content
+                      }' > /tmp/auth-config.json
                   curl -s -X PATCH "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/config/auth" \
                       -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
                       -H "Content-Type: application/json" \
-                      -d '{"site_url":"https://crm.marketingbende.nl","uri_allow_list":"https://crm.marketingbende.nl/**,https://beeldrijmers.github.io/atomic-crm/**"}' \
+                      -d @/tmp/auth-config.json \
                       -w "\nHTTP status: %{http_code}\n"
 
             - if: ${{ env.IS_SUPABASE_CONFIGURED }}

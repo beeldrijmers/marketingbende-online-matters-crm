@@ -48,7 +48,7 @@ const dealCategories = [
  */
 const App = () => (
   <CRM
-    title="CRM"
+    title="Marketingbende x Online Matters CRM"
     currency="EUR"
     dealStages={dealStages}
     dealPipelineStatuses={dealPipelineStatuses}
