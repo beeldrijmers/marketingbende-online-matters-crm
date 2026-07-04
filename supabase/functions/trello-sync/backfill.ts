@@ -73,7 +73,11 @@ const backfillCard = async (
   return { cardId: card.id, dealId, commentCount: comments.length };
 };
 
-const run = async () => {
+export const run = async (): Promise<{
+  cardCount: number;
+  synced: number;
+  totalComments: number;
+}> => {
   const cards = await fetchTrelloBoardCards({
     boardId: BOARD_ID,
     apiKey,
@@ -96,6 +100,7 @@ const run = async () => {
 
   // eslint-disable-next-line no-console
   console.log(`Done. Synced ${synced} deals, ${totalComments} comments.`);
+  return { cardCount: cards.length, synced, totalComments };
 };
 
 if (import.meta.main) {

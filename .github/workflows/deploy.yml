@@ -31,6 +31,11 @@ jobs:
             POSTMARK_WEBHOOK_PASSWORD: ${{secrets.POSTMARK_WEBHOOK_PASSWORD}}
             POSTMARK_WEBHOOK_AUTHORIZED_IPS: ${{secrets.POSTMARK_WEBHOOK_AUTHORIZED_IPS}}
             VITE_GOOGLE_WORKPLACE_DOMAIN: ${{secrets.VITE_GOOGLE_WORKPLACE_DOMAIN}}
+            TRELLO_API_KEY: ${{secrets.TRELLO_API_KEY}}
+            TRELLO_TOKEN: ${{secrets.TRELLO_TOKEN}}
+            TRELLO_SYNC_DEFAULT_SALES_EMAIL: ${{secrets.TRELLO_SYNC_DEFAULT_SALES_EMAIL}}
+            TRELLO_WEBHOOK_SHARED_SECRET: ${{secrets.TRELLO_WEBHOOK_SHARED_SECRET}}
+            ADMIN_BACKFILL_SECRET: ${{secrets.ADMIN_BACKFILL_SECRET}}
 
         steps:
             - name: 📥 Checkout repo
@@ -98,6 +103,18 @@ jobs:
                   npx supabase secrets set VITE_INBOUND_EMAIL=${{ env.VITE_INBOUND_EMAIL }}
                   npx supabase secrets set VITE_ATTACHMENTS_BUCKET=${{ env.VITE_ATTACHMENTS_BUCKET }}
 
+            - if: ${{ env.IS_SUPABASE_CONFIGURED && env.TRELLO_API_KEY && env.TRELLO_TOKEN && env.TRELLO_SYNC_DEFAULT_SALES_EMAIL && env.TRELLO_WEBHOOK_SHARED_SECRET }}
+              name: 📡 Push supabase trello sync secrets
+              run: |
+                  npx supabase secrets set TRELLO_API_KEY=${{ env.TRELLO_API_KEY }}
+                  npx supabase secrets set TRELLO_TOKEN=${{ env.TRELLO_TOKEN }}
+                  npx supabase secrets set TRELLO_SYNC_DEFAULT_SALES_EMAIL=${{ env.TRELLO_SYNC_DEFAULT_SALES_EMAIL }}
+                  npx supabase secrets set TRELLO_WEBHOOK_SHARED_SECRET=${{ env.TRELLO_WEBHOOK_SHARED_SECRET }}
+
+            - if: ${{ env.IS_SUPABASE_CONFIGURED && env.ADMIN_BACKFILL_SECRET }}
+              name: 📡 Push supabase admin backfill secret
+              run: npx supabase secrets set ADMIN_BACKFILL_SECRET=${{ env.ADMIN_BACKFILL_SECRET }}
+
             - if: ${{ env.IS_SUPABASE_CONFIGURED }}
               name: 📡 Deploy supabase functions
               run: npx supabase functions deploy
@@ -133,6 +150,26 @@ jobs:
             - if: ${{ !env.POSTMARK_WEBHOOK_AUTHORIZED_IPS }}
               name: Check POSTMARK_WEBHOOK_USER secret
               run: echo ':warning:POSTMARK_WEBHOOK_AUTHORIZED_IPS secret is missing' >> $GITHUB_STEP_SUMMARY
+
+            - if: ${{ !env.TRELLO_API_KEY }}
+              name: Check TRELLO_API_KEY secret
+              run: echo ':warning:TRELLO_API_KEY secret is missing' >> $GITHUB_STEP_SUMMARY
+
+            - if: ${{ !env.TRELLO_TOKEN }}
+              name: Check TRELLO_TOKEN secret
+              run: echo ':warning:TRELLO_TOKEN secret is missing' >> $GITHUB_STEP_SUMMARY
+
+            - if: ${{ !env.TRELLO_SYNC_DEFAULT_SALES_EMAIL }}
+              name: Check TRELLO_SYNC_DEFAULT_SALES_EMAIL secret
+              run: echo ':warning:TRELLO_SYNC_DEFAULT_SALES_EMAIL secret is missing' >> $GITHUB_STEP_SUMMARY
+
+            - if: ${{ !env.TRELLO_WEBHOOK_SHARED_SECRET }}
+              name: Check TRELLO_WEBHOOK_SHARED_SECRET secret
+              run: echo ':warning:TRELLO_WEBHOOK_SHARED_SECRET secret is missing' >> $GITHUB_STEP_SUMMARY
+
+            - if: ${{ !env.ADMIN_BACKFILL_SECRET }}
+              name: Check ADMIN_BACKFILL_SECRET secret
+              run: echo ':warning:ADMIN_BACKFILL_SECRET secret is missing' >> $GITHUB_STEP_SUMMARY
 
             - if: ${{ !env.IS_SUPABASE_CONFIGURED }}
               name: Supabase deployment skipped

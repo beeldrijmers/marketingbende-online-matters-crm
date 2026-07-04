@@ -9,6 +9,7 @@ import { fetchTrelloCard } from "./fetchTrelloCard.ts";
 import { upsertDealFromCard } from "./upsertDealFromCard.ts";
 import { archiveDealByCardId } from "./archiveDealByCardId.ts";
 import { addTrelloCommentAsDealNote } from "./addTrelloCommentAsDealNote.ts";
+import { run as runTrelloBackfill } from "./backfill.ts";
 
 // Action types that mean "the card's stage/category/name may have changed" -
 // the full, authoritative card is re-fetched and upserted for all of them.
@@ -25,6 +26,29 @@ Deno.serve(async (req) => {
   // is first registered, purely to confirm the callback URL responds with 2xx.
   if (req.method === "HEAD") return new Response(null, { status: 200 });
   if (req.method !== "POST") return new Response(null, { status: 405 });
+
+  // One-time (re-runnable) admin trigger for the historical-card backfill.
+  // Deliberately checked via its own header/secret, entirely separate from
+  // the Trello webhook auth below, so the two callers can't be confused for
+  // one another. Inert unless ADMIN_BACKFILL_SECRET is configured.
+  const adminBackfillSecret = Deno.env.get("ADMIN_BACKFILL_SECRET");
+  if (
+    adminBackfillSecret &&
+    req.headers.get("x-admin-backfill-secret") === adminBackfillSecret
+  ) {
+    try {
+      const summary = await runTrelloBackfill();
+      return new Response(JSON.stringify(summary), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({ error: (error as Error).message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
 
   const rawBody = await req.text();
 
@@ -135,4 +159,10 @@ Deno.serve(async (req) => {
       "idModel": "6979f9a8a825b6ff46306e8a",
       "description": "Marketingbende CRM sync"
     }'
+
+  To (re-)run the one-time historical-card backfill against a deployed
+  environment, without ever needing that environment's Supabase service role
+  key locally (the deployed function already has it injected):
+  curl -i --location --request POST 'https://crm.marketingbende.nl/functions/v1/trello-sync' \
+    --header 'x-admin-backfill-secret: <ADMIN_BACKFILL_SECRET>'
 */
