@@ -326,6 +326,14 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/providers/commons/dutchMessages.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/providers/commons/dutchCrmMessages.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/providers/commons/canAccess.ts",
           "type": "registry:component"
         },
@@ -466,6 +474,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/misc/CopyPaste.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/misc/ContactOption.tsx",
           "type": "registry:component"
         },
@@ -571,6 +583,10 @@
         },
         {
           "path": "src/components/atomic-crm/deals/DealInputs.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/DealInboundEmail.tsx",
           "type": "registry:component"
         },
         {
