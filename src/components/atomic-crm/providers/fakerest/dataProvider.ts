@@ -297,6 +297,19 @@ export const createDataProvider = ({
     mergeContacts: async (sourceId: Identifier, targetId: Identifier) => {
       return mergeContacts(sourceId, targetId, baseDataProvider);
     },
+    // The Moneybird integration needs the real backend (edge function + API
+    // token). In the FakeRest demo there is no backend, so expose the same
+    // sample tax rates for the UI and refuse creation with a clear message.
+    getMoneybirdTaxRates: async () => [
+      { id: "21", name: "21% btw", percentage: "21.0" },
+      { id: "9", name: "9% btw", percentage: "9.0" },
+      { id: "0", name: "0% btw", percentage: "0.0" },
+    ],
+    createMoneybirdEstimate: async () => {
+      throw new Error(
+        "De Moneybird-koppeling is niet beschikbaar in de demomodus.",
+      );
+    },
     getConfiguration: async (): Promise<ConfigurationContextValue> => {
       const { data } = await baseDataProvider.getOne("configuration", {
         id: 1,

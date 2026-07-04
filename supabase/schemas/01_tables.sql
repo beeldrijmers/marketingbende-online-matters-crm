@@ -29,7 +29,8 @@ create table public.companies (
     description text,
     revenue text,
     tax_identifier text,
-    logo jsonb
+    logo jsonb,
+    moneybird_contact_id text
 );
 
 create table public.contacts (
@@ -77,7 +78,13 @@ create table public.deals (
     expected_closing_date date,
     sales_id bigint,
     index smallint,
-    trello_card_id text
+    trello_card_id text,
+    moneybird_estimate_id text,
+    moneybird_estimate_status text,
+    moneybird_estimate_claimed_at timestamp with time zone,
+    moneybird_estimate_created_by bigint,
+    moneybird_estimate_error text,
+    constraint deals_moneybird_estimate_status_check check (moneybird_estimate_status in ('pending', 'completed', 'failed'))
 );
 
 create table public.deal_notes (
@@ -155,6 +162,9 @@ alter table public.deals
 alter table public.deals
     add constraint deals_sales_id_fkey foreign key (sales_id) references public.sales(id);
 
+alter table public.deals
+    add constraint deals_moneybird_estimate_created_by_fkey foreign key (moneybird_estimate_created_by) references public.sales(id);
+
 alter table public.deal_notes
     add constraint "dealNotes_deal_id_fkey" foreign key (deal_id) references public.deals(id) on update cascade on delete cascade;
 
@@ -183,3 +193,5 @@ create index contacts_company_id_idx on public.contacts using btree (company_id)
 create index deal_notes_deal_id_idx on public.deal_notes using btree (deal_id);
 create index deals_company_id_idx on public.deals using btree (company_id);
 create unique index uq__deals__trello_card_id on public.deals using btree (trello_card_id) where (trello_card_id is not null);
+create unique index uq__deals__moneybird_estimate_id on public.deals using btree (moneybird_estimate_id) where (moneybird_estimate_id is not null);
+create unique index uq__companies__moneybird_contact_id on public.companies using btree (moneybird_contact_id) where (moneybird_contact_id is not null);

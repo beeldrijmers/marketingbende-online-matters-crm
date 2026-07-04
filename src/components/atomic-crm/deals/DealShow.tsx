@@ -28,6 +28,10 @@ import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Deal } from "../types";
 import { ContactList } from "./ContactList";
 import { DealInboundEmail } from "./DealInboundEmail";
+import {
+  MoneybirdEstimateButton,
+  ViewMoneybirdEstimateButton,
+} from "./MoneybirdEstimateButton";
 import { findDealLabel, formatISODateString } from "./dealUtils";
 
 export const DealShow = ({ open, id }: { open: boolean; id?: string }) => {
@@ -79,6 +83,11 @@ const DealShowContent = () => {
                 </>
               ) : (
                 <>
+                  {record.moneybird_estimate_id ? (
+                    <ViewMoneybirdEstimateButton record={record} />
+                  ) : (
+                    <MoneybirdEstimateButton record={record} />
+                  )}
                   <ArchiveButton record={record} />
                   <EditButton />
                 </>

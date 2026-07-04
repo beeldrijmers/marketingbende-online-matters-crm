@@ -225,6 +225,54 @@ const getDataProviderWithCustomMethods = () => {
 
       return data;
     },
+    async getMoneybirdTaxRates() {
+      const { data, error } = await getSupabaseClient().functions.invoke<{
+        data: { id: string; name: string; percentage: string }[];
+      }>("moneybird_estimate", {
+        method: "GET",
+      });
+
+      if (!data || error) {
+        console.error("moneybird_estimate.getTaxRates.error", error);
+        throw new Error("Failed to load Moneybird tax rates");
+      }
+
+      return data.data;
+    },
+    async createMoneybirdEstimate(params: {
+      dealId: Identifier;
+      taxRateId: string;
+      description: string;
+    }) {
+      const { data, error } = await getSupabaseClient().functions.invoke<{
+        data: { estimateId: string; status: string; alreadyExisted: boolean };
+      }>("moneybird_estimate", {
+        method: "POST",
+        body: {
+          dealId: params.dealId,
+          taxRateId: params.taxRateId,
+          description: params.description,
+        },
+      });
+
+      if (!data || error) {
+        console.error("moneybird_estimate.create.error", error);
+        // The edge function returns a useful message (e.g. a 409 "already in
+        // progress" or a Moneybird validation error); surface it to the UI.
+        const errorDetails = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(
+          errorDetails?.message || "Failed to create Moneybird estimate",
+        );
+      }
+
+      return data.data;
+    },
     async getConfiguration(): Promise<ConfigurationContextValue> {
       const { data } = await baseDataProvider.getOne("configuration", {
         id: 1,

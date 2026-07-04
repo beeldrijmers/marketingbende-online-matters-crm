@@ -223,6 +223,36 @@ export const dutchCrmMessages = {
         title: "Gearchiveerde deal",
         view: "Gearchiveerde deals bekijken",
       },
+      moneybird: {
+        action: "Offerte in Moneybird",
+        view: "Bekijk offerte in Moneybird",
+        pending: "Offerte wordt aangemaakt...",
+        dialog_title: "Moneybird-offerte aanmaken",
+        dialog_description:
+          "Controleer de gegevens en maak een concept-offerte aan in Moneybird voor dit deal.",
+        company: "Bedrijf",
+        amount: "Bedrag",
+        no_address: "Geen adres bekend voor dit bedrijf",
+        description_label: "Omschrijving op de offerte",
+        tax_rate: "BTW-tarief",
+        tax_rate_placeholder: "Kies een btw-tarief",
+        tax_rate_loading: "Tarieven laden...",
+        no_contact_hint:
+          "Er is geen contactpersoon gekoppeld; de offerte gaat naar het bedrijf.",
+        multiple_contacts_hint:
+          "Er zijn meerdere contactpersonen gekoppeld; de offerte gaat naar het bedrijf, niet naar een specifiek contact.",
+        warning_title: "Let op: echt document",
+        warning:
+          "Dit maakt een echt concept-document aan in de Moneybird-administratie van Marketingbende. Het wordt niet automatisch naar de klant gemaild.",
+        no_company:
+          "Dit deal heeft geen gekoppeld bedrijf; koppel eerst een bedrijf.",
+        no_amount: "Dit deal heeft geen bedrag; stel eerst een bedrag in.",
+        wrong_currency: "De offertekoppeling werkt alleen met de valuta EUR.",
+        confirm: "Offerte aanmaken",
+        creating: "Bezig met aanmaken...",
+        success: "Offerte aangemaakt in Moneybird",
+        error: "Aanmaken van de offerte is mislukt",
+      },
       inbound: {
         title: "Inkomende e-mail",
         description:

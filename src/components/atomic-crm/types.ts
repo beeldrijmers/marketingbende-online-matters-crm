@@ -69,6 +69,7 @@ export type Company = {
   context_links?: string[];
   nb_contacts?: number;
   nb_deals?: number;
+  moneybird_contact_id?: string;
 } & Pick<RaRecord, "id">;
 
 export type EmailAndType = {
@@ -125,6 +126,11 @@ export type Deal = {
   expected_closing_date: string;
   sales_id: Identifier;
   index: number;
+  moneybird_estimate_id?: string;
+  moneybird_estimate_status?: "pending" | "completed" | "failed";
+  moneybird_estimate_claimed_at?: string;
+  moneybird_estimate_created_by?: Identifier;
+  moneybird_estimate_error?: string;
 } & Pick<RaRecord, "id">;
 
 export type DealNote = {

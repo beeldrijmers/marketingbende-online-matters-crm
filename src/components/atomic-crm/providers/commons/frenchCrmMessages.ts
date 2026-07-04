@@ -223,6 +223,38 @@ export const frenchCrmMessages = {
         title: "Affaire archivée",
         view: "Afficher les affaires archivées",
       },
+      moneybird: {
+        action: "Devis dans Moneybird",
+        view: "Voir le devis dans Moneybird",
+        pending: "Création du devis...",
+        dialog_title: "Créer un devis Moneybird",
+        dialog_description:
+          "Vérifiez les informations et créez un devis brouillon dans Moneybird pour cette affaire.",
+        company: "Entreprise",
+        amount: "Montant",
+        no_address: "Aucune adresse connue pour cette entreprise",
+        description_label: "Description sur le devis",
+        tax_rate: "Taux de TVA",
+        tax_rate_placeholder: "Choisissez un taux de TVA",
+        tax_rate_loading: "Chargement des taux...",
+        no_contact_hint:
+          "Aucun contact n'est lié ; le devis est adressé à l'entreprise.",
+        multiple_contacts_hint:
+          "Plusieurs contacts sont liés ; le devis est adressé à l'entreprise, pas à un contact précis.",
+        warning_title: "Attention : document réel",
+        warning:
+          "Ceci crée un vrai document brouillon dans l'administration Moneybird de Marketingbende. Il n'est pas automatiquement envoyé au client par e-mail.",
+        no_company:
+          "Cette affaire n'a pas d'entreprise liée ; liez d'abord une entreprise.",
+        no_amount:
+          "Cette affaire n'a pas de montant ; définissez d'abord un montant.",
+        wrong_currency:
+          "L'intégration des devis ne fonctionne qu'avec la devise EUR.",
+        confirm: "Créer le devis",
+        creating: "Création...",
+        success: "Devis créé dans Moneybird",
+        error: "Échec de la création du devis",
+      },
       inbound: {
         title: "E-mail entrant",
         description:

@@ -36,6 +36,11 @@ jobs:
             TRELLO_SYNC_DEFAULT_SALES_EMAIL: ${{secrets.TRELLO_SYNC_DEFAULT_SALES_EMAIL}}
             TRELLO_WEBHOOK_SHARED_SECRET: ${{secrets.TRELLO_WEBHOOK_SHARED_SECRET}}
             ADMIN_BACKFILL_SECRET: ${{secrets.ADMIN_BACKFILL_SECRET}}
+            MONEYBIRD_API_TOKEN: ${{secrets.MONEYBIRD_API_TOKEN}}
+            MONEYBIRD_ADMIN_ID: ${{secrets.MONEYBIRD_ADMIN_ID}}
+            # Non-secret: the administration id appears in Moneybird URLs. Baked
+            # into the frontend build so the "view estimate" deep link works.
+            VITE_MONEYBIRD_ADMIN_ID: ${{secrets.MONEYBIRD_ADMIN_ID}}
 
         steps:
             - name: 📥 Checkout repo
@@ -115,6 +120,12 @@ jobs:
               name: 📡 Push supabase admin backfill secret
               run: npx supabase secrets set ADMIN_BACKFILL_SECRET=${{ env.ADMIN_BACKFILL_SECRET }}
 
+            - if: ${{ env.IS_SUPABASE_CONFIGURED && env.MONEYBIRD_API_TOKEN && env.MONEYBIRD_ADMIN_ID }}
+              name: 📡 Push supabase moneybird secrets
+              run: |
+                  npx supabase secrets set MONEYBIRD_API_TOKEN=${{ env.MONEYBIRD_API_TOKEN }}
+                  npx supabase secrets set MONEYBIRD_ADMIN_ID=${{ env.MONEYBIRD_ADMIN_ID }}
+
             - if: ${{ env.IS_SUPABASE_CONFIGURED }}
               name: 📡 Deploy supabase functions
               run: npx supabase functions deploy
@@ -170,6 +181,14 @@ jobs:
             - if: ${{ !env.ADMIN_BACKFILL_SECRET }}
               name: Check ADMIN_BACKFILL_SECRET secret
               run: echo ':warning:ADMIN_BACKFILL_SECRET secret is missing' >> $GITHUB_STEP_SUMMARY
+
+            - if: ${{ !env.MONEYBIRD_API_TOKEN }}
+              name: Check MONEYBIRD_API_TOKEN secret
+              run: echo ':warning:MONEYBIRD_API_TOKEN secret is missing' >> $GITHUB_STEP_SUMMARY
+
+            - if: ${{ !env.MONEYBIRD_ADMIN_ID }}
+              name: Check MONEYBIRD_ADMIN_ID secret
+              run: echo ':warning:MONEYBIRD_ADMIN_ID secret is missing' >> $GITHUB_STEP_SUMMARY
 
             - if: ${{ !env.IS_SUPABASE_CONFIGURED }}
               name: Supabase deployment skipped

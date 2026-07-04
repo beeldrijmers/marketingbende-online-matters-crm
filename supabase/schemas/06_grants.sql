@@ -70,6 +70,15 @@ grant all on table public.companies to anon;
 grant all on table public.companies to authenticated;
 grant all on table public.companies to service_role;
 
+-- moneybird_contact_id is written exclusively by the moneybird_estimate edge
+-- function (service role); see the deals grant above for why a table-level
+-- revoke+re-grant is required instead of a column-level revoke.
+revoke update on table public.companies from anon, authenticated;
+grant update (id, created_at, name, sector, size, linkedin_url, website, phone_number,
+              address, zipcode, city, state_abbr, sales_id, context_links, country,
+              description, revenue, tax_identifier, logo)
+              on table public.companies to anon, authenticated;
+
 grant all on table public.contacts to anon;
 grant all on table public.contacts to authenticated;
 grant all on table public.contacts to service_role;
@@ -81,6 +90,18 @@ grant all on table public.contact_notes to service_role;
 grant all on table public.deals to anon;
 grant all on table public.deals to authenticated;
 grant all on table public.deals to service_role;
+
+-- Moneybird bookkeeping columns are written exclusively by the moneybird_estimate
+-- edge function (service role), so client roles must not be able to reset them
+-- and bypass its claim/idempotency logic. A column-level REVOKE alone is not
+-- enough: "grant all on table" above already grants UPDATE on every column, and
+-- a table-level grant always wins over a column-level revoke in Postgres. So the
+-- table-level UPDATE grant must be revoked and re-granted for the remaining
+-- columns only, right after the blanket grant above.
+revoke update on table public.deals from anon, authenticated;
+grant update (id, name, company_id, contact_ids, category, stage, description, amount,
+              created_at, updated_at, archived_at, expected_closing_date, sales_id,
+              index, trello_card_id) on table public.deals to anon, authenticated;
 
 grant all on table public.deal_notes to anon;
 grant all on table public.deal_notes to authenticated;
