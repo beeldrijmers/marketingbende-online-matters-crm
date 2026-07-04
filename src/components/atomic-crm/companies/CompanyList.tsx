@@ -1,9 +1,12 @@
+import { Users } from "lucide-react";
 import { useGetIdentity, useListContext, useTranslate } from "ra-core";
+import { Link } from "react-router";
 import { CreateButton } from "@/components/admin/create-button";
 import { ExportButton } from "@/components/admin/export-button";
 import { List } from "@/components/admin/list";
 import { ListPagination } from "@/components/admin/list-pagination";
 import { SortButton } from "@/components/admin/sort-button";
+import { Button } from "@/components/ui/button";
 
 import { TopToolbar } from "../layout/TopToolbar";
 import { CompanyEmpty } from "./CompanyEmpty";
@@ -47,6 +50,12 @@ const CompanyListActions = () => {
   const translate = useTranslate();
   return (
     <TopToolbar>
+      <Button asChild variant="outline" size="sm">
+        <Link to="/contacts">
+          <Users className="h-4 w-4" />
+          {translate("resources.contacts.name", { smart_count: 2 })}
+        </Link>
+      </Button>
       <SortButton fields={["name", "created_at", "nb_contacts"]} />
       <ExportButton />
       <CreateButton

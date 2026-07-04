@@ -1,6 +1,6 @@
 import { useGetList } from "ra-core";
 
-import type { Contact, ContactNote } from "../types";
+import type { Company, Contact, ContactNote } from "../types";
 import { DashboardActivityLog } from "./DashboardActivityLog";
 import { DashboardStepper } from "./DashboardStepper";
 import { DealsChart } from "./DealsChart";
@@ -9,13 +9,10 @@ import { TasksList } from "./TasksList";
 import { Welcome } from "./Welcome";
 
 export const Dashboard = () => {
-  const {
-    data: dataContact,
-    total: totalContact,
-    isPending: isPendingContact,
-  } = useGetList<Contact>("contacts", {
-    pagination: { page: 1, perPage: 1 },
-  });
+  const { total: totalContact, isPending: isPendingContact } =
+    useGetList<Contact>("contacts", {
+      pagination: { page: 1, perPage: 1 },
+    });
 
   const { total: totalContactNotes, isPending: isPendingContactNotes } =
     useGetList<ContactNote>("contact_notes", {
@@ -29,18 +26,29 @@ export const Dashboard = () => {
     },
   );
 
-  const isPending = isPendingContact || isPendingContactNotes || isPendingDeal;
+  const { total: totalCompany, isPending: isPendingCompany } =
+    useGetList<Company>("companies", {
+      pagination: { page: 1, perPage: 1 },
+    });
+
+  const isPending =
+    isPendingContact ||
+    isPendingContactNotes ||
+    isPendingDeal ||
+    isPendingCompany;
 
   if (isPending) {
     return null;
   }
 
-  if (!totalContact) {
-    return <DashboardStepper step={1} />;
-  }
+  // Only show the getting-started guide for a brand-new, completely empty CRM.
+  // As soon as there is any data (contacts, companies or deals) we go straight
+  // to the real dashboard: adding a contact or note is never a hard requirement.
+  const isEmptyCrm =
+    !totalContact && !totalContactNotes && !totalDeal && !totalCompany;
 
-  if (!totalContactNotes) {
-    return <DashboardStepper step={2} contactId={dataContact?.[0]?.id} />;
+  if (isEmptyCrm) {
+    return <DashboardStepper step={1} />;
   }
 
   return (
