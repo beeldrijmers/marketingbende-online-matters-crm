@@ -1,0 +1,138 @@
+// Follow this setup guide to integrate the Deno language server with your editor:
+// https://deno.land/manual/getting_started/setup_your_environment
+// This enables autocomplete, go to definition, etc.
+
+// Setup type definitions for built-in Supabase Runtime APIs
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { verifyTrelloWebhookRequest } from "./verifyTrelloWebhookRequest.ts";
+import { fetchTrelloCard } from "./fetchTrelloCard.ts";
+import { upsertDealFromCard } from "./upsertDealFromCard.ts";
+import { archiveDealByCardId } from "./archiveDealByCardId.ts";
+import { addTrelloCommentAsDealNote } from "./addTrelloCommentAsDealNote.ts";
+
+// Action types that mean "the card's stage/category/name may have changed" -
+// the full, authoritative card is re-fetched and upserted for all of them.
+const CARD_SYNC_ACTIONS = new Set([
+  "createCard",
+  "updateCard",
+  "addLabelToCard",
+  "removeLabelToCard",
+  "moveCardToBoard",
+]);
+
+Deno.serve(async (req) => {
+  // Trello sends a HEAD (and sometimes an empty POST) request when a webhook
+  // is first registered, purely to confirm the callback URL responds with 2xx.
+  if (req.method === "HEAD") return new Response(null, { status: 200 });
+  if (req.method !== "POST") return new Response(null, { status: 405 });
+
+  const rawBody = await req.text();
+
+  const isAuthorized = await verifyTrelloWebhookRequest(req, rawBody);
+  if (!isAuthorized) return new Response("Unauthorized", { status: 401 });
+
+  if (!rawBody) return new Response("OK"); // Trello's registration probe
+
+  const { action } = JSON.parse(rawBody);
+  if (!action?.type) {
+    // Return a 403 so Trello knows retrying this exact payload is pointless.
+    return new Response("Missing action.type", { status: 403 });
+  }
+
+  try {
+    if (CARD_SYNC_ACTIONS.has(action.type)) {
+      const cardId = action.data?.card?.id;
+      if (!cardId)
+        return new Response("Missing action.data.card.id", { status: 403 });
+      const card = await fetchTrelloCard(cardId);
+      await upsertDealFromCard(card);
+      return new Response("OK");
+    }
+
+    if (action.type === "commentCard") {
+      const cardId = action.data?.card?.id;
+      const commentText = action.data?.text;
+      const authorName = action.memberCreator?.fullName ?? "Onbekend";
+      if (!cardId || !commentText) {
+        return new Response("Missing action.data.card.id or action.data.text", {
+          status: 403,
+        });
+      }
+      await addTrelloCommentAsDealNote({
+        trelloCardId: cardId,
+        authorName,
+        commentText,
+      });
+      return new Response("OK");
+    }
+
+    if (action.type === "deleteCard") {
+      const cardId = action.data?.card?.id;
+      if (!cardId)
+        return new Response("Missing action.data.card.id", { status: 403 });
+      await archiveDealByCardId(cardId);
+      return new Response("OK");
+    }
+
+    // Unhandled action types (e.g. board/list-level events) are ignored.
+    return new Response("OK");
+  } catch (error) {
+    return new Response(`Trello sync failed: ${(error as Error).message}`, {
+      status: 500,
+    });
+  }
+});
+
+/* To invoke locally:
+  1. Run `make start`
+  2. Make sure `supabase/functions/.env` has TRELLO_API_KEY, TRELLO_TOKEN,
+     TRELLO_SYNC_DEFAULT_SALES_EMAIL and TRELLO_WEBHOOK_SHARED_SECRET set.
+  3. In another terminal, run `make start-supabase-functions`
+  4. In another terminal, make an HTTP request (createCard example):
+  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/trello-sync?secret=local-dev-secret' \
+    --header 'Content-Type: application/json' \
+    --data '{
+      "action": {
+        "type": "createCard",
+        "data": {
+          "card": { "id": "<real Trello card id>" },
+          "list": { "id": "<real Trello list id>" }
+        }
+      }
+    }'
+
+  Comment example:
+  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/trello-sync?secret=local-dev-secret' \
+    --header 'Content-Type: application/json' \
+    --data '{
+      "action": {
+        "type": "commentCard",
+        "memberCreator": { "fullName": "John Plantenga" },
+        "data": {
+          "card": { "id": "<real Trello card id>" },
+          "text": "Klant heeft akkoord gegeven op de offerte."
+        }
+      }
+    }'
+
+  Delete example:
+  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/trello-sync?secret=local-dev-secret' \
+    --header 'Content-Type: application/json' \
+    --data '{
+      "action": {
+        "type": "deleteCard",
+        "data": { "card": { "id": "<real Trello card id>" } }
+      }
+    }'
+
+  To register the real webhook once the CRM is deployed to a public URL:
+  curl -i --location --request POST 'https://api.trello.com/1/webhooks' \
+    --header 'Content-Type: application/json' \
+    --data '{
+      "key": "<TRELLO_API_KEY>",
+      "token": "<TRELLO_TOKEN>",
+      "callbackURL": "https://crm.marketingbende.nl/functions/v1/trello-sync?secret=<TRELLO_WEBHOOK_SHARED_SECRET>",
+      "idModel": "6979f9a8a825b6ff46306e8a",
+      "description": "Marketingbende CRM sync"
+    }'
+*/

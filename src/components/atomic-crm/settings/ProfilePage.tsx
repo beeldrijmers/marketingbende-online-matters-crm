@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { Check, CircleX, Copy, Pencil, Save } from "lucide-react";
+import { CircleX, Pencil, Save } from "lucide-react";
 import {
   Form,
   useDataProvider,
@@ -24,13 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
+import { CopyPaste } from "../misc/CopyPaste";
 import ImageEditorField from "../misc/ImageEditorField";
 import type { CrmDataProvider } from "../providers/types";
 import type { Sale, SalesFormData } from "../types";
@@ -325,46 +320,6 @@ const TextRender = ({
     <div className={className}>
       <RecordField source={source} label={label} />
     </div>
-  );
-};
-
-const CopyPaste = ({ value }: { value: string }) => {
-  const translate = useTranslate();
-  const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
-    setCopied(true);
-    navigator.clipboard.writeText(value);
-    setTimeout(() => {
-      setCopied(false);
-    }, 1500);
-  };
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            onClick={handleCopy}
-            variant="ghost"
-            className="normal-case justify-between w-full"
-          >
-            <span className="overflow-hidden text-ellipsis">{value}</span>
-            {copied ? (
-              <Check className="h-4 w-4 ml-2" />
-            ) : (
-              <Copy className="h-4 w-4 ml-2" />
-            )}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>
-            {copied
-              ? translate("crm.common.copied")
-              : translate("crm.common.copy")}
-          </p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
   );
 };
 

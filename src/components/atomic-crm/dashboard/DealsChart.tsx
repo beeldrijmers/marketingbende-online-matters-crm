@@ -9,10 +9,10 @@ import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Deal } from "../types";
 
 const multiplier = {
-  opportunity: 0.2,
-  "proposal-sent": 0.5,
-  "in-negociation": 0.8,
-  delayed: 0.3,
+  "informatie-pipeline": 0.2,
+  bezig: 0.5,
+  "on-hold": 0.3,
+  "facturatie-live": 0.9,
 };
 
 const threeMonthsAgo = new Date(
@@ -28,7 +28,7 @@ export const DealsChart = memo(() => {
     ? navigator.languages || [navigator.language]
     : [DEFAULT_LOCALE];
   const wonLabel = findDealLabel(dealStages, "won") ?? "Won";
-  const lostLabel = findDealLabel(dealStages, "lost") ?? "Lost";
+  const lostLabel = findDealLabel(dealStages, "lost");
 
   const { data, isPending } = useGetList<Deal>("deals", {
     pagination: { perPage: 100, page: 1 },
@@ -186,19 +186,21 @@ export const DealsChart = memo(() => {
                 legendPosition: "top-left",
                 legendOrientation: "vertical",
               },
-              {
-                axis: "y",
-                value: 0,
-                lineStyle: {
-                  stroke: "#f47560",
-                  strokeWidth: 1,
-                },
-                textStyle: { fill: "#e25c3b" },
-                legend: lostLabel,
-                legendPosition: "bottom-left",
-                legendOrientation: "vertical",
-              },
-            ] as any
+              lostLabel
+                ? {
+                    axis: "y",
+                    value: 0,
+                    lineStyle: {
+                      stroke: "#f47560",
+                      strokeWidth: 1,
+                    },
+                    textStyle: { fill: "#e25c3b" },
+                    legend: lostLabel,
+                    legendPosition: "bottom-left",
+                    legendOrientation: "vertical",
+                  }
+                : null,
+            ].filter(Boolean) as any
           }
         />
       </div>

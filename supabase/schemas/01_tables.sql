@@ -76,7 +76,8 @@ create table public.deals (
     archived_at timestamp with time zone,
     expected_closing_date date,
     sales_id bigint,
-    index smallint
+    index smallint,
+    trello_card_id text
 );
 
 create table public.deal_notes (
@@ -181,3 +182,4 @@ create index contact_notes_contact_id_idx on public.contact_notes using btree (c
 create index contacts_company_id_idx on public.contacts using btree (company_id);
 create index deal_notes_deal_id_idx on public.deal_notes using btree (deal_id);
 create index deals_company_id_idx on public.deals using btree (company_id);
+create unique index uq__deals__trello_card_id on public.deals using btree (trello_card_id) where (trello_card_id is not null);

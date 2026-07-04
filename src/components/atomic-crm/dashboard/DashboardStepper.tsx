@@ -13,6 +13,7 @@ import { ContactCreateSheet } from "../contacts/ContactCreateSheet";
 import { ContactImportButton } from "../contacts/ContactImportButton";
 import useAppBarHeight from "../misc/useAppBarHeight";
 import { NoteCreateSheet } from "../notes/NoteCreateSheet";
+import { useConfigurationContext } from "../root/ConfigurationContext";
 
 export const DashboardStepper = ({
   step,
@@ -22,6 +23,7 @@ export const DashboardStepper = ({
   contactId?: Identifier;
 }) => {
   const translate = useTranslate();
+  const { title } = useConfigurationContext();
   const appbarHeight = useAppBarHeight();
   const isMobile = useIsMobile();
   const [contactCreateOpen, setContactCreateOpen] = useState(false);
@@ -66,7 +68,8 @@ export const DashboardStepper = ({
                 <CheckCircle className="text-green-600 w-5 h-5 shrink-0" />
                 <h4 className="font-bold">
                   {translate("crm.dashboard.stepper.install", {
-                    _: "Install Atomic CRM",
+                    _: "Install %{title}",
+                    title,
                   })}
                 </h4>
               </div>

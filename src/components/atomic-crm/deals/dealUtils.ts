@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import type { Identifier } from "ra-core";
 
 import type { DealStage } from "../types";
 
@@ -49,4 +50,19 @@ export function formatISODateString(dateString: string) {
   const date = new Date(year, month - 1, day);
 
   return format(date, "PP");
+}
+
+export function buildDealInboundEmail(
+  dealId: Identifier,
+  inboundEmail: string | undefined,
+): string | null {
+  if (!inboundEmail) return null;
+
+  const atIndex = inboundEmail.indexOf("@");
+  if (atIndex === -1) return null;
+
+  const domain = inboundEmail.slice(atIndex + 1);
+  if (!domain) return null;
+
+  return `deal-${dealId}@${domain}`;
 }

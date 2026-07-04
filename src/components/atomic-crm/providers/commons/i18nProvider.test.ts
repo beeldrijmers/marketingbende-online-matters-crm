@@ -6,8 +6,9 @@ afterEach(() => {
 });
 
 describe("i18nProvider", () => {
-  it("registers en and fr locales", () => {
+  it("registers nl, en and fr locales", () => {
     expect(i18nProvider.getLocales?.()).toEqual([
+      { locale: "nl", name: "Nederlands" },
       { locale: "en", name: "English" },
       { locale: "fr", name: "Français" },
     ]);
@@ -45,21 +46,21 @@ describe("i18nProvider", () => {
     );
   });
 
-  it("uses browser french locale when available", () => {
+  it("always defaults to dutch regardless of browser locale", () => {
     vi.stubGlobal("navigator", {
       language: "fr-FR",
       languages: ["fr-FR", "en-US"],
     });
 
-    expect(getInitialLocale()).toBe("fr");
+    expect(getInitialLocale()).toBe("nl");
   });
 
-  it("falls back to english when browser locale is unsupported", () => {
+  it("defaults to dutch even when browser locale is unsupported", () => {
     vi.stubGlobal("navigator", {
       language: "es-ES",
       languages: ["es-ES", "pt-BR"],
     });
 
-    expect(getInitialLocale()).toBe("en");
+    expect(getInitialLocale()).toBe("nl");
   });
 });

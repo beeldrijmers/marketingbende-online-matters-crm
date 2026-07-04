@@ -1,6 +1,6 @@
 import { commands } from "vitest/browser";
 
-import { formatISODateString } from "./dealUtils";
+import { buildDealInboundEmail, formatISODateString } from "./dealUtils";
 
 describe("formatISODateString", () => {
   let originalTimezone: string;
@@ -50,5 +50,35 @@ describe("formatISODateString", () => {
     expect(() => formatISODateString(invalidDate)).toThrow(
       "Invalid date format. Expected YYYY-MM-DD.",
     );
+  });
+});
+
+describe("buildDealInboundEmail", () => {
+  it("builds the inbound address for a numeric deal id", () => {
+    expect(buildDealInboundEmail(42, "abc123@inbound.example.com")).toBe(
+      "deal-42@inbound.example.com",
+    );
+  });
+
+  it("builds the inbound address for a string deal id", () => {
+    expect(buildDealInboundEmail("42", "abc123@inbound.example.com")).toBe(
+      "deal-42@inbound.example.com",
+    );
+  });
+
+  it("returns null when inboundEmail is missing", () => {
+    expect(buildDealInboundEmail(42, undefined)).toBeNull();
+  });
+
+  it("returns null when inboundEmail is empty", () => {
+    expect(buildDealInboundEmail(42, "")).toBeNull();
+  });
+
+  it("returns null when inboundEmail is malformed (no @)", () => {
+    expect(buildDealInboundEmail(42, "not-an-email")).toBeNull();
+  });
+
+  it("returns null when inboundEmail has no domain (trailing @)", () => {
+    expect(buildDealInboundEmail(42, "abc123@")).toBeNull();
   });
 });

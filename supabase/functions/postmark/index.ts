@@ -5,10 +5,12 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { addNoteToContact } from "./addNoteToContact.ts";
+import { addNoteToDeal } from "./addNoteToDeal.ts";
 import {
   getForwardedMailContent,
   stripSubjectForwardingPrefix,
 } from "./forwardedParser.ts";
+import { extractDealIdFromEmails } from "./extractDealId.ts";
 import { extractMailContactData } from "./extractMailContactData.ts";
 import { getExpectedAuthorization } from "./getExpectedAuthorization.ts";
 import { getNoteContent } from "./getNoteContent.ts";
@@ -50,6 +52,23 @@ Deno.serve(async (req) => {
       `Could not extract sales email from FromFull: ${FromFull}`,
       { status: 403 },
     );
+  }
+
+  // A recipient like "deal-42@<inbound-domain>" links the mail directly to
+  // that deal instead of falling back to the generic contact-matching flow.
+  const inboundDomain = INBOUND_EMAIL.split("@")[1] || "";
+  const dealId = extractDealIdFromEmails(ToFull, inboundDomain);
+  if (dealId) {
+    const dealNoteContent = getNoteContent(
+      stripSubjectForwardingPrefix(Subject),
+      getForwardedMailContent(TextBody),
+    );
+    return await addNoteToDeal({
+      salesEmail,
+      dealId,
+      noteContent: dealNoteContent,
+      attachments: await extractAndUploadAttachments(Attachments),
+    });
   }
 
   const allSales = await supabaseAdmin.from("sales").select("email");

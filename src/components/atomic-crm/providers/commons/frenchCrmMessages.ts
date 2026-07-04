@@ -223,6 +223,11 @@ export const frenchCrmMessages = {
         title: "Affaire archivée",
         view: "Afficher les affaires archivées",
       },
+      inbound: {
+        title: "E-mail entrant",
+        description:
+          "Transférez ou mettez en copie (Cc) vos e-mails à cette adresse pour les ajouter automatiquement en tant que notes sur cette affaire.",
+      },
       inputs: {
         linked_to: "Lié à",
       },
@@ -393,7 +398,7 @@ export const frenchCrmMessages = {
         creating: "Création...",
         initial_user_created: "Utilisateur initial créé avec succès",
       },
-      welcome_title: "Bienvenue sur Atomic CRM",
+      welcome_title: "Bienvenue sur %{title}",
     },
     common: {
       activity: "Activité",
@@ -439,7 +444,7 @@ export const frenchCrmMessages = {
       latest_notes: "Mes dernières notes",
       latest_notes_added_ago: "ajouté %{timeAgo}",
       stepper: {
-        install: "Installer Atomic CRM",
+        install: "Installer %{title}",
         progress: "%{step}/3 terminé",
         whats_next: "Et ensuite ?",
       },

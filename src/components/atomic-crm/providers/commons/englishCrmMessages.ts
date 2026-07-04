@@ -218,6 +218,11 @@ export const englishCrmMessages = {
         title: "Archived Deal",
         view: "View archived deals",
       },
+      inbound: {
+        title: "Inbound email",
+        description:
+          "Forward or Cc emails to this address to automatically add them as notes on this deal.",
+      },
       inputs: {
         linked_to: "Linked to",
       },
@@ -387,7 +392,7 @@ export const englishCrmMessages = {
         creating: "Creating...",
         initial_user_created: "Initial user successfully created",
       },
-      welcome_title: "Welcome to Atomic CRM",
+      welcome_title: "Welcome to %{title}",
     },
     common: {
       activity: "Activity",
@@ -432,7 +437,7 @@ export const englishCrmMessages = {
       latest_notes: "My Latest Notes",
       latest_notes_added_ago: "added %{timeAgo}",
       stepper: {
-        install: "Install Atomic CRM",
+        install: "Install %{title}",
         progress: "%{step}/3 done",
         whats_next: "What's next?",
       },
