@@ -32,12 +32,12 @@ test("user adds a tag to several contacts", async ({
 
   await page.goto("http://localhost:5175/");
 
-  await page.getByLabel("Email").fill("john@doe.com");
-  await page.getByLabel("Password").fill("password");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByLabel("E-mail").fill("john@doe.com");
+  await page.getByLabel("Wachtwoord").fill("password");
+  await page.getByRole("button", { name: "Inloggen" }).click();
 
   await expect(page).toHaveTitle(/Marketingbende x Online Matters CRM/);
-  await expect(page.getByRole("link", { name: "Contacts" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Contacten" })).toBeVisible();
 
   await menu.goToContacts();
   await expect(page.getByText("Ada Lovelace")).toBeVisible();
@@ -45,14 +45,14 @@ test("user adds a tag to several contacts", async ({
 
   const checkboxes = page.getByRole("checkbox");
   await checkboxes.nth(1).click();
-  await page.getByRole("button", { name: /select all/i }).click();
+  await page.getByRole("button", { name: /alles selecteren/i }).click();
 
-  await page.getByRole("button", { name: /^Tag$/ }).click();
-  await page.getByRole("button", { name: "Create new tag" }).click();
-  await page.getByLabel("Tag name").fill("Prospect");
-  await page.getByRole("button", { name: "Save" }).click();
+  await page.getByRole("button", { name: /^Label$/ }).click();
+  await page.getByRole("button", { name: "Nieuw label aanmaken" }).click();
+  await page.getByLabel("Naam van label").fill("Prospect");
+  await page.getByRole("button", { name: "Opslaan" }).click();
 
-  await dismissToast("Tag added to 2 contacts");
+  await dismissToast("Label toegevoegd aan 2 contacten");
 
   await expect(
     page.getByText("Grace Hopper").locator("xpath=ancestor::a[1]"),

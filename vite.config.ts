@@ -60,6 +60,9 @@ export default defineConfig({
   esbuild: {
     keepNames: true,
   },
+  optimizeDeps: {
+    exclude: ["@supabase/realtime-js"],
+  },
   build: {
     sourcemap: true,
   },

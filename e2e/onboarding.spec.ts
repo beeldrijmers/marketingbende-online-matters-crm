@@ -5,84 +5,94 @@ test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
 
   // Expect a title "to contain" a substring.
   await expect(page).toHaveTitle(/Marketingbende x Online Matters CRM/);
-  await expect(page.getByText("Welcome to Atomic CRM")).toBeVisible();
+  await expect(
+    page.getByText("Welkom bij Marketingbende x Online Matters CRM"),
+  ).toBeVisible();
 
-  await page.getByLabel("First name").fill("John");
-  await page.getByLabel("Last name").fill("Doe");
-  await page.getByLabel("Email").fill("john@doe.com");
-  await page.getByLabel("Password").fill("password");
-  await page.getByRole("button", { name: "Create account" }).click();
+  await page.getByLabel("Voornaam").fill("John");
+  await page.getByLabel("Achternaam").fill("Doe");
+  await page.getByLabel("E-mail").fill("john@doe.com");
+  await page.getByLabel("Wachtwoord").fill("password");
+  await page.getByRole("button", { name: "Account aanmaken" }).click();
 
-  await expect(page.getByText("What's next?")).toBeVisible();
-  await expect(page.getByText("1/3 done")).toBeVisible();
-  await expect(page.getByText("Install Atomic CRM")).toBeVisible();
-  await expect(page.getByText("Add your first contact")).toBeVisible();
-  await expect(page.getByText("Add your first note")).toBeVisible();
+  await expect(page.getByText("Wat nu?")).toBeVisible();
+  await expect(page.getByText("1/3 voltooid")).toBeVisible();
+  await expect(
+    page.getByText("Marketingbende x Online Matters CRM installeren"),
+  ).toBeVisible();
+  await expect(page.getByText("Voeg uw eerste contact toe")).toBeVisible();
+  await expect(page.getByText("Voeg uw eerste notitie toe")).toBeVisible();
 
-  await page.getByText("New Contact").click();
+  await page.getByText("Nieuw contact").click();
   await page.waitForLoadState("networkidle");
-  await page.getByLabel("She/Her").click();
-  await page.getByLabel("First name").fill("Jane");
-  await page.getByLabel("Last name").fill("Smith");
-  await page.getByLabel("Title").fill("CEO");
-  await page.getByLabel("Company").click();
+  await page.getByLabel("Zij/Haar").click();
+  await page.getByLabel("Voornaam").fill("Jane");
+  await page.getByLabel("Achternaam").fill("Smith");
+  await page.getByLabel("Functietitel").fill("CEO");
+  await page.getByLabel("Bedrijf").click();
   await page.getByPlaceholder("Search").fill("Smith Corp");
-  await page.getByText("Create Smith Corp").click();
+  await page.getByText("Smith Corp aanmaken").click();
   await page
-    .getByRole("group", { name: "Email addresses" })
-    .getByRole("textbox", { name: "Email" })
+    .getByRole("group", { name: "E-mailadressen" })
+    .getByRole("textbox", { name: "E-mail" })
     .fill("jane@smithcorp.com");
   await page
-    .getByRole("group", { name: "Email addresses" })
-    .getByRole("button", { name: "Add" })
+    .getByRole("group", { name: "E-mailadressen" })
+    .getByRole("button", { name: "Toevoegen" })
     .click();
 
   await page
-    .getByRole("group", { name: "Phone numbers" })
-    .getByRole("textbox", { name: "Phone number" })
+    .getByRole("group", { name: "Telefoonnummers" })
+    .getByRole("textbox", { name: "Telefoonnummer" })
     .fill("+1234567890");
   await page
-    .getByRole("group", { name: "Phone numbers" })
-    .getByRole("button", { name: "Add" })
+    .getByRole("group", { name: "Telefoonnummers" })
+    .getByRole("button", { name: "Toevoegen" })
     .click();
 
   await page
-    .getByLabel("LinkedIn URL")
+    .getByLabel("LinkedIn-URL")
     .fill("https://www.linkedin.com/in/jane-smith");
 
   await page
-    .getByLabel("Background info (bio, how you met, etc)")
+    .getByLabel("Achtergrondinformatie (bio, hoe u elkaar kent, etc.)")
     .fill("Met at a conference.");
 
-  await page.getByLabel("Has newsletter").check();
+  await page.getByLabel("Ontvangt nieuwsbrief").check();
 
-  await expect(page.getByLabel("Account manager *")).toHaveText("John Doe");
+  await expect(page.getByLabel("Accountmanager *")).toHaveText("John Doe");
 
-  await page.getByRole("button", { name: "Save" }).click();
+  await page.getByRole("button", { name: "Opslaan" }).click();
 
-  await dismissToast("Element created");
+  await dismissToast("Element toegevoegd");
 
   await expect(page.locator(isMobile ? "h2" : "h5")).toHaveText("Jane Smith");
-  await expect(page.getByText("CEO at Smith Corp")).toBeVisible();
+  await expect(page.getByText("CEO bij Smith Corp")).toBeVisible();
 
   await menu.goToDashboard();
   await page.waitForLoadState("networkidle");
 
-  await expect(page.getByText("2/3 done")).toBeVisible();
+  await expect(page.getByText("2/3 voltooid")).toBeVisible();
 
-  await page.getByRole("button", { name: "Add note" }).click();
+  await page.getByRole("button", { name: "Notitie toevoegen" }).click();
 
   await page.waitForLoadState("networkidle");
 
-  await page.getByPlaceholder("Add a note").fill("This is a note about Jane.");
   await page
-    .getByRole("button", { name: isMobile ? "Save" : "Add this note" })
+    .getByPlaceholder("Voeg een notitie toe")
+    .fill("This is a note about Jane.");
+  await page
+    .getByRole("button", {
+      name: isMobile ? "Opslaan" : "Deze notitie toevoegen",
+    })
     .click();
 
-  await dismissToast("Note added");
+  await dismissToast("Notitie toegevoegd");
 
   await expect(
-    page.getByText(isMobile ? "Me" : "You added a note", { exact: false }),
+    page.getByText(isMobile ? "Ik" : "U heeft een notitie toegevoegd", {
+      exact: false,
+    }),
   ).toBeVisible();
   await expect(page.getByText("This is a note about Jane.")).toBeVisible();
 
@@ -90,16 +100,16 @@ test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
 
   await page.waitForLoadState("networkidle");
 
-  await expect(page.getByText("Latest Activity")).toBeVisible();
+  await expect(page.getByText("Laatste activiteit")).toBeVisible();
   await expect(
-    page.getByText("Latest Activity").locator("xpath=../.."),
-  ).toHaveText(/You added company Smith Corp today at/);
+    page.getByText("Laatste activiteit").locator("xpath=../.."),
+  ).toHaveText(/U heeft een bedrijf toegevoegd Smith Corp today at/);
 
   await expect(
-    page.getByText("Latest Activity").locator("xpath=../.."),
-  ).toHaveText(/You added Jane Smith to Smith Corp today at/);
+    page.getByText("Laatste activiteit").locator("xpath=../.."),
+  ).toHaveText(/U heeft toegevoegd Jane Smith aan Smith Corp today at/);
 
   await expect(
-    page.getByText("Latest Activity").locator("xpath=../.."),
-  ).toHaveText(/You added a note about Jane Smith today at/);
+    page.getByText("Laatste activiteit").locator("xpath=../.."),
+  ).toHaveText(/U heeft een notitie toegevoegd over Jane Smith today at/);
 });
