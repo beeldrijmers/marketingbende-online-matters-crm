@@ -162,6 +162,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/sales/party.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/sales/index.ts",
           "type": "registry:component"
         },
@@ -179,6 +183,10 @@
         },
         {
           "path": "src/components/atomic-crm/sales/SalesCreate.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/sales/SaleAvatar.tsx",
           "type": "registry:component"
         },
         {
@@ -402,6 +410,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/notes/NoteAuthorLine.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/notes/NoteAttachments.tsx",
           "type": "registry:component"
         },
@@ -554,6 +566,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/filters/OwnerFilterCategory.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/filters/FilterCategory.tsx",
           "type": "registry:component"
         },
@@ -575,6 +591,10 @@
         },
         {
           "path": "src/components/atomic-crm/deals/MoneybirdDocumentButtons.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/MobileDealsList.tsx",
           "type": "registry:component"
         },
         {
@@ -774,6 +794,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/companies/MobileCompaniesList.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/companies/GridList.tsx",
           "type": "registry:component"
         },
@@ -855,6 +879,10 @@
         },
         {
           "path": "src/components/atomic-crm/activity/ActivityLog.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/activity/ActivityActor.tsx",
           "type": "registry:component"
         },
         {
