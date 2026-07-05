@@ -60,4 +60,16 @@ describe("extractDealAmount", () => {
   it("parses a decimal comma amount", () => {
     expect(extractDealAmount("", "Prijs: EUR 1.500,50 excl. btw")).toBe(1501);
   });
+
+  it("reads a bare amount followed by the word 'euro'", () => {
+    expect(extractDealAmount("", "voor 2.750 euro excl. btw")).toBe(2750);
+  });
+
+  it("reads a number followed by the EUR code", () => {
+    expect(extractDealAmount("", "budget van 2500 EUR")).toBe(2500);
+  });
+
+  it("does not treat 'european' as a euro amount", () => {
+    expect(extractDealAmount("", "500 european customers")).toBeNull();
+  });
 });
