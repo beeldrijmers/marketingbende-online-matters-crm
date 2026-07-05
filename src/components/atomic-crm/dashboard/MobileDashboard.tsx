@@ -1,7 +1,7 @@
 import { useGetList, useTimeout } from "ra-core";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import type { Contact, ContactNote } from "../types";
+import type { Company, Contact, ContactNote, Deal } from "../types";
 import { DashboardActivityLog } from "./DashboardActivityLog";
 import { DashboardStepper } from "./DashboardStepper";
 import { Welcome } from "./Welcome";
@@ -44,37 +44,47 @@ const Loading = () => (
 );
 
 export const MobileDashboard = () => {
-  const {
-    data: dataContact,
-    total: totalContact,
-    isPending: isPendingContact,
-  } = useGetList<Contact>("contacts", {
-    pagination: { page: 1, perPage: 1 },
-  });
+  const { total: totalContact, isPending: isPendingContact } =
+    useGetList<Contact>("contacts", {
+      pagination: { page: 1, perPage: 1 },
+    });
   const { total: totalContactNotes, isPending: isPendingContactNotes } =
     useGetList<ContactNote>("contact_notes", {
       pagination: { page: 1, perPage: 1 },
     });
+  const { total: totalDeal, isPending: isPendingDeal } = useGetList<Deal>(
+    "deals",
+    {
+      pagination: { page: 1, perPage: 1 },
+    },
+  );
+  const { total: totalCompany, isPending: isPendingCompany } =
+    useGetList<Company>("companies", {
+      pagination: { page: 1, perPage: 1 },
+    });
   const oneSecondHasPassed = useTimeout(1000);
 
-  const isPending = isPendingContact || isPendingContactNotes;
+  const isPending =
+    isPendingContact ||
+    isPendingContactNotes ||
+    isPendingDeal ||
+    isPendingCompany;
 
   if (isPending) {
     return oneSecondHasPassed ? <Loading /> : null;
   }
 
-  if (!totalContact) {
+  // Only show the getting-started guide for a brand-new, completely empty CRM.
+  // As soon as there is any data (contacts, companies or deals) we go straight
+  // to the real dashboard: adding a contact or note is never a hard requirement.
+  // Mirrors the desktop Dashboard so mobile no longer forces onboarding.
+  const isEmptyCrm =
+    !totalContact && !totalContactNotes && !totalDeal && !totalCompany;
+
+  if (isEmptyCrm) {
     return (
       <Wrapper>
         <DashboardStepper step={1} />
-      </Wrapper>
-    );
-  }
-
-  if (!totalContactNotes) {
-    return (
-      <Wrapper>
-        <DashboardStepper step={2} contactId={dataContact?.[0]?.id} />
       </Wrapper>
     );
   }
