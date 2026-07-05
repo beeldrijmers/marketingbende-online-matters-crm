@@ -59,7 +59,7 @@ export const MobileNavigation = () => {
           "calc(var(--spacing)) * 6" + (isPwa && isWebiOS ? " + 15px" : ""),
       }}
     >
-      <div className="flex justify-center">
+      <div className="flex h-full items-center justify-around px-1">
         <>
           <NavigationButton
             href="/"
@@ -149,10 +149,10 @@ const CreateButton = () => {
           <Button
             variant="default"
             size="icon"
-            className="h-16 w-16 rounded-full -mt-3"
+            className="h-11 w-11 rounded-full shadow-sm"
             aria-label={translate("ra.action.create")}
           >
-            <Plus className="size-10" />
+            <Plus className="size-6" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
