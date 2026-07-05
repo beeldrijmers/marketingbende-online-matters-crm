@@ -20,7 +20,7 @@ const LEGACY_DESCRIPTION_PREFIX = "Gemigreerd vanuit Trello:";
 // has one, with a link back to the source card appended; otherwise the legacy
 // placeholder so the source is always traceable.
 const buildDealDescription = (card: TrelloCardInput): string => {
-  const trimmed = card.desc.trim();
+  const trimmed = (card.desc ?? "").trim();
   return trimmed
     ? `${trimmed}\n\nBron (Trello): ${card.url}`
     : `${LEGACY_DESCRIPTION_PREFIX} ${card.url}`;

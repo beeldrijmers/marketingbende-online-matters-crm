@@ -7,7 +7,9 @@ interface TrelloApiCard {
   due: string | null;
   dueComplete: boolean;
   shortUrl: string;
+  desc: string;
   labels: { name: string }[];
+  attachments?: { url: string; name: string }[];
 }
 
 // Fetches every open card on a board in one call, for the one-time backfill.
@@ -23,7 +25,12 @@ export const fetchTrelloBoardCards = async ({
   const url = new URL(`https://api.trello.com/1/boards/${boardId}/cards/open`);
   url.searchParams.set("key", apiKey);
   url.searchParams.set("token", token);
-  url.searchParams.set("fields", "name,idList,due,dueComplete,shortUrl,labels");
+  url.searchParams.set(
+    "fields",
+    "name,idList,due,dueComplete,shortUrl,desc,labels",
+  );
+  url.searchParams.set("attachments", "true");
+  url.searchParams.set("attachment_fields", "url,name");
 
   const response = await fetch(url);
   if (!response.ok) {
@@ -41,5 +48,9 @@ export const fetchTrelloBoardCards = async ({
     due: card.due,
     dueComplete: card.dueComplete,
     url: card.shortUrl,
+    desc: card.desc ?? "",
+    attachmentUrls: (card.attachments ?? [])
+      .map((attachment) => attachment.url)
+      .filter(Boolean),
   }));
 };

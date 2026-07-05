@@ -51,8 +51,8 @@ export const extractCompanyWebsite = (
   attachmentUrls: string[],
 ): string | null => {
   const urlRegex = /https?:\/\/[^\s)<>"']+/gi;
-  const fromDescription = desc.match(urlRegex) ?? [];
-  const candidates = [...attachmentUrls, ...fromDescription];
+  const fromDescription = (desc ?? "").match(urlRegex) ?? [];
+  const candidates = [...(attachmentUrls ?? []), ...fromDescription];
 
   for (const candidate of candidates) {
     let host: string;
