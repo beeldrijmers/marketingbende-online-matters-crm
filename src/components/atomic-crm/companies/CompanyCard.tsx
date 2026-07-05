@@ -1,25 +1,24 @@
 import { Handshake } from "lucide-react";
 import { Link } from "react-router";
-import {
-  useCreatePath,
-  useListContext,
-  useRecordContext,
-  useTranslate,
-} from "ra-core";
-import { ReferenceManyField } from "@/components/admin/reference-many-field";
+import { useCreatePath, useRecordContext, useTranslate } from "ra-core";
 import { Card } from "@/components/ui/card";
 
 import { Avatar as ContactAvatar } from "../contacts/Avatar";
 import { useConfigurationContext } from "../root/ConfigurationContext";
-import type { Company } from "../types";
+import type { Company, Contact } from "../types";
 import { CompanyAvatar } from "./CompanyAvatar";
 
-export const CompanyCard = (props: { record?: Company }) => {
+export const CompanyCard = (props: {
+  record?: Company;
+  contacts?: Contact[];
+}) => {
   const createPath = useCreatePath();
   const record = useRecordContext<Company>(props);
   const translate = useTranslate();
   const { companySectors } = useConfigurationContext();
   if (!record) return null;
+
+  const contacts = props.contacts ?? [];
 
   const sector = companySectors.find((s) => s.value === record.sector);
   const sectorLabel = sector?.label;
@@ -44,9 +43,7 @@ export const CompanyCard = (props: { record?: Company }) => {
         <div className="flex flex-row w-full justify-between gap-2">
           <div className="flex items-center">
             {record.nb_contacts ? (
-              <ReferenceManyField reference="contacts" target="company_id">
-                <AvatarGroupIterator />
-              </ReferenceManyField>
+              <AvatarGroup contacts={contacts} total={record.nb_contacts} />
             ) : null}
           </div>
           {record.nb_deals ? (
@@ -67,14 +64,17 @@ export const CompanyCard = (props: { record?: Company }) => {
   );
 };
 
-const AvatarGroupIterator = () => {
-  const { data, total, error, isPending } = useListContext();
-  if (isPending || error) return null;
-
+const AvatarGroup = ({
+  contacts,
+  total,
+}: {
+  contacts: Contact[];
+  total: number;
+}) => {
   const MAX_AVATARS = 3;
   return (
     <div className="*:data-[slot=avatar]:ring-background flex -space-x-0.5 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:grayscale-50">
-      {data.slice(0, MAX_AVATARS).map((record: any) => (
+      {contacts.slice(0, MAX_AVATARS).map((record) => (
         <ContactAvatar
           key={record.id}
           record={record}

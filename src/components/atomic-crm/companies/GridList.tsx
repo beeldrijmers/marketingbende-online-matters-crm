@@ -1,7 +1,13 @@
-import { RecordContextProvider, useListContext, useTranslate } from "ra-core";
+import { groupBy } from "lodash";
+import {
+  RecordContextProvider,
+  useGetList,
+  useListContext,
+  useTranslate,
+} from "ra-core";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Company } from "../types";
+import type { Company, Contact } from "../types";
 import { CompanyCard } from "./CompanyCard";
 
 const times = (nbChildren: number, fn: (key: number) => any) =>
@@ -24,6 +30,23 @@ const LoadedGridList = () => {
   const { data, error, isPending } = useListContext<Company>();
   const translate = useTranslate();
 
+  // Batch-fetch the contacts for every visible company in a single query,
+  // replacing the per-card ReferenceManyField that fired one request per card
+  // (an N+1 that made the page slow). We only render up to 3 avatars per
+  // company and take the total from the company's nb_contacts, so the perPage
+  // cap only ever affects which few avatars show, never the count.
+  const companyIds = data?.map((company) => company.id) ?? [];
+  const { data: contacts } = useGetList<Contact>(
+    "contacts",
+    {
+      filter: { "company_id@in": `(${companyIds})` },
+      pagination: { page: 1, perPage: 1000 },
+      sort: { field: "company_id", order: "ASC" },
+    },
+    { enabled: companyIds.length > 0 },
+  );
+  const contactsByCompany = groupBy(contacts ?? [], "company_id");
+
   if (isPending || error) return null;
 
   return (
@@ -35,7 +58,7 @@ const LoadedGridList = () => {
     >
       {data.map((record) => (
         <RecordContextProvider key={record.id} value={record}>
-          <CompanyCard />
+          <CompanyCard contacts={contactsByCompany[record.id] ?? []} />
         </RecordContextProvider>
       ))}
 
