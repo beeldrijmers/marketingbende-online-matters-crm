@@ -1,0 +1,59 @@
+import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
+import type { Attachment } from "./extractAndUploadAttachments.ts";
+
+// After a mail note has been added to a contact, mirror it onto every active
+// (non-archived) deal that contact is part of, so the deal timeline reflects
+// the correspondence too — this is what makes "where do we stand" obvious.
+//
+// Best-effort: the contact note is the primary outcome and has already
+// succeeded by the time this runs, so any failure here is logged and swallowed
+// rather than failing the whole webhook (which would make Postmark retry and
+// duplicate the contact note). Returns the number of deals the note reached.
+export const linkMailToActiveDeals = async ({
+  contactEmail,
+  salesId,
+  noteContent,
+  attachments,
+}: {
+  contactEmail: string;
+  salesId: number;
+  noteContent: string;
+  attachments: Attachment[];
+}): Promise<number> => {
+  try {
+    const { data: contact, error: contactError } = await supabaseAdmin
+      .from("contacts")
+      .select("id")
+      .contains("email_jsonb", JSON.stringify([{ email: contactEmail }]))
+      .maybeSingle();
+    if (contactError || !contact) return 0;
+
+    const { data: deals, error: dealsError } = await supabaseAdmin
+      .from("deals")
+      .select("id")
+      .contains("contact_ids", [contact.id])
+      .is("archived_at", null);
+    if (dealsError || !deals?.length) return 0;
+
+    for (const deal of deals) {
+      const { error: noteError } = await supabaseAdmin
+        .from("deal_notes")
+        .insert({
+          deal_id: deal.id,
+          text: noteContent,
+          sales_id: salesId,
+          attachments,
+        });
+      if (noteError) {
+        console.error(
+          `Could not mirror mail note to deal ${deal.id}: ${noteError.message}`,
+        );
+      }
+    }
+
+    return deals.length;
+  } catch (error) {
+    console.error("linkMailToActiveDeals failed (best-effort):", error);
+    return 0;
+  }
+};

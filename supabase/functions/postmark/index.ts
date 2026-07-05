@@ -11,7 +11,8 @@ import {
   stripSubjectForwardingPrefix,
 } from "./forwardedParser.ts";
 import { extractDealIdFromEmails } from "./extractDealId.ts";
-import { extractMailContactData } from "./extractMailContactData.ts";
+import { gatherClientParticipants } from "./gatherParticipants.ts";
+import { linkMailToActiveDeals } from "./linkMailToActiveDeals.ts";
 import { getExpectedAuthorization } from "./getExpectedAuthorization.ts";
 import { getNoteContent } from "./getNoteContent.ts";
 import { extractAndUploadAttachments } from "./extractAndUploadAttachments.ts";
@@ -41,21 +42,20 @@ Deno.serve(async (req) => {
   response = checkBody(json);
   if (response) return response;
 
-  const { FromFull, Attachments } = json;
-  let { ToFull, TextBody, Subject } = json;
+  const { FromFull, CcFull, Attachments, ToFull } = json;
+  let { TextBody, Subject } = json;
 
-  const salesEmail = (FromFull.Email || "").toLowerCase();
-  if (!salesEmail) {
+  const senderEmail = (FromFull.Email || "").toLowerCase();
+  if (!senderEmail) {
     // Return a 403 to let Postmark know that it's no use to retry this request
     // https://postmarkapp.com/developer/webhooks/inbound-webhook#errors-and-retries
-    return new Response(
-      `Could not extract sales email from FromFull: ${FromFull}`,
-      { status: 403 },
-    );
+    return new Response(`Could not extract sender email from FromFull`, {
+      status: 403,
+    });
   }
 
   // A recipient like "deal-42@<inbound-domain>" links the mail directly to
-  // that deal instead of falling back to the generic contact-matching flow.
+  // that deal — the most explicit route, so it wins over smart matching.
   const inboundDomain = INBOUND_EMAIL.split("@")[1] || "";
   const dealId = extractDealIdFromEmails(ToFull, inboundDomain);
   if (dealId) {
@@ -64,48 +64,70 @@ Deno.serve(async (req) => {
       getForwardedMailContent(TextBody),
     );
     return await addNoteToDeal({
-      salesEmail,
+      salesEmail: senderEmail,
       dealId,
       noteContent: dealNoteContent,
       attachments: await extractAndUploadAttachments(Attachments),
     });
   }
 
-  const allSales = await supabaseAdmin.from("sales").select("email");
-  const salesEmails =
-    allSales.data?.map((s: { email: string }) => s.email) ?? [];
+  // Load the team (sales) users: we exclude their addresses from the client
+  // participant set, and the note is attributed to the team member involved.
+  const { data: salesRows } = await supabaseAdmin
+    .from("sales")
+    .select("id, email");
+  const sales = (salesRows ?? []) as { id: number; email: string }[];
+  const salesByEmail = new Map(sales.map((s) => [s.email.toLowerCase(), s.id]));
+  const salesEmails = [...salesByEmail.keys()];
 
-  const firstToEmail = (ToFull[0]?.Email || "").toLowerCase();
+  const cc = (CcFull ?? []) as { Email: string; Name: string }[];
 
-  // If we have an INBOUND_EMAIL and the email is sent only to the inbound email address, and the sender is a known sales email,
-  // then we can try to extract the real recipient email from the body of the email
-  if (
-    INBOUND_EMAIL &&
-    ToFull.length === 1 &&
-    firstToEmail === INBOUND_EMAIL &&
-    salesEmails.includes(salesEmail)
-  ) {
-    const emailRegex = /[\w.+%-]+@[\w.-]+\.[a-zA-Z]{2,}/g;
-    const emailsInBody = TextBody.match(emailRegex) || [];
+  // The note owner is the team member in the envelope (prefer the sender).
+  const envelopeEmails = [
+    FromFull.Email,
+    ...ToFull.map((t: { Email: string }) => t.Email),
+    ...cc.map((c) => c.Email),
+  ]
+    .map((email: string) => (email || "").toLowerCase())
+    .filter(Boolean);
+  const forwarderSalesEmail =
+    envelopeEmails.find((email) => salesByEmail.has(email)) ?? senderEmail;
+  const forwarderSalesId = salesByEmail.get(forwarderSalesEmail);
 
-    const candidateEmails = emailsInBody
-      .map((email: string) => email.toLowerCase())
-      .filter(
-        (email: string) =>
-          email !== INBOUND_EMAIL && !salesEmails?.includes(email),
-      );
-    if (candidateEmails.length > 0) {
-      ToFull = [
-        {
-          Email: candidateEmails[0],
-          Name: "",
-        },
-      ];
-    } else {
-      // Return a 403 to let Postmark know that it's no use to retry this request
-      // https://postmarkapp.com/developer/webhooks/inbound-webhook#errors-and-retries
+  // Smart routing: every real client in To + Cc becomes (or matches) a contact.
+  let participants = gatherClientParticipants({
+    recipients: [...ToFull, ...cc],
+    salesEmails,
+    inboundEmail: INBOUND_EMAIL,
+  });
+
+  // Forwarded-to-inbound case: the envelope holds only the intake/team
+  // addresses, so the real client lives in the forwarded body. Only parse it
+  // when a team member is actually involved, otherwise we can't attribute it.
+  if (participants.length === 0) {
+    if (!salesByEmail.has(forwarderSalesEmail)) {
       return new Response(
-        `Could not extract recipient email from transferred email body.`,
+        `No team member involved; not routing mail from ${senderEmail}`,
+        { status: 403 },
+      );
+    }
+    const emailRegex = /[\w.+%-]+@[\w.-]+\.[a-zA-Z]{2,}/g;
+    const bodyEmails = ((TextBody.match(emailRegex) || []) as string[]).map(
+      (email) => ({ Email: email, Name: "" }),
+    );
+    // A forwarded body can contain a whole quoted thread (signatures, other
+    // participants). Only the first client address — the forwarded message's
+    // original sender — is reliably the intended contact; taking all of them
+    // would auto-create noise contacts. The envelope path above keeps all real
+    // recipients; this fallback deliberately keeps just the first.
+    participants = gatherClientParticipants({
+      recipients: bodyEmails,
+      salesEmails,
+      inboundEmail: INBOUND_EMAIL,
+    }).slice(0, 1);
+    if (participants.length === 0) {
+      return new Response(
+        `Could not determine any client participant to route the mail to`,
         { status: 403 },
       );
     }
@@ -114,9 +136,6 @@ Deno.serve(async (req) => {
   }
 
   const noteContent = getNoteContent(Subject, TextBody);
-
-  const contacts = extractMailContactData(ToFull);
-
   const attachments = await extractAndUploadAttachments(Attachments);
 
   for (const {
@@ -126,17 +145,9 @@ Deno.serve(async (req) => {
     domain,
     companyName,
     website,
-  } of contacts) {
-    if (!email) {
-      // Return a 403 to let Postmark know that it's no use to retry this request
-      // https://postmarkapp.com/developer/webhooks/inbound-webhook#errors-and-retries
-      return new Response(`Could not extract email from ToFull: ${ToFull}`, {
-        status: 403,
-      });
-    }
-
-    await addNoteToContact({
-      salesEmail,
+  } of participants) {
+    const errorResponse = await addNoteToContact({
+      salesEmail: forwarderSalesEmail,
       email,
       domain,
       firstName,
@@ -146,6 +157,19 @@ Deno.serve(async (req) => {
       companyName,
       website,
     });
+    // addNoteToContact returns a Response only on failure (e.g. no active
+    // sales for the forwarder); surface it so Postmark reacts appropriately.
+    if (errorResponse) return errorResponse;
+
+    // Mirror the note onto the contact's active deals (best-effort).
+    if (forwarderSalesId != null) {
+      await linkMailToActiveDeals({
+        contactEmail: email,
+        salesId: forwarderSalesId,
+        noteContent,
+        attachments,
+      });
+    }
   }
 
   return new Response("OK");
