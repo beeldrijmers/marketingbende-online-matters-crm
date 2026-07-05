@@ -92,7 +92,9 @@ test.describe("user adding a task", () => {
       await expect(
         page.getByText("Follow up with Jane").locator(".."),
       ).toHaveText(
-        "Bellen Follow up with Janeverloopt 4/11/2026, 9:00:00 PM (Betreft: Jane Smith)",
+        // The task row now also renders the assignee badge between the due date
+        // and the "(Betreft: ...)" suffix, so tolerate anything in between.
+        /Bellen Follow up with Janeverloopt 4\/11\/2026, 9:00:00 PM.*\(Betreft: Jane Smith\)/,
       );
     }
   });

@@ -96,13 +96,13 @@ test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
   await expect(page.getByText("Laatste activiteit")).toBeVisible();
   await expect(
     page.getByText("Laatste activiteit").locator("xpath=../.."),
-  ).toHaveText(/U heeft een bedrijf toegevoegd Smith Corp today at/);
+  ).toHaveText(/U heeft een bedrijf toegevoegd Smith Corp vandaag om/);
 
   await expect(
     page.getByText("Laatste activiteit").locator("xpath=../.."),
-  ).toHaveText(/U heeft toegevoegd Jane Smith aan Smith Corp today at/);
+  ).toHaveText(/U heeft toegevoegd Jane Smith aan Smith Corp vandaag om/);
 
   await expect(
     page.getByText("Laatste activiteit").locator("xpath=../.."),
-  ).toHaveText(/U heeft een notitie toegevoegd over Jane Smith today at/);
+  ).toHaveText(/U heeft een notitie toegevoegd over Jane Smith vandaag om/);
 });
