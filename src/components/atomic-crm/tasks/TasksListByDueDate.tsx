@@ -22,10 +22,12 @@ import {
 
 export const TasksListByDueDate = ({
   filterByContact,
+  scope = "mine",
   emptyPlaceholder,
   pendingPlaceholder,
 }: {
   filterByContact?: Identifier;
+  scope?: "mine" | "all";
   emptyPlaceholder?: React.ReactNode;
   pendingPlaceholder?: React.ReactNode;
 }) => {
@@ -33,18 +35,23 @@ export const TasksListByDueDate = ({
   const isMobile = useIsMobile();
   const translate = useTranslate();
 
+  const scopeFilter =
+    filterByContact != null
+      ? { contact_id: filterByContact }
+      : scope === "all"
+        ? {}
+        : { sales_id: identity?.id };
+
   const { data: tasks, isPending } = useGetList(
     "tasks",
     {
       pagination: { page: 1, perPage: 1000 },
       sort: { field: "due_date", order: "ASC" },
-      filter: {
-        ...(filterByContact != null
-          ? { contact_id: filterByContact }
-          : { sales_id: identity?.id }),
-      },
+      filter: { ...scopeFilter },
     },
-    { enabled: filterByContact != null ? true : !!identity },
+    {
+      enabled: filterByContact != null || scope === "all" ? true : !!identity,
+    },
   );
 
   const showContact = filterByContact == null;
@@ -106,18 +113,22 @@ export const TasksListByDueDate = ({
         title={translate("resources.tasks.filters.overdue")}
         showContact={showContact}
         isMobile={isMobile}
+        count={overdueTasks.length}
+        urgent
       />
       <TaskListFilter
         tasks={dueTodayTasks}
         title={translate("resources.tasks.filters.today")}
         showContact={showContact}
         isMobile={isMobile}
+        count={dueTodayTasks.length}
       />
       <TaskListFilter
         tasks={dueTomorrowTasks}
         title={translate("resources.tasks.filters.tomorrow")}
         showContact={showContact}
         isMobile={isMobile}
+        count={dueTomorrowTasks.length}
       />
       {(!filterByContact || (filterByContact && isBeforeFriday())) && (
         <TaskListFilter
@@ -125,6 +136,7 @@ export const TasksListByDueDate = ({
           title={translate("resources.tasks.filters.this_week")}
           showContact={showContact}
           isMobile={isMobile}
+          count={dueThisWeekTasks.length}
         />
       )}
       <TaskListFilter
@@ -132,6 +144,7 @@ export const TasksListByDueDate = ({
         title={translate("resources.tasks.filters.later")}
         showContact={showContact}
         isMobile={isMobile}
+        count={dueLaterTasks.length}
       />
     </div>
   );

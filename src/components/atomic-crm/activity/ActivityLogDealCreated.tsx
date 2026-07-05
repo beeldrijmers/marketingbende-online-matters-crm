@@ -1,10 +1,10 @@
-import { type RaRecord, useGetIdentity, useTranslate } from "ra-core";
+import { type RaRecord, useTranslate } from "ra-core";
 import { Link } from "react-router";
 
 import { ReferenceField } from "@/components/admin/reference-field";
 import { RelativeDate } from "../misc/RelativeDate";
-import { useGetSalesName } from "../sales/useGetSalesName";
 import type { ActivityDealCreated } from "../types";
+import { ActivityActorAvatar, useActor } from "./ActivityActor";
 import { useActivityLogContext } from "./ActivityLogContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -19,21 +19,18 @@ export function ActivityLogDealCreated({
   const isMobile = useIsMobile();
   const translate = useTranslate();
   const { deal } = activity;
-  const { identity, isPending } = useGetIdentity();
-  const isCurrentUser = !isPending && identity?.id === activity.sales_id;
-  const salesName = useGetSalesName(activity.sales_id, {
-    enabled: !isCurrentUser,
-  });
+  const { isCurrentUser, name } = useActor(activity.sales_id);
   return (
     <div className="p-0">
       <div className="flex flex-row gap-2 items-start w-full">
+        <ActivityActorAvatar salesId={activity.sales_id} />
         <div className="w-[20px] h-[20px] bg-muted rounded-full shrink-0" />
         <span className="text-muted-foreground text-sm flex-grow">
           {translate(
             isCurrentUser
               ? "crm.activity.you_added_deal"
               : "crm.activity.added_deal",
-            { name: salesName },
+            { name },
           )}{" "}
           {isMobile ? (
             deal.name

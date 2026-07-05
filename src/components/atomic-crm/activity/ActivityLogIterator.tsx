@@ -1,8 +1,11 @@
 import { Fragment } from "react";
+import { isToday, isYesterday } from "date-fns";
 import {
   useListContext,
   useInfinitePaginationContext,
+  useLocaleState,
   useTranslate,
+  type TranslateFunction,
 } from "ra-core";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +21,7 @@ import {
   DEAL_NOTE_CREATED,
 } from "../consts";
 import type { Activity } from "../types";
+import { formatLocalizedDate } from "../misc/RelativeDate";
 import { ActivityLogCompanyCreated } from "./ActivityLogCompanyCreated";
 import { ActivityLogContactCreated } from "./ActivityLogContactCreated";
 import { ActivityLogContactNoteCreated } from "./ActivityLogContactNoteCreated";
@@ -26,12 +30,68 @@ import { ActivityLogDealNoteCreated } from "./ActivityLogDealNoteCreated";
 import { InfinitePagination } from "../misc/InfinitePagination";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+type ActivityDayGroup = {
+  key: string;
+  label: string;
+  items: Activity[];
+};
+
+const dayKeyOf = (date: Date): string =>
+  `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+
+const dayLabelOf = (
+  date: Date,
+  isoDate: string,
+  translate: TranslateFunction,
+  locale: string,
+): string => {
+  if (isToday(date)) {
+    return translate("crm.activity.today", { _: "Vandaag" });
+  }
+  if (isYesterday(date)) {
+    return translate("crm.activity.yesterday", { _: "Gisteren" });
+  }
+  return formatLocalizedDate(isoDate, locale);
+};
+
+/**
+ * Groups the (date-descending) activity feed into per-day buckets. Purely
+ * derived in render: the input array and records are never mutated. Because the
+ * list is sorted by date DESC, same-day items are contiguous, so it is enough
+ * to compare each item with the current (last) group.
+ */
+const groupActivitiesByDay = (
+  activities: Activity[],
+  translate: TranslateFunction,
+  locale: string,
+): ActivityDayGroup[] =>
+  activities.reduce<ActivityDayGroup[]>((groups, activity) => {
+    const date = new Date(activity.date);
+    const key = dayKeyOf(date);
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) {
+      return [
+        ...groups.slice(0, -1),
+        { ...last, items: [...last.items, activity] },
+      ];
+    }
+    return [
+      ...groups,
+      {
+        key,
+        label: dayLabelOf(date, activity.date, translate, locale),
+        items: [activity],
+      },
+    ];
+  }, []);
+
 export function ActivityLogIterator() {
   const isMobile = useIsMobile();
   const { data, isPending, error, refetch } = useListContext<Activity>();
   const { hasNextPage, fetchNextPage, isFetchingNextPage } =
     useInfinitePaginationContext();
   const translate = useTranslate();
+  const [locale = "en"] = useLocaleState();
 
   if (isPending) {
     return (
@@ -68,13 +128,22 @@ export function ActivityLogIterator() {
     );
   }
 
+  const groups = groupActivitiesByDay(data ?? [], translate, locale);
+
   return (
-    <div className="space-y-4">
-      {data?.map((activity, index) => (
-        <Fragment key={index}>
-          <ActivityItem activity={activity} />
-          {index < data.length - 1 && <Separator />}
-        </Fragment>
+    <div className="space-y-6">
+      {groups.map((group) => (
+        <section key={group.key} className="space-y-4">
+          <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {group.label}
+          </h3>
+          {group.items.map((activity, index) => (
+            <Fragment key={activity.id ?? index}>
+              <ActivityItem activity={activity} />
+              {index < group.items.length - 1 && <Separator />}
+            </Fragment>
+          ))}
+        </section>
       ))}
 
       {/* Desktop: explicit Load More button */}

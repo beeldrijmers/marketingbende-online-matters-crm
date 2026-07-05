@@ -29,6 +29,25 @@ async function updateSaleAdministrator(
   return sales.at(0);
 }
 
+const VALID_PARTIES = ["online_matters", "marketingbende", "groeien_met_ads"];
+
+const isValidParty = (partij: unknown): partij is string =>
+  typeof partij === "string" && VALID_PARTIES.includes(partij);
+
+async function updateSalePartij(user_id: string, partij: string) {
+  const { data: sales, error: salesError } = await supabaseAdmin
+    .from("sales")
+    .update({ partij })
+    .eq("user_id", user_id)
+    .select("*");
+
+  if (!sales?.length || salesError) {
+    console.error("Error updating user:", salesError);
+    throw salesError ?? new Error("Failed to update sale");
+  }
+  return sales.at(0);
+}
+
 async function createSale(
   user_id: string,
   data: {
@@ -38,6 +57,7 @@ async function createSale(
     last_name: string;
     disabled: boolean;
     administrator: boolean;
+    partij?: string;
   },
 ) {
   const { data: sales, error: salesError } = await supabaseAdmin
@@ -67,8 +87,15 @@ async function updateSaleAvatar(user_id: string, avatar: string) {
 }
 
 async function inviteUser(req: Request, currentUserSale: any) {
-  const { email, password, first_name, last_name, disabled, administrator } =
-    await req.json();
+  const {
+    email,
+    password,
+    first_name,
+    last_name,
+    disabled,
+    administrator,
+    partij,
+  } = await req.json();
 
   if (!currentUserSale.administrator) {
     return createErrorResponse(401, "Not Authorized");
@@ -121,6 +148,7 @@ async function inviteUser(req: Request, currentUserSale: any) {
         last_name,
         disabled,
         administrator,
+        ...(isValidParty(partij) ? { partij } : {}),
       });
 
       return new Response(
@@ -162,7 +190,10 @@ async function inviteUser(req: Request, currentUserSale: any) {
 
   try {
     await updateSaleDisabled(user.id, disabled);
-    const sale = await updateSaleAdministrator(user.id, administrator);
+    let sale = await updateSaleAdministrator(user.id, administrator);
+    if (isValidParty(partij)) {
+      sale = await updateSalePartij(user.id, partij);
+    }
 
     return new Response(
       JSON.stringify({
@@ -187,6 +218,7 @@ async function patchUser(req: Request, currentUserSale: any) {
     avatar,
     administrator,
     disabled,
+    partij,
   } = await req.json();
   const { data: sale } = await supabaseAdmin
     .from("sales")
@@ -241,7 +273,10 @@ async function patchUser(req: Request, currentUserSale: any) {
 
   try {
     await updateSaleDisabled(data.user.id, disabled);
-    const sale = await updateSaleAdministrator(data.user.id, administrator);
+    let sale = await updateSaleAdministrator(data.user.id, administrator);
+    if (isValidParty(partij)) {
+      sale = await updateSalePartij(data.user.id, partij);
+    }
     return new Response(
       JSON.stringify({
         data: sale,

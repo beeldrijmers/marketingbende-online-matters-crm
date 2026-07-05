@@ -21,6 +21,7 @@ import {
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Contact, Task as TData } from "../types";
+import { OwnerChipField } from "../sales/SaleAvatar";
 import { TaskEdit } from "./TaskEdit";
 import { TaskEditSheet } from "./TaskEditSheet";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -121,10 +122,23 @@ export const Task = ({
               )}
               {task.text}
             </div>
-            <div className="text-sm text-muted-foreground">
-              {translate("resources.tasks.fields.due_short")}
-              &nbsp;
-              <DateField source="due_date" record={task} showDate showTime />
+            <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-sm text-muted-foreground">
+              <span>
+                {translate("resources.tasks.fields.due_short")}
+                &nbsp;
+                <DateField source="due_date" record={task} showDate showTime />
+              </span>
+              {task.sales_id != null && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <OwnerChipField
+                    source="sales_id"
+                    record={task}
+                    size={16}
+                    showParty
+                  />
+                </>
+              )}
               {showContact && (
                 <ReferenceField<TData, Contact>
                   source="contact_id"

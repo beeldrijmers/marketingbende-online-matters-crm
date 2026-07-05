@@ -2,7 +2,6 @@ import { Pencil } from "lucide-react";
 import {
   useGetRecordRepresentation,
   RecordRepresentation,
-  useGetIdentity,
   useGetOne,
   useTranslate,
 } from "ra-core";
@@ -16,11 +15,10 @@ import MobileHeader from "../layout/MobileHeader";
 import { Markdown } from "../misc/Markdown";
 import { MobileBackButton } from "../misc/MobileBackButton";
 import { RelativeDate } from "../misc/RelativeDate";
-import { Status } from "../misc/Status";
 import type { ContactNote } from "../types";
 import { NoteAttachments } from "./NoteAttachments";
+import { NoteAuthorLine } from "./NoteAuthorLine";
 import { NoteEditSheet } from "./NoteEditSheet";
-import { useGetSalesName } from "../sales/useGetSalesName";
 
 export const NoteShowPage = () => {
   const translate = useTranslate();
@@ -33,11 +31,6 @@ export const NoteShowPage = () => {
 
   const { data: note, isPending } = useGetOne<ContactNote>("contact_notes", {
     id: noteId!,
-  });
-  const { identity } = useGetIdentity();
-  const isCurrentUser = note?.sales_id === identity?.id;
-  const salesName = useGetSalesName(note?.sales_id, {
-    enabled: note && !isCurrentUser,
   });
 
   if (isPending || !note) return null;
@@ -89,10 +82,7 @@ export const NoteShowPage = () => {
       <MobileContent>
         <div className="mb-4">
           <div className="flex items-center space-x-2 w-full text-sm text-muted-foreground">
-            <span>
-              {isCurrentUser ? translate("resources.notes.me") : salesName}{" "}
-            </span>
-            {note.status && <Status status={note.status} />}
+            <NoteAuthorLine note={note} showStatus />
             <div className="flex-1" />
             <RelativeDate date={note.date} />
           </div>

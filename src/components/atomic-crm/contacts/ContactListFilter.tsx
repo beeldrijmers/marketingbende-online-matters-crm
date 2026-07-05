@@ -1,5 +1,5 @@
 import { endOfYesterday, startOfMonth, startOfWeek, subMonths } from "date-fns";
-import { CheckSquare, Clock, Tag, TrendingUp, Users } from "lucide-react";
+import { CheckSquare, Clock, Tag, TrendingUp } from "lucide-react";
 import {
   useGetIdentity,
   useGetList,
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 import { FilterCategory } from "../filters/FilterCategory";
+import { OwnerFilterCategory } from "../filters/OwnerFilterCategory";
 import { Status } from "../misc/Status";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import { ResponsiveFilters } from "../misc/ResponsiveFilters";
@@ -52,7 +53,6 @@ const ContactFilterToggleButton = ({
 export const ContactListFilter = () => {
   const { noteStatuses } = useConfigurationContext();
   const isMobile = useIsMobile();
-  const { identity } = useGetIdentity();
   const translate = useTranslate();
   const { data } = useGetList("tags", {
     pagination: { page: 1, perPage: 10 },
@@ -165,16 +165,7 @@ export const ContactListFilter = () => {
         />
       </FilterCategory>
 
-      <FilterCategory
-        icon={<Users />}
-        label="resources.contacts.fields.sales_id"
-      >
-        <ContactFilterToggleButton
-          label="crm.common.me"
-          value={{ sales_id: identity?.id }}
-          size={isMobile ? "lg" : undefined}
-        />
-      </FilterCategory>
+      <OwnerFilterCategory />
     </ResponsiveFilters>
   );
 };

@@ -16,6 +16,13 @@ export type SignUpData = {
   last_name: string;
 };
 
+/**
+ * The three collaborating parties. Stored on `sales.partij`; the single source
+ * of truth for the union, imported by sales/party.ts (labels/colors) and the
+ * ownership UI.
+ */
+export type PartyKey = "online_matters" | "marketingbende" | "groeien_met_ads";
+
 export type SalesFormData = {
   avatar?: string;
   email: string;
@@ -24,6 +31,7 @@ export type SalesFormData = {
   last_name: string;
   administrator: boolean;
   disabled: boolean;
+  partij?: PartyKey;
 };
 
 export type Sale = {
@@ -33,6 +41,7 @@ export type Sale = {
   avatar?: RAFile;
   disabled?: boolean;
   user_id: string;
+  partij?: PartyKey;
 
   /**
    * This is a copy of the user's email, to make it easier to handle by react admin

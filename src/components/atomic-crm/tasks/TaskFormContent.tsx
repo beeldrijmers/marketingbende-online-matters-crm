@@ -2,11 +2,15 @@ import { AutocompleteInput } from "@/components/admin/autocomplete-input";
 import { ReferenceInput } from "@/components/admin/reference-input";
 import { SelectInput } from "@/components/admin/select-input";
 import { TextInput } from "@/components/admin/text-input";
-import { required } from "ra-core";
+import { required, useTranslate } from "ra-core";
 import { DateTimeInput } from "@/components/admin";
 
 import { contactOptionText } from "../misc/ContactOption";
 import { useConfigurationContext } from "../root/ConfigurationContext";
+import type { Sale } from "../types";
+
+const saleOptionRenderer = (choice: Sale) =>
+  `${choice.first_name} ${choice.last_name}`;
 
 export const TaskFormContent = ({
   selectContact,
@@ -14,6 +18,7 @@ export const TaskFormContent = ({
   selectContact?: boolean;
 }) => {
   const { taskTypes } = useConfigurationContext();
+  const translate = useTranslate();
   return (
     <div className="flex flex-col gap-4">
       <TextInput
@@ -52,6 +57,22 @@ export const TaskFormContent = ({
           helperText={false}
         />
       </div>
+
+      <ReferenceInput
+        reference="sales"
+        source="sales_id"
+        sort={{ field: "last_name", order: "ASC" }}
+        filter={{ "disabled@neq": true }}
+      >
+        <SelectInput
+          helperText={false}
+          optionText={saleOptionRenderer}
+          validate={required()}
+          label={translate("resources.tasks.fields.sales_id", {
+            _: "Toegewezen aan",
+          })}
+        />
+      </ReferenceInput>
     </div>
   );
 };

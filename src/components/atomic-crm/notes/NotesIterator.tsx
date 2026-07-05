@@ -1,4 +1,4 @@
-import { useListContext } from "ra-core";
+import { useListContext, useTranslate } from "ra-core";
 import { Fragment } from "react";
 import { Separator } from "@/components/ui/separator";
 
@@ -13,6 +13,7 @@ export const NotesIterator = ({
   reference: "contacts" | "deals";
   showStatus?: boolean;
 }) => {
+  const translate = useTranslate();
   const { isPending, error, data = [] } = useListContext();
 
   if (isPending || error) return null;
@@ -20,7 +21,7 @@ export const NotesIterator = ({
   return (
     <div className="mt-4">
       <NoteCreate reference={reference} showStatus={showStatus} />
-      {data.length > 0 && (
+      {data.length > 0 ? (
         <div className="mt-4 space-y-4">
           {data.map((note, index) => (
             <Fragment key={note.id}>
@@ -33,6 +34,10 @@ export const NotesIterator = ({
             </Fragment>
           ))}
         </div>
+      ) : (
+        <p className="mt-4 text-sm text-muted-foreground">
+          {translate("resources.notes.empty", { _: "Nog geen notities" })}
+        </p>
       )}
       <InfinitePagination />
     </div>

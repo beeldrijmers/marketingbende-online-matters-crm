@@ -5,6 +5,9 @@ import {
   useTranslate,
 } from "ra-core";
 
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+
 import { TasksIterator } from "./TasksIterator";
 
 type TaskListProps = {
@@ -12,6 +15,8 @@ type TaskListProps = {
   title: string;
   showContact?: boolean;
   isMobile: boolean;
+  count?: number;
+  urgent?: boolean;
 };
 
 export const TaskListFilter = ({
@@ -19,6 +24,8 @@ export const TaskListFilter = ({
   title,
   showContact,
   isMobile,
+  count,
+  urgent,
 }: TaskListProps) => {
   const translate = useTranslate();
   const listContext = useList({
@@ -31,11 +38,28 @@ export const TaskListFilter = ({
 
   if (!tasks?.length || !total) return null;
 
+  const isUrgent = !!urgent && (count ?? 0) > 0;
+
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-2">
-        {title}
-      </p>
+      <div className="flex items-center gap-2 mb-2">
+        <p
+          className={cn(
+            "text-xs uppercase tracking-wider font-medium",
+            isUrgent ? "text-destructive" : "text-muted-foreground",
+          )}
+        >
+          {title}
+        </p>
+        {count != null && count > 0 && (
+          <Badge
+            variant={isUrgent ? "destructive" : "secondary"}
+            className="h-4 min-w-4 px-1 text-[10px] leading-none"
+          >
+            {count}
+          </Badge>
+        )}
+      </div>
       <ResourceContextProvider value="tasks">
         <ListContextProvider value={listContext}>
           <TasksIterator showContact={showContact} />

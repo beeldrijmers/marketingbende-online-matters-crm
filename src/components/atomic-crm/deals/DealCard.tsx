@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 import { CompanyAvatar } from "../companies/CompanyAvatar";
+import { OwnerChipField } from "../sales/SaleAvatar";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Deal } from "../types";
 
@@ -103,6 +104,13 @@ export const DealCardContent = ({
                 </Badge>
               )}
             </div>
+            <OwnerChipField
+              source="sales_id"
+              record={deal}
+              size={16}
+              showParty
+              className="text-xs text-muted-foreground"
+            />
           </CardContent>
         </Card>
       </RecordContextProvider>
