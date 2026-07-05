@@ -290,6 +290,9 @@ export const dutchCrmMessages = {
         title: "Geen deals gevonden",
       },
       invalid_date: "Ongeldige datum",
+      filters: {
+        only_mine: "Alleen mijn deals",
+      },
     },
     notes: {
       name: "Notitie |||| Notities",
@@ -317,6 +320,7 @@ export const dutchCrmMessages = {
       },
       deleted: "Notitie verwijderd",
       empty: "Nog geen notities",
+      unknown_author: "een teamlid",
       author_added: "%{name} heeft een notitie toegevoegd",
       you_added: "U heeft een notitie toegevoegd",
       me: "Ik",
@@ -348,6 +352,7 @@ export const dutchCrmMessages = {
         email: "E-mail",
         administrator: "Beheerder",
         disabled: "Uitgeschakeld",
+        partij: "Partij",
       },
       create: {
         error: "Er is een fout opgetreden bij het aanmaken van de gebruiker.",
@@ -374,6 +379,7 @@ export const dutchCrmMessages = {
         type: "Type",
         contact_id: "Contact",
         due_short: "verloopt",
+        sales_id: "Toegewezen aan",
       },
       action: {
         add: "Taak toevoegen",
@@ -405,6 +411,8 @@ export const dutchCrmMessages = {
         today: "Vandaag",
         tomorrow: "Morgen",
         with_pending: "Met openstaande taken",
+        mine: "Mijn taken",
+        team: "Team",
       },
       regarding_contact: "(Betreft: %{name})",
       updated: "Taak bijgewerkt",
@@ -481,6 +489,23 @@ export const dutchCrmMessages = {
       at_company: "bij",
       to: "aan",
       load_more: "Meer activiteit laden",
+      someone: "een teamlid",
+      today: "Vandaag",
+      yesterday: "Gisteren",
+    },
+    ownership: {
+      you: "Jij",
+      unknown: "Onbekend",
+      party: {
+        online_matters: "Online Matters",
+        marketingbende: "Marketingbende",
+        groeien_met_ads: "Groeien met Ads",
+      },
+      filter: {
+        owner: "Eigenaar",
+        all: "Alles",
+        mine: "Van mij",
+      },
     },
     dashboard: {
       deals_chart: "Verwachte deal-omzet",

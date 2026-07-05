@@ -291,6 +291,9 @@ export const frenchCrmMessages = {
         title: "Aucune affaire trouvée",
       },
       invalid_date: "Date invalide",
+      filters: {
+        only_mine: "Uniquement mes affaires",
+      },
     },
     notes: {
       name: "Note |||| Notes",
@@ -318,6 +321,7 @@ export const frenchCrmMessages = {
       },
       deleted: "Note supprimée",
       empty: "Aucune note pour l'instant",
+      unknown_author: "un membre de l'équipe",
       author_added: "%{name} a ajouté une note",
       you_added: "Vous avez ajouté une note",
       me: "Moi",
@@ -349,6 +353,7 @@ export const frenchCrmMessages = {
         email: "E-mail",
         administrator: "Admin",
         disabled: "Désactivé",
+        partij: "Partie",
       },
       create: {
         error:
@@ -376,6 +381,7 @@ export const frenchCrmMessages = {
         type: "Type",
         contact_id: "Contact",
         due_short: "échéance",
+        sales_id: "Assigné à",
       },
       action: {
         add: "Ajouter une tâche",
@@ -406,6 +412,8 @@ export const frenchCrmMessages = {
         today: "Aujourd'hui",
         tomorrow: "Demain",
         with_pending: "Avec des tâches en attente",
+        mine: "Mes tâches",
+        team: "Équipe",
       },
       regarding_contact: "(Concernant : %{name})",
       updated: "Tâche mise à jour",
@@ -482,6 +490,23 @@ export const frenchCrmMessages = {
       at_company: "chez",
       to: "à",
       load_more: "Charger plus d'activité",
+      someone: "un membre de l'équipe",
+      today: "Aujourd'hui",
+      yesterday: "Hier",
+    },
+    ownership: {
+      you: "Vous",
+      unknown: "Inconnu",
+      party: {
+        online_matters: "Online Matters",
+        marketingbende: "Marketingbende",
+        groeien_met_ads: "Groeien met Ads",
+      },
+      filter: {
+        owner: "Propriétaire",
+        all: "Tous",
+        mine: "À moi",
+      },
     },
     dashboard: {
       deals_chart: "Revenus des affaires à venir",

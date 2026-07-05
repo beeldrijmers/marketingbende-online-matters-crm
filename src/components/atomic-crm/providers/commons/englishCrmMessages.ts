@@ -284,6 +284,9 @@ export const englishCrmMessages = {
         title: "No deals found",
       },
       invalid_date: "Invalid date",
+      filters: {
+        only_mine: "Only my deals",
+      },
     },
     notes: {
       name: "Note |||| Notes",
@@ -311,6 +314,7 @@ export const englishCrmMessages = {
       },
       deleted: "Note deleted",
       empty: "No notes yet",
+      unknown_author: "a team member",
       author_added: "%{name} added a note",
       you_added: "You added a note",
       me: "Me",
@@ -342,6 +346,7 @@ export const englishCrmMessages = {
         email: "Email",
         administrator: "Admin",
         disabled: "Disabled",
+        partij: "Party",
       },
       create: {
         error: "An error occurred while creating the user.",
@@ -368,6 +373,7 @@ export const englishCrmMessages = {
         type: "Type",
         contact_id: "Contact",
         due_short: "due",
+        sales_id: "Assigned to",
       },
       action: {
         add: "Add task",
@@ -398,6 +404,8 @@ export const englishCrmMessages = {
         today: "Today",
         tomorrow: "Tomorrow",
         with_pending: "With pending tasks",
+        mine: "My tasks",
+        team: "Team",
       },
       regarding_contact: "(Re: %{name})",
       updated: "Task updated",
@@ -474,6 +482,23 @@ export const englishCrmMessages = {
       at_company: "at",
       to: "to",
       load_more: "Load more activity",
+      someone: "a team member",
+      today: "Today",
+      yesterday: "Yesterday",
+    },
+    ownership: {
+      you: "You",
+      unknown: "Unknown",
+      party: {
+        online_matters: "Online Matters",
+        marketingbende: "Marketingbende",
+        groeien_met_ads: "Groeien met Ads",
+      },
+      filter: {
+        owner: "Owner",
+        all: "All",
+        mine: "Mine",
+      },
     },
     dashboard: {
       deals_chart: "Upcoming Deal Revenue",
