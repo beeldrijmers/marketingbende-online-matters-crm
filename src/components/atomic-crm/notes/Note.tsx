@@ -2,7 +2,6 @@ import { CircleX, Edit, Save, Trash2 } from "lucide-react";
 import {
   Form,
   useDelete,
-  useGetIdentity,
   useNotify,
   useResourceContext,
   useTranslate,
@@ -10,7 +9,6 @@ import {
 } from "ra-core";
 import { useEffect, useRef, useState } from "react";
 import type { FieldValues, SubmitHandler } from "react-hook-form";
-import { ReferenceField } from "@/components/admin/reference-field";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -20,14 +18,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import { CompanyAvatar } from "../companies/CompanyAvatar";
 import { Markdown } from "../misc/Markdown";
 import { RelativeDate } from "../misc/RelativeDate";
-import { Status } from "../misc/Status";
 import type { ContactNote, DealNote } from "../types";
 import { NoteAttachments } from "./NoteAttachments";
+import { NoteAuthorLine } from "./NoteAuthorLine";
 import { NoteInputs } from "./NoteInputs";
-import { useGetSalesName } from "../sales/useGetSalesName";
 
 export const Note = ({
   showStatus,
@@ -45,11 +41,6 @@ export const Note = ({
   const resource = useResourceContext();
   const notify = useNotify();
   const translate = useTranslate();
-  const { identity } = useGetIdentity();
-  const isCurrentUser = note.sales_id === identity?.id;
-  const salesName = useGetSalesName(note.sales_id, {
-    enabled: !isCurrentUser,
-  });
 
   // Detect if content is truncated
   useEffect(() => {
@@ -107,20 +98,7 @@ export const Note = ({
       className="mb-4"
     >
       <div className="flex items-center space-x-4 w-full">
-        <ReferenceField source="company_id" reference="companies" link="show">
-          <CompanyAvatar width={20} height={20} />
-        </ReferenceField>
-        <div className="inline-flex h-full items-center text-sm text-muted-foreground">
-          {translate(
-            isCurrentUser
-              ? "resources.notes.you_added"
-              : "resources.notes.author_added",
-            { name: salesName },
-          )}{" "}
-          {showStatus && note.status && (
-            <Status className="ml-2" status={note.status} />
-          )}
-        </div>
+        <NoteAuthorLine note={note} showStatus={showStatus} />
         <span className={`${isHover ? "visible" : "invisible"}`}>
           <TooltipProvider>
             <Tooltip>

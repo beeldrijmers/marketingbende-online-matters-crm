@@ -20,6 +20,7 @@ import { RotateCcw } from "lucide-react";
 
 import { Status } from "../misc/Status";
 import { formatRelativeDate } from "../misc/RelativeDate";
+import { OwnerChipField } from "../sales/SaleAvatar";
 import type { Contact } from "../types";
 import { Avatar } from "./Avatar";
 import { TagsList } from "./TagsList";
@@ -181,6 +182,14 @@ const ContactItemContent = ({
               <TagsList />
             </div>
           ) : null}
+          <div className="mt-0.5">
+            <OwnerChipField
+              source="sales_id"
+              record={contact}
+              size={16}
+              className="text-xs text-muted-foreground"
+            />
+          </div>
         </div>
         {contact.last_seen && (
           <div className="text-right ml-4">
@@ -313,6 +322,12 @@ const ContactItemContentMobile = ({ contact }: { contact: Contact }) => {
                   })}
                 </span>
               ) : null}
+              <OwnerChipField
+                source="sales_id"
+                record={contact}
+                size={16}
+                className="text-xs text-muted-foreground"
+              />
             </div>
           </div>
         </div>

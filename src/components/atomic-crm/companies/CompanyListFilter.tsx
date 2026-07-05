@@ -1,15 +1,11 @@
-import { Building, Truck, Users } from "lucide-react";
-import {
-  FilterLiveForm,
-  useGetIdentity,
-  useListContext,
-  useTranslate,
-} from "ra-core";
+import { Building, Truck } from "lucide-react";
+import { FilterLiveForm, useListContext, useTranslate } from "ra-core";
 import { cn } from "@/lib/utils";
 import { ToggleFilterButton } from "@/components/admin/toggle-filter-button";
 import { SearchInput } from "@/components/admin/search-input";
 
 import { FilterCategory } from "../filters/FilterCategory";
+import { OwnerFilterCategory } from "../filters/OwnerFilterCategory";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import { getTranslatedCompanySizeLabel } from "./getTranslatedCompanySizeLabel";
 import { sizes } from "./sizes";
@@ -20,7 +16,6 @@ const activeFilterClassName =
   "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary";
 
 export const CompanyListFilter = () => {
-  const { identity } = useGetIdentity();
   const { filterValues } = useListContext();
   const { companySectors } = useConfigurationContext();
   const translate = useTranslate();
@@ -68,21 +63,7 @@ export const CompanyListFilter = () => {
         ))}
       </FilterCategory>
 
-      <FilterCategory
-        icon={<Users className="h-4 w-4" />}
-        label="resources.companies.fields.sales_id"
-      >
-        <ToggleFilterButton
-          className={cn(
-            "w-full justify-between",
-            !!identity &&
-              filterValues.sales_id === identity.id &&
-              activeFilterClassName,
-          )}
-          label={translate("crm.common.me")}
-          value={{ sales_id: identity?.id }}
-        />
-      </FilterCategory>
+      <OwnerFilterCategory />
     </div>
   );
 };

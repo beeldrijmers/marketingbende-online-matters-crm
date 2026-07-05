@@ -1,12 +1,12 @@
-import { useGetIdentity, useRecordContext, useTranslate } from "ra-core";
+import { useRecordContext, useTranslate } from "ra-core";
 
 import { ReferenceField } from "@/components/admin/reference-field";
 import { TextField } from "@/components/admin/text-field";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Avatar } from "../contacts/Avatar";
 import { RelativeDate } from "../misc/RelativeDate";
-import { useGetSalesName } from "../sales/useGetSalesName";
 import type { ActivityContactNoteCreated, Contact } from "../types";
+import { ActivityActorAvatar, useActor } from "./ActivityActor";
 import { useActivityLogContext } from "./ActivityLogContext";
 import { ActivityLogNote } from "./ActivityLogNote";
 
@@ -25,12 +25,8 @@ export function ActivityLogContactNoteCreated({
   const context = useActivityLogContext();
   const isMobile = useIsMobile();
   const translate = useTranslate();
-  const { identity } = useGetIdentity();
   const { contactNote } = activity;
-  const isCurrentUser = activity.sales_id === identity?.id;
-  const salesName = useGetSalesName(activity.sales_id, {
-    enabled: !isCurrentUser,
-  });
+  const { isCurrentUser, name } = useActor(activity.sales_id);
   const link = isMobile
     ? `/contacts/${contactNote.contact_id}/notes/${contactNote.id}`
     : `/contacts/${contactNote.contact_id}/show`;
@@ -38,6 +34,7 @@ export function ActivityLogContactNoteCreated({
     <ActivityLogNote
       header={
         <div className="flex items-start gap-2 w-full">
+          <ActivityActorAvatar salesId={activity.sales_id} />
           <ReferenceField
             source="contact_id"
             reference="contacts"
@@ -51,7 +48,7 @@ export function ActivityLogContactNoteCreated({
               isCurrentUser
                 ? "crm.activity.you_added_note"
                 : "crm.activity.added_note",
-              { name: salesName },
+              { name },
             )}{" "}
             <ReferenceField
               source="contact_id"

@@ -4,9 +4,13 @@ import { DataTable } from "@/components/admin/data-table";
 import { ExportButton } from "@/components/admin/export-button";
 import { List } from "@/components/admin/list";
 import { SearchInput } from "@/components/admin/search-input";
+import { SelectInput } from "@/components/admin/select-input";
 import { Badge } from "@/components/ui/badge";
 
 import { TopToolbar } from "../layout/TopToolbar";
+import type { Sale } from "../types";
+import { PartyBadge } from "./SaleAvatar";
+import { PARTY_OPTIONS } from "./party";
 
 const SalesListActions = () => (
   <TopToolbar>
@@ -15,7 +19,23 @@ const SalesListActions = () => (
   </TopToolbar>
 );
 
-const filters = [<SearchInput source="q" alwaysOn />];
+// Party names are brand names (identical across locales), so plain labels are
+// used here; the field label falls back to the humanized "Partij".
+const partyFilterChoices = PARTY_OPTIONS.map((option) => ({
+  id: option.value,
+  name: option.fallback,
+}));
+
+const filters = [
+  <SearchInput source="q" alwaysOn />,
+  <SelectInput source="partij" choices={partyFilterChoices} />,
+];
+
+const PartijField = (_props: { label?: string | boolean }) => {
+  const record = useRecordContext<Sale>();
+  if (!record) return null;
+  return <PartyBadge sale={record} />;
+};
 
 const OptionsField = (_props: { label?: string | boolean }) => {
   const record = useRecordContext();
@@ -54,6 +74,9 @@ export function SalesList() {
         <DataTable.Col source="first_name" />
         <DataTable.Col source="last_name" />
         <DataTable.Col source="email" />
+        <DataTable.Col source="partij">
+          <PartijField />
+        </DataTable.Col>
         <DataTable.Col label={false}>
           <OptionsField />
         </DataTable.Col>
