@@ -10,6 +10,7 @@ import { resolveDefaultSalesId } from "./resolveDefaultSalesId.ts";
 import { extractCompanyWebsite } from "./extractCompanyWebsite.ts";
 import { extractDealAmount } from "./extractDealAmount.ts";
 import { lookupCompanyWebsite } from "./lookupCompanyWebsite.ts";
+import { trelloCardCreatedAt } from "./trelloCardDate.ts";
 import type { TrelloCardInput } from "./trelloCardTypes.ts";
 
 // The prefix of the auto-generated placeholder description used before a card
@@ -42,6 +43,9 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
   const website = extractCompanyWebsite(card.desc, card.attachmentUrls);
   const description = buildDealDescription(card);
   const amount = extractDealAmount(card.name, card.desc);
+  // The real project start: decoded from the Trello card id so a long-running
+  // deal keeps its true creation date instead of the import/backfill time.
+  const createdAt = trelloCardCreatedAt(card.id);
 
   const { data: existingDeal, error: fetchError } = await supabaseAdmin
     .from("deals")
@@ -85,6 +89,9 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
         category,
         stage,
         expected_closing_date: expectedClosingDate,
+        // Correct the historical import date to the real Trello creation date.
+        // Deterministic per card, so re-syncs are idempotent.
+        ...(createdAt ? { created_at: createdAt } : {}),
         ...(canEnrichDescription ? { description } : {}),
         ...(canEnrichAmount ? { amount } : {}),
       })
@@ -107,6 +114,7 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
       expected_closing_date: expectedClosingDate,
       description,
       ...(amount != null ? { amount } : {}),
+      ...(createdAt ? { created_at: createdAt } : {}),
       trello_card_id: card.id,
       sales_id: salesId,
     })
