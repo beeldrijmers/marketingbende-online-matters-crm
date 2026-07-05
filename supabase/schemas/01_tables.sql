@@ -102,6 +102,7 @@ create table public.deal_notes (
     text text,
     date timestamp with time zone default now(),
     sales_id bigint,
+    status text,
     attachments jsonb[]
 );
 
@@ -190,6 +191,9 @@ alter table public.sales
 alter table public.tasks
     add constraint tasks_contact_id_fkey foreign key (contact_id) references public.contacts(id) on update cascade on delete cascade;
 
+alter table public.tasks
+    add constraint tasks_sales_id_fkey foreign key (sales_id) references public.sales(id) on update cascade on delete set null not valid;
+
 -- Legacy primary key constraint names (from before snake_case rename)
 alter table only public.contact_notes
     add constraint "contactNotes_pkey" primary key (id);
@@ -205,6 +209,7 @@ create index contact_notes_contact_id_idx on public.contact_notes using btree (c
 create index contacts_company_id_idx on public.contacts using btree (company_id);
 create index deal_notes_deal_id_idx on public.deal_notes using btree (deal_id);
 create index deals_company_id_idx on public.deals using btree (company_id);
+create index tasks_sales_id_due_date_idx on public.tasks using btree (sales_id, due_date);
 create unique index uq__deals__trello_card_id on public.deals using btree (trello_card_id) where (trello_card_id is not null);
 create unique index uq__deals__moneybird_estimate_id on public.deals using btree (moneybird_estimate_id) where (moneybird_estimate_id is not null);
 create unique index uq__deals__moneybird_invoice_id on public.deals using btree (moneybird_invoice_id) where (moneybird_invoice_id is not null);
