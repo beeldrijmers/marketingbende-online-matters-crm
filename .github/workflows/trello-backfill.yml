@@ -1,0 +1,41 @@
+name: 🔁 Trello backfill
+
+# Manually-triggered re-run of the historical Trello-card backfill against the
+# deployed trello-sync edge function. Re-processes every card so existing deals
+# and companies pick up the latest enrichment (descriptions, company websites/
+# logos). Safe to re-run: manual edits are never overwritten.
+on:
+  workflow_dispatch:
+
+jobs:
+  backfill:
+    name: 🔁 Trigger backfill
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      ADMIN_BACKFILL_SECRET: ${{ secrets.ADMIN_BACKFILL_SECRET }}
+
+    steps:
+      - name: 🔁 POST backfill trigger
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$ADMIN_BACKFILL_SECRET" ]; then
+            echo "::error::Missing SUPABASE_URL or ADMIN_BACKFILL_SECRET secret"
+            exit 1
+          fi
+          endpoint="${SUPABASE_URL%/}/functions/v1/trello-sync"
+          echo "POST $endpoint"
+          http_code=$(curl -sS --max-time 600 -o /tmp/backfill-response.json -w "%{http_code}" \
+            -X POST "$endpoint" \
+            -H "x-admin-backfill-secret: ${ADMIN_BACKFILL_SECRET}" \
+            -H "Content-Type: application/json")
+          echo "HTTP status: $http_code"
+          echo "----- response body -----"
+          cat /tmp/backfill-response.json || true
+          echo ""
+          echo "-------------------------"
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Backfill returned HTTP $http_code"
+            exit 1
+          fi
