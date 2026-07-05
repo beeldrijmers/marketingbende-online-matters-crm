@@ -30,7 +30,7 @@ test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
   await page.getByLabel("Achternaam").fill("Smith");
   await page.getByLabel("Functietitel").fill("CEO");
   await page.getByLabel("Bedrijf").click();
-  await page.getByPlaceholder("Search").fill("Smith Corp");
+  await page.getByPlaceholder("Zoeken").fill("Smith Corp");
   await page.getByText("Smith Corp aanmaken").click();
   await page
     .getByRole("group", { name: "E-mailadressen" })

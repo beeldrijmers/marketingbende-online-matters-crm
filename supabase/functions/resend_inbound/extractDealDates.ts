@@ -57,11 +57,7 @@ const MONTHS: Record<string, string> = {
 const pad2 = (value: number): string => String(value).padStart(2, "0");
 
 // Builds an ISO date from its parts, returning null for out-of-range values.
-const toIsoDate = (
-  day: number,
-  month: number,
-  year: number,
-): string | null => {
+const toIsoDate = (day: number, month: number, year: number): string | null => {
   if (!Number.isInteger(day) || day < 1 || day > 31) return null;
   if (!Number.isInteger(month) || month < 1 || month > 12) return null;
   if (!Number.isInteger(year) || year < 1000 || year > 9999) return null;

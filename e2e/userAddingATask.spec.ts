@@ -63,7 +63,7 @@ test.describe("user adding a task", () => {
     await page.getByLabel("Omschrijving *").fill("Follow up with Jane");
     await page.getByLabel("Vervaldatum").fill("2026-04-11T21:00");
     await page.getByLabel("Type").click();
-    await page.getByRole("option", { name: "Call" }).click();
+    await page.getByRole("option", { name: "Bellen" }).click();
 
     await page.getByRole("button", { name: "Opslaan" }).click();
 
@@ -92,7 +92,7 @@ test.describe("user adding a task", () => {
       await expect(
         page.getByText("Follow up with Jane").locator(".."),
       ).toHaveText(
-        "Call Follow up with Janeverloopt 4/11/2026, 9:00:00 PM (Betreft: Jane Smith)",
+        "Bellen Follow up with Janeverloopt 4/11/2026, 9:00:00 PM (Betreft: Jane Smith)",
       );
     }
   });
