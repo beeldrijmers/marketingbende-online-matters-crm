@@ -133,6 +133,8 @@ export type Deal = {
   updated_at: string;
   archived_at?: string;
   expected_closing_date: string;
+  start_date?: string;
+  delivery_date?: string;
   sales_id: Identifier;
   index: number;
   moneybird_estimate_id?: string;

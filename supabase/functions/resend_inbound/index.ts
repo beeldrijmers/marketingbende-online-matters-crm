@@ -17,8 +17,11 @@ import { extractDealIdFromEmails } from "../postmark/extractDealId.ts";
 import { gatherClientParticipants } from "../postmark/gatherParticipants.ts";
 import { linkMailToActiveDeals } from "../postmark/linkMailToActiveDeals.ts";
 import { getNoteContent } from "../postmark/getNoteContent.ts";
+import { extractDealAmount } from "../trello-sync/extractDealAmount.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
+import { extractDealDates } from "./extractDealDates.ts";
 import { parseEmailAddress, parseEmailContacts } from "./parseEmailAddress.ts";
+import { upsertDealFromMail } from "./upsertDealFromMail.ts";
 import { verifySvixSignature } from "./verifySvixSignature.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -190,6 +193,15 @@ Deno.serve(async (req) => {
 
   const noteContent = getNoteContent(subject, textBody);
 
+  // Intelligent extraction from the (normalised) mail: a deal value and any
+  // start/delivery dates. Computed once and reused for every participant so a
+  // multi-recipient mail describes the same offer consistently.
+  const amount = extractDealAmount(subject, textBody);
+  const dates = extractDealDates(textBody);
+  // Guards the "max one deal per company per mail" invariant across participants
+  // that resolve to the same company.
+  const handledCompanyIds = new Set<number>();
+
   for (const {
     firstName,
     lastName,
@@ -219,6 +231,23 @@ Deno.serve(async (req) => {
         attachments: [],
       });
     }
+
+    // Open or enrich the company's deal with the extracted value/dates. Runs
+    // after linkMailToActiveDeals so a freshly created deal is not double-noted
+    // (that mirror only touches deals that already existed). Best-effort: any
+    // failure is swallowed inside the helper and never fails the webhook.
+    await upsertDealFromMail({
+      contactEmail,
+      subject,
+      companyNameFallback: companyName,
+      amount,
+      startDate: dates.startDate,
+      deliveryDate: dates.deliveryDate,
+      salesEmail: forwarderSalesEmail,
+      salesId: forwarderSalesId ?? null,
+      noteContent,
+      handledCompanyIds,
+    });
   }
 
   return new Response("OK");

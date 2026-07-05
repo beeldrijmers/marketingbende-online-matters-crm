@@ -76,6 +76,8 @@ create table public.deals (
     updated_at timestamp with time zone not null default now(),
     archived_at timestamp with time zone,
     expected_closing_date date,
+    start_date date,
+    delivery_date date,
     sales_id bigint,
     index smallint,
     trello_card_id text,
