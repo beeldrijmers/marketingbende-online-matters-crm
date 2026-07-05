@@ -56,6 +56,8 @@ import { StartPage } from "../login/StartPage.tsx";
 import { useIsMobile } from "@/hooks/use-mobile.ts";
 import { MobileTasksList } from "../tasks/MobileTasksList.tsx";
 import { ContactListMobile } from "../contacts/ContactList.tsx";
+import { MobileDealsList } from "../deals/MobileDealsList.tsx";
+import { MobileCompaniesList } from "../companies/MobileCompaniesList.tsx";
 import { ContactShow } from "../contacts/ContactShow.tsx";
 import { CompanyShow } from "../companies/CompanyShow.tsx";
 import { NoteShowPage } from "../notes/NoteShowPage.tsx";
@@ -337,7 +339,12 @@ const MobileAdmin = (
         >
           <Route path=":id/notes/:noteId" element={<NoteShowPage />} />
         </Resource>
-        <Resource name="companies" show={CompanyShow} />
+        <Resource
+          name="companies"
+          list={MobileCompaniesList}
+          show={CompanyShow}
+        />
+        <Resource name="deals" list={MobileDealsList} />
         <Resource name="tasks" list={MobileTasksList} />
       </Admin>
     </PersistQueryClientProvider>
