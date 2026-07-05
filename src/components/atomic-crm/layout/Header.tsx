@@ -34,19 +34,20 @@ const Header = () => {
             <div className="flex justify-between items-center gap-4 lg:grid lg:grid-cols-[1fr_auto_1fr]">
               <Link
                 to="/"
+                title="Marketingbende × Online Matters"
                 className="flex items-center gap-2 text-secondary-foreground no-underline"
               >
                 <img
-                  className="[.light_&]:hidden h-6"
+                  className="[.light_&]:hidden h-7"
                   src={darkModeLogo}
                   alt={title}
                 />
                 <img
-                  className="[.dark_&]:hidden h-6"
+                  className="[.dark_&]:hidden h-7"
                   src={lightModeLogo}
                   alt={title}
                 />
-                <h1 className="text-xl font-semibold">{title}</h1>
+                <Wordmark title={title} />
               </Link>
               <div>
                 <nav className="flex">
@@ -91,6 +92,28 @@ const Header = () => {
         </header>
       </nav>
     </>
+  );
+};
+
+// Renders the app title as a wordmark: the first word gets the gradient
+// treatment, a trailing "CRM" becomes a small badge. Falls back to a plain
+// title for custom configurations without a "CRM" suffix.
+const Wordmark = ({ title }: { title: string }) => {
+  const hasCrmSuffix = / CRM$/i.test(title.trim());
+  const mainText = hasCrmSuffix
+    ? title.trim().replace(/ CRM$/i, "")
+    : title.trim();
+  return (
+    <h1 className="flex items-center gap-1.5 text-xl leading-none">
+      <span className="font-black italic tracking-wide bg-gradient-to-r from-blue-500 to-violet-500 [.dark_&]:from-blue-400 [.dark_&]:to-violet-400 bg-clip-text text-transparent">
+        {mainText}
+      </span>
+      {hasCrmSuffix && (
+        <span className="rounded-md border border-secondary-foreground/25 px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-secondary-foreground/70">
+          CRM
+        </span>
+      )}
+    </h1>
   );
 };
 

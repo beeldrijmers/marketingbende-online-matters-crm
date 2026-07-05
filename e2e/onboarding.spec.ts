@@ -4,10 +4,8 @@ test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
   await page.goto("http://localhost:5175/");
 
   // Expect a title "to contain" a substring.
-  await expect(page).toHaveTitle(/Marketingbende x Online Matters CRM/);
-  await expect(
-    page.getByText("Welkom bij Marketingbende x Online Matters CRM"),
-  ).toBeVisible();
+  await expect(page).toHaveTitle(/BANKAI CRM/);
+  await expect(page.getByText("Welkom bij BANKAI CRM")).toBeVisible();
 
   await page.getByLabel("Voornaam").fill("John");
   await page.getByLabel("Achternaam").fill("Doe");
@@ -17,9 +15,7 @@ test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
 
   await expect(page.getByText("Wat nu?")).toBeVisible();
   await expect(page.getByText("1/3 voltooid")).toBeVisible();
-  await expect(
-    page.getByText("Marketingbende x Online Matters CRM installeren"),
-  ).toBeVisible();
+  await expect(page.getByText("BANKAI CRM installeren")).toBeVisible();
   await expect(page.getByText("Voeg uw eerste contact toe")).toBeVisible();
   await expect(page.getByText("Voeg uw eerste notitie toe")).toBeVisible();
 

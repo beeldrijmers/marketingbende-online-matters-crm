@@ -2,7 +2,9 @@
 // demo/FakeRest-app (demo/App.tsx), zodat beide dezelfde Nederlandse labels
 // en waarden tonen in plaats van de Engelse Atomic CRM-standaardwaarden.
 
-export const title = "Marketingbende x Online Matters CRM";
+// BANKAI: knipoog naar het kanban-dealbord (en de ultieme vorm uit Bleach) —
+// de samenwerking Marketingbende × Online Matters op volle kracht.
+export const title = "BANKAI CRM";
 
 export const currency = "EUR";
 

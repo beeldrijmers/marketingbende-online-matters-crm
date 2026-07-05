@@ -1,11 +1,11 @@
 import type { ConfigurationContextValue } from "./ConfigurationContext";
 
-export const defaultDarkModeLogo = "./logos/logo_mb_om_dark.svg";
-export const defaultLightModeLogo = "./logos/logo_mb_om_light.svg";
+export const defaultDarkModeLogo = "./logos/bankai_dark.svg";
+export const defaultLightModeLogo = "./logos/bankai_light.svg";
 
 export const defaultCurrency = "EUR";
 
-export const defaultTitle = "Marketingbende x Online Matters CRM";
+export const defaultTitle = "BANKAI CRM";
 
 export const defaultCompanySectors = [
   { value: "communication-services", label: "Communicatiediensten" },

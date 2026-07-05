@@ -4,7 +4,9 @@ import { useStore } from "ra-core";
 import type { DealStage, LabeledValue, NoteStatus } from "../types";
 import { defaultConfiguration } from "./defaultConfiguration";
 
-export const CONFIGURATION_STORE_KEY = "app.configuration";
+// v2: key bumped for the BANKAI rebrand - browsers that seeded the old
+// title/logos into localStorage pick up the new defaults on their next visit.
+export const CONFIGURATION_STORE_KEY = "app.configuration.v2";
 
 export interface ConfigurationContextValue {
   companySectors: LabeledValue[];

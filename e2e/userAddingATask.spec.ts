@@ -45,7 +45,7 @@ test.describe("user adding a task", () => {
     await page.getByLabel("Wachtwoord").fill("password");
     await page.getByRole("button", { name: "Inloggen" }).click();
 
-    await expect(page).toHaveTitle(/Marketingbende x Online Matters CRM/);
+    await expect(page).toHaveTitle(/BANKAI CRM/);
     await expect(page.getByText("Laatste activiteit")).toBeVisible();
 
     await menu.goToContacts();

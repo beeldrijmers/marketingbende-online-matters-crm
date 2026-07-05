@@ -1,0 +1,11 @@
+<svg width="800" height="800" viewBox="0 0 800 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bankai-blade-dark" x1="120" y1="120" x2="680" y2="680" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#60A5FA"/>
+      <stop offset="1" stop-color="#A78BFA"/>
+    </linearGradient>
+  </defs>
+  <rect x="320" y="112" width="160" height="576" rx="80" fill="url(#bankai-blade-dark)" transform="rotate(45 400 400)"/>
+  <rect x="320" y="112" width="160" height="576" rx="80" fill="url(#bankai-blade-dark)" transform="rotate(-45 400 400)"/>
+  <circle cx="400" cy="400" r="58" fill="#09090B"/>
+</svg>
