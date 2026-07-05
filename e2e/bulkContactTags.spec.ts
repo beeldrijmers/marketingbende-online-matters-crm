@@ -37,7 +37,9 @@ test("user adds a tag to several contacts", async ({
   await page.getByRole("button", { name: "Inloggen" }).click();
 
   await expect(page).toHaveTitle(/Marketingbende x Online Matters CRM/);
-  await expect(page.getByRole("link", { name: "Contacten" })).toBeVisible();
+  // Contacts moved out of the top nav; confirm the app loaded via a nav link
+  // that still exists.
+  await expect(page.getByRole("link", { name: "Bedrijven" })).toBeVisible();
 
   await menu.goToContacts();
   await expect(page.getByText("Ada Lovelace")).toBeVisible();

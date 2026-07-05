@@ -199,7 +199,11 @@ const getMenuMethod = ({ page }: { page: Page; isMobile: boolean }) => ({
     await page.waitForLoadState("networkidle");
   },
   goToContacts: async () => {
-    await page.getByRole("link", { name: "Contacten" }).click();
+    // "Contacten" is no longer a top-nav link (it now lives under Bedrijven),
+    // and a test may have no companies at all, so navigate to the contacts list
+    // directly by URL rather than depending on a nav/toolbar element. The app
+    // is built with a relative base and uses hash routing.
+    await page.goto("http://localhost:5175/#/contacts");
     await page.waitForLoadState("networkidle");
   },
 });

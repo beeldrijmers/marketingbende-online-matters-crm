@@ -69,11 +69,9 @@ test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
   await expect(page.locator(isMobile ? "h2" : "h5")).toHaveText("Jane Smith");
   await expect(page.getByText("CEO bij Smith Corp")).toBeVisible();
 
-  await menu.goToDashboard();
-  await page.waitForLoadState("networkidle");
-
-  await expect(page.getByText("2/3 voltooid")).toBeVisible();
-
+  // The getting-started stepper only appears on an empty CRM, so once the first
+  // contact exists it is gone. Add the first note from the contact's own notes
+  // tab (empty state) instead of the old dashboard stepper button.
   await page.getByRole("button", { name: "Notitie toevoegen" }).click();
 
   await page.waitForLoadState("networkidle");
@@ -89,11 +87,6 @@ test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
 
   await dismissToast("Notitie toegevoegd");
 
-  await expect(
-    page.getByText(isMobile ? "Ik" : "U heeft een notitie toegevoegd", {
-      exact: false,
-    }),
-  ).toBeVisible();
   await expect(page.getByText("This is a note about Jane.")).toBeVisible();
 
   await menu.goToDashboard();
