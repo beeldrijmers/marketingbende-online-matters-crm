@@ -1,5 +1,6 @@
 import { RecordContextProvider, useListContext, useTranslate } from "ra-core";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Company } from "../types";
 import { CompanyCard } from "./CompanyCard";
 
@@ -7,12 +8,14 @@ const times = (nbChildren: number, fn: (key: number) => any) =>
   Array.from({ length: nbChildren }, (_, key) => fn(key));
 
 const LoadingGridList = () => (
-  <div className="flex flex-wrap w-[1008px] gap-1">
+  <div
+    className="w-full gap-2 grid"
+    style={{
+      gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+    }}
+  >
     {times(15, (key) => (
-      <div
-        className="h-[200px] w-[194px] flex flex-col bg-gray-200"
-        key={key}
-      />
+      <Skeleton className="h-[200px] w-full rounded-xl" key={key} />
     ))}
   </div>
 );

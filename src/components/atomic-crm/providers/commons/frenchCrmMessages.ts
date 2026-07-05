@@ -197,6 +197,7 @@ export const frenchCrmMessages = {
     },
     deals: {
       name: "Affaire |||| Affaires",
+      forcedCaseName: "Affaire",
       fields: {
         name: "Nom",
         description: "Description",

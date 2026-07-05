@@ -32,12 +32,12 @@ export const HotContacts = () => {
   );
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center">
         <div className="mr-3 flex">
           <Users className="text-muted-foreground w-6 h-6" />
         </div>
-        <h2 className="text-xl font-semibold text-muted-foreground">
+        <h2 className="text-xl font-semibold text-foreground">
           {translate("resources.contacts.hot.title")}
         </h2>
         <TooltipProvider>
@@ -83,11 +83,11 @@ export const HotContacts = () => {
           )}
           leftAvatar={(contact) => <Avatar record={contact} />}
           empty={
-            <div className="p-4">
-              <p className="text-sm mb-4">
+            <div className="flex flex-col items-center gap-2 p-6 text-center">
+              <p className="text-sm text-muted-foreground">
                 {translate("resources.contacts.hot.empty_hint")}
               </p>
-              <p className="text-sm">
+              <p className="text-sm text-muted-foreground">
                 {translate("resources.contacts.hot.empty_change_status")}
               </p>
             </div>

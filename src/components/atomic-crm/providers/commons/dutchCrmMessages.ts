@@ -197,6 +197,7 @@ export const dutchCrmMessages = {
     },
     deals: {
       name: "Deal |||| Deals",
+      forcedCaseName: "Deal",
       fields: {
         name: "Naam",
         description: "Omschrijving",

@@ -3,60 +3,66 @@ import type { ConfigurationContextValue } from "./ConfigurationContext";
 export const defaultDarkModeLogo = "./logos/logo_mb_om_dark.svg";
 export const defaultLightModeLogo = "./logos/logo_mb_om_light.svg";
 
-export const defaultCurrency = "USD";
+export const defaultCurrency = "EUR";
 
 export const defaultTitle = "Marketingbende x Online Matters CRM";
 
 export const defaultCompanySectors = [
-  { value: "communication-services", label: "Communication Services" },
-  { value: "consumer-discretionary", label: "Consumer Discretionary" },
-  { value: "consumer-staples", label: "Consumer Staples" },
-  { value: "energy", label: "Energy" },
-  { value: "financials", label: "Financials" },
-  { value: "health-care", label: "Health Care" },
-  { value: "industrials", label: "Industrials" },
-  { value: "information-technology", label: "Information Technology" },
-  { value: "materials", label: "Materials" },
-  { value: "real-estate", label: "Real Estate" },
-  { value: "utilities", label: "Utilities" },
+  { value: "communication-services", label: "Communicatiediensten" },
+  {
+    value: "consumer-discretionary",
+    label: "Cyclische consumentengoederen",
+  },
+  {
+    value: "consumer-staples",
+    label: "Niet-cyclische consumentengoederen",
+  },
+  { value: "energy", label: "Energie" },
+  { value: "financials", label: "Financiële dienstverlening" },
+  { value: "health-care", label: "Gezondheidszorg" },
+  { value: "industrials", label: "Industrie" },
+  { value: "information-technology", label: "Informatietechnologie" },
+  { value: "materials", label: "Basismaterialen" },
+  { value: "real-estate", label: "Vastgoed" },
+  { value: "utilities", label: "Nutsbedrijven" },
 ];
 
 export const defaultDealStages = [
-  { value: "opportunity", label: "Opportunity" },
-  { value: "proposal-sent", label: "Proposal Sent" },
-  { value: "in-negociation", label: "In Negotiation" },
-  { value: "won", label: "Won" },
-  { value: "lost", label: "Lost" },
-  { value: "delayed", label: "Delayed" },
+  { value: "opportunity", label: "Kans" },
+  { value: "proposal-sent", label: "Voorstel verstuurd" },
+  { value: "in-negociation", label: "In onderhandeling" },
+  { value: "won", label: "Gewonnen" },
+  { value: "lost", label: "Verloren" },
+  { value: "delayed", label: "Vertraagd" },
 ];
 
 export const defaultDealPipelineStatuses = ["won"];
 
 export const defaultDealCategories = [
-  { value: "other", label: "Other" },
+  { value: "other", label: "Overig" },
   { value: "copywriting", label: "Copywriting" },
-  { value: "print-project", label: "Print project" },
-  { value: "ui-design", label: "UI Design" },
-  { value: "website-design", label: "Website design" },
+  { value: "print-project", label: "Printproject" },
+  { value: "ui-design", label: "UI-ontwerp" },
+  { value: "website-design", label: "Websiteontwerp" },
 ];
 
 export const defaultNoteStatuses = [
-  { value: "cold", label: "Cold", color: "#7dbde8" },
+  { value: "cold", label: "Koud", color: "#7dbde8" },
   { value: "warm", label: "Warm", color: "#e8cb7d" },
-  { value: "hot", label: "Hot", color: "#e88b7d" },
-  { value: "in-contract", label: "In Contract", color: "#a4e87d" },
+  { value: "hot", label: "Heet", color: "#e88b7d" },
+  { value: "in-contract", label: "In contract", color: "#a4e87d" },
 ];
 
 export const defaultTaskTypes = [
-  { value: "none", label: "None" },
-  { value: "email", label: "Email" },
+  { value: "none", label: "Geen" },
+  { value: "email", label: "E-mail" },
   { value: "demo", label: "Demo" },
   { value: "lunch", label: "Lunch" },
-  { value: "meeting", label: "Meeting" },
-  { value: "follow-up", label: "Follow-up" },
-  { value: "thank-you", label: "Thank you" },
-  { value: "ship", label: "Ship" },
-  { value: "call", label: "Call" },
+  { value: "meeting", label: "Vergadering" },
+  { value: "follow-up", label: "Opvolgen" },
+  { value: "thank-you", label: "Bedankje" },
+  { value: "ship", label: "Opleveren" },
+  { value: "call", label: "Bellen" },
 ];
 
 export const defaultConfiguration: ConfigurationContextValue = {

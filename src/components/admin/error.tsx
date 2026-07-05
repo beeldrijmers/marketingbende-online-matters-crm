@@ -36,7 +36,7 @@ export const Error = (props: InternalErrorProps & {}) => {
   return (
     <div className="flex flex-col items-center md:p-16 gap-5" {...rest}>
       <h1 className="flex items-center text-3xl mt-5 mb-5 gap-3" role="alert">
-        <CircleAlert className="w-2em h-2em" />
+        <CircleAlert className="w-8 h-8" />
         <Translate i18nKey="ra.page.error" />
       </h1>
       <div>
@@ -53,37 +53,37 @@ export const Error = (props: InternalErrorProps & {}) => {
                 <Translate i18nKey={errorMessage}>{errorMessage}</Translate>
               </AccordionTrigger>
               <AccordionContent className="whitespace-pre-wrap pt-1">
-                <pre className="text-xls">{errorInfo?.componentStack}</pre>
+                <pre className="text-xs">{errorInfo?.componentStack}</pre>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
 
           <p className="text-center ">
-            Need help with this error? Try the following:
+            Hulp nodig bij deze fout? Probeer het volgende:
           </p>
           <div>
             <ul className="list-disc">
               <li>
-                Check the{" "}
+                Bekijk de{" "}
                 <a
                   className="text-primary underline-offset-4 hover:underline"
                   href="https://marmelab.com/shadcn-admin-kit/docs"
                 >
-                  shadcn-admin-kit documentation
+                  documentatie van shadcn-admin-kit
                 </a>
               </li>
               <li>
-                Search on{" "}
+                Zoek op{" "}
                 <a
                   className="text-primary underline-offset-4 hover:underline"
                   href="https://stackoverflow.com/questions/tagged/shadcn-admin-kit"
                 >
                   StackOverflow
                 </a>{" "}
-                for community answers
+                naar antwoorden van de community
               </li>
               <li>
-                Get help from the core team via{" "}
+                Krijg hulp van het kernteam via{" "}
                 <a
                   className="text-primary underline-offset-4 hover:underline"
                   href="https://marmelab.com/shadcn-admin-kit/"

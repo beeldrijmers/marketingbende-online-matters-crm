@@ -25,7 +25,7 @@ import {
   type HintedString,
   type ExtractRecordPaths,
 } from "ra-core";
-import { Columns, Search } from "lucide-react";
+import { Columns, Search, X } from "lucide-react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
@@ -191,9 +191,11 @@ export const ColumnsSelector = ({ children }: ColumnsSelectorProps) => {
             <button
               onClick={() => setColumnFilter("")}
               className="absolute right-8 top-2 h-4 w-4 text-muted-foreground"
-              aria-label="Clear"
+              aria-label={translate("ra.action.clear_search", {
+                _: "Clear search",
+              })}
             >
-              ×
+              <X className="h-4 w-4" />
             </button>
           )}
         </div>

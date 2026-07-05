@@ -190,6 +190,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/root/appConfiguration.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/root/ConfigurationContext.tsx",
           "type": "registry:component"
         },
@@ -567,6 +571,10 @@
         },
         {
           "path": "src/components/atomic-crm/deals/OnlyMineInput.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/MoneybirdDocumentButtons.tsx",
           "type": "registry:component"
         },
         {

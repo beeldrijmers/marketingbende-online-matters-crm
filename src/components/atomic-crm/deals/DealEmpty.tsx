@@ -26,7 +26,7 @@ export const DealEmpty = ({ children }: { children?: ReactNode }) => {
 
   return (
     <div
-      className="flex flex-col justify-center items-center gap-12"
+      className="flex flex-col items-center justify-center gap-6 px-4"
       style={{
         height: `calc(100dvh - ${appbarHeight}px)`,
       }}
@@ -34,29 +34,28 @@ export const DealEmpty = ({ children }: { children?: ReactNode }) => {
       <img
         src="./img/empty.svg"
         alt={translate("resources.deals.empty.title")}
+        className="h-auto w-56 sm:w-64"
       />
       {contacts && contacts.length > 0 ? (
         <>
-          <div className="flex flex-col items-center gap-0">
-            <h3 className="text-lg font-bold">
+          <div className="flex flex-col items-center gap-2">
+            <h3 className="text-lg font-semibold text-foreground">
               {translate("resources.deals.empty.title")}
             </h3>
-            <p className="text-sm text-center text-muted-foreground mb-4">
+            <p className="max-w-sm text-center text-sm text-muted-foreground">
               {translate("resources.deals.empty.description")}
             </p>
           </div>
-          <div className="flex space-x-8">
-            <CreateButton label="resources.deals.action.create" />
-          </div>
+          <CreateButton label="resources.deals.action.create" />
           <DealCreate open={!!matchCreate} />
           {children}
         </>
       ) : (
-        <div className="flex flex-col items-center gap-0">
-          <h3 className="text-lg font-bold">
+        <div className="flex flex-col items-center gap-2">
+          <h3 className="text-lg font-semibold text-foreground">
             {translate("resources.deals.empty.title")}
           </h3>
-          <p className="text-sm text-center text-muted-foreground mb-4">
+          <p className="max-w-sm text-center text-sm text-muted-foreground">
             {translate("resources.contacts.empty.description")}
             <br />
             <Link to="/contacts/create" className="hover:underline">

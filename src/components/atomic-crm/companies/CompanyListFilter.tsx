@@ -1,5 +1,11 @@
 import { Building, Truck, Users } from "lucide-react";
-import { FilterLiveForm, useGetIdentity, useTranslate } from "ra-core";
+import {
+  FilterLiveForm,
+  useGetIdentity,
+  useListContext,
+  useTranslate,
+} from "ra-core";
+import { cn } from "@/lib/utils";
 import { ToggleFilterButton } from "@/components/admin/toggle-filter-button";
 import { SearchInput } from "@/components/admin/search-input";
 
@@ -8,8 +14,14 @@ import { useConfigurationContext } from "../root/ConfigurationContext";
 import { getTranslatedCompanySizeLabel } from "./getTranslatedCompanySizeLabel";
 import { sizes } from "./sizes";
 
+// Brand accent for the currently active toggle filter, layered over the
+// button's own selected/secondary styling.
+const activeFilterClassName =
+  "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary";
+
 export const CompanyListFilter = () => {
   const { identity } = useGetIdentity();
+  const { filterValues } = useListContext();
   const { companySectors } = useConfigurationContext();
   const translate = useTranslate();
   const translatedSizes = sizes.map((size) => ({
@@ -17,7 +29,7 @@ export const CompanyListFilter = () => {
     name: getTranslatedCompanySizeLabel(size, translate),
   }));
   return (
-    <div className="w-52 min-w-52 flex flex-col gap-8">
+    <div className="w-52 min-w-52 flex flex-col gap-6">
       <FilterLiveForm>
         <SearchInput source="q" />
       </FilterLiveForm>
@@ -28,7 +40,10 @@ export const CompanyListFilter = () => {
       >
         {translatedSizes.map((size) => (
           <ToggleFilterButton
-            className="w-full justify-between"
+            className={cn(
+              "w-full justify-between",
+              filterValues.size === size.id && activeFilterClassName,
+            )}
             label={size.name}
             key={size.name}
             value={{ size: size.id }}
@@ -42,7 +57,10 @@ export const CompanyListFilter = () => {
       >
         {companySectors.map((sector) => (
           <ToggleFilterButton
-            className="w-full justify-between"
+            className={cn(
+              "w-full justify-between",
+              filterValues.sector === sector.value && activeFilterClassName,
+            )}
             label={sector.label}
             key={sector.value}
             value={{ sector: sector.value }}
@@ -55,7 +73,12 @@ export const CompanyListFilter = () => {
         label="resources.companies.fields.sales_id"
       >
         <ToggleFilterButton
-          className="w-full justify-between"
+          className={cn(
+            "w-full justify-between",
+            !!identity &&
+              filterValues.sales_id === identity.id &&
+              activeFilterClassName,
+          )}
           label={translate("crm.common.me")}
           value={{ sales_id: identity?.id }}
         />

@@ -97,7 +97,7 @@ export const ResponsiveFilters = ({
                     className="flex-1"
                   >
                     {translate("ra.navigation.clear_filters", {
-                      _: "Clear filters",
+                      _: "Filters wissen",
                     })}
                   </Button>
                 </SheetClose>

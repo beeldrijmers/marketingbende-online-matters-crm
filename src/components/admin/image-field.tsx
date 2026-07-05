@@ -24,7 +24,7 @@ import type { FieldProps } from "@/lib/field.type";
  *     className="[&_img]:w-8 [&_img]:h-8 [&_img]:rounded-full"
  *     empty={
  *         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
- *           👤
+ *           ?
  *         </div>
  *     }
  * />

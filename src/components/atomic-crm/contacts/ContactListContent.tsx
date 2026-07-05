@@ -15,6 +15,7 @@ import { TextField } from "@/components/admin/text-field";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { RotateCcw } from "lucide-react";
 
 import { Status } from "../misc/Status";
@@ -68,7 +69,25 @@ export const ContactListContent = () => {
   );
 
   if (isPending) {
-    return <Skeleton className="w-full h-9" />;
+    return (
+      <div className="md:divide-y">
+        {[...Array(5)].map((_, index) => (
+          <div
+            key={index}
+            className="flex flex-row items-center gap-4 pl-2 pr-4 py-2"
+          >
+            <div className="px-4 py-3">
+              <Skeleton className="h-4 w-4 rounded-sm" />
+            </div>
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="flex-1 min-w-0 flex flex-col gap-2">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-3 w-64" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   }
 
   if (error) {
@@ -107,12 +126,18 @@ const ContactItemContent = ({
   const translate = useTranslate();
   const [locale = "en"] = useLocaleState();
   const { selectedIds } = useListContext<Contact>();
+  const isSelected = selectedIds.includes(contact.id);
   const lastActivity = contact.last_seen
     ? formatRelativeDate(contact.last_seen, locale)
     : null;
 
   return (
-    <div className="flex flex-row items-center pl-2 pr-4 py-2 hover:bg-muted transition-colors first:rounded-t-xl last:rounded-b-xl">
+    <div
+      className={cn(
+        "flex flex-row items-center pl-2 pr-4 py-2 transition-colors first:rounded-t-xl last:rounded-b-xl",
+        isSelected ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted",
+      )}
+    >
       <div
         className="px-4 py-3 flex items-center cursor-pointer"
         onClick={(e) => handleToggleItem(contact.id, e)}
@@ -124,7 +149,7 @@ const ContactItemContent = ({
       </div>
       <Link
         to={`/contacts/${contact.id}/show`}
-        className="flex-1 flex flex-row gap-4 items-center"
+        className="flex-1 flex flex-row gap-4 items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Avatar />
         <div className="flex-1 min-w-0">
@@ -252,7 +277,7 @@ const ContactItemContentMobile = ({ contact }: { contact: Contact }) => {
   return (
     <Link
       to={`/contacts/${contact.id}/show`}
-      className="flex flex-row gap-4 items-center py-2 hover:bg-muted transition-colors"
+      className="flex flex-row gap-4 items-center py-2 px-2 -mx-2 rounded-lg hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Avatar />
       <div className="flex flex-col grow justify-between">

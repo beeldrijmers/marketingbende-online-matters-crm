@@ -47,11 +47,11 @@ export const DealsPipeline = () => {
   return (
     <>
       <div className="flex items-center mb-4">
-        <div className="ml-8 mr-8 flex">
+        <div className="mr-3 flex">
           <DollarSign className="text-muted-foreground w-6 h-6" />
         </div>
         <Link
-          className="text-xl font-semibold text-muted-foreground hover:underline"
+          className="text-xl font-semibold text-foreground hover:underline"
           to="/deals"
         >
           {translate("crm.dashboard.deals_pipeline")}

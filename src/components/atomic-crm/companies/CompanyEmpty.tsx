@@ -18,22 +18,21 @@ export const CompanyEmpty = () => {
         alt={translate("resources.companies.empty.title", {
           _: "No companies found",
         })}
+        className="w-56 h-auto"
       />
-      <div className="flex flex-col gap-0 items-center">
-        <h6 className="text-lg font-bold">
+      <div className="flex flex-col gap-2 items-center">
+        <h6 className="text-lg font-semibold text-foreground">
           {translate("resources.companies.empty.title", {
             _: "No companies found",
           })}
         </h6>
-        <p className="text-sm text-center text-muted-foreground mb-4">
+        <p className="text-sm text-center text-muted-foreground">
           {translate("resources.companies.empty.description", {
             _: "It seems your company list is empty.",
           })}
         </p>
       </div>
-      <div className="flex space-x-2">
-        <CreateButton label="resources.companies.action.create" />
-      </div>
+      <CreateButton label="resources.companies.action.create" />
     </div>
   );
 };

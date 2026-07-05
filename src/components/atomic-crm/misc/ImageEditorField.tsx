@@ -63,7 +63,7 @@ const ImageEditorField = (props: ImageEditorFieldProps) => {
               className="cursor-pointer object-cover"
               style={{ width, height }}
               alt={translate("crm.image_editor.editable_content", {
-                _: "Editable content",
+                _: "Bewerkbare inhoud",
               })}
             />
           )}
@@ -157,19 +157,19 @@ const ImageEditorDialog = (props: ImageEditorDialogProps) => {
         <DialogHeader>
           <DialogTitle>
             {translate("crm.image_editor.title", {
-              _: "Upload and resize image",
+              _: "Afbeelding uploaden en formaat wijzigen",
             })}
           </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-2 justify-center">
           <div
-            className="flex flex-row justify-center bg-gray-50 cursor-pointer p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex flex-row justify-center bg-muted cursor-pointer p-4 border-2 border-dashed border-muted rounded-lg hover:border-sidebar-ring transition-colors"
             {...getRootProps()}
           >
             <input {...getInputProps()} />
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               {translate("crm.image_editor.drop_hint", {
-                _: "Drop a file to upload, or click to select it.",
+                _: "Sleep een bestand hierheen om te uploaden, of klik om het te selecteren.",
               })}
             </p>
           </div>

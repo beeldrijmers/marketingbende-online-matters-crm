@@ -50,10 +50,10 @@ export const LatestNotes = () => {
   return (
     <div>
       <div className="flex items-center mb-4">
-        <div className="ml-8 mr-8 flex">
+        <div className="mr-3 flex">
           <FileText className="text-muted-foreground w-6 h-6" />
         </div>
-        <h2 className="text-xl font-semibold text-muted-foreground">
+        <h2 className="text-xl font-semibold text-foreground">
           {translate("crm.dashboard.latest_notes")}
         </h2>
       </div>

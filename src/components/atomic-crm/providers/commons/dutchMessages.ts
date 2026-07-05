@@ -15,6 +15,7 @@ export const dutchMessages: TranslationMessages = {
       cancel: "Annuleren",
       clear_array_input: "Lijst wissen",
       clear_input_value: "Veld wissen",
+      clear_search: "Zoekopdracht wissen",
       clone: "Klonen",
       close_menu: "Menu sluiten",
       close: "Sluiten",
@@ -134,6 +135,9 @@ export const dutchMessages: TranslationMessages = {
       DESC: "aflopend",
     },
     navigation: {
+      breadcrumb_drawer_title: "Navigeer naar",
+      breadcrumb_drawer_instructions:
+        "Selecteer een pagina om naartoe te gaan.",
       clear_filters: "Filters wissen",
       no_results: "Geen resultaten gevonden",
       no_filtered_results: "Geen %{name} gevonden met de huidige filters.",
@@ -233,6 +237,11 @@ export const dutchMessages: TranslationMessages = {
         message: "Controleer uw data provider",
         title: "Geen data om te tonen",
       },
+    },
+  },
+  "ra-supabase": {
+    auth: {
+      forgot_password: "Wachtwoord vergeten?",
     },
   },
 } as const;

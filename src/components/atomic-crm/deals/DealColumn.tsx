@@ -1,5 +1,7 @@
 import { Droppable } from "@hello-pangea/dnd";
 
+import { cn } from "@/lib/utils";
+
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Deal } from "../types";
 import { findDealLabel } from "./dealUtils";
@@ -15,13 +17,13 @@ export const DealColumn = ({
   const totalAmount = deals.reduce((sum, deal) => sum + deal.amount, 0);
   const { dealStages, currency } = useConfigurationContext();
   return (
-    <div className="flex-1 pb-8">
-      <div className="flex flex-col items-center">
-        <h3 className="text-base font-medium">
+    <div className="flex flex-1 min-w-60 flex-col">
+      <div className="flex flex-col items-center gap-1.5">
+        <h3 className="rounded-full bg-muted px-3 py-1 text-sm font-semibold text-foreground">
           {findDealLabel(dealStages, stage)}
         </h3>
         <p className="text-sm text-muted-foreground">
-          {totalAmount.toLocaleString("en-US", {
+          {totalAmount.toLocaleString("nl-NL", {
             notation: "compact",
             style: "currency",
             currency,
@@ -35,9 +37,10 @@ export const DealColumn = ({
           <div
             ref={droppableProvided.innerRef}
             {...droppableProvided.droppableProps}
-            className={`flex flex-col rounded-2xl mt-2 gap-2 ${
-              snapshot.isDraggingOver ? "bg-muted" : ""
-            }`}
+            className={cn(
+              "flex flex-col rounded-2xl mt-2 gap-2 border-2 border-dashed border-transparent p-1 pb-3 transition-colors duration-200 overflow-y-auto max-h-[calc(100vh-17rem)] min-h-[16rem]",
+              snapshot.isDraggingOver && "border-primary/40 bg-muted",
+            )}
           >
             {deals.map((deal, index) => (
               <DealCard key={deal.id} deal={deal} index={index} />

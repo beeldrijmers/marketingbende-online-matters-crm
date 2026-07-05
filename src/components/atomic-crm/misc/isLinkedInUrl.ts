@@ -8,14 +8,14 @@ export const isLinkedinUrl = (url: string) => {
     if (!parsedUrl.href.match(LINKEDIN_URL_REGEX)) {
       return {
         message: "crm.validation.invalid_linkedin_url",
-        args: { _: "URL must be from linkedin.com" },
+        args: { _: "URL moet van linkedin.com zijn" },
       };
     }
   } catch {
     // If URL parsing fails, return false
     return {
       message: "crm.validation.invalid_url",
-      args: { _: "Must be a valid URL" },
+      args: { _: "Moet een geldige URL zijn" },
     };
   }
 };

@@ -18,7 +18,7 @@ export const ContactEmpty = () => {
     <>
       <ContactCreateSheet open={createOpen} onOpenChange={setCreateOpen} />
       <div
-        className="flex flex-col justify-center items-center gap-3"
+        className="flex flex-col justify-center items-center gap-6"
         style={{
           height: `calc(100dvh - ${appbarHeight}px)`,
         }}
@@ -28,7 +28,7 @@ export const ContactEmpty = () => {
           alt={translate("resources.contacts.empty.title")}
         />
         <div className="flex flex-col gap-0 items-center">
-          <h6 className="text-lg font-bold">
+          <h6 className="text-lg font-semibold">
             {translate("resources.contacts.empty.title")}
           </h6>
           <p className="text-sm text-muted-foreground text-center mb-4">

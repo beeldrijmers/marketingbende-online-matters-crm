@@ -58,7 +58,7 @@ export const SimpleListItem = <RecordType extends RaRecord = any>(
         <button
           onClick={handleClick}
           style={style}
-          className="w-full text-left hover:bg-muted focus: bg-muted focus:outline-none"
+          className="w-full text-left hover:bg-muted focus:bg-muted focus:outline-none"
         >
           {children}
         </button>

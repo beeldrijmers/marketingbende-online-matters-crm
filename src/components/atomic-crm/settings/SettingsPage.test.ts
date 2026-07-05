@@ -30,7 +30,7 @@ describe("validateItemsInUse", () => {
       { value: "opportunity", label: "Opportunity" },
     ];
     expect(validateItemsInUse(items, deals, "stage", "stages")).toBe(
-      "Cannot remove stages that are still used by deals: lost",
+      "Kan stages die nog worden gebruikt door deals niet verwijderen: lost",
     );
   });
 
@@ -49,7 +49,7 @@ describe("validateItemsInUse", () => {
       { value: "opportunity", label: "Opportunity" },
     ];
     expect(validateItemsInUse(items, deals, "stage", "stages")).toBe(
-      "Duplicate stages: won",
+      "Dubbele stages: won",
     );
   });
 
@@ -61,14 +61,14 @@ describe("validateItemsInUse", () => {
       { value: "opportunity", label: "Opportunity" },
     ];
     expect(validateItemsInUse(items, deals, "stage", "stages")).toBe(
-      "Duplicate stages: won",
+      "Dubbele stages: won",
     );
   });
 
-  it("returns 'Validating…' when deals have not loaded yet", () => {
+  it("returns 'Bezig met valideren…' when deals have not loaded yet", () => {
     const items = [{ value: "won", label: "Won" }];
     expect(validateItemsInUse(items, undefined, "stage", "stages")).toBe(
-      "Validating…",
+      "Bezig met valideren…",
     );
   });
 

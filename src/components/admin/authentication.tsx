@@ -72,7 +72,7 @@ export const AuthError = (props: AuthErrorProps) => {
       {...rest}
     >
       <h1 className="flex items-center text-3xl my-5 gap-3" role="alert">
-        <CircleAlert className="w-2em h-2em" />
+        <CircleAlert className="w-8 h-8" />
         <Translate i18nKey={title} />
       </h1>
       <p className="my-5">{translate(message, { _: message })}</p>

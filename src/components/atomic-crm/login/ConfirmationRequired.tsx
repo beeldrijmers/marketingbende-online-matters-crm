@@ -1,31 +1,31 @@
+import { MailCheck } from "lucide-react";
 import { Notification } from "@/components/admin/notification";
 import { useTranslate } from "ra-core";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 
 export const ConfirmationRequired = () => {
   const translate = useTranslate();
-  const { darkModeLogo: logo, title } = useConfigurationContext();
+  const { darkModeLogo, lightModeLogo, title } = useConfigurationContext();
 
   return (
-    <div className="h-screen p-8">
-      <div className="flex items-center gap-4">
-        <img
-          src={logo}
-          alt={title}
-          width={24}
-          className="filter brightness-0 invert"
-        />
+    <div className="min-h-screen flex flex-col p-8">
+      <div className="flex items-center gap-2">
+        <img className="[.light_&]:hidden h-6" src={darkModeLogo} alt={title} />
+        <img className="[.dark_&]:hidden h-6" src={lightModeLogo} alt={title} />
         <h1 className="text-xl font-semibold">{title}</h1>
       </div>
-      <div className="h-full text-center">
-        <div className="max-w-sm mx-auto h-full flex flex-col justify-center gap-4">
-          <h1 className="text-2xl font-bold mb-4">
+      <div className="flex-1 flex items-center justify-center">
+        <div className="max-w-sm w-full flex flex-col items-center gap-4 text-center">
+          <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <MailCheck className="size-6" />
+          </div>
+          <h2 className="text-2xl font-semibold tracking-tight">
             {translate("crm.auth.welcome_title", {
               _: "Welcome to %{title}",
               title,
             })}
-          </h1>
-          <p className="text-base mb-4">
+          </h2>
+          <p className="text-sm text-muted-foreground">
             {translate("crm.auth.confirmation_required", {
               _: "Please follow the link we just sent you by email to confirm your account.",
             })}

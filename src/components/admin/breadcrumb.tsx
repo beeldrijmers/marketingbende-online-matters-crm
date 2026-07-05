@@ -73,7 +73,7 @@ export const Breadcrumb = ({ children, ref }: BreadcrumbProps) => {
             <React.Fragment>
               <BreadcrumbItem>
                 <Drawer open={open} onOpenChange={setOpen}>
-                  <DrawerTrigger aria-label="Toggle Menu">
+                  <DrawerTrigger aria-label="Menu wisselen">
                     <BreadcrumbEllipsis className="h-4 w-4" />
                   </DrawerTrigger>
                   <DrawerContent>

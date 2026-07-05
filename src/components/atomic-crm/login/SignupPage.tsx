@@ -18,11 +18,8 @@ import { SSOAuthButton } from "./SSOAuthButton";
 export const SignupPage = () => {
   const queryClient = useQueryClient();
   const dataProvider = useDataProvider<CrmDataProvider>();
-  const {
-    darkModeLogo: logo,
-    title,
-    googleWorkplaceDomain,
-  } = useConfigurationContext();
+  const { darkModeLogo, lightModeLogo, title, googleWorkplaceDomain } =
+    useConfigurationContext();
   const navigate = useNavigate();
   const translate = useTranslate();
   const { data: isInitialized, isPending } = useQuery({
@@ -99,29 +96,27 @@ export const SignupPage = () => {
   };
 
   return (
-    <div className="h-screen p-8">
-      <div className="flex items-center gap-4">
-        <img
-          src={logo}
-          alt={title}
-          width={24}
-          className="filter brightness-0 invert"
-        />
+    <div className="min-h-screen flex flex-col p-8">
+      <div className="flex items-center gap-2">
+        <img className="[.light_&]:hidden h-6" src={darkModeLogo} alt={title} />
+        <img className="[.dark_&]:hidden h-6" src={lightModeLogo} alt={title} />
         <h1 className="text-xl font-semibold">{title}</h1>
       </div>
-      <div className="h-full">
-        <div className="max-w-sm mx-auto h-full flex flex-col justify-center gap-4">
-          <h1 className="text-2xl font-bold mb-4">
-            {translate("crm.auth.welcome_title", {
-              _: "Welcome to %{title}",
-              title,
-            })}
-          </h1>
-          <p className="text-base mb-4">
-            {translate("crm.auth.signup.create_first_user", {
-              _: "Create the first user account to complete the setup.",
-            })}
-          </p>
+      <div className="flex-1 flex items-center justify-center py-8">
+        <div className="w-full max-w-sm flex flex-col gap-6">
+          <div className="space-y-2 text-center">
+            <h2 className="text-2xl font-semibold tracking-tight">
+              {translate("crm.auth.welcome_title", {
+                _: "Welcome to %{title}",
+                title,
+              })}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {translate("crm.auth.signup.create_first_user", {
+                _: "Create the first user account to complete the setup.",
+              })}
+            </p>
+          </div>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="first_name">

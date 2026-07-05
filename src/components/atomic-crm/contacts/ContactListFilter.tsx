@@ -6,8 +6,12 @@ import {
   useListContext,
   useTranslate,
 } from "ra-core";
+import matches from "lodash/matches";
+import pickBy from "lodash/pickBy";
+import type { ReactElement } from "react";
 import { ToggleFilterButton } from "@/components/admin/toggle-filter-button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 import { FilterCategory } from "../filters/FilterCategory";
 import { Status } from "../misc/Status";
@@ -15,6 +19,35 @@ import { useConfigurationContext } from "../root/ConfigurationContext";
 import { ResponsiveFilters } from "../misc/ResponsiveFilters";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ActiveFilterButton } from "../misc/ActiveFilterButton";
+
+const isFilterValueActive = (
+  value: Record<string, unknown>,
+  filterValues: Record<string, unknown>,
+) => matches(pickBy(value, (val) => typeof val !== "undefined"))(filterValues);
+
+const ContactFilterToggleButton = ({
+  label,
+  value,
+  size,
+}: {
+  label: ReactElement | string;
+  value: Record<string, unknown>;
+  size?: "default" | "sm" | "lg" | "icon" | null;
+}) => {
+  const { filterValues } = useListContext();
+  const isActive = isFilterValueActive(value, filterValues || {});
+  return (
+    <ToggleFilterButton
+      className={cn(
+        "w-auto md:w-full justify-between h-10 md:h-8",
+        isActive && "bg-primary/10 text-primary",
+      )}
+      label={label}
+      value={value}
+      size={size}
+    />
+  );
+};
 
 export const ContactListFilter = () => {
   const { noteStatuses } = useConfigurationContext();
@@ -36,8 +69,7 @@ export const ContactListFilter = () => {
         label="resources.contacts.fields.last_seen"
         icon={<Clock />}
       >
-        <ToggleFilterButton
-          className="w-auto md:w-full justify-between h-10 md:h-8"
+        <ContactFilterToggleButton
           label="resources.contacts.filters.today"
           value={{
             "last_seen@gte": endOfYesterday().toISOString(),
@@ -45,8 +77,7 @@ export const ContactListFilter = () => {
           }}
           size={isMobile ? "lg" : undefined}
         />
-        <ToggleFilterButton
-          className="w-auto md:w-full justify-between h-10 md:h-8"
+        <ContactFilterToggleButton
           label="resources.contacts.filters.this_week"
           value={{
             "last_seen@gte": startOfWeek(new Date()).toISOString(),
@@ -54,8 +85,7 @@ export const ContactListFilter = () => {
           }}
           size={isMobile ? "lg" : undefined}
         />
-        <ToggleFilterButton
-          className="w-auto md:w-full justify-between h-10 md:h-8"
+        <ContactFilterToggleButton
           label="resources.contacts.filters.before_this_week"
           value={{
             "last_seen@gte": undefined,
@@ -63,8 +93,7 @@ export const ContactListFilter = () => {
           }}
           size={isMobile ? "lg" : undefined}
         />
-        <ToggleFilterButton
-          className="w-auto md:w-full justify-between h-10 md:h-8"
+        <ContactFilterToggleButton
           label="resources.contacts.filters.before_this_month"
           value={{
             "last_seen@gte": undefined,
@@ -72,8 +101,7 @@ export const ContactListFilter = () => {
           }}
           size={isMobile ? "lg" : undefined}
         />
-        <ToggleFilterButton
-          className="w-auto md:w-full justify-between h-10 md:h-8"
+        <ContactFilterToggleButton
           label="resources.contacts.filters.before_last_month"
           value={{
             "last_seen@gte": undefined,
@@ -91,9 +119,8 @@ export const ContactListFilter = () => {
         icon={<TrendingUp />}
       >
         {noteStatuses.map((status) => (
-          <ToggleFilterButton
+          <ContactFilterToggleButton
             key={status.value}
-            className="w-auto md:w-full justify-between h-10 md:h-8"
             label={
               <span>
                 {status.label} <Status status={status.value} />
@@ -108,8 +135,7 @@ export const ContactListFilter = () => {
       <FilterCategory label="resources.contacts.filters.tags" icon={<Tag />}>
         {data &&
           data.map((record) => (
-            <ToggleFilterButton
-              className="w-auto md:w-full justify-between h-10 md:h-8"
+            <ContactFilterToggleButton
               key={record.id}
               label={
                 <Badge
@@ -132,8 +158,7 @@ export const ContactListFilter = () => {
         icon={<CheckSquare />}
         label="resources.contacts.filters.tasks"
       >
-        <ToggleFilterButton
-          className="w-full justify-between h-10 md:h-8"
+        <ContactFilterToggleButton
           label="resources.tasks.filters.with_pending"
           value={{ "nb_tasks@gt": 0 }}
           size={isMobile ? "lg" : undefined}
@@ -144,8 +169,7 @@ export const ContactListFilter = () => {
         icon={<Users />}
         label="resources.contacts.fields.sales_id"
       >
-        <ToggleFilterButton
-          className="w-full justify-between h-10 md:h-8"
+        <ContactFilterToggleButton
           label="crm.common.me"
           value={{ sales_id: identity?.id }}
           size={isMobile ? "lg" : undefined}
@@ -174,7 +198,7 @@ export const ContactListFilterSummary = () => {
   return (
     <div className="flex flex-wrap items-start mb-4 gap-1">
       <ActiveFilterButton
-        className="w-auto justify-between h-8"
+        className="w-auto justify-between h-8 bg-primary/10 text-primary"
         label="resources.contacts.filters.today"
         value={{
           "last_seen@gte": endOfYesterday().toISOString(),
@@ -182,7 +206,7 @@ export const ContactListFilterSummary = () => {
         }}
       />
       <ActiveFilterButton
-        className="w-auto justify-between h-8"
+        className="w-auto justify-between h-8 bg-primary/10 text-primary"
         label="resources.contacts.filters.this_week"
         value={{
           "last_seen@gte": startOfWeek(new Date()).toISOString(),
@@ -190,7 +214,7 @@ export const ContactListFilterSummary = () => {
         }}
       />
       <ActiveFilterButton
-        className="w-auto justify-between h-8"
+        className="w-auto justify-between h-8 bg-primary/10 text-primary"
         label="resources.contacts.filters.before_this_week"
         value={{
           "last_seen@gte": undefined,
@@ -198,7 +222,7 @@ export const ContactListFilterSummary = () => {
         }}
       />
       <ActiveFilterButton
-        className="w-auto justify-between h-8"
+        className="w-auto justify-between h-8 bg-primary/10 text-primary"
         label="resources.contacts.filters.before_this_month"
         value={{
           "last_seen@gte": undefined,
@@ -206,7 +230,7 @@ export const ContactListFilterSummary = () => {
         }}
       />
       <ActiveFilterButton
-        className="w-auto justify-between h-8"
+        className="w-auto justify-between h-8 bg-primary/10 text-primary"
         label="resources.contacts.filters.before_last_month"
         value={{
           "last_seen@gte": undefined,
@@ -217,7 +241,7 @@ export const ContactListFilterSummary = () => {
       {noteStatuses.map((status) => (
         <ActiveFilterButton
           key={status.value}
-          className="w-auto justify-between h-8"
+          className="w-auto justify-between h-8 bg-primary/10 text-primary"
           label={
             <span>
               {status.label} <Status status={status.value} />
@@ -230,7 +254,7 @@ export const ContactListFilterSummary = () => {
       {data &&
         data.map((record) => (
           <ActiveFilterButton
-            className="w-auto justify-between h-8"
+            className="w-auto justify-between h-8 bg-primary/10 text-primary"
             key={record.id}
             label={
               <Badge
@@ -248,13 +272,13 @@ export const ContactListFilterSummary = () => {
         ))}
 
       <ActiveFilterButton
-        className="w-auto justify-between h-8"
+        className="w-auto justify-between h-8 bg-primary/10 text-primary"
         label="resources.tasks.filters.with_pending"
         value={{ "nb_tasks@gt": 0 }}
       />
 
       <ActiveFilterButton
-        className="w-auto justify-between h-8"
+        className="w-auto justify-between h-8 bg-primary/10 text-primary"
         label="resources.contacts.filters.managed_by_me"
         value={{ sales_id: identity?.id }}
       />

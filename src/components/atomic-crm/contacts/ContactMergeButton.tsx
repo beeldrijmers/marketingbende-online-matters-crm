@@ -228,34 +228,42 @@ const ContactMergeDialog = ({ open, onClose }: ContactMergeDialogProps) => {
                 <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                   {notesCount != null && notesCount > 0 && (
                     <li>
-                      • {notesCount} note
-                      {notesCount !== 1 ? "s" : ""} will be reassigned
+                      • {notesCount}{" "}
+                      {notesCount !== 1
+                        ? "notities worden opnieuw toegewezen"
+                        : "notitie wordt opnieuw toegewezen"}
                     </li>
                   )}
                   {tasksCount != null && tasksCount > 0 && (
                     <li>
-                      • {tasksCount} task
-                      {tasksCount !== 1 ? "s" : ""} will be reassigned
+                      • {tasksCount}{" "}
+                      {tasksCount !== 1
+                        ? "taken worden opnieuw toegewezen"
+                        : "taak wordt opnieuw toegewezen"}
                     </li>
                   )}
                   {dealsCount != null && dealsCount > 0 && (
                     <li>
-                      • {dealsCount} deal
-                      {dealsCount !== 1 ? "s" : ""} will be updated
+                      • {dealsCount}{" "}
+                      {dealsCount !== 1
+                        ? "deals worden bijgewerkt"
+                        : "deal wordt bijgewerkt"}
                     </li>
                   )}
                   {loserContact.email_jsonb?.length > 0 && (
                     <li>
-                      • {loserContact.email_jsonb.length} email address
-                      {loserContact.email_jsonb.length !== 1 ? "es" : ""} will
-                      be added
+                      • {loserContact.email_jsonb.length}{" "}
+                      {loserContact.email_jsonb.length !== 1
+                        ? "e-mailadressen worden toegevoegd"
+                        : "e-mailadres wordt toegevoegd"}
                     </li>
                   )}
                   {loserContact.phone_jsonb?.length > 0 && (
                     <li>
-                      • {loserContact.phone_jsonb.length} phone number
-                      {loserContact.phone_jsonb.length !== 1 ? "s" : ""} will be
-                      added
+                      • {loserContact.phone_jsonb.length}{" "}
+                      {loserContact.phone_jsonb.length !== 1
+                        ? "telefoonnummers worden toegevoegd"
+                        : "telefoonnummer wordt toegevoegd"}
                     </li>
                   )}
                   {!notesCount &&

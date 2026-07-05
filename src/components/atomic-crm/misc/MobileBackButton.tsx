@@ -27,7 +27,7 @@ export const MobileBackButton = (props: { resource?: string; to?: string }) => {
       }}
     >
       <ChevronLeft className="size-6" />
-      <span className="sr-only">Back{to ? "" : " to list"}</span>
+      <span className="sr-only">Terug{to ? "" : " naar lijst"}</span>
     </Button>
   );
 };

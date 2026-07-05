@@ -79,11 +79,11 @@ export const validateItemsInUse = (
     const duplicatesList = [...duplicates];
     return (
       messages?.duplicate?.(displayName, duplicatesList) ??
-      `Duplicate ${displayName}: ${duplicatesList.join(", ")}`
+      `Dubbele ${displayName}: ${duplicatesList.join(", ")}`
     );
   }
   // Check that no in-use value was removed (skip if deals haven't loaded)
-  if (!deals) return messages?.validating ?? "Validating…";
+  if (!deals) return messages?.validating ?? "Bezig met valideren…";
   const values = new Set(slugs);
   const inUse = [
     ...new Set(
@@ -97,7 +97,7 @@ export const validateItemsInUse = (
   if (inUse.length > 0) {
     return (
       messages?.inUse?.(displayName, inUse) ??
-      `Cannot remove ${displayName} that are still used by deals: ${inUse.join(", ")}`
+      `Kan ${displayName} die nog worden gebruikt door deals niet verwijderen: ${inUse.join(", ")}`
     );
   }
   return undefined;
@@ -112,7 +112,7 @@ const getCurrencyChoices = () => {
   );
   return Intl.supportedValuesOf("currency").map((code) => ({
     id: code,
-    name: `${code} – ${displayNames.of(code)}`,
+    name: `${code} (${displayNames.of(code)})`,
   }));
 };
 

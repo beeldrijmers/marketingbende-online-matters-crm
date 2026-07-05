@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { nl } from "date-fns/locale";
 import type { Identifier } from "ra-core";
 
 import type { DealStage } from "../types";
@@ -49,7 +50,7 @@ export function formatISODateString(dateString: string) {
   const [year, month, day] = dateString.split("-").map(Number);
   const date = new Date(year, month - 1, day);
 
-  return format(date, "PP");
+  return format(date, "PP", { locale: nl });
 }
 
 export function buildDealInboundEmail(

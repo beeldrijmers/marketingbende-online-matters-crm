@@ -3,6 +3,7 @@ import { format, startOfMonth } from "date-fns";
 import { TrendingUp } from "lucide-react";
 import { useGetList, useTranslate } from "ra-core";
 import { memo, useMemo } from "react";
+import { Card } from "@/components/ui/card";
 
 import { findDealLabel } from "../deals/dealUtils";
 import { useConfigurationContext } from "../root/ConfigurationContext";
@@ -27,7 +28,7 @@ export const DealsChart = memo(() => {
   const acceptedLanguages = navigator
     ? navigator.languages || [navigator.language]
     : [DEFAULT_LOCALE];
-  const wonLabel = findDealLabel(dealStages, "won") ?? "Won";
+  const wonLabel = findDealLabel(dealStages, "won") ?? "Gewonnen";
   const lostLabel = findDealLabel(dealStages, "lost");
 
   const { data, isPending } = useGetList<Deal>("deals", {
@@ -89,121 +90,126 @@ export const DealsChart = memo(() => {
     { min: 0, max: 0 },
   );
   return (
-    <div className="flex flex-col">
-      <div className="flex items-center mb-4">
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center">
         <div className="mr-3 flex">
           <TrendingUp className="text-muted-foreground w-6 h-6" />
         </div>
-        <h2 className="text-xl font-semibold text-muted-foreground">
+        <h2 className="text-xl font-semibold text-foreground">
           {translate("crm.dashboard.deals_chart")}
         </h2>
       </div>
-      <div className="h-[400px]">
-        <ResponsiveBar
-          data={months}
-          indexBy="date"
-          keys={["won", "pending", "lost"]}
-          colors={["#61cdbb", "#97e3d5", "#e25c3b"]}
-          margin={{ top: 30, right: 50, bottom: 30, left: 0 }}
-          padding={0.3}
-          valueScale={{
-            type: "linear",
-            min: range.min * 1.2,
-            max: range.max * 1.2,
-          }}
-          indexScale={{ type: "band", round: true }}
-          enableGridX={true}
-          enableGridY={false}
-          enableLabel={false}
-          tooltip={({ value, indexValue }) => (
-            <div className="p-2 bg-secondary rounded shadow inline-flex items-center gap-1 text-secondary-foreground">
-              <strong>{indexValue}: </strong>&nbsp;{value > 0 ? "+" : ""}
-              {value.toLocaleString(acceptedLanguages.at(0) ?? DEFAULT_LOCALE, {
-                style: "currency",
-                currency,
-              })}
-            </div>
-          )}
-          axisTop={{
-            tickSize: 0,
-            tickPadding: 12,
-            style: {
-              ticks: {
-                text: {
-                  fill: "var(--color-muted-foreground)",
+      <Card className="p-6">
+        <div className="h-[400px]">
+          <ResponsiveBar
+            data={months}
+            indexBy="date"
+            keys={["won", "pending", "lost"]}
+            colors={["#61cdbb", "#97e3d5", "#e25c3b"]}
+            margin={{ top: 30, right: 50, bottom: 30, left: 0 }}
+            padding={0.3}
+            valueScale={{
+              type: "linear",
+              min: range.min * 1.2,
+              max: range.max * 1.2,
+            }}
+            indexScale={{ type: "band", round: true }}
+            enableGridX={true}
+            enableGridY={false}
+            enableLabel={false}
+            tooltip={({ value, indexValue }) => (
+              <div className="p-2 bg-secondary rounded shadow inline-flex items-center gap-1 text-secondary-foreground">
+                <strong>{indexValue}: </strong>&nbsp;{value > 0 ? "+" : ""}
+                {value.toLocaleString(
+                  acceptedLanguages.at(0) ?? DEFAULT_LOCALE,
+                  {
+                    style: "currency",
+                    currency,
+                  },
+                )}
+              </div>
+            )}
+            axisTop={{
+              tickSize: 0,
+              tickPadding: 12,
+              style: {
+                ticks: {
+                  text: {
+                    fill: "var(--color-muted-foreground)",
+                  },
+                },
+                legend: {
+                  text: {
+                    fill: "var(--color-muted-foreground)",
+                  },
                 },
               },
-              legend: {
-                text: {
-                  fill: "var(--color-muted-foreground)",
+            }}
+            axisBottom={{
+              legendPosition: "middle",
+              legendOffset: 50,
+              tickSize: 0,
+              tickPadding: 12,
+              style: {
+                ticks: {
+                  text: {
+                    fill: "var(--color-muted-foreground)",
+                  },
+                },
+                legend: {
+                  text: {
+                    fill: "var(--color-muted-foreground)",
+                  },
                 },
               },
-            },
-          }}
-          axisBottom={{
-            legendPosition: "middle",
-            legendOffset: 50,
-            tickSize: 0,
-            tickPadding: 12,
-            style: {
-              ticks: {
-                text: {
-                  fill: "var(--color-muted-foreground)",
+            }}
+            axisLeft={null}
+            axisRight={{
+              format: (v: any) => `${Math.abs(v / 1000)}k`,
+              tickValues: 8,
+              style: {
+                ticks: {
+                  text: {
+                    fill: "var(--color-muted-foreground)",
+                  },
+                },
+                legend: {
+                  text: {
+                    fill: "var(--color-muted-foreground)",
+                  },
                 },
               },
-              legend: {
-                text: {
-                  fill: "var(--color-muted-foreground)",
+            }}
+            markers={
+              [
+                {
+                  axis: "y",
+                  value: 0,
+                  lineStyle: { strokeOpacity: 0 },
+                  textStyle: { fill: "#2ebca6" },
+                  legend: wonLabel,
+                  legendPosition: "top-left",
+                  legendOrientation: "vertical",
                 },
-              },
-            },
-          }}
-          axisLeft={null}
-          axisRight={{
-            format: (v: any) => `${Math.abs(v / 1000)}k`,
-            tickValues: 8,
-            style: {
-              ticks: {
-                text: {
-                  fill: "var(--color-muted-foreground)",
-                },
-              },
-              legend: {
-                text: {
-                  fill: "var(--color-muted-foreground)",
-                },
-              },
-            },
-          }}
-          markers={
-            [
-              {
-                axis: "y",
-                value: 0,
-                lineStyle: { strokeOpacity: 0 },
-                textStyle: { fill: "#2ebca6" },
-                legend: wonLabel,
-                legendPosition: "top-left",
-                legendOrientation: "vertical",
-              },
-              lostLabel
-                ? {
-                    axis: "y",
-                    value: 0,
-                    lineStyle: {
-                      stroke: "#f47560",
-                      strokeWidth: 1,
-                    },
-                    textStyle: { fill: "#e25c3b" },
-                    legend: lostLabel,
-                    legendPosition: "bottom-left",
-                    legendOrientation: "vertical",
-                  }
-                : null,
-            ].filter(Boolean) as any
-          }
-        />
-      </div>
+                lostLabel
+                  ? {
+                      axis: "y",
+                      value: 0,
+                      lineStyle: {
+                        stroke: "#f47560",
+                        strokeWidth: 1,
+                      },
+                      textStyle: { fill: "#e25c3b" },
+                      legend: lostLabel,
+                      legendPosition: "bottom-left",
+                      legendOrientation: "vertical",
+                    }
+                  : null,
+              ].filter(Boolean) as any
+            }
+          />
+        </div>
+      </Card>
     </div>
   );
 });

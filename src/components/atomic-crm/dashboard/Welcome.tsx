@@ -2,39 +2,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Welcome = () => (
   <Card>
-    <CardHeader className="px-4">
-      <CardTitle>Your CRM Starter Kit</CardTitle>
+    <CardHeader>
+      <CardTitle>Welkom bij het CRM</CardTitle>
     </CardHeader>
-    <CardContent className="px-4">
-      <p className="text-sm mb-4">
-        <a
-          href="https://marmelab.com/atomic-crm"
-          className="underline hover:no-underline"
-        >
-          Atomic CRM
-        </a>{" "}
-        is a template designed to help you quickly build your own CRM.
+    <CardContent>
+      <p className="text-sm text-muted-foreground mb-4">
+        Dit is het interne CRM van Marketingbende x Online Matters. Hier beheer
+        je contacten, bedrijven, deals en taken op een centrale plek.
       </p>
-      <p className="text-sm mb-4">
-        This demo runs on a mock API, so you can explore and modify the data. It
-        resets on reload. The full version uses Supabase for the backend.
-      </p>
-      <p className="text-sm">
-        Powered by{" "}
-        <a
-          href="https://marmelab.com/shadcn-admin-kit"
-          className="underline hover:no-underline"
-        >
-          shadcn-admin-kit
-        </a>
-        , Atomic CRM is fully open-source. You can find the code at{" "}
-        <a
-          href="https://github.com/marmelab/atomic-crm"
-          className="underline hover:no-underline"
-        >
-          marmelab/atomic-crm
-        </a>
-        .
+      <p className="text-sm text-muted-foreground">
+        Je bekijkt op dit moment demogegevens. Deze worden bij het herladen van
+        de pagina teruggezet naar de uitgangssituatie; in de productieomgeving
+        werkt het CRM met een Supabase-backend.
       </p>
     </CardContent>
   </Card>

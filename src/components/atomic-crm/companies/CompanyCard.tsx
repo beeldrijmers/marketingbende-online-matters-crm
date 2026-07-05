@@ -31,9 +31,9 @@ export const CompanyCard = (props: { record?: Company }) => {
         id: record.id,
         type: "show",
       })}
-      className="no-underline"
+      className="no-underline rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <Card className="h-[200px] flex flex-col justify-between p-4 hover:bg-muted">
+      <Card className="h-[200px] flex flex-col justify-between p-4 transition-shadow duration-200 hover:bg-muted/60 hover:shadow-md">
         <div className="flex flex-col items-center gap-1">
           <CompanyAvatar />
           <div className="text-center mt-1">

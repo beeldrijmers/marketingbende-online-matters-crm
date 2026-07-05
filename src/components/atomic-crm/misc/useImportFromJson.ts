@@ -116,7 +116,9 @@ export const useImportFromJson = (): [
 
   const importFile = useEvent(async (file: File) => {
     if (currentSale == null) {
-      throw new Error("Importing data requires to be authenticated");
+      throw new Error(
+        "Voor het importeren van gegevens is authenticatie vereist",
+      );
     }
     const startedAt = new Date();
 
@@ -144,7 +146,9 @@ export const useImportFromJson = (): [
     ) => {
       try {
         if (!isSale(dataToImport)) {
-          throw new Error(`Error while importing sale: Invalid data`);
+          throw new Error(
+            `Fout bij het importeren van gebruiker: ongeldige gegevens`,
+          );
         }
         const existingRecordResponse = await dataProvider.getList("sales", {
           filter: { email: dataToImport.email.trim() },
@@ -192,7 +196,7 @@ export const useImportFromJson = (): [
           ...old,
           status: "error",
           error: new Error(
-            `Error while importing sale: ${(err as Error).message}`,
+            `Fout bij het importeren van gebruiker: ${(err as Error).message}`,
           ),
           failedImports: {
             ...old.failedImports,
@@ -218,7 +222,7 @@ export const useImportFromJson = (): [
             ...old.failedImports,
             companies: [
               ...old.failedImports.companies,
-              { ...(dataToImport as any), error: "Invalid format" },
+              { ...(dataToImport as any), error: "Ongeldig formaat" },
             ],
           },
         }));
@@ -238,7 +242,7 @@ export const useImportFromJson = (): [
                 ...old.failedImports.companies,
                 {
                   ...(dataToImport as any),
-                  error: `Invalid sector "${sector}". Must be one of: ${companySectors.map((s) => s.value).join(", ")}`,
+                  error: `Ongeldige sector "${sector}". Moet een van de volgende zijn: ${companySectors.map((s) => s.value).join(", ")}`,
                 },
               ],
             },
@@ -314,7 +318,7 @@ export const useImportFromJson = (): [
             ...old.failedImports,
             contacts: [
               ...old.failedImports.contacts,
-              { ...(dataToImport as any), error: "Invalid format" },
+              { ...(dataToImport as any), error: "Ongeldig formaat" },
             ],
           },
         }));
@@ -335,7 +339,7 @@ export const useImportFromJson = (): [
                 ...old.failedImports.contacts,
                 {
                   ...(dataToImport as any),
-                  error: `Invalid gender "${gender}". Must be one of: ${contactGender.map((g) => g.value).join(", ")}`,
+                  error: `Ongeldig geslacht "${gender}". Moet een van de volgende zijn: ${contactGender.map((g) => g.value).join(", ")}`,
                 },
               ],
             },
@@ -427,7 +431,7 @@ export const useImportFromJson = (): [
             ...old.failedImports,
             notes: [
               ...old.failedImports.notes,
-              { ...(dataToImport as any), error: "Invalid format" },
+              { ...(dataToImport as any), error: "Ongeldig formaat" },
             ],
           },
           error: null,
@@ -450,7 +454,7 @@ export const useImportFromJson = (): [
                 ...old.failedImports.notes,
                 {
                   ...(dataToImport as any),
-                  error: `Invalid contact_id ${dataToImport.contact_id}`,
+                  error: `Ongeldig contact_id ${dataToImport.contact_id}`,
                 },
               ],
             },
@@ -523,7 +527,7 @@ export const useImportFromJson = (): [
             ...old.failedImports,
             tasks: [
               ...old.failedImports.tasks,
-              { ...(dataToImport as any), error: "Invalid format" },
+              { ...(dataToImport as any), error: "Ongeldig formaat" },
             ],
           },
           error: null,
@@ -546,7 +550,7 @@ export const useImportFromJson = (): [
                 ...old.failedImports.tasks,
                 {
                   ...(dataToImport as any),
-                  error: `Invalid contact_id ${dataToImport.contact_id}`,
+                  error: `Ongeldig contact_id ${dataToImport.contact_id}`,
                 },
               ],
             },

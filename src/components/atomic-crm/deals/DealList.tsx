@@ -10,6 +10,7 @@ import { ReferenceInput } from "@/components/admin/reference-input";
 import { FilterButton } from "@/components/admin/filter-form";
 import { SearchInput } from "@/components/admin/search-input";
 import { SelectInput } from "@/components/admin/select-input";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import { TopToolbar } from "../layout/TopToolbar";
@@ -73,7 +74,7 @@ const DealLayout = () => {
   const { data, isPending, filterValues } = useListContext();
   const hasFilters = filterValues && Object.keys(filterValues).length > 0;
 
-  if (isPending) return null;
+  if (isPending) return <DealListSkeleton />;
   if (!data?.length && !hasFilters)
     return (
       <>
@@ -91,6 +92,27 @@ const DealLayout = () => {
       <DealCreate open={!!matchCreate} />
       <DealEdit open={!!matchEdit && !matchCreate} id={matchEdit?.params.id} />
       <DealShow open={!!matchShow} id={matchShow?.params.id} />
+    </div>
+  );
+};
+
+const DealListSkeleton = () => {
+  const { dealStages } = useConfigurationContext();
+  return (
+    <div className="flex gap-4 overflow-x-auto pb-2">
+      {dealStages.map((stage) => (
+        <div key={stage.value} className="flex-1 min-w-60 pb-8">
+          <div className="flex flex-col items-center gap-1.5">
+            <Skeleton className="h-6 w-24 rounded-full" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+          <div className="flex flex-col gap-2 mt-2">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Skeleton key={index} className="h-20 w-full rounded-xl" />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 };

@@ -7,14 +7,20 @@ import { ErrorBoundary } from "react-error-boundary";
 import { useConfigurationLoader } from "../root/useConfigurationLoader";
 import { MobileNavigation } from "./MobileNavigation";
 
+const MobilePageLoadingSkeleton = () => (
+  <div className="pt-18 pb-20 px-4 min-h-screen flex flex-col gap-4">
+    <Skeleton className="h-8 w-2/3" />
+    <Skeleton className="h-32 w-full" />
+    <Skeleton className="h-32 w-full" />
+  </div>
+);
+
 export const MobileLayout = ({ children }: { children: ReactNode }) => {
   useConfigurationLoader();
   return (
     <>
       <ErrorBoundary FallbackComponent={Error}>
-        <Suspense fallback={<Skeleton className="h-12 w-12 rounded-full" />}>
-          {children}
-        </Suspense>
+        <Suspense fallback={<MobilePageLoadingSkeleton />}>{children}</Suspense>
       </ErrorBoundary>
       <MobileNavigation />
       <Notification mobileOffset={{ bottom: "72px" }} />

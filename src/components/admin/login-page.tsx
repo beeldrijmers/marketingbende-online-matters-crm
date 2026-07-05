@@ -65,17 +65,19 @@ export const LoginPage = (props: { redirectTo?: string }) => {
         <div className="flex flex-col justify-center w-full p-4 lg:p-8">
           <div className="w-full space-y-6 lg:mx-auto lg:w-[350px]">
             <div className="text-center">
-              <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Inloggen
+              </h1>
             </div>
             <Form className="space-y-8" onSubmit={handleSubmit}>
               <TextInput
-                label="Email"
+                label="E-mail"
                 source="email"
                 type="email"
                 validate={required()}
               />
               <TextInput
-                label="Password"
+                label="Wachtwoord"
                 source="password"
                 type="password"
                 validate={required()}
@@ -85,7 +87,7 @@ export const LoginPage = (props: { redirectTo?: string }) => {
                 className="w-full cursor-pointer"
                 disabled={loading}
               >
-                Sign in
+                Inloggen
               </Button>
             </Form>
 
@@ -93,7 +95,7 @@ export const LoginPage = (props: { redirectTo?: string }) => {
               to={"/forgot-password"}
               className="block text-sm text-center hover:underline"
             >
-              Forgot your password?
+              Wachtwoord vergeten?
             </Link>
           </div>
         </div>
