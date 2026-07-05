@@ -59,7 +59,7 @@ export const DealCardContent = ({
         >
           <CardContent className="px-3 flex flex-col gap-2">
             <div className="flex-1 flex">
-              <p className="flex-1 text-sm font-medium mb-2">
+              <p className="flex-1 text-sm font-medium">
                 <ReferenceField
                   source="company_id"
                   reference="companies"

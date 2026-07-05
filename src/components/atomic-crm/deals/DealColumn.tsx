@@ -38,7 +38,7 @@ export const DealColumn = ({
             ref={droppableProvided.innerRef}
             {...droppableProvided.droppableProps}
             className={cn(
-              "flex flex-col rounded-2xl mt-2 gap-2 border-2 border-dashed border-transparent p-1 pb-3 transition-colors duration-200 overflow-y-auto max-h-[calc(100vh-17rem)] min-h-[16rem]",
+              "flex flex-col rounded-2xl mt-2 gap-2 border-2 border-dashed border-transparent p-1 pb-3 transition-colors duration-200 overflow-y-auto max-h-[calc(100dvh-17rem)] min-h-[16rem]",
               snapshot.isDraggingOver && "border-primary/40 bg-muted",
             )}
           >

@@ -58,7 +58,10 @@ export const DealEmpty = ({ children }: { children?: ReactNode }) => {
           <p className="max-w-sm text-center text-sm text-muted-foreground">
             {translate("resources.contacts.empty.description")}
             <br />
-            <Link to="/contacts/create" className="hover:underline">
+            <Link
+              to="/contacts/create"
+              className="text-primary underline underline-offset-2 hover:no-underline"
+            >
               {translate("resources.contacts.action.add_first")}
             </Link>{" "}
             {translate("resources.deals.empty.before_create")}

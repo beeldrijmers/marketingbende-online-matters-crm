@@ -30,8 +30,8 @@ const Header = () => {
     <>
       <nav className="grow">
         <header className="bg-secondary">
-          <div className="px-4">
-            <div className="flex justify-between items-center flex-1">
+          <div className="max-w-screen-xl mx-auto px-4">
+            <div className="flex justify-between items-center gap-4 lg:grid lg:grid-cols-[1fr_auto_1fr]">
               <Link
                 to="/"
                 className="flex items-center gap-2 text-secondary-foreground no-underline"
@@ -71,7 +71,7 @@ const Header = () => {
                   />
                 </nav>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center lg:justify-end">
                 <ThemeModeToggle />
                 <RefreshButton />
                 <UserMenu>

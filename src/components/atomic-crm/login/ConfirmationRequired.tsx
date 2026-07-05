@@ -8,7 +8,7 @@ export const ConfirmationRequired = () => {
   const { darkModeLogo, lightModeLogo, title } = useConfigurationContext();
 
   return (
-    <div className="min-h-screen flex flex-col p-8">
+    <div className="min-h-screen flex flex-col p-4 lg:p-8">
       <div className="flex items-center gap-2">
         <img className="[.light_&]:hidden h-6" src={darkModeLogo} alt={title} />
         <img className="[.dark_&]:hidden h-6" src={lightModeLogo} alt={title} />

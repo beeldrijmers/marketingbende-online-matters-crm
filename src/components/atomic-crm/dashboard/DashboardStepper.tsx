@@ -65,7 +65,7 @@ export const DashboardStepper = ({
             </div>
             <div className="flex flex-col gap-12">
               <div className="flex gap-8 items-center">
-                <CheckCircle className="text-green-600 w-5 h-5 shrink-0" />
+                <CheckCircle className="text-green-600 dark:text-green-500 w-5 h-5 shrink-0" />
                 <h4 className="font-bold">
                   {translate("crm.dashboard.stepper.install", {
                     _: "Install %{title}",
@@ -75,7 +75,7 @@ export const DashboardStepper = ({
               </div>
               <div className="flex gap-8 items-start">
                 {step > 1 ? (
-                  <CheckCircle className="text-green-600 w-5 h-5 mt-1 shrink-0" />
+                  <CheckCircle className="text-green-600 dark:text-green-500 w-5 h-5 mt-1 shrink-0" />
                 ) : (
                   <Circle className="text-muted-foreground w-5 h-5 mt-1 shrink-0" />
                 )}

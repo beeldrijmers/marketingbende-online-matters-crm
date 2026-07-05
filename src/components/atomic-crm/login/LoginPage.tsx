@@ -101,7 +101,7 @@ export const LoginPage = (props: { redirectTo?: string }) => {
           </div>
         </div>
         <div className="flex flex-col justify-center w-full p-4 lg:p-8">
-          <div className="w-full space-y-6 lg:mx-auto lg:w-[350px]">
+          <div className="w-full space-y-6 lg:mx-auto lg:max-w-sm">
             <div className="text-center">
               <h1 className="text-2xl font-semibold tracking-tight">
                 {translate("ra.auth.sign_in")}

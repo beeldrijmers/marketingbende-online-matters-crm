@@ -169,7 +169,7 @@ const CompanyShowContent = () => {
                   </div>
                 )}
               </TabsContent>
-              <TabsContent value="deals">
+              <TabsContent value="deals" className="pt-2">
                 {record.nb_deals ? (
                   <ReferenceManyField
                     reference="deals"
@@ -273,7 +273,7 @@ const DealsIterator = () => {
           <div key={deal.id} className="p-0 text-sm">
             <RouterLink
               to={`/deals/${deal.id}/show`}
-              className="flex items-center justify-between hover:bg-muted py-2 px-4 transition-colors"
+              className="flex items-center justify-between hover:bg-muted py-2 transition-colors"
             >
               <div className="flex-1 min-w-0">
                 <div className="font-medium">{deal.name}</div>

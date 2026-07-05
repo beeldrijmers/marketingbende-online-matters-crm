@@ -8,7 +8,7 @@ export const CompanyEmpty = () => {
   const translate = useTranslate();
   return (
     <div
-      className="flex flex-col justify-center items-center gap-6"
+      className="flex flex-col justify-center items-center gap-6 px-4"
       style={{
         height: `calc(100dvh - ${appbarHeight}px)`,
       }}
@@ -18,7 +18,7 @@ export const CompanyEmpty = () => {
         alt={translate("resources.companies.empty.title", {
           _: "No companies found",
         })}
-        className="w-56 h-auto"
+        className="h-auto w-56 sm:w-64"
       />
       <div className="flex flex-col gap-2 items-center">
         <h6 className="text-lg font-semibold text-foreground">
