@@ -1,16 +1,5 @@
 import type { TrelloCardInput } from "./trelloCardTypes.ts";
-
-interface TrelloApiCard {
-  id: string;
-  name: string;
-  idList: string;
-  due: string | null;
-  dueComplete: boolean;
-  shortUrl: string;
-  desc: string;
-  labels: { name: string }[];
-  attachments?: { url: string; name: string }[];
-}
+import { parseTrelloApiCard, type TrelloApiCard } from "./parseTrelloApiCard.ts";
 
 // Fetches every open card on a board in one call, for the one-time backfill.
 export const fetchTrelloBoardCards = async ({
@@ -31,6 +20,11 @@ export const fetchTrelloBoardCards = async ({
   );
   url.searchParams.set("attachments", "true");
   url.searchParams.set("attachment_fields", "url,name");
+  url.searchParams.set("members", "true");
+  url.searchParams.set("member_fields", "fullName");
+  url.searchParams.set("checklists", "all");
+  url.searchParams.set("checklist_fields", "name");
+  url.searchParams.set("checkItem_fields", "name,state,due,idMember");
 
   const response = await fetch(url);
   if (!response.ok) {
@@ -40,17 +34,5 @@ export const fetchTrelloBoardCards = async ({
   }
   const cards = (await response.json()) as TrelloApiCard[];
 
-  return cards.map((card) => ({
-    id: card.id,
-    name: card.name,
-    idList: card.idList,
-    labelNames: card.labels.map((label) => label.name),
-    due: card.due,
-    dueComplete: card.dueComplete,
-    url: card.shortUrl,
-    desc: card.desc ?? "",
-    attachmentUrls: (card.attachments ?? [])
-      .map((attachment) => attachment.url)
-      .filter(Boolean),
-  }));
+  return cards.map(parseTrelloApiCard);
 };

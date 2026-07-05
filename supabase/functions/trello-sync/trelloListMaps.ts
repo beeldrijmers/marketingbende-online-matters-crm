@@ -7,6 +7,10 @@
 // (internal reference/roadmap cards, orphaned attachments, etc.).
 export const INTERNAL_COMPANY_NAME = "Marketingbende (intern)";
 
+// The "Klaar" list — a card moving here counts as the project being finished
+// and triggers the team-lead notification.
+export const WON_LIST_ID = "6979f9a8a825b6ff46306ecf";
+
 // Lists whose name directly maps to a deal stage.
 export const LIST_TO_STAGE: Record<string, string> = {
   "6979f9b306e4dba9dc5182fa": "informatie-pipeline", // informatie + pipeline

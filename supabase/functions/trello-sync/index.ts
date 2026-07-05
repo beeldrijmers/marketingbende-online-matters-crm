@@ -10,15 +10,28 @@ import { upsertDealFromCard } from "./upsertDealFromCard.ts";
 import { archiveDealByCardId } from "./archiveDealByCardId.ts";
 import { addTrelloCommentAsDealNote } from "./addTrelloCommentAsDealNote.ts";
 import { run as runTrelloBackfill } from "./backfill.ts";
+import { WON_LIST_ID } from "./trelloListMaps.ts";
+import {
+  isMoveToWonList,
+  sendCardDoneNotification,
+} from "./notifyCardDone.ts";
 
-// Action types that mean "the card's stage/category/name may have changed" -
-// the full, authoritative card is re-fetched and upserted for all of them.
+// Action types that mean "the card (its stage/category/name/steps) may have
+// changed" - the full, authoritative card is re-fetched and upserted for all of
+// them. The checkItem/checklist actions keep the deal's steps in sync when they
+// are ticked off, added or removed in Trello.
 const CARD_SYNC_ACTIONS = new Set([
   "createCard",
   "updateCard",
   "addLabelToCard",
   "removeLabelToCard",
   "moveCardToBoard",
+  "updateCheckItemStateOnCard",
+  "createCheckItem",
+  "updateCheckItem",
+  "deleteCheckItem",
+  "addChecklistToCard",
+  "removeChecklistFromCard",
 ]);
 
 Deno.serve(async (req) => {
@@ -70,6 +83,15 @@ Deno.serve(async (req) => {
         return new Response("Missing action.data.card.id", { status: 403 });
       const card = await fetchTrelloCard(cardId);
       await upsertDealFromCard(card);
+      // When the card was just moved into "Klaar", let the team lead know the
+      // project is finished (and by whom). Only fires on the actual transition.
+      if (isMoveToWonList(action, WON_LIST_ID)) {
+        await sendCardDoneNotification({
+          projectName: card.name,
+          doneBy: action.memberCreator?.fullName ?? "Iemand",
+          cardUrl: card.url,
+        });
+      }
       return new Response("OK");
     }
 

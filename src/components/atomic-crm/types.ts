@@ -164,13 +164,22 @@ export type Tag = {
   color: string;
 };
 
+export type TaskSource = "manual" | "trello";
+
 export type Task = {
-  contact_id: Identifier;
+  // A task is anchored to a contact, a deal, or both. Trello-synced deal steps
+  // carry a deal_id and no contact_id.
+  contact_id?: Identifier | null;
+  deal_id?: Identifier | null;
   type: string;
   text: string;
   due_date: string;
   done_date?: string | null;
   sales_id?: Identifier;
+  // 'trello' tasks mirror a Trello checklist item and are kept in two-way sync
+  // with their card via trello_checkitem_id.
+  source?: TaskSource;
+  trello_checkitem_id?: string | null;
 } & Pick<RaRecord, "id">;
 
 export type ActivityCompanyCreated = {

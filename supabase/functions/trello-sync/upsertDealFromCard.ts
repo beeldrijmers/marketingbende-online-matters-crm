@@ -11,6 +11,7 @@ import { extractCompanyWebsite } from "./extractCompanyWebsite.ts";
 import { extractDealAmount } from "./extractDealAmount.ts";
 import { lookupCompanyWebsite } from "./lookupCompanyWebsite.ts";
 import { trelloCardCreatedAt } from "./trelloCardDate.ts";
+import { syncCardChecklistItems } from "./syncCardChecklistItems.ts";
 import type { TrelloCardInput } from "./trelloCardTypes.ts";
 
 // The prefix of the auto-generated placeholder description used before a card
@@ -101,6 +102,8 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
         `Could not update deal for Trello card ${card.id}: ${updateError.message}`,
       );
     }
+    // Mirror the card's checklist items onto the deal's steps.
+    await syncCardChecklistItems(card, existingDeal.id);
     return existingDeal.id;
   }
 
@@ -125,5 +128,7 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
       `Could not create deal for Trello card ${card.id}: ${createError?.message}`,
     );
   }
+  // Mirror the card's checklist items onto the newly-created deal's steps.
+  await syncCardChecklistItems(card, createdDeal.id);
   return createdDeal.id;
 };
