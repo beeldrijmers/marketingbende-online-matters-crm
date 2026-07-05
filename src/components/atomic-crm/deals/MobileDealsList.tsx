@@ -10,6 +10,7 @@ import { Link, matchPath, useLocation } from "react-router";
 import { NumberField } from "@/components/admin/number-field";
 import { ReferenceField } from "@/components/admin/reference-field";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { CompanyAvatar } from "../companies/CompanyAvatar";
 import MobileHeader from "../layout/MobileHeader";
@@ -29,7 +30,11 @@ export const MobileDealsList = () => {
   const { identity } = useGetIdentity();
   if (!identity) return null;
   return (
-    <InfiniteListBase perPage={1000} sort={{ field: "index", order: "ASC" }}>
+    <InfiniteListBase
+      perPage={1000}
+      filter={{ "archived_at@is": null }}
+      sort={{ field: "index", order: "ASC" }}
+    >
       <DealsLayoutMobile />
     </InfiniteListBase>
   );
@@ -99,32 +104,54 @@ const DealsLayoutMobile = () => {
         </h1>
       </MobileHeader>
       <MobileContent>
-        {!isPending && !error && data?.length === 0 ? (
+        {isPending ? (
+          <MobileDealsListSkeleton />
+        ) : error ? (
+          <p className="text-sm text-destructive">
+            {translate("ra.notification.http_error", {
+              _: "Er ging iets mis bij het laden van de deals.",
+            })}
+          </p>
+        ) : data?.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             {translate("resources.deals.empty", { _: "Nog geen deals" })}
           </p>
-        ) : null}
-        <div className="flex flex-col gap-6">
-          {groups.map((group) => (
-            <div key={group.key} className="flex flex-col gap-2">
-              <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                {group.label}
-                <span className="text-muted-foreground/70">
-                  {group.deals.length}
-                </span>
-              </h2>
-              {group.deals.map((deal) => (
-                <RecordContextProvider key={deal.id} value={deal}>
-                  <MobileDealRow deal={deal} />
-                </RecordContextProvider>
-              ))}
-            </div>
-          ))}
-        </div>
+        ) : (
+          <div className="flex flex-col gap-6">
+            {groups.map((group) => (
+              <div key={group.key} className="flex flex-col gap-2">
+                <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  {group.label}
+                  <span className="text-muted-foreground/70">
+                    {group.deals.length}
+                  </span>
+                </h2>
+                {group.deals.map((deal) => (
+                  <RecordContextProvider key={deal.id} value={deal}>
+                    <MobileDealRow deal={deal} />
+                  </RecordContextProvider>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
       </MobileContent>
     </div>
   );
 };
+
+const MobileDealsListSkeleton = () => (
+  <div className="flex flex-col gap-6">
+    {Array.from({ length: 3 }).map((_, groupIndex) => (
+      <div key={groupIndex} className="flex flex-col gap-2">
+        <Skeleton className="h-3 w-28" />
+        {Array.from({ length: 3 }).map((_, rowIndex) => (
+          <Skeleton key={rowIndex} className="h-16 w-full rounded-xl" />
+        ))}
+      </div>
+    ))}
+  </div>
+);
 
 const MobileDealRow = ({ deal }: { deal: Deal }) => {
   const { currency } = useConfigurationContext();

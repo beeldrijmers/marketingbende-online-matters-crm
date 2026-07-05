@@ -109,7 +109,7 @@ const NavigationButton = ({
     asChild
     variant="ghost"
     className={cn(
-      "flex-col gap-1 h-auto py-2 px-0.5 rounded-md w-14",
+      "flex-col gap-1 h-auto py-2 px-0.5 rounded-md w-14 transition-transform active:scale-90 active:bg-muted",
       isActive ? "text-primary" : "text-muted-foreground",
     )}
   >
