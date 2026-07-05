@@ -30,8 +30,29 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+        // Precache the hashed, immutable build assets. index.html is
+        // deliberately NOT precached: it is served network-first (below) so a
+        // fresh deploy is picked up on the next load instead of being pinned to
+        // the cached old shell, which caused stale "Niet gevonden" pages (the
+        // old bundle rendering routes that no longer match) after deploys.
+        globPatterns: ["**/*.{js,css,ico,png,svg,woff,woff2}"],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        // Disable the default cache-first SPA navigation fallback so navigations
+        // are handled by the network-first route below.
+        navigateFallback: null,
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "app-shell",
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 8 },
+            },
+          },
+        ],
       },
       manifest: false, // Use existing manifest.json from public/
     }),
