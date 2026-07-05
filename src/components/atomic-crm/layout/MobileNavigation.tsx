@@ -46,21 +46,23 @@ export const MobileNavigation = () => {
   const isWebiOS = /iPad|iPod|iPhone/.test(window.navigator.userAgent);
 
   return (
-    <nav
-      aria-label={translate("crm.navigation.label")}
-      className="fixed bottom-0 left-0 right-0 z-50 bg-secondary h-14"
-      style={{
-        // iOS bug: even though viewport is set correctly, the bottom safe area inset is not accounted for
-        // So we manually add some padding to avoid the navigation being too close to the home bar
-        paddingBottom: isPwa && isWebiOS ? 15 : undefined,
-        // We use box-sizing: border-box, so the height contains the padding.
-        // To actually increase the padding, we need to increase the height as well
-        height:
-          "calc(var(--spacing)) * 6" + (isPwa && isWebiOS ? " + 15px" : ""),
-      }}
-    >
-      <div className="flex h-full items-center justify-around px-1">
-        <>
+    <>
+      {/* Floating create button, above the bottom nav bar */}
+      <CreateButton />
+      <nav
+        aria-label={translate("crm.navigation.label")}
+        className="fixed bottom-0 left-0 right-0 z-50 bg-secondary h-14"
+        style={{
+          // iOS bug: even though viewport is set correctly, the bottom safe area inset is not accounted for
+          // So we manually add some padding to avoid the navigation being too close to the home bar
+          paddingBottom: isPwa && isWebiOS ? 15 : undefined,
+          // We use box-sizing: border-box, so the height contains the padding.
+          // To actually increase the padding, we need to increase the height as well
+          height:
+            "calc(var(--spacing)) * 6" + (isPwa && isWebiOS ? " + 15px" : ""),
+        }}
+      >
+        <div className="flex h-full items-center justify-around px-1">
           <NavigationButton
             href="/"
             Icon={Home}
@@ -73,13 +75,10 @@ export const MobileNavigation = () => {
             label={translate("resources.deals.name", { smart_count: 2 })}
             isActive={currentPath === "/deals"}
           />
-          <CreateButton />
           <NavigationButton
             href="/companies"
             Icon={Building2}
-            label={translate("resources.companies.name", {
-              smart_count: 2,
-            })}
+            label={translate("resources.companies.name", { smart_count: 2 })}
             isActive={currentPath === "/companies"}
           />
           <NavigationButton
@@ -89,9 +88,9 @@ export const MobileNavigation = () => {
             isActive={currentPath === "/tasks"}
           />
           <SettingsButton />
-        </>
-      </div>
-    </nav>
+        </div>
+      </nav>
+    </>
   );
 };
 
@@ -149,10 +148,10 @@ const CreateButton = () => {
           <Button
             variant="default"
             size="icon"
-            className="h-11 w-11 rounded-full shadow-sm"
+            className="fixed bottom-20 right-4 z-50 h-14 w-14 rounded-full shadow-lg"
             aria-label={translate("ra.action.create")}
           >
-            <Plus className="size-6" />
+            <Plus className="size-7" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
