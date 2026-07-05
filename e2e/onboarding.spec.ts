@@ -32,6 +32,10 @@ test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
   await page.getByLabel("Bedrijf").click();
   await page.getByPlaceholder("Zoeken").fill("Smith Corp");
   await page.getByText("Smith Corp aanmaken").click();
+  // On mobile the company autocomplete is a modal popover (modal={isMobile}),
+  // which makes the rest of the form inert until it closes. Wait for the search
+  // box to disappear so the popover has fully released before we type below.
+  await expect(page.getByPlaceholder("Zoeken")).toBeHidden();
   await page
     .getByRole("group", { name: "E-mailadressen" })
     .getByRole("textbox", { name: "E-mail" })
