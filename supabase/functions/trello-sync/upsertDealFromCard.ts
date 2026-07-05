@@ -8,6 +8,7 @@ import {
 import { findOrCreateCompany } from "./findOrCreateCompany.ts";
 import { resolveDefaultSalesId } from "./resolveDefaultSalesId.ts";
 import { extractCompanyWebsite } from "./extractCompanyWebsite.ts";
+import { extractDealAmount } from "./extractDealAmount.ts";
 import { lookupCompanyWebsite } from "./lookupCompanyWebsite.ts";
 import type { TrelloCardInput } from "./trelloCardTypes.ts";
 
@@ -40,10 +41,11 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
   const expectedClosingDate = card.due ? card.due.slice(0, 10) : null;
   const website = extractCompanyWebsite(card.desc, card.attachmentUrls);
   const description = buildDealDescription(card);
+  const amount = extractDealAmount(card.name, card.desc);
 
   const { data: existingDeal, error: fetchError } = await supabaseAdmin
     .from("deals")
-    .select("id, description")
+    .select("id, description, amount")
     .eq("trello_card_id", card.id)
     .maybeSingle();
   if (fetchError) {
@@ -70,6 +72,11 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
       (!currentDescription ||
         currentDescription.startsWith(LEGACY_DESCRIPTION_PREFIX));
 
+    // Back-fill the amount only when the deal has none yet; never overwrite a
+    // value someone entered/adjusted manually in the CRM.
+    const currentAmount = existingDeal.amount as number | null;
+    const canEnrichAmount = amount != null && !currentAmount;
+
     const { error: updateError } = await supabaseAdmin
       .from("deals")
       .update({
@@ -79,6 +86,7 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
         stage,
         expected_closing_date: expectedClosingDate,
         ...(canEnrichDescription ? { description } : {}),
+        ...(canEnrichAmount ? { amount } : {}),
       })
       .eq("id", existingDeal.id);
     if (updateError) {
@@ -98,6 +106,7 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
       stage,
       expected_closing_date: expectedClosingDate,
       description,
+      ...(amount != null ? { amount } : {}),
       trello_card_id: card.id,
       sales_id: salesId,
     })
