@@ -1,18 +1,24 @@
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 
 // Looks up a company by exact name match, creating it when it doesn't exist
-// yet. Returns the company id. When a website is provided, it is set on
-// creation and back-filled onto an existing company that has none yet (so the
-// company_saved trigger can derive the logo/favicon) — but a website already
-// present is never overwritten, preserving manual edits.
+// yet. Returns the company id.
+//
+// Website resolution (for the logo/favicon, derived by the company_saved
+// trigger): the `website` argument (taken from the Trello card) wins; when it is
+// absent and the company has none yet, the optional `lookupWebsite` fallback is
+// consulted (a best-effort name->domain web lookup). A website already present
+// is never overwritten, preserving manual edits, and the lookup runs at most
+// once per company that actually needs one.
 export const findOrCreateCompany = async ({
   name,
   salesId,
   website,
+  lookupWebsite,
 }: {
   name: string;
   salesId: number;
   website?: string | null;
+  lookupWebsite?: () => Promise<string | null>;
 }): Promise<number> => {
   const { data: existing, error: fetchError } = await supabaseAdmin
     .from("companies")
@@ -24,26 +30,34 @@ export const findOrCreateCompany = async ({
       `Could not look up company "${name}": ${fetchError.message}`,
     );
   }
+
+  const resolveWebsite = async (): Promise<string | null> =>
+    website ?? (lookupWebsite ? await lookupWebsite() : null);
+
   if (existing) {
-    if (website && !existing.website) {
-      const { error: updateError } = await supabaseAdmin
-        .from("companies")
-        .update({ website })
-        .eq("id", existing.id);
-      if (updateError) {
-        throw new Error(
-          `Could not back-fill website for company "${name}": ${updateError.message}`,
-        );
+    if (!existing.website) {
+      const resolved = await resolveWebsite();
+      if (resolved) {
+        const { error: updateError } = await supabaseAdmin
+          .from("companies")
+          .update({ website: resolved })
+          .eq("id", existing.id);
+        if (updateError) {
+          throw new Error(
+            `Could not back-fill website for company "${name}": ${updateError.message}`,
+          );
+        }
       }
     }
     return existing.id;
   }
 
+  const resolved = await resolveWebsite();
   const { data: created, error: createError } = await supabaseAdmin
     .from("companies")
     .insert(
-      website
-        ? { name, sales_id: salesId, website }
+      resolved
+        ? { name, sales_id: salesId, website: resolved }
         : { name, sales_id: salesId },
     )
     .select("id")

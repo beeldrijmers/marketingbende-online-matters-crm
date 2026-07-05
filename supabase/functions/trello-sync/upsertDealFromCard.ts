@@ -8,6 +8,7 @@ import {
 import { findOrCreateCompany } from "./findOrCreateCompany.ts";
 import { resolveDefaultSalesId } from "./resolveDefaultSalesId.ts";
 import { extractCompanyWebsite } from "./extractCompanyWebsite.ts";
+import { lookupCompanyWebsite } from "./lookupCompanyWebsite.ts";
 import type { TrelloCardInput } from "./trelloCardTypes.ts";
 
 // The prefix of the auto-generated placeholder description used before a card
@@ -56,6 +57,10 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
     name: companyName,
     salesId,
     website,
+    // When the card carries no website, fall back to a best-effort web lookup so
+    // the company can still get a logo. Runs at most once per company (only when
+    // it has none yet).
+    lookupWebsite: () => lookupCompanyWebsite(companyName),
   });
 
   if (existingDeal) {
