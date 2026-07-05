@@ -13,7 +13,9 @@ interface TrelloApiCard {
   due: string | null;
   dueComplete: boolean;
   shortUrl: string;
+  desc: string;
   labels: { name: string }[];
+  attachments?: { url: string; name: string }[];
 }
 
 // Webhook payloads only carry a partial snapshot of the card depending on
@@ -25,9 +27,11 @@ export const fetchTrelloCard = async (
   const url = new URL(`https://api.trello.com/1/cards/${cardId}`);
   url.searchParams.set("key", apiKey);
   url.searchParams.set("token", token);
-  url.searchParams.set("fields", "name,idList,due,dueComplete,shortUrl");
+  url.searchParams.set("fields", "name,idList,due,dueComplete,shortUrl,desc");
   url.searchParams.set("labels", "true");
   url.searchParams.set("label_fields", "name");
+  url.searchParams.set("attachments", "true");
+  url.searchParams.set("attachment_fields", "url,name");
 
   const response = await fetch(url);
   if (!response.ok) {
@@ -45,5 +49,9 @@ export const fetchTrelloCard = async (
     due: card.due,
     dueComplete: card.dueComplete,
     url: card.shortUrl,
+    desc: card.desc ?? "",
+    attachmentUrls: (card.attachments ?? [])
+      .map((attachment) => attachment.url)
+      .filter(Boolean),
   };
 };
