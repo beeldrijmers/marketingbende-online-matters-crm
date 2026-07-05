@@ -86,6 +86,17 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        // Stable vendor chunks: the app deploys often, and without this every
+        // deploy invalidates one giant bundle. Framework code changes rarely,
+        // so returning visitors keep it cached across deploys.
+        manualChunks: {
+          "react-vendor": ["react", "react-dom", "react-router"],
+          "supabase-vendor": ["@supabase/supabase-js"],
+        },
+      },
+    },
   },
   resolve: {
     preserveSymlinks: true,

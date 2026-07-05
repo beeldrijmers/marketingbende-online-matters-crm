@@ -5,7 +5,7 @@ import type {
   LayoutComponent,
 } from "ra-core";
 import { CustomRoutes, localStorageStore, Resource } from "ra-core";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Route } from "react-router";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
@@ -125,8 +125,8 @@ export const CRM = ({
   noteStatuses = defaultNoteStatuses,
   taskTypes = defaultTaskTypes,
   title = defaultTitle,
-  dataProvider = defaultDataProviderBuilder(),
-  authProvider = defaultAuthProviderBuilder(),
+  dataProvider: dataProviderProp,
+  authProvider: authProviderProp,
   i18nProvider = defaulti18nProvider,
   store = defaultStore,
   googleWorkplaceDomain = import.meta.env.VITE_GOOGLE_WORKPLACE_DOMAIN,
@@ -135,6 +135,19 @@ export const CRM = ({
   disableTelemetry,
   ...rest
 }: CRMProps) => {
+  // Build the default providers at most once: default parameter values are
+  // re-evaluated on every render, which recreated the Supabase data provider
+  // (and with it every ra-core context downstream) each time the CRM
+  // component rendered.
+  const dataProvider = useMemo(
+    () => dataProviderProp ?? defaultDataProviderBuilder(),
+    [dataProviderProp],
+  );
+  const authProvider = useMemo(
+    () => authProviderProp ?? defaultAuthProviderBuilder(),
+    [authProviderProp],
+  );
+
   useEffect(() => {
     if (
       disableTelemetry ||
@@ -235,14 +248,31 @@ export const CRM = ({
   );
 };
 
+// Data in a three-person CRM rarely changes from one minute to the next:
+// serve cached results instantly while navigating and refetch in the
+// background once they are older than a minute, instead of blocking every
+// page switch on a fresh round-trip to Supabase.
+const QUERY_STALE_TIME_MS = 60 * 1000;
+
 const DesktopAdmin = (
   props: CoreAdminProps & {
     dashboard?: DashboardComponent;
     layout?: LayoutComponent;
   },
 ) => {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: QUERY_STALE_TIME_MS,
+          },
+        },
+      }),
+  );
   return (
     <Admin
+      queryClient={queryClient}
       layout={props.layout ?? Layout}
       dashboard={props.dashboard ?? Dashboard}
       {...props}
@@ -285,20 +315,28 @@ const MobileAdmin = (
     layout?: LayoutComponent;
   },
 ) => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        gcTime: 1000 * 60 * 60 * 24, // 24 hours
-        networkMode: "offlineFirst",
-      },
-      mutations: {
-        networkMode: "offlineFirst",
-      },
-    },
-  });
-  const asyncStoragePersister = createAsyncStoragePersister({
-    storage: localStorage,
-  });
+  // Create the client and persister once: rebuilding them on every render
+  // threw away the in-memory query cache, forcing a full refetch storm.
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: QUERY_STALE_TIME_MS,
+            gcTime: 1000 * 60 * 60 * 24, // 24 hours
+            networkMode: "offlineFirst",
+          },
+          mutations: {
+            networkMode: "offlineFirst",
+          },
+        },
+      }),
+  );
+  const [asyncStoragePersister] = useState(() =>
+    createAsyncStoragePersister({
+      storage: localStorage,
+    }),
+  );
 
   return (
     <PersistQueryClientProvider

@@ -1,5 +1,6 @@
 import { useGetList } from "ra-core";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Company, Contact, ContactNote } from "../types";
 import { DashboardActivityLog } from "./DashboardActivityLog";
 import { DashboardStepper } from "./DashboardStepper";
@@ -38,7 +39,20 @@ export const Dashboard = () => {
     isPendingCompany;
 
   if (isPending) {
-    return null;
+    return (
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 mt-1">
+        <div className="xl:col-span-3">
+          <Skeleton className="h-64 w-full" />
+        </div>
+        <div className="xl:col-span-6 flex flex-col gap-6">
+          <Skeleton className="h-48 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+        <div className="xl:col-span-3">
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    );
   }
 
   // Only show the getting-started guide for a brand-new, completely empty CRM.
