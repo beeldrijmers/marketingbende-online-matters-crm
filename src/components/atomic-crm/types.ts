@@ -155,9 +155,7 @@ export type DealNote = {
   date: string;
   sales_id: Identifier;
   attachments?: AttachmentNote[];
-
-  // This is defined for compatibility with `ContactNote`
-  status?: undefined;
+  status?: string;
 } & Pick<RaRecord, "id">;
 
 export type Tag = {
