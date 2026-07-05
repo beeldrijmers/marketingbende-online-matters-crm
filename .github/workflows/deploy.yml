@@ -38,6 +38,8 @@ jobs:
             ADMIN_BACKFILL_SECRET: ${{secrets.ADMIN_BACKFILL_SECRET}}
             MONEYBIRD_API_TOKEN: ${{secrets.MONEYBIRD_API_TOKEN}}
             MONEYBIRD_ADMIN_ID: ${{secrets.MONEYBIRD_ADMIN_ID}}
+            RESEND_API_KEY: ${{secrets.RESEND_API_KEY}}
+            RESEND_WEBHOOK_SECRET: ${{secrets.RESEND_WEBHOOK_SECRET}}
             # Non-secret: the administration id appears in Moneybird URLs. Baked
             # into the frontend build so the "view estimate" deep link works.
             VITE_MONEYBIRD_ADMIN_ID: ${{secrets.MONEYBIRD_ADMIN_ID}}
@@ -125,6 +127,12 @@ jobs:
               run: |
                   npx supabase secrets set MONEYBIRD_API_TOKEN=${{ env.MONEYBIRD_API_TOKEN }}
                   npx supabase secrets set MONEYBIRD_ADMIN_ID=${{ env.MONEYBIRD_ADMIN_ID }}
+
+            - if: ${{ env.IS_SUPABASE_CONFIGURED && env.RESEND_API_KEY && env.RESEND_WEBHOOK_SECRET }}
+              name: 📡 Push supabase resend inbound secrets
+              run: |
+                  npx supabase secrets set RESEND_API_KEY=${{ env.RESEND_API_KEY }}
+                  npx supabase secrets set RESEND_WEBHOOK_SECRET=${{ env.RESEND_WEBHOOK_SECRET }}
 
             - if: ${{ env.IS_SUPABASE_CONFIGURED }}
               name: 📡 Deploy supabase functions
