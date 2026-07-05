@@ -101,7 +101,7 @@ const DealListSkeleton = () => {
   return (
     <div className="flex gap-4 overflow-x-auto pb-2">
       {dealStages.map((stage) => (
-        <div key={stage.value} className="flex-1 min-w-60 pb-8">
+        <div key={stage.value} className="flex-1 min-w-56 pb-8">
           <div className="flex flex-col items-center gap-1.5">
             <Skeleton className="h-6 w-24 rounded-full" />
             <Skeleton className="h-4 w-16" />
