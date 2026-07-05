@@ -107,6 +107,12 @@ jobs:
                   npx supabase secrets set POSTMARK_WEBHOOK_USER=${{ env.POSTMARK_WEBHOOK_USER }}
                   npx supabase secrets set POSTMARK_WEBHOOK_PASSWORD=${{ env.POSTMARK_WEBHOOK_PASSWORD }}
                   npx supabase secrets set POSTMARK_WEBHOOK_AUTHORIZED_IPS=${{ env.POSTMARK_WEBHOOK_AUTHORIZED_IPS }}
+
+            # Inbound-email config is provider-agnostic (used by the Resend
+            # inbound function too), so it must NOT be gated behind Postmark.
+            - if: ${{ env.IS_SUPABASE_CONFIGURED && env.VITE_INBOUND_EMAIL }}
+              name: 📡 Push supabase inbound email config
+              run: |
                   npx supabase secrets set VITE_INBOUND_EMAIL=${{ env.VITE_INBOUND_EMAIL }}
                   npx supabase secrets set VITE_ATTACHMENTS_BUCKET=${{ env.VITE_ATTACHMENTS_BUCKET }}
 
