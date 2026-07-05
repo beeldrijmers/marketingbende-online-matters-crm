@@ -14,10 +14,10 @@ export const DealColumn = ({
   stage: string;
   deals: Deal[];
 }) => {
-  const totalAmount = deals.reduce((sum, deal) => sum + deal.amount, 0);
+  const totalAmount = deals.reduce((sum, deal) => sum + (deal.amount ?? 0), 0);
   const { dealStages, currency } = useConfigurationContext();
   return (
-    <div className="flex flex-1 min-w-60 flex-col">
+    <div className="flex flex-1 min-w-56 flex-col">
       <div className="flex flex-col items-center gap-1.5">
         <h3 className="rounded-full bg-muted px-3 py-1 text-sm font-semibold text-foreground">
           {findDealLabel(dealStages, stage)}

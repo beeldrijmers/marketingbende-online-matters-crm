@@ -206,6 +206,8 @@ export const dutchCrmMessages = {
         category: "Categorie",
         amount: "Budget",
         expected_closing_date: "Verwachte afsluitdatum",
+        start_date: "Startdatum",
+        delivery_date: "Opleverdatum",
         stage: "Fase",
       },
       action: {
@@ -290,6 +292,8 @@ export const dutchCrmMessages = {
         title: "Geen deals gevonden",
       },
       invalid_date: "Ongeldige datum",
+      no_date: "Nog niet gepland",
+      no_amount: "Nog geen bedrag",
       filters: {
         only_mine: "Alleen mijn deals",
       },

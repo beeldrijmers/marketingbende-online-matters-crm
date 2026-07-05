@@ -1,5 +1,4 @@
 import { useMutation } from "@tanstack/react-query";
-import { isValid } from "date-fns";
 import { Archive, ArchiveRestore } from "lucide-react";
 import {
   InfiniteListBase,
@@ -18,7 +17,7 @@ import { ReferenceArrayField } from "@/components/admin/reference-array-field";
 import { ReferenceField } from "@/components/admin/reference-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 
 import { CompanyAvatar } from "../companies/CompanyAvatar";
@@ -39,7 +38,11 @@ export const DealShow = ({ open, id }: { open: boolean; id?: string }) => {
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="lg:max-w-4xl p-4 overflow-y-auto max-h-9/10 top-1/20 translate-y-0">
+      <DialogContent
+        aria-describedby={undefined}
+        className="lg:max-w-4xl p-4 overflow-y-auto max-h-9/10 top-1/20 translate-y-0"
+      >
+        <DealDialogTitle />
         {id ? (
           <ShowBase id={id}>
             <DealShowContent />
@@ -50,19 +53,44 @@ export const DealShow = ({ open, id }: { open: boolean; id?: string }) => {
   );
 };
 
+const DealDialogTitle = () => {
+  const translate = useTranslate();
+  return (
+    <DialogTitle className="sr-only">
+      {translate("resources.deals.forcedCaseName")}
+    </DialogTitle>
+  );
+};
+
 const DealShowContent = () => {
   const translate = useTranslate();
   const { dealStages, dealCategories, currency } = useConfigurationContext();
   const record = useRecordContext<Deal>();
   if (!record) return null;
 
+  const closingLabel = formatISODateString(record.expected_closing_date);
+  const startLabel = formatISODateString(record.start_date);
+  const deliveryLabel = formatISODateString(record.delivery_date);
+  const closingIsPast =
+    closingLabel !== null &&
+    new Date(record.expected_closing_date as string) < new Date();
+  const amountLabel =
+    record.amount != null
+      ? record.amount.toLocaleString("nl-NL", {
+          style: "currency",
+          currency,
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        })
+      : null;
+
   return (
     <>
       <div className="space-y-2">
         {record.archived_at ? <ArchivedTitle /> : null}
         <div className="flex-1">
-          <div className="flex justify-between items-start mb-8">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-wrap justify-between items-start gap-3 mb-8">
+            <div className="flex items-center gap-4 flex-1 min-w-64">
               <ReferenceField
                 source="company_id"
                 reference="companies"
@@ -89,18 +117,22 @@ const DealShowContent = () => {
             </div>
           </div>
 
-          <div className="flex gap-8 m-4">
-            <div className="flex flex-col mr-10">
+          <div className="flex flex-wrap gap-x-10 gap-y-4 m-4">
+            <div className="flex flex-col">
               <span className="text-xs text-muted-foreground tracking-wide">
                 {translate("resources.deals.fields.expected_closing_date")}
               </span>
               <div className="flex items-center gap-2">
                 <span className="text-sm">
-                  {isValid(new Date(record.expected_closing_date))
-                    ? formatISODateString(record.expected_closing_date)
-                    : translate("resources.deals.invalid_date")}
+                  {closingLabel ?? (
+                    <span className="text-muted-foreground">
+                      {translate("resources.deals.no_date", {
+                        _: "Nog niet gepland",
+                      })}
+                    </span>
+                  )}
                 </span>
-                {new Date(record.expected_closing_date) < new Date() ? (
+                {closingIsPast ? (
                   <Badge variant="destructive">
                     {translate("crm.common.past")}
                   </Badge>
@@ -108,23 +140,45 @@ const DealShowContent = () => {
               </div>
             </div>
 
-            <div className="flex flex-col mr-10">
+            {startLabel && (
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground tracking-wide">
+                  {translate("resources.deals.fields.start_date", {
+                    _: "Startdatum",
+                  })}
+                </span>
+                <span className="text-sm">{startLabel}</span>
+              </div>
+            )}
+
+            {deliveryLabel && (
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground tracking-wide">
+                  {translate("resources.deals.fields.delivery_date", {
+                    _: "Opleverdatum",
+                  })}
+                </span>
+                <span className="text-sm">{deliveryLabel}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col">
               <span className="text-xs text-muted-foreground tracking-wide">
                 {translate("resources.deals.fields.amount")}
               </span>
               <span className="text-sm">
-                {record.amount.toLocaleString("en-US", {
-                  notation: "compact",
-                  style: "currency",
-                  currency,
-                  currencyDisplay: "narrowSymbol",
-                  minimumSignificantDigits: 3,
-                })}
+                {amountLabel ?? (
+                  <span className="text-muted-foreground">
+                    {translate("resources.deals.no_amount", {
+                      _: "Nog geen bedrag",
+                    })}
+                  </span>
+                )}
               </span>
             </div>
 
             {record.category && (
-              <div className="flex flex-col mr-10">
+              <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground tracking-wide">
                   {translate("resources.deals.fields.category")}
                 </span>
@@ -135,7 +189,7 @@ const DealShowContent = () => {
               </div>
             )}
 
-            <div className="flex flex-col mr-10">
+            <div className="flex flex-col">
               <span className="text-xs text-muted-foreground tracking-wide">
                 {translate("resources.deals.fields.stage")}
               </span>

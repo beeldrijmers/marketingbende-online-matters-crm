@@ -201,6 +201,8 @@ export const englishCrmMessages = {
         category: "Category",
         amount: "Budget",
         expected_closing_date: "Expected closing date",
+        start_date: "Start date",
+        delivery_date: "Delivery date",
         stage: "Stage",
       },
       action: {
@@ -284,6 +286,8 @@ export const englishCrmMessages = {
         title: "No deals found",
       },
       invalid_date: "Invalid date",
+      no_date: "Not scheduled yet",
+      no_amount: "No amount yet",
       filters: {
         only_mine: "Only my deals",
       },

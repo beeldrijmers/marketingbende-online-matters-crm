@@ -41,9 +41,13 @@ function ucFirst(str: string): string {
 
 const isoDateStringRegex = /^\d{4}-\d{2}-\d{2}$/;
 
-export function formatISODateString(dateString: string) {
-  if (!isoDateStringRegex.test(dateString)) {
-    throw new Error("Invalid date format. Expected YYYY-MM-DD.");
+// Date columns are nullable in the database, so a missing or malformed value
+// must render as "no date" instead of crashing the page.
+export function formatISODateString(
+  dateString: string | null | undefined,
+): string | null {
+  if (!dateString || !isoDateStringRegex.test(dateString)) {
+    return null;
   }
   // Some browsers will consider a date in the format YYYY-MM-DD as UTC, which can cause off-by-one-day issues depending on the user's timezone.
   // To avoid this, we can parse the date components manually and create a date object in the local timezone.

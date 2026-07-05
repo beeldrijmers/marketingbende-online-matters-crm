@@ -38,18 +38,18 @@ describe("formatISODateString", () => {
     expect(formatISODateString(isoDate)).toBe("15 jun. 2024");
   });
 
-  it("throw for an invalid date string", () => {
-    const invalidDate = "invalid-date";
-    expect(() => formatISODateString(invalidDate)).toThrow(
-      "Invalid date format. Expected YYYY-MM-DD.",
-    );
+  it("returns null for an invalid date string", () => {
+    expect(formatISODateString("invalid-date")).toBeNull();
   });
 
-  it("throw for a date string with wrong format", () => {
-    const invalidDate = "15-06-2024";
-    expect(() => formatISODateString(invalidDate)).toThrow(
-      "Invalid date format. Expected YYYY-MM-DD.",
-    );
+  it("returns null for a date string with wrong format", () => {
+    expect(formatISODateString("15-06-2024")).toBeNull();
+  });
+
+  it("returns null for null, undefined and empty input", () => {
+    expect(formatISODateString(null)).toBeNull();
+    expect(formatISODateString(undefined)).toBeNull();
+    expect(formatISODateString("")).toBeNull();
   });
 });
 

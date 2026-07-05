@@ -206,6 +206,8 @@ export const frenchCrmMessages = {
         category: "Catégorie",
         amount: "Budget",
         expected_closing_date: "Date de clôture prévue",
+        start_date: "Date de début",
+        delivery_date: "Date de livraison",
         stage: "Étape",
       },
       action: {
@@ -291,6 +293,8 @@ export const frenchCrmMessages = {
         title: "Aucune affaire trouvée",
       },
       invalid_date: "Date invalide",
+      no_date: "Pas encore planifiée",
+      no_amount: "Pas encore de montant",
       filters: {
         only_mine: "Uniquement mes affaires",
       },
