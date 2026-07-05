@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   InfiniteListBase,
   RecordContextProvider,
@@ -8,46 +9,86 @@ import {
 import { Link, matchPath, useLocation } from "react-router";
 import { NumberField } from "@/components/admin/number-field";
 import { ReferenceField } from "@/components/admin/reference-field";
-import { SelectField } from "@/components/admin/select-field";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
 import { CompanyAvatar } from "../companies/CompanyAvatar";
 import MobileHeader from "../layout/MobileHeader";
 import { MobileContent } from "../layout/MobileContent";
-import { InfinitePagination } from "../misc/InfinitePagination";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import { OwnerChipField } from "../sales/SaleAvatar";
-import type { Deal } from "../types";
+import type { Deal, DealStage } from "../types";
 import { DealShow } from "./DealShow";
 
 /**
  * Mobile deals view: the kanban board is desktop-only, so on mobile the deals
- * are shown as a tappable list (company, name, amount, stage, owner + party).
- * Registered as the `deals` list in the mobile Admin.
+ * are shown as a tappable list grouped by stage (the columns of the desktop
+ * board become sections). Each row shows company, name, amount and owner +
+ * party. Registered as the `deals` list in the mobile Admin.
  */
 export const MobileDealsList = () => {
   const { identity } = useGetIdentity();
   if (!identity) return null;
   return (
-    <InfiniteListBase
-      perPage={25}
-      sort={{ field: "created_at", order: "DESC" }}
-    >
+    <InfiniteListBase perPage={1000} sort={{ field: "index", order: "ASC" }}>
       <DealsLayoutMobile />
     </InfiniteListBase>
   );
 };
 
+type DealGroup = { key: string; label: string; deals: Deal[] };
+
+const groupDealsByStage = (
+  deals: Deal[],
+  dealStages: DealStage[],
+  fallbackLabel: string,
+): DealGroup[] => {
+  const byStage = new Map<string, Deal[]>();
+  for (const deal of deals) {
+    const key = deal.stage ?? "";
+    const bucket = byStage.get(key);
+    if (bucket) bucket.push(deal);
+    else byStage.set(key, [deal]);
+  }
+
+  const groups: DealGroup[] = [];
+  // Configured stages first, in the pipeline order.
+  for (const stage of dealStages) {
+    const stageDeals = byStage.get(stage.value);
+    if (stageDeals?.length) {
+      groups.push({ key: stage.value, label: stage.label, deals: stageDeals });
+      byStage.delete(stage.value);
+    }
+  }
+  // Any deals with an unknown/empty stage go into a trailing group so nothing
+  // is hidden.
+  for (const [key, stageDeals] of byStage) {
+    groups.push({
+      key: key || "unknown",
+      label: key || fallbackLabel,
+      deals: stageDeals,
+    });
+  }
+  return groups;
+};
+
 const DealsLayoutMobile = () => {
   const translate = useTranslate();
   const location = useLocation();
+  const { dealStages } = useConfigurationContext();
   const { data, error, isPending } = useListContext<Deal>();
 
   // The deal detail is a URL-driven dialog (same pattern as the desktop board):
   // tapping a row navigates to /deals/:id/show, which this list matches and
   // opens over itself; closing redirects back to the list.
   const matchShow = matchPath("/deals/:id/show", location.pathname);
+
+  const fallbackLabel = translate("resources.deals.other_stage", {
+    _: "Overig",
+  });
+  const groups = useMemo(
+    () => groupDealsByStage(data ?? [], dealStages, fallbackLabel),
+    [data, dealStages, fallbackLabel],
+  );
 
   return (
     <div>
@@ -63,25 +104,30 @@ const DealsLayoutMobile = () => {
             {translate("resources.deals.empty", { _: "Nog geen deals" })}
           </p>
         ) : null}
-        <div className="flex flex-col gap-2">
-          {data?.map((deal) => (
-            <RecordContextProvider key={deal.id} value={deal}>
-              <MobileDealRow deal={deal} />
-            </RecordContextProvider>
+        <div className="flex flex-col gap-6">
+          {groups.map((group) => (
+            <div key={group.key} className="flex flex-col gap-2">
+              <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {group.label}
+                <span className="text-muted-foreground/70">
+                  {group.deals.length}
+                </span>
+              </h2>
+              {group.deals.map((deal) => (
+                <RecordContextProvider key={deal.id} value={deal}>
+                  <MobileDealRow deal={deal} />
+                </RecordContextProvider>
+              ))}
+            </div>
           ))}
         </div>
-        {!error ? (
-          <div className="flex justify-center mt-4">
-            <InfinitePagination />
-          </div>
-        ) : null}
       </MobileContent>
     </div>
   );
 };
 
 const MobileDealRow = ({ deal }: { deal: Deal }) => {
-  const { dealStages, currency } = useConfigurationContext();
+  const { currency } = useConfigurationContext();
   return (
     <Link to={`/deals/${deal.id}/show`} className="no-underline">
       <Card className="p-3 flex flex-col gap-1.5 transition-colors hover:bg-muted/60">
@@ -118,25 +164,14 @@ const MobileDealRow = ({ deal }: { deal: Deal }) => {
               empty="Geen bedrag"
             />
           </span>
-          {deal.stage ? (
-            <Badge variant="secondary" className="shrink-0">
-              <SelectField
-                source="stage"
-                choices={dealStages}
-                optionText="label"
-                optionValue="value"
-                empty={deal.stage}
-              />
-            </Badge>
-          ) : null}
+          <OwnerChipField
+            source="sales_id"
+            record={deal}
+            size={16}
+            showParty
+            className="text-xs text-muted-foreground"
+          />
         </div>
-        <OwnerChipField
-          source="sales_id"
-          record={deal}
-          size={16}
-          showParty
-          className="text-xs text-muted-foreground"
-        />
       </Card>
     </Link>
   );
