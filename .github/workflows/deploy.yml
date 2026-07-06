@@ -140,6 +140,12 @@ jobs:
                   npx supabase secrets set RESEND_API_KEY=${{ env.RESEND_API_KEY }}
                   npx supabase secrets set RESEND_WEBHOOK_SECRET=${{ env.RESEND_WEBHOOK_SECRET }}
 
+            # UserMiddleware in the edge functions needs SB_PUBLISHABLE_KEY to call
+            # auth.getUser(); without it every authenticated function returns 401.
+            - if: ${{ env.IS_SUPABASE_CONFIGURED && env.VITE_SB_PUBLISHABLE_KEY }}
+              name: 📡 Push supabase publishable key secret
+              run: npx supabase secrets set SB_PUBLISHABLE_KEY=${{ env.VITE_SB_PUBLISHABLE_KEY }}
+
             - if: ${{ env.IS_SUPABASE_CONFIGURED }}
               name: 📡 Deploy supabase functions
               run: npx supabase functions deploy
