@@ -59,7 +59,7 @@ export const sendCardDoneNotification = async ({
   const to = Deno.env.get("NOTIFY_CARD_DONE_EMAIL");
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!to || !apiKey) {
-    console.log(
+    console.warn(
       "Card-done notification skipped: NOTIFY_CARD_DONE_EMAIL or RESEND_API_KEY not set.",
     );
     return;
