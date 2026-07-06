@@ -157,11 +157,15 @@ Deno.serve(async (req) => {
     envelopeEmails.find((email) => salesByEmail.has(email)) ?? senderEmail;
   const forwarderSalesId = salesByEmail.get(forwarderSalesEmail);
 
-  // Every CRM team member present in the envelope (From/To/Cc) is an involved
-  // party. They become the deal's assignees, so a card created from a mail is
-  // visible to exactly the colleagues who were on the thread - no more, no less.
+  // Every CRM team member on the mail - envelope (From/To/Cc) or the forwarded
+  // headers in the body - is an involved party. They become the deal's
+  // assignees, so a card created from a mail is visible to exactly the
+  // colleagues who were on the thread. The body is scanned because Resend's
+  // envelope only carries recipients on the receiving domain (a partner on
+  // another domain would otherwise be missed).
   const involvedSalesIds = resolveInvolvedSalesIds(
     envelopeEmails,
+    textBody,
     salesByEmail,
   );
 
