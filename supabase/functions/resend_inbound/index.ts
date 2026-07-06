@@ -23,6 +23,7 @@ import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { extractDealDates } from "./extractDealDates.ts";
 import { parseEmailAddress, parseEmailContacts } from "./parseEmailAddress.ts";
 import { upsertDealFromMail } from "./upsertDealFromMail.ts";
+import { resolveInvolvedSalesIds } from "./resolveInvolvedSalesIds.ts";
 import { verifySvixSignature } from "./verifySvixSignature.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -156,6 +157,14 @@ Deno.serve(async (req) => {
     envelopeEmails.find((email) => salesByEmail.has(email)) ?? senderEmail;
   const forwarderSalesId = salesByEmail.get(forwarderSalesEmail);
 
+  // Every CRM team member present in the envelope (From/To/Cc) is an involved
+  // party. They become the deal's assignees, so a card created from a mail is
+  // visible to exactly the colleagues who were on the thread - no more, no less.
+  const involvedSalesIds = resolveInvolvedSalesIds(
+    envelopeEmails,
+    salesByEmail,
+  );
+
   // Smart routing: every real client in To + Cc becomes (or matches) a contact.
   let participants = gatherClientParticipants({
     recipients: [...toFull, ...ccFull],
@@ -253,6 +262,7 @@ Deno.serve(async (req) => {
       deliveryDate: dates.deliveryDate,
       salesEmail: forwarderSalesEmail,
       salesId: forwarderSalesId ?? null,
+      assigneeIds: involvedSalesIds,
       noteContent,
       handledCompanyIds,
     });
