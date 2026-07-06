@@ -3,6 +3,7 @@ import {
   resolveCategory,
   resolveStage,
   resolveDealName,
+  resolveRevenuePeriod,
 } from "./resolveDealFields";
 
 describe("resolveCategory", () => {
@@ -60,5 +61,20 @@ describe("resolveDealName", () => {
 
   it("leaves titles without the noise prefix unchanged", () => {
     expect(resolveDealName("MB Roofing - SEO")).toBe("MB Roofing - SEO");
+  });
+});
+
+describe("resolveRevenuePeriod", () => {
+  it("classifies SEO as monthly recurring", () => {
+    expect(resolveRevenuePeriod("seo")).toBe("maandelijks");
+  });
+  it("classifies project categories as one-off", () => {
+    expect(resolveRevenuePeriod("eenmalig")).toBe("eenmalig");
+    expect(resolveRevenuePeriod("website-development")).toBe("eenmalig");
+    expect(resolveRevenuePeriod("website-optimalisatie")).toBe("eenmalig");
+  });
+  it("leaves internal/other categories unclassified", () => {
+    expect(resolveRevenuePeriod("happr")).toBe(null);
+    expect(resolveRevenuePeriod("overig")).toBe(null);
   });
 });

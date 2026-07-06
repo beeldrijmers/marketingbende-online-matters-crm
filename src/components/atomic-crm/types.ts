@@ -137,6 +137,7 @@ export type Deal = {
   sales_id: Identifier;
   index: number;
   won_notified_at?: string | null;
+  revenue_period?: "maandelijks" | "eenmalig" | null;
   moneybird_estimate_id?: string;
   moneybird_estimate_status?: "pending" | "completed" | "failed";
   moneybird_estimate_claimed_at?: string;

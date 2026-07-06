@@ -527,6 +527,17 @@ export const englishCrmMessages = {
     dashboard: {
       deals_chart: "Upcoming Deal Revenue",
       deals_pipeline: "Deals Pipeline",
+      revenue: {
+        title: "Revenue per month",
+        recurring: "Monthly recurring",
+        oneoff: "One-off",
+        mrr_label: "Monthly recurring revenue",
+        mrr_sub: "per month, active subscriptions",
+        oneoff_label: "One-off revenue",
+        oneoff_sub: "one-off projects this year",
+        empty:
+          "No revenue data yet. Set an amount and type (monthly/one-off) on your deals.",
+      },
       latest_activity: "Latest Activity",
       latest_activity_error: "Error loading latest activity",
       latest_notes: "My Latest Notes",

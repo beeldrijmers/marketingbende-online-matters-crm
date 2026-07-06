@@ -99,8 +99,14 @@ create table public.deals (
     moneybird_invoice_created_by bigint,
     moneybird_invoice_error text,
     moneybird_invoice_administration_id text,
+    -- Whether the deal's amount is a monthly recurring fee ('maandelijks', e.g.
+    -- an SEO subscription) or a single one-off project fee ('eenmalig', e.g. a
+    -- webshop build). Drives the revenue dashboard (MRR vs one-off). Null when
+    -- unknown / not applicable (Happr and other non-billable cards).
+    revenue_period text,
     constraint deals_moneybird_estimate_status_check check (moneybird_estimate_status in ('pending', 'completed', 'failed')),
-    constraint deals_moneybird_invoice_status_check check (moneybird_invoice_status in ('pending', 'completed', 'failed'))
+    constraint deals_moneybird_invoice_status_check check (moneybird_invoice_status in ('pending', 'completed', 'failed')),
+    constraint deals_revenue_period_check check (revenue_period in ('maandelijks', 'eenmalig'))
 );
 
 create table public.deal_notes (

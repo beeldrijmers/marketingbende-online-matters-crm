@@ -536,6 +536,17 @@ export const frenchCrmMessages = {
     dashboard: {
       deals_chart: "Revenus des affaires à venir",
       deals_pipeline: "Pipeline des affaires",
+      revenue: {
+        title: "Chiffre d'affaires par mois",
+        recurring: "Récurrent mensuel",
+        oneoff: "Ponctuel",
+        mrr_label: "Chiffre d'affaires mensuel récurrent",
+        mrr_sub: "par mois, abonnements actifs",
+        oneoff_label: "Chiffre d'affaires ponctuel",
+        oneoff_sub: "projets ponctuels cette année",
+        empty:
+          "Pas encore de données de revenus. Renseignez un montant et un type (mensuel/ponctuel) sur vos affaires.",
+      },
       latest_activity: "Dernière activité",
       latest_activity_error:
         "Erreur lors du chargement de la dernière activité",
