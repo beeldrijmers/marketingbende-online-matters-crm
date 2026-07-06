@@ -139,6 +139,8 @@ export type Deal = {
   // assignees (enforced by RLS). Defaults to the owner.
   assignee_ids?: Identifier[];
   index: number;
+  // "On hold" marking - a parked deal stays in its stage and shows a badge.
+  on_hold?: boolean;
   won_notified_at?: string | null;
   revenue_period?: "maandelijks" | "eenmalig" | null;
   moneybird_estimate_id?: string;

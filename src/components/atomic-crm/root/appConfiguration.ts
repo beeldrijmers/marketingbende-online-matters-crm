@@ -8,14 +8,17 @@ export const title = "BANKAI CRM";
 
 export const currency = "EUR";
 
-// Stage values mirror the "SEO - Online Matters" Trello board's pipeline lists.
-// The final stage keeps the internal value "won" (label "Klaar") because
-// DealsChart.tsx hardcodes stage === "won"/"lost" for its revenue forecast.
+// The kanban is a single left-to-right "loopband" from start to finished. The
+// four stages are the conveyor; "on hold" is not a column but a marking on the
+// card (deals.on_hold), so a parked deal stays in its current stage instead of
+// piling up in a separate stack. Stage values are kept stable (the final stage
+// keeps the internal value "won" - DealsChart/RevenueDashboard key off
+// "won"/"lost" - and "informatie-pipeline" stays the first-stage value the
+// monthly cycle resets to), only the labels changed.
 export const dealStages = [
-  { value: "informatie-pipeline", label: "Informatie + pipeline" },
+  { value: "informatie-pipeline", label: "Nieuw" },
   { value: "bezig", label: "Bezig" },
-  { value: "on-hold", label: "In de wacht" },
-  { value: "facturatie-live", label: "Facturatie + live project" },
+  { value: "facturatie-live", label: "Facturatie / live" },
   { value: "won", label: "Klaar" },
 ];
 

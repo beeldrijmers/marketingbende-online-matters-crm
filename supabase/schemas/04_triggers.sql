@@ -27,6 +27,12 @@ create or replace trigger set_deal_assignee_default_trigger
     before insert on public.deals
     for each row execute function public.set_deal_assignee_default();
 
+-- Sends a monthly recurring deal back to the start of the loopband when it is
+-- marked "Klaar", resetting its Trello-synced steps (see cycle_monthly_deal).
+create or replace trigger cycle_monthly_deal_trigger
+    before update on public.deals
+    for each row execute function public.cycle_monthly_deal();
+
 create or replace trigger set_deal_notes_sales_id_trigger
     before insert on public.deal_notes
     for each row execute function public.set_sales_id_default();

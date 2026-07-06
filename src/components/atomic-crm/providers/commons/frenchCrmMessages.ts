@@ -221,6 +221,7 @@ export const frenchCrmMessages = {
         amount: "Budget",
         revenue_period: "Type de revenu",
         assignee_ids: "Assigné à",
+        on_hold: "En attente",
         assignee_ids_helper:
           "Seules les personnes assignées voient cette carte",
         expected_closing_date: "Date de clôture prévue",
