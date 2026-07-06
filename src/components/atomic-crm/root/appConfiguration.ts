@@ -12,7 +12,7 @@ export const currency = "EUR";
 // four stages are the conveyor; "on hold" is not a column but a marking on the
 // card (deals.on_hold), so a parked deal stays in its current stage instead of
 // piling up in a separate stack. Stage values are kept stable (the final stage
-// keeps the internal value "won" - DealsChart/RevenueDashboard key off
+// keeps the internal value "won" - RevenueDashboard keys off
 // "won"/"lost" - and "informatie-pipeline" stays the first-stage value the
 // monthly cycle resets to), only the labels changed.
 export const dealStages = [
