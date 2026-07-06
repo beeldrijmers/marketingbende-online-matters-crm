@@ -4,7 +4,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Company, Contact, ContactNote } from "../types";
 import { DashboardActivityLog } from "./DashboardActivityLog";
 import { DashboardStepper } from "./DashboardStepper";
-import { DealsChart } from "./DealsChart";
 import { HotContacts } from "./HotContacts";
 import { RevenueDashboard } from "./RevenueDashboard";
 import { TasksList } from "./TasksList";
@@ -82,7 +81,6 @@ export const Dashboard = () => {
       </div>
       <div className="xl:col-span-6 min-w-0">
         <div className="flex flex-col gap-6">
-          {totalDeal ? <DealsChart /> : null}
           <DashboardActivityLog />
         </div>
       </div>
