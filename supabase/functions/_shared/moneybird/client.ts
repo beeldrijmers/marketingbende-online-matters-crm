@@ -1,37 +1,32 @@
-// Thin fetch wrapper around the Moneybird REST API v2. Shared by the estimate
-// and invoice functions. Env vars are checked at MODULE LOAD time (a
-// misconfigured secret crashes the function on import, never mid-request);
-// every call throws on a non-2xx response with the status plus the body; this
-// module holds NO business logic.
+// Thin fetch wrapper around the Moneybird REST API v2. Shared by the estimate,
+// invoice and connection functions. Since the integration became per-user,
+// every call runs under explicit per-request credentials (the caller's
+// personal API token + administration id) — there is deliberately NO
+// module-level environment access here; this module holds NO business logic.
 
 import type {
   DocumentKind,
+  MoneybirdAdministration,
   MoneybirdContact,
   MoneybirdContactInput,
   MoneybirdDocument,
   MoneybirdDocumentInput,
   MoneybirdTaxRate,
 } from "./types.ts";
+import type { MoneybirdCredentials } from "./credentials.ts";
 
-const apiToken = Deno.env.get("MONEYBIRD_API_TOKEN");
-const adminId = Deno.env.get("MONEYBIRD_ADMIN_ID");
-if (!apiToken || !adminId) {
-  throw new Error(
-    "Missing MONEYBIRD_API_TOKEN or MONEYBIRD_ADMIN_ID env variable",
-  );
-}
-
-const baseUrl = `https://moneybird.com/api/v2/${adminId}`;
+const API_ROOT = "https://moneybird.com/api/v2";
 
 // The REST collection path per document kind.
 const collectionPath = (kind: DocumentKind): string =>
   kind === "estimate" ? "estimates" : "sales_invoices";
 
 const moneybirdFetch = async <T>(
-  path: string,
+  apiToken: string,
+  url: string,
   init?: RequestInit,
 ): Promise<T> => {
-  const response = await fetch(`${baseUrl}/${path}`, {
+  const response = await fetch(url, {
     ...init,
     headers: {
       Authorization: `Bearer ${apiToken}`,
@@ -42,22 +37,50 @@ const moneybirdFetch = async <T>(
 
   if (!response.ok) {
     throw new Error(
-      `Moneybird ${init?.method ?? "GET"} ${path} failed: ${response.status} ${await response.text()}`,
+      `Moneybird ${init?.method ?? "GET"} ${url.slice(API_ROOT.length + 1)} failed: ${response.status} ${await response.text()}`,
     );
   }
 
   return (await response.json()) as T;
 };
 
-export const listTaxRates = (): Promise<MoneybirdTaxRate[]> =>
-  moneybirdFetch<MoneybirdTaxRate[]>("tax_rates.json");
+// Administration-scoped fetch: all document/contact/tax-rate endpoints live
+// under /api/v2/{administrationId}/.
+const administrationFetch = <T>(
+  credentials: MoneybirdCredentials,
+  path: string,
+  init?: RequestInit,
+): Promise<T> =>
+  moneybirdFetch<T>(
+    credentials.apiToken,
+    `${API_ROOT}/${credentials.administrationId}/${path}`,
+    init,
+  );
+
+// The administrations a token can access. This is the only endpoint that is
+// NOT administration-scoped; it doubles as the connect-time token validation
+// (an invalid token yields a 401 from Moneybird).
+export const listAdministrations = (
+  apiToken: string,
+): Promise<MoneybirdAdministration[]> =>
+  moneybirdFetch<MoneybirdAdministration[]>(
+    apiToken,
+    `${API_ROOT}/administrations.json`,
+  );
+
+export const listTaxRates = (
+  credentials: MoneybirdCredentials,
+): Promise<MoneybirdTaxRate[]> =>
+  administrationFetch<MoneybirdTaxRate[]>(credentials, "tax_rates.json");
 
 // Best-effort lookup of an existing contact by an exact (case-insensitive)
 // company_name match. Null when nothing matches — the caller then creates one.
 export const findContactByCompanyName = async (
+  credentials: MoneybirdCredentials,
   name: string,
 ): Promise<MoneybirdContact | null> => {
-  const contacts = await moneybirdFetch<MoneybirdContact[]>(
+  const contacts = await administrationFetch<MoneybirdContact[]>(
+    credentials,
     `contacts.json?query=${encodeURIComponent(name)}`,
   );
   const normalized = name.trim().toLowerCase();
@@ -70,21 +93,27 @@ export const findContactByCompanyName = async (
 };
 
 export const createContact = (
+  credentials: MoneybirdCredentials,
   payload: MoneybirdContactInput,
 ): Promise<MoneybirdContact> =>
-  moneybirdFetch<MoneybirdContact>("contacts.json", {
+  administrationFetch<MoneybirdContact>(credentials, "contacts.json", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 
 export const createDocument = (
+  credentials: MoneybirdCredentials,
   kind: DocumentKind,
   payload: MoneybirdDocumentInput,
 ): Promise<MoneybirdDocument> =>
-  moneybirdFetch<MoneybirdDocument>(`${collectionPath(kind)}.json`, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+  administrationFetch<MoneybirdDocument>(
+    credentials,
+    `${collectionPath(kind)}.json`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
 
 // Reconciliation guard for the "our create landed at Moneybird but the response
 // never reached us" case: find a document we previously created for this deal by
@@ -92,8 +121,10 @@ export const createDocument = (
 // page recent documents and match client-side. BEST-EFFORT: a listing failure
 // must never block a normal creation, so on any error we log and return null
 // (the atomic deal claim + the partial-unique index remain the primary
-// idempotency guarantees).
+// idempotency guarantees). Runs under the caller's credentials, so it only ever
+// sees (and adopts) documents in the caller's own administration.
 export const findDocumentByReference = async (
+  credentials: MoneybirdCredentials,
   kind: DocumentKind,
   reference: string,
 ): Promise<MoneybirdDocument | null> => {
@@ -101,7 +132,8 @@ export const findDocumentByReference = async (
   const maxPages = 3;
   try {
     for (let page = 1; page <= maxPages; page++) {
-      const documents = await moneybirdFetch<MoneybirdDocument[]>(
+      const documents = await administrationFetch<MoneybirdDocument[]>(
+        credentials,
         `${collectionPath(kind)}.json?per_page=${perPage}&page=${page}`,
       );
       const match = documents.find(

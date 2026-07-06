@@ -14,6 +14,8 @@ alter table public.tags enable row level security;
 alter table public.tasks enable row level security;
 alter table public.configuration enable row level security;
 alter table public.favicons_excluded_domains enable row level security;
+alter table public.moneybird_connections enable row level security;
+alter table public.moneybird_company_contacts enable row level security;
 
 -- Companies
 create policy "Enable read access for authenticated users" on public.companies for select to authenticated using (true);
@@ -67,3 +69,14 @@ create policy "Enable update for admins" on public.configuration for update to a
 
 -- Favicons excluded domains
 create policy "Enable access for authenticated users only" on public.favicons_excluded_domains to authenticated using (true) with check (true);
+
+-- Moneybird connections (owner-only: a user may only see their own connection
+-- row; the encrypted token column is additionally hidden from client roles via
+-- column-level grants, see 06_grants.sql). All writes go through the
+-- moneybird_connection edge function (service role, bypasses RLS), so there are
+-- deliberately NO insert/update/delete policies for authenticated.
+create policy "Enable read access for connection owner" on public.moneybird_connections for select to authenticated
+    using (sales_id in (select id from public.sales where user_id = (select auth.uid())));
+
+-- Moneybird company contacts: a server-side cache used exclusively by the
+-- moneybird edge functions (service role). No client policies at all.

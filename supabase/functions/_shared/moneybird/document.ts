@@ -1,7 +1,9 @@
 // Orchestrates creating a Moneybird document (estimate or invoice) for a CRM
-// deal. Shared by both edge functions. Sequence:
-//   claim (atomic) -> load company -> resolve contact (+cache) -> reconcile by
-//   reference -> create document -> record result on the deal.
+// deal, in the CALLER'S OWN administration (per-user credentials). Shared by
+// both edge functions. Sequence:
+//   claim (atomic) -> load company -> resolve contact (+cache per
+//   administration) -> reconcile by reference -> create document -> record
+//   result (including the administration) on the deal.
 // Any failure after the claim is recorded on the deal as 'failed' with the
 // message, so the UI can show it and the user can retry.
 
@@ -14,6 +16,7 @@ import {
 import { findOrCreateMoneybirdContact } from "./contact.ts";
 import { createDocument, findDocumentByReference } from "./client.ts";
 import { buildDocumentPayload, documentReference } from "./payload.ts";
+import type { MoneybirdCredentials } from "./credentials.ts";
 import type { DocumentKind } from "./types.ts";
 
 export type CreateDocumentOutcome =
@@ -29,6 +32,7 @@ export const createDocumentForDeal = async ({
   description,
   currency,
   salesId,
+  credentials,
 }: {
   documentKind: DocumentKind;
   dealId: number;
@@ -36,6 +40,7 @@ export const createDocumentForDeal = async ({
   description: string;
   currency: string;
   salesId: number;
+  credentials: MoneybirdCredentials;
 }): Promise<CreateDocumentOutcome> => {
   const claim = await claimDealForDocument(documentKind, dealId, salesId);
   if (claim.outcome === "already_completed") {
@@ -54,9 +59,7 @@ export const createDocumentForDeal = async ({
 
     const { data: company, error: companyError } = await supabaseAdmin
       .from("companies")
-      .select(
-        "id, name, address, zipcode, city, country, tax_identifier, moneybird_contact_id",
-      )
+      .select("id, name, address, zipcode, city, country, tax_identifier")
       .eq("id", deal.company_id)
       .maybeSingle();
     if (companyError) {
@@ -68,17 +71,23 @@ export const createDocumentForDeal = async ({
       throw new Error(`Company ${deal.company_id} not found`);
     }
 
-    const contactId = await findOrCreateMoneybirdContact(company);
+    const contactId = await findOrCreateMoneybirdContact(credentials, company);
 
     // Reconciliation: adopt a document a prior attempt may already have created
     // for this deal (network-timeout case) instead of creating a duplicate.
+    // Scoped to the caller's administration by the credentials.
     const reference = documentReference(documentKind, dealId);
-    const existing = await findDocumentByReference(documentKind, reference);
+    const existing = await findDocumentByReference(
+      credentials,
+      documentKind,
+      reference,
+    );
 
     const documentId = existing
       ? existing.id
       : (
           await createDocument(
+            credentials,
             documentKind,
             buildDocumentPayload({
               kind: documentKind,
@@ -91,7 +100,12 @@ export const createDocumentForDeal = async ({
           )
         ).id;
 
-    await markDocumentCompleted(documentKind, dealId, documentId);
+    await markDocumentCompleted(
+      documentKind,
+      dealId,
+      documentId,
+      credentials.administrationId,
+    );
     return {
       kind: "created",
       documentId,

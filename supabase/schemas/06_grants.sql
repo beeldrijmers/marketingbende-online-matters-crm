@@ -70,15 +70,6 @@ grant all on table public.companies to anon;
 grant all on table public.companies to authenticated;
 grant all on table public.companies to service_role;
 
--- moneybird_contact_id is written exclusively by the moneybird_estimate edge
--- function (service role); see the deals grant above for why a table-level
--- revoke+re-grant is required instead of a column-level revoke.
-revoke update on table public.companies from anon, authenticated;
-grant update (id, created_at, name, sector, size, linkedin_url, website, phone_number,
-              address, zipcode, city, state_abbr, sales_id, context_links, country,
-              description, revenue, tax_identifier, logo)
-              on table public.companies to anon, authenticated;
-
 grant all on table public.contacts to anon;
 grant all on table public.contacts to authenticated;
 grant all on table public.contacts to service_role;
@@ -91,11 +82,11 @@ grant all on table public.deals to anon;
 grant all on table public.deals to authenticated;
 grant all on table public.deals to service_role;
 
--- Moneybird bookkeeping columns (both moneybird_estimate_* and moneybird_invoice_*)
--- are written exclusively by the moneybird edge functions (service role), so
--- client roles must not be able to reset them and bypass the claim/idempotency
--- logic. They are simply omitted from the re-granted column list below. A
--- column-level REVOKE alone would not be
+-- Moneybird bookkeeping columns (both moneybird_estimate_* and moneybird_invoice_*,
+-- including the *_administration_id columns) are written exclusively by the
+-- moneybird edge functions (service role), so client roles must not be able to
+-- reset them and bypass the claim/idempotency logic. They are simply omitted
+-- from the re-granted column list below. A column-level REVOKE alone would not be
 -- enough: "grant all on table" above already grants UPDATE on every column, and
 -- a table-level grant always wins over a column-level revoke in Postgres. So the
 -- table-level UPDATE grant must be revoked and re-granted for the remaining
@@ -128,6 +119,23 @@ grant all on table public.configuration to service_role;
 grant all on table public.favicons_excluded_domains to anon;
 grant all on table public.favicons_excluded_domains to authenticated;
 grant all on table public.favicons_excluded_domains to service_role;
+
+-- Moneybird connections: the encrypted API token must NEVER be readable or
+-- writable by client roles. The default privileges at the bottom of this file
+-- grant ALL on every new table to anon/authenticated, so we revoke everything
+-- and re-grant SELECT for the non-secret columns only (api_token_encrypted is
+-- deliberately omitted). All writes go through the moneybird_connection edge
+-- function (service role). NOTE for the frontend: a column-restricted SELECT
+-- means "select=*" fails with a permission error; always request the allowed
+-- columns explicitly.
+grant all on table public.moneybird_connections to service_role;
+revoke all on table public.moneybird_connections from anon, authenticated;
+grant select (id, sales_id, administration_id, administration_name, created_at, updated_at)
+    on table public.moneybird_connections to authenticated;
+
+-- Moneybird company contacts: server-side cache, edge functions only.
+grant all on table public.moneybird_company_contacts to service_role;
+revoke all on table public.moneybird_company_contacts from anon, authenticated;
 
 -- View grants
 grant all on table public.activity_log to anon;
@@ -182,6 +190,14 @@ grant all on sequence public.tags_id_seq to service_role;
 grant all on sequence public.tasks_id_seq to anon;
 grant all on sequence public.tasks_id_seq to authenticated;
 grant all on sequence public.tasks_id_seq to service_role;
+
+-- Moneybird sequences: only the edge functions (service role) insert rows, and
+-- the default privileges below would otherwise hand USAGE to client roles.
+grant all on sequence public.moneybird_connections_id_seq to service_role;
+revoke all on sequence public.moneybird_connections_id_seq from anon, authenticated;
+
+grant all on sequence public.moneybird_company_contacts_id_seq to service_role;
+revoke all on sequence public.moneybird_company_contacts_id_seq from anon, authenticated;
 
 -- Default privileges
 alter default privileges for role postgres in schema public grant all on sequences to postgres;

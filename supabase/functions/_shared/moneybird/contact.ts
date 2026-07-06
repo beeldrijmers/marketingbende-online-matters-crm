@@ -1,9 +1,11 @@
 // Resolve the Moneybird contact for a CRM company, creating it when needed.
-// Shared by estimates and invoices — both use the same companies.moneybird_
-// contact_id cache, so a company's contact is created at most once.
+// Shared by estimates and invoices. A Moneybird contact id is only valid inside
+// the administration it was created in, and every user connects their OWN
+// administration, so the cache lives in moneybird_company_contacts keyed by
+// (company_id, administration_id) — one contact per company PER administration.
 //
 // Resolution order:
-//   1. companies.moneybird_contact_id cache hit -> reuse (no API call)
+//   1. cache hit for this (company, administration) -> reuse (no API call)
 //   2. find an existing Moneybird contact by company name -> adopt + cache
 //   3. create a new Moneybird contact -> cache
 //
@@ -13,60 +15,72 @@
 import { supabaseAdmin } from "../supabaseAdmin.ts";
 import { createContact, findContactByCompanyName } from "./client.ts";
 import { buildContactPayload, type CompanyForContact } from "./payload.ts";
+import type { MoneybirdCredentials } from "./credentials.ts";
 
 interface CompanyRow extends CompanyForContact {
   id: number;
-  moneybird_contact_id: string | null;
 }
 
 export const findOrCreateMoneybirdContact = async (
+  credentials: MoneybirdCredentials,
   company: CompanyRow,
 ): Promise<string> => {
-  if (company.moneybird_contact_id) {
-    return company.moneybird_contact_id;
-  }
-
-  const existing = await findContactByCompanyName(company.name);
-  const contactId = existing
-    ? existing.id
-    : (await createContact(buildContactPayload(company))).id;
-
-  // Conditional cache write-back. The per-deal claim serializes per DEAL, not
-  // per COMPANY, so two deals of the same company can resolve a contact
-  // concurrently and both arrive here with a null cache. The .is(..., null)
-  // guard makes exactly one write win.
-  const { data: won, error } = await supabaseAdmin
-    .from("companies")
-    .update({ moneybird_contact_id: contactId })
-    .eq("id", company.id)
-    .is("moneybird_contact_id", null)
-    .select("moneybird_contact_id")
+  const { data: cached, error: cacheError } = await supabaseAdmin
+    .from("moneybird_company_contacts")
+    .select("contact_id")
+    .eq("company_id", company.id)
+    .eq("administration_id", credentials.administrationId)
     .maybeSingle();
-  if (error) {
+  if (cacheError) {
     throw new Error(
-      `Could not cache Moneybird contact id on company ${company.id}: ${error.message}`,
+      `Could not read the Moneybird contact cache for company ${company.id}: ${cacheError.message}`,
     );
   }
-  if (won) return contactId;
+  if (cached) {
+    return cached.contact_id;
+  }
 
-  // We lost the race: reuse the winner's contact so both documents reference the
-  // same one. A freshly created loser contact is an orphan (no document
-  // attached); we do NOT auto-delete from the live administration — a rare empty
-  // contact is logged for manual cleanup.
+  const existing = await findContactByCompanyName(credentials, company.name);
+  const contactId = existing
+    ? existing.id
+    : (await createContact(credentials, buildContactPayload(company))).id;
+
+  // Conditional cache write. The per-deal claim serializes per DEAL, not per
+  // COMPANY, so two deals of the same company can resolve a contact
+  // concurrently and both arrive here with a cache miss. The unique index on
+  // (company_id, administration_id) makes exactly one insert win; the loser
+  // detects the conflict and reuses the winner's contact.
+  const { error: insertError } = await supabaseAdmin
+    .from("moneybird_company_contacts")
+    .insert({
+      company_id: company.id,
+      administration_id: credentials.administrationId,
+      contact_id: contactId,
+    });
+  if (!insertError) return contactId;
+
+  // 23505 = unique_violation: we lost the race. Any other error is fatal.
+  if (insertError.code !== "23505") {
+    throw new Error(
+      `Could not cache Moneybird contact id for company ${company.id}: ${insertError.message}`,
+    );
+  }
+
   const { data: winner, error: reselectError } = await supabaseAdmin
-    .from("companies")
-    .select("moneybird_contact_id")
-    .eq("id", company.id)
+    .from("moneybird_company_contacts")
+    .select("contact_id")
+    .eq("company_id", company.id)
+    .eq("administration_id", credentials.administrationId)
     .maybeSingle();
-  if (reselectError || !winner?.moneybird_contact_id) {
+  if (reselectError || !winner?.contact_id) {
     throw new Error(
       `Lost the contact-cache race for company ${company.id} but could not read the winning contact id: ${reselectError?.message ?? "no id"}`,
     );
   }
-  if (!existing && winner.moneybird_contact_id !== contactId) {
+  if (!existing && winner.contact_id !== contactId) {
     console.error(
-      `Orphaned Moneybird contact ${contactId} created for company ${company.id} due to a concurrent document; reusing ${winner.moneybird_contact_id}. Manual cleanup of the orphan may be needed.`,
+      `Orphaned Moneybird contact ${contactId} created for company ${company.id} due to a concurrent document; reusing ${winner.contact_id}. Manual cleanup of the orphan may be needed.`,
     );
   }
-  return winner.moneybird_contact_id;
+  return winner.contact_id;
 };

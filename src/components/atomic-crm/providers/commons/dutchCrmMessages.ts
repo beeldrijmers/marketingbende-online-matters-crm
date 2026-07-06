@@ -250,7 +250,7 @@ export const dutchCrmMessages = {
             "Controleer de gegevens en maak een concept-offerte aan in Moneybird voor dit deal.",
           confirm: "Offerte aanmaken",
           warning:
-            "Dit maakt een echte concept-offerte aan in de Moneybird-administratie van Marketingbende. Het wordt niet automatisch naar de klant gemaild.",
+            "Dit maakt een echte concept-offerte aan in je eigen Moneybird-administratie. Het wordt niet automatisch naar de klant gemaild.",
           success: "Offerte aangemaakt in Moneybird",
           error: "Aanmaken van de offerte is mislukt",
         },
@@ -263,7 +263,7 @@ export const dutchCrmMessages = {
             "Controleer de gegevens en maak een concept-factuur aan in Moneybird voor dit deal.",
           confirm: "Factuur aanmaken",
           warning:
-            "Dit maakt een echte concept-factuur aan in de Moneybird-administratie van Marketingbende. De factuur wordt NIET automatisch verzonden; verstuur hem zelf vanuit Moneybird.",
+            "Dit maakt een echte concept-factuur aan in je eigen Moneybird-administratie. De factuur wordt NIET automatisch verzonden; verstuur hem zelf vanuit Moneybird.",
           success: "Factuur aangemaakt in Moneybird",
           error: "Aanmaken van de factuur is mislukt",
         },
@@ -285,6 +285,8 @@ export const dutchCrmMessages = {
         wrong_currency:
           "De Moneybird-koppeling werkt alleen met de valuta EUR.",
         creating: "Bezig met aanmaken...",
+        not_connected_hint:
+          "Koppel eerst je eigen Moneybird-administratie via je profielpagina.",
       },
       inbound: {
         title: "Inkomende e-mail",
@@ -642,6 +644,23 @@ export const dutchCrmMessages = {
         title: "MCP-server",
         description:
           "Gebruik deze URL om uw AI-assistent via het Model Context Protocol (MCP) te koppelen aan uw CRM-gegevens.",
+      },
+      moneybird: {
+        title: "Moneybird",
+        description:
+          "Koppel je eigen Moneybird-administratie om offertes en facturen vanuit deals aan te maken. Maak in Moneybird een persoonlijk API-token aan (profielicoon, Instellingen, Ontwikkelaars, Token aanmaken) en plak het hier.",
+        token_label: "Persoonlijk API-token",
+        token_help:
+          "Het token wordt gecontroleerd bij Moneybird en versleuteld opgeslagen. Het wordt daarna nooit meer getoond.",
+        administration_label: "Administratie",
+        administration_placeholder: "Kies een administratie",
+        connect: "Moneybird koppelen",
+        connecting: "Bezig met koppelen...",
+        connected: "Gekoppeld aan administratie %{administration}.",
+        connect_success: "Moneybird gekoppeld aan %{administration}",
+        disconnect: "Loskoppelen",
+        disconnect_confirm: "Ja, loskoppelen",
+        disconnect_success: "Moneybird losgekoppeld",
       },
       password: {
         change: "Wachtwoord wijzigen",

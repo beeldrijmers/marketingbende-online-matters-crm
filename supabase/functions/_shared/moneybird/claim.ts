@@ -26,6 +26,7 @@ const COLUMNS = {
     claimedAt: "moneybird_estimate_claimed_at",
     createdBy: "moneybird_estimate_created_by",
     error: "moneybird_estimate_error",
+    administrationId: "moneybird_estimate_administration_id",
   },
   invoice: {
     id: "moneybird_invoice_id",
@@ -33,6 +34,7 @@ const COLUMNS = {
     claimedAt: "moneybird_invoice_claimed_at",
     createdBy: "moneybird_invoice_created_by",
     error: "moneybird_invoice_error",
+    administrationId: "moneybird_invoice_administration_id",
   },
 } as const;
 
@@ -120,6 +122,7 @@ export const markDocumentCompleted = async (
   kind: DocumentKind,
   dealId: number | string,
   documentId: string,
+  administrationId: string,
 ): Promise<void> => {
   const cols = COLUMNS[kind];
   const { error } = await supabaseAdmin
@@ -128,6 +131,9 @@ export const markDocumentCompleted = async (
       [cols.id]: documentId,
       [cols.status]: "completed",
       [cols.error]: null,
+      // The administration the document lives in — connections are per user, so
+      // this differs per creator; the UI deep link needs it.
+      [cols.administrationId]: administrationId,
     })
     .eq("id", dealId);
   if (error) {

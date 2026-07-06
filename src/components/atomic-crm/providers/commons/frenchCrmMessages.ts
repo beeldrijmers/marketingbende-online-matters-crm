@@ -250,7 +250,7 @@ export const frenchCrmMessages = {
             "Vérifiez les informations et créez un devis brouillon dans Moneybird pour cette affaire.",
           confirm: "Créer le devis",
           warning:
-            "Ceci crée un vrai devis brouillon dans l'administration Moneybird de Marketingbende. Il n'est pas automatiquement envoyé au client par e-mail.",
+            "Ceci crée un vrai devis brouillon dans votre propre administration Moneybird. Il n'est pas automatiquement envoyé au client par e-mail.",
           success: "Devis créé dans Moneybird",
           error: "Échec de la création du devis",
         },
@@ -263,7 +263,7 @@ export const frenchCrmMessages = {
             "Vérifiez les informations et créez une facture brouillon dans Moneybird pour cette affaire.",
           confirm: "Créer la facture",
           warning:
-            "Ceci crée une vraie facture brouillon dans l'administration Moneybird de Marketingbende. Elle n'est PAS envoyée automatiquement ; envoyez-la vous-même depuis Moneybird.",
+            "Ceci crée une vraie facture brouillon dans votre propre administration Moneybird. Elle n'est PAS envoyée automatiquement ; envoyez-la vous-même depuis Moneybird.",
           success: "Facture créée dans Moneybird",
           error: "Échec de la création de la facture",
         },
@@ -286,6 +286,8 @@ export const frenchCrmMessages = {
         wrong_currency:
           "L'intégration Moneybird ne fonctionne qu'avec la devise EUR.",
         creating: "Création...",
+        not_connected_hint:
+          "Liez d'abord votre propre administration Moneybird via votre page de profil.",
       },
       inbound: {
         title: "E-mail entrant",
@@ -645,6 +647,23 @@ export const frenchCrmMessages = {
         title: "Serveur MCP",
         description:
           "Utilisez cette URL pour connecter votre assistant IA aux données de votre CRM via le Model Context Protocol (MCP).",
+      },
+      moneybird: {
+        title: "Moneybird",
+        description:
+          "Liez votre propre administration Moneybird pour créer des devis et des factures depuis les affaires. Créez un jeton API personnel dans Moneybird (icône de profil, Paramètres, Développeurs, Créer un jeton) et collez-le ici.",
+        token_label: "Jeton API personnel",
+        token_help:
+          "Le jeton est vérifié auprès de Moneybird et stocké chiffré. Il ne sera plus jamais affiché.",
+        administration_label: "Administration",
+        administration_placeholder: "Choisissez une administration",
+        connect: "Lier Moneybird",
+        connecting: "Liaison en cours...",
+        connected: "Lié à l'administration %{administration}.",
+        connect_success: "Moneybird lié à %{administration}",
+        disconnect: "Délier",
+        disconnect_confirm: "Oui, délier",
+        disconnect_success: "Moneybird délié",
       },
       password: {
         change: "Changer le mot de passe",

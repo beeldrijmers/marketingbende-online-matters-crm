@@ -30,6 +30,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
+import { useMoneybirdConnection } from "../misc/useMoneybirdConnection";
 import type { CrmDataProvider } from "../providers/types";
 import type { Company, Deal } from "../types";
 
@@ -66,20 +67,42 @@ const MoneybirdDocumentButton = ({
   const isPending = statusOf(record, kind) === "pending";
   const Icon = iconFor(kind);
 
+  // Documents are created in the CALLER'S OWN Moneybird administration, so the
+  // create button only works for users who linked one. Anyone else sees a
+  // disabled button with a hint pointing to their profile page.
+  const { data: connection, isPending: connectionLoading } =
+    useMoneybirdConnection();
+  const notConnected = !connectionLoading && !connection;
+  const notConnectedHint = translate(
+    "resources.deals.moneybird.not_connected_hint",
+  );
+
+  const button = (
+    <Button
+      onClick={() => setOpen(true)}
+      size="sm"
+      variant="outline"
+      className="flex items-center gap-2 h-9"
+      disabled={isPending || connectionLoading || notConnected}
+    >
+      <Icon className="w-4 h-4" />
+      {isPending
+        ? translate(`resources.deals.moneybird.${kind}.pending`)
+        : translate(`resources.deals.moneybird.${kind}.action`)}
+    </Button>
+  );
+
   return (
     <>
-      <Button
-        onClick={() => setOpen(true)}
-        size="sm"
-        variant="outline"
-        className="flex items-center gap-2 h-9"
-        disabled={isPending}
-      >
-        <Icon className="w-4 h-4" />
-        {isPending
-          ? translate(`resources.deals.moneybird.${kind}.pending`)
-          : translate(`resources.deals.moneybird.${kind}.action`)}
-      </Button>
+      {notConnected ? (
+        // A disabled button swallows mouse events; the wrapper carries the
+        // explanation for both pointer and assistive tech users.
+        <span title={notConnectedHint} aria-label={notConnectedHint}>
+          {button}
+        </span>
+      ) : (
+        button
+      )}
       {open ? (
         <MoneybirdDocumentDialog
           record={record}
@@ -326,18 +349,21 @@ const ViewMoneybirdDocumentButton = ({
   const translate = useTranslate();
   const documentId = idOf(record, kind);
 
-  // The administration id is not a secret (it appears in Moneybird URLs); it is
-  // exposed as a public build env var so the deep link can be built client-side.
+  // Documents live in the administration of whoever created them (connections
+  // are per user), so the deep link is built from the administration id stored
+  // on the deal. The id is not a secret; it appears in Moneybird URLs.
+  const administrationId =
+    kind === "estimate"
+      ? record.moneybird_estimate_administration_id
+      : record.moneybird_invoice_administration_id;
+
   const href = useMemo(() => {
-    const adminId = import.meta.env.VITE_MONEYBIRD_ADMIN_ID as
-      | string
-      | undefined;
     const path = kind === "estimate" ? "estimates" : "sales_invoices";
-    if (adminId && documentId) {
-      return `https://moneybird.com/${adminId}/${path}/${documentId}`;
+    if (administrationId && documentId) {
+      return `https://moneybird.com/${administrationId}/${path}/${documentId}`;
     }
     return "https://moneybird.com";
-  }, [documentId, kind]);
+  }, [administrationId, documentId, kind]);
 
   return (
     <Button

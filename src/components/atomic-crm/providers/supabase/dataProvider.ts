@@ -247,6 +247,91 @@ const getDataProviderWithCustomMethods = () => {
 
       return data.data;
     },
+    // The caller's own Moneybird connection status. Reads the table directly:
+    // RLS restricts it to the caller's own row and column-level grants hide the
+    // encrypted token, so "select=*" would be denied; request the readable
+    // columns explicitly.
+    async getMoneybirdConnection() {
+      const { data, error } = await getSupabaseClient()
+        .from("moneybird_connections")
+        .select(
+          "id, sales_id, administration_id, administration_name, created_at, updated_at",
+        )
+        .maybeSingle();
+
+      if (error) {
+        console.error("moneybird_connections.get.error", error);
+        throw new Error("Failed to load the Moneybird connection");
+      }
+
+      return data
+        ? {
+            administrationId: data.administration_id as string,
+            administrationName: data.administration_name as string,
+          }
+        : null;
+    },
+    // Validates the personal API token live against Moneybird and stores it
+    // encrypted. When the token can access several administrations the edge
+    // function answers 409 with the list; we surface it so the UI can show a
+    // picker and retry with an explicit administrationId.
+    async connectMoneybird(params: {
+      apiToken: string;
+      administrationId?: string;
+    }) {
+      const { data, error } = await getSupabaseClient().functions.invoke<{
+        data: { administrationId: string; administrationName: string };
+      }>("moneybird_connection", {
+        method: "POST",
+        body: {
+          apiToken: params.apiToken,
+          administrationId: params.administrationId,
+        },
+      });
+
+      if (!data || error) {
+        // Deliberately NOT logging the error context here: the request body
+        // contains the plaintext API token.
+        const errorDetails = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        const failure = new Error(
+          errorDetails?.message || "Failed to connect Moneybird",
+        ) as Error & {
+          administrations?: { id: string; name: string }[];
+        };
+        if (Array.isArray(errorDetails?.administrations)) {
+          failure.administrations = errorDetails.administrations;
+        }
+        throw failure;
+      }
+
+      return data.data;
+    },
+    async disconnectMoneybird() {
+      const { error } = await getSupabaseClient().functions.invoke(
+        "moneybird_connection",
+        { method: "DELETE" },
+      );
+
+      if (error) {
+        console.error("moneybird_connection.disconnect.error", error);
+        const errorDetails = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(
+          errorDetails?.message || "Failed to disconnect Moneybird",
+        );
+      }
+    },
     async createMoneybirdDocument(
       kind: "estimate" | "invoice",
       params: {
