@@ -310,6 +310,8 @@ export const createDataProvider = ({
         "De Moneybird-koppeling is niet beschikbaar in de demomodus.",
       );
     },
+    // No Trello backend in the demo; ticking a step off simply stays local.
+    completeTrelloStep: async () => {},
     getConfiguration: async (): Promise<ConfigurationContextValue> => {
       const { data } = await baseDataProvider.getOne("configuration", {
         id: 1,

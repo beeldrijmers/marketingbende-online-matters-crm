@@ -61,10 +61,13 @@ export const TasksListByDueDate = ({
     [tasks],
   );
 
+  // Steps synced from Trello often have no due date. new Date(null) is 1970, so
+  // without this guard those tasks would all be classed as "overdue"; instead
+  // they get their own "Zonder datum" bucket.
   const overdueTasks = useMemo(
     () =>
       ongoingTasks?.filter((task) => {
-        return isOverdue(task.due_date);
+        return task.due_date && isOverdue(task.due_date);
       }) || [],
     [ongoingTasks],
   );
@@ -72,23 +75,37 @@ export const TasksListByDueDate = ({
   const dueTodayTasks = useMemo(
     () =>
       ongoingTasks?.filter((task) => {
-        return isDueToday(task.due_date);
+        return task.due_date && isDueToday(task.due_date);
       }) || [],
     [ongoingTasks],
   );
 
   const dueTomorrowTasks = useMemo(
-    () => ongoingTasks?.filter((task) => isDueTomorrow(task.due_date)) || [],
+    () =>
+      ongoingTasks?.filter(
+        (task) => task.due_date && isDueTomorrow(task.due_date),
+      ) || [],
     [ongoingTasks],
   );
 
   const dueThisWeekTasks = useMemo(
-    () => ongoingTasks?.filter((task) => isDueThisWeek(task.due_date)) || [],
+    () =>
+      ongoingTasks?.filter(
+        (task) => task.due_date && isDueThisWeek(task.due_date),
+      ) || [],
     [ongoingTasks],
   );
 
   const dueLaterTasks = useMemo(
-    () => ongoingTasks?.filter((task) => isDueLater(task.due_date)) || [],
+    () =>
+      ongoingTasks?.filter(
+        (task) => task.due_date && isDueLater(task.due_date),
+      ) || [],
+    [ongoingTasks],
+  );
+
+  const noDueDateTasks = useMemo(
+    () => ongoingTasks?.filter((task) => !task.due_date) || [],
     [ongoingTasks],
   );
 
@@ -145,6 +162,15 @@ export const TasksListByDueDate = ({
         showContact={showContact}
         isMobile={isMobile}
         count={dueLaterTasks.length}
+      />
+      <TaskListFilter
+        tasks={noDueDateTasks}
+        title={translate("resources.tasks.filters.no_due", {
+          _: "Zonder datum",
+        })}
+        showContact={showContact}
+        isMobile={isMobile}
+        count={noDueDateTasks.length}
       />
     </div>
   );

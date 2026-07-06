@@ -37,4 +37,9 @@ export interface TrelloCardInput {
   // Every checklist item on the card, flattened across all checklists. These
   // become the deal's steps ("wat moet er nog gebeuren").
   checkItems: TrelloCheckItemInput[];
+  // Whether the Trello response actually carried a `checklists` array. Lets the
+  // sync tell "this card genuinely has no checklists" (safe to delete orphaned
+  // steps) apart from "the field was missing from a malformed response" (do not
+  // delete anything), so a partial response can never wipe a deal's steps.
+  checklistsPresent: boolean;
 }

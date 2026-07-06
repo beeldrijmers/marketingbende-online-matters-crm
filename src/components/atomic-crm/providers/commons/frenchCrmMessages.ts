@@ -198,6 +198,20 @@ export const frenchCrmMessages = {
     deals: {
       name: "Affaire |||| Affaires",
       forcedCaseName: "Affaire",
+      steps: {
+        title: "Étapes",
+        progress: "%{done}/%{total} faites",
+        next_action: "Étape suivante",
+        all_done: "Toutes les étapes sont faites.",
+      },
+      next_action: {
+        "informatie-pipeline":
+          "Rassembler les informations et rédiger un devis.",
+        bezig: "Réaliser le travail.",
+        "on-hold": "En attente - relancer dès que possible.",
+        "facturatie-live": "Facturer et mettre le projet en ligne.",
+        won: "Terminé.",
+      },
       fields: {
         name: "Nom",
         description: "Description",
@@ -395,6 +409,7 @@ export const frenchCrmMessages = {
       actions: {
         postpone_next_week: "Reporté à la semaine prochaine",
         postpone_tomorrow: "Reporter à demain",
+        claim: "Prendre en charge",
         title: "Actions de tâche",
       },
       added: "Tâche ajoutée",
@@ -408,7 +423,8 @@ export const frenchCrmMessages = {
         edit_for: "Modifier la tâche pour %{name}",
       },
       empty: "Aucune tâche pour l'instant",
-      empty_list_hint: "Les tâches ajoutées à vos contacts apparaîtront ici.",
+      empty_list_hint:
+        "Les tâches et étapes Trello qui vous sont attribuées apparaîtront ici.",
       filters: {
         later: "Plus tard",
         overdue: "En retard",
@@ -420,6 +436,9 @@ export const frenchCrmMessages = {
         team: "Équipe",
       },
       regarding_contact: "(Concernant : %{name})",
+      regarding_deal: "— %{name}",
+      trello_step: "Trello",
+      to_claim: "À prendre en charge",
       updated: "Tâche mise à jour",
     },
     tags: {

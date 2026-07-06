@@ -1,5 +1,8 @@
 import type { TrelloCardInput } from "./trelloCardTypes.ts";
-import { parseTrelloApiCard, type TrelloApiCard } from "./parseTrelloApiCard.ts";
+import {
+  parseTrelloApiCard,
+  type TrelloApiCard,
+} from "./parseTrelloApiCard.ts";
 
 // Fetches every open card on a board in one call, for the one-time backfill.
 export const fetchTrelloBoardCards = async ({

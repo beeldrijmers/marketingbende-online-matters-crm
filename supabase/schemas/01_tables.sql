@@ -81,6 +81,10 @@ create table public.deals (
     sales_id bigint,
     index smallint,
     trello_card_id text,
+    -- Set the first time the deal's Trello card moves into "Klaar", so the
+    -- team-lead notification is sent at most once even though Trello webhooks
+    -- are delivered at-least-once and retried.
+    won_notified_at timestamp with time zone,
     moneybird_estimate_id text,
     moneybird_estimate_status text,
     moneybird_estimate_claimed_at timestamp with time zone,

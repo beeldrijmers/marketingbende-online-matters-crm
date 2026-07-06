@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { MoreVertical } from "lucide-react";
 import {
+  useDataProvider,
   useDeleteWithUndoController,
   useGetRecordRepresentation,
   useNotify,
@@ -10,6 +11,7 @@ import {
 import { useEffect, useState } from "react";
 import { ReferenceField } from "@/components/admin/reference-field";
 import { DateField } from "@/components/admin/date-field";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -20,7 +22,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
-import type { Contact, Task as TData } from "../types";
+import type { Contact, Deal, Task as TData } from "../types";
+import type { CrmDataProvider } from "../providers/types";
 import { OwnerChipField } from "../sales/SaleAvatar";
 import { TaskEdit } from "./TaskEdit";
 import { TaskEditSheet } from "./TaskEditSheet";
@@ -38,7 +41,9 @@ export const Task = ({
   const notify = useNotify();
   const translate = useTranslate();
   const queryClient = useQueryClient();
+  const dataProvider = useDataProvider<CrmDataProvider>();
   const getContactRepresentation = useGetRecordRepresentation("contacts");
+  const isTrelloStep = task.source === "trello" && !!task.trello_checkitem_id;
 
   const [openEdit, setOpenEdit] = useState(false);
 
@@ -64,14 +69,35 @@ export const Task = ({
     setOpenEdit(true);
   };
 
-  const handleCheck = () => () => {
+  const handleCheck = () => async () => {
+    const previousDone = task.done_date ?? null;
+    const nextDone = !task.done_date;
     update("tasks", {
       id: task.id,
       data: {
-        done_date: task.done_date ? null : new Date().toISOString(),
+        done_date: nextDone ? new Date().toISOString() : null,
       },
       previousData: task,
     });
+    // Two-way sync: reflect the completion on the Trello checklist item. Trello
+    // stays the source of truth, so if the write-back fails we roll the CRM row
+    // back to its previous state - otherwise the next card sync would silently
+    // revert the user's action (Trello would still say "not done").
+    if (isTrelloStep) {
+      try {
+        await dataProvider.completeTrelloStep(task.id, nextDone);
+      } catch (error) {
+        update("tasks", {
+          id: task.id,
+          data: { done_date: previousDone },
+          previousData: { ...task, done_date: nextDone ? "pending" : null },
+        });
+        notify(
+          (error as Error)?.message ?? "Kon de stap niet naar Trello bijwerken",
+          { type: "error" },
+        );
+      }
+    }
   };
 
   useEffect(() => {
@@ -121,6 +147,14 @@ export const Task = ({
                 </>
               )}
               {task.text}
+              {isTrelloStep && (
+                <Badge
+                  variant="outline"
+                  className="ml-1.5 align-middle text-[10px] font-normal text-muted-foreground"
+                >
+                  {translate("resources.tasks.trello_step", { _: "Trello" })}
+                </Badge>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-sm text-muted-foreground">
               <span>
@@ -144,7 +178,7 @@ export const Task = ({
                   />
                 </>
               )}
-              {showContact && (
+              {showContact && task.contact_id != null && (
                 <ReferenceField<TData, Contact>
                   source="contact_id"
                   reference="contacts"
@@ -158,6 +192,27 @@ export const Task = ({
                         {" "}
                         {translate("resources.tasks.regarding_contact", {
                           name: getContactRepresentation(referenceRecord),
+                        })}
+                      </>
+                    );
+                  }}
+                />
+              )}
+              {showContact && task.deal_id != null && (
+                <ReferenceField<TData, Deal>
+                  source="deal_id"
+                  reference="deals"
+                  record={task}
+                  link="show"
+                  className="inline text-sm text-muted-foreground"
+                  render={({ referenceRecord }) => {
+                    if (!referenceRecord) return null;
+                    return (
+                      <>
+                        {" "}
+                        {translate("resources.tasks.regarding_deal", {
+                          name: referenceRecord.name,
+                          _: `— ${referenceRecord.name}`,
                         })}
                       </>
                     );

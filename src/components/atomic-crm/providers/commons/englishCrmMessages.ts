@@ -193,6 +193,19 @@ export const englishCrmMessages = {
     deals: {
       name: "Deal |||| Deals",
       forcedCaseName: "Deal",
+      steps: {
+        title: "Steps",
+        progress: "%{done}/%{total} done",
+        next_action: "Next step",
+        all_done: "All steps are done.",
+      },
+      next_action: {
+        "informatie-pipeline": "Gather information and draft a quote.",
+        bezig: "Carry out the work.",
+        "on-hold": "On hold - follow up when possible.",
+        "facturatie-live": "Invoice and take the project live.",
+        won: "Completed.",
+      },
       fields: {
         name: "Name",
         description: "Description",
@@ -387,6 +400,7 @@ export const englishCrmMessages = {
       actions: {
         postpone_next_week: "Postpone to next week",
         postpone_tomorrow: "Postpone to tomorrow",
+        claim: "Pick up",
         title: "task actions",
       },
       added: "Task added",
@@ -400,7 +414,8 @@ export const englishCrmMessages = {
         edit_for: "Edit task for %{name}",
       },
       empty: "No tasks yet",
-      empty_list_hint: "Tasks added to your contacts will appear here.",
+      empty_list_hint:
+        "Tasks and Trello steps assigned to you will appear here.",
       filters: {
         later: "Later",
         overdue: "Overdue",
@@ -412,6 +427,9 @@ export const englishCrmMessages = {
         team: "Team",
       },
       regarding_contact: "(Re: %{name})",
+      regarding_deal: "— %{name}",
+      trello_step: "Trello",
+      to_claim: "To pick up",
       updated: "Task updated",
     },
     tags: {

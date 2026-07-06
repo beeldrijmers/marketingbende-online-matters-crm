@@ -198,6 +198,20 @@ export const dutchCrmMessages = {
     deals: {
       name: "Deal |||| Deals",
       forcedCaseName: "Deal",
+      steps: {
+        title: "Stappen",
+        progress: "%{done}/%{total} af",
+        next_action: "Volgende stap",
+        all_done: "Alle stappen zijn afgerond.",
+      },
+      next_action: {
+        "informatie-pipeline":
+          "Informatie verzamelen en een offerte opstellen.",
+        bezig: "Het werk uitvoeren.",
+        "on-hold": "In de wacht - opvolgen wanneer het weer kan.",
+        "facturatie-live": "Factureren en het project live zetten.",
+        won: "Afgerond.",
+      },
       fields: {
         name: "Naam",
         description: "Omschrijving",
@@ -393,6 +407,7 @@ export const dutchCrmMessages = {
       actions: {
         postpone_next_week: "Uitstellen naar volgende week",
         postpone_tomorrow: "Uitstellen naar morgen",
+        claim: "Oppakken",
         title: "taakacties",
       },
       added: "Taak toegevoegd",
@@ -407,7 +422,7 @@ export const dutchCrmMessages = {
       },
       empty: "Nog geen taken",
       empty_list_hint:
-        "Taken die aan uw contacten zijn toegevoegd, verschijnen hier.",
+        "Taken en Trello-stappen die aan u zijn toegewezen, verschijnen hier.",
       filters: {
         later: "Later",
         overdue: "Verlopen",
@@ -419,6 +434,9 @@ export const dutchCrmMessages = {
         team: "Team",
       },
       regarding_contact: "(Betreft: %{name})",
+      regarding_deal: "— %{name}",
+      trello_step: "Trello",
+      to_claim: "Op te pakken",
       updated: "Taak bijgewerkt",
     },
     tags: {

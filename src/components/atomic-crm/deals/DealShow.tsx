@@ -27,6 +27,7 @@ import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Deal } from "../types";
 import { ContactList } from "./ContactList";
 import { DealInboundEmail } from "./DealInboundEmail";
+import { DealSteps } from "./DealSteps";
 import { MoneybirdDocumentControl } from "./MoneybirdDocumentButtons";
 import { findDealLabel, formatISODateString } from "./dealUtils";
 
@@ -223,6 +224,11 @@ const DealShowContent = () => {
               <p className="text-sm leading-6">{record.description}</p>
             </div>
           )}
+
+          <div className="m-4">
+            <Separator className="mb-4" />
+            <DealSteps />
+          </div>
 
           <div className="m-4">
             <DealInboundEmail />

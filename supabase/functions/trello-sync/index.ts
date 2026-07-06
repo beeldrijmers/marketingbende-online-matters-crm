@@ -11,10 +11,8 @@ import { archiveDealByCardId } from "./archiveDealByCardId.ts";
 import { addTrelloCommentAsDealNote } from "./addTrelloCommentAsDealNote.ts";
 import { run as runTrelloBackfill } from "./backfill.ts";
 import { WON_LIST_ID } from "./trelloListMaps.ts";
-import {
-  isMoveToWonList,
-  sendCardDoneNotification,
-} from "./notifyCardDone.ts";
+import { isMoveToWonList, sendCardDoneNotification } from "./notifyCardDone.ts";
+import { claimWonNotification } from "./claimWonNotification.ts";
 
 // Action types that mean "the card (its stage/category/name/steps) may have
 // changed" - the full, authoritative card is re-fetched and upserted for all of
@@ -82,10 +80,15 @@ Deno.serve(async (req) => {
       if (!cardId)
         return new Response("Missing action.data.card.id", { status: 403 });
       const card = await fetchTrelloCard(cardId);
-      await upsertDealFromCard(card);
+      const dealId = await upsertDealFromCard(card);
       // When the card was just moved into "Klaar", let the team lead know the
-      // project is finished (and by whom). Only fires on the actual transition.
-      if (isMoveToWonList(action, WON_LIST_ID)) {
+      // project is finished (and by whom). Only fires on the actual transition,
+      // and claimWonNotification makes sure a retried/duplicate webhook delivery
+      // does not e-mail twice.
+      if (
+        isMoveToWonList(action, WON_LIST_ID) &&
+        (await claimWonNotification(dealId))
+      ) {
         await sendCardDoneNotification({
           projectName: card.name,
           doneBy: action.memberCreator?.fullName ?? "Iemand",

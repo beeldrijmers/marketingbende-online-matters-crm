@@ -40,7 +40,13 @@ describe("parseTrelloApiCard", () => {
           id: "cl2",
           name: "Techniek",
           checkItems: [
-            { id: "ci3", name: "Tracking", state: "incomplete", due: null, idMember: null },
+            {
+              id: "ci3",
+              name: "Tracking",
+              state: "incomplete",
+              due: null,
+              idMember: null,
+            },
           ],
         },
       ],
@@ -54,8 +60,21 @@ describe("parseTrelloApiCard", () => {
         memberId: "m1",
         due: "2026-07-10T00:00:00.000Z",
       },
-      { id: "ci3", name: "Tracking", complete: false, memberId: null, due: null },
+      {
+        id: "ci3",
+        name: "Tracking",
+        complete: false,
+        memberId: null,
+        due: null,
+      },
     ]);
+    expect(card.checklistsPresent).toBe(true);
+  });
+
+  it("reports checklistsPresent=false when the response has no checklists field", () => {
+    const card = parseTrelloApiCard({ ...base });
+    expect(card.checklistsPresent).toBe(false);
+    expect(card.checkItems).toEqual([]);
   });
 
   it("maps card members and tolerates missing optional collections", () => {

@@ -53,4 +53,5 @@ export const parseTrelloApiCard = (card: TrelloApiCard): TrelloCardInput => ({
       due: item.due ?? null,
     })),
   ),
+  checklistsPresent: Array.isArray(card.checklists),
 });

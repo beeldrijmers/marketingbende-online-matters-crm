@@ -1,5 +1,8 @@
 import type { TrelloCardInput } from "./trelloCardTypes.ts";
-import { parseTrelloApiCard, type TrelloApiCard } from "./parseTrelloApiCard.ts";
+import {
+  parseTrelloApiCard,
+  type TrelloApiCard,
+} from "./parseTrelloApiCard.ts";
 
 const apiKey = Deno.env.get("TRELLO_API_KEY");
 const token = Deno.env.get("TRELLO_TOKEN");

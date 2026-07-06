@@ -145,13 +145,23 @@ describe("resolveStepMutation", () => {
   });
 
   it("inserts a completed step with done_date set to now", () => {
-    const m = resolveStepMutation(7, desired({ complete: true }), undefined, NOW);
+    const m = resolveStepMutation(
+      7,
+      desired({ complete: true }),
+      undefined,
+      NOW,
+    );
     expect(m.kind).toBe("insert");
     if (m.kind === "insert") expect(m.row.done_date).toBe(NOW);
   });
 
   it("marks a step done when Trello completed it", () => {
-    const m = resolveStepMutation(7, desired({ complete: true }), existing(), NOW);
+    const m = resolveStepMutation(
+      7,
+      desired({ complete: true }),
+      existing(),
+      NOW,
+    );
     expect(m).toEqual({ kind: "update", patch: { id: 10, done_date: NOW } });
   });
 

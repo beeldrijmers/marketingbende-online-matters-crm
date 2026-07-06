@@ -284,6 +284,26 @@ const getDataProviderWithCustomMethods = () => {
 
       return data.data;
     },
+    // Writes a completed/reopened Trello-synced step back to its Trello card, so
+    // ticking a step off in the CRM ticks it off in Trello too.
+    async completeTrelloStep(taskId: Identifier, complete: boolean) {
+      const { error } = await getSupabaseClient().functions.invoke(
+        "trello-checkitem",
+        { method: "POST", body: { taskId, complete } },
+      );
+      if (error) {
+        const errorDetails = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(
+          errorDetails?.message || "Kon de stap niet naar Trello bijwerken",
+        );
+      }
+    },
     async getConfiguration(): Promise<ConfigurationContextValue> {
       const { data } = await baseDataProvider.getOne("configuration", {
         id: 1,

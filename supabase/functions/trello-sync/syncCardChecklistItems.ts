@@ -62,13 +62,24 @@ export const syncCardChecklistItems = async (
     }
 
     if (inserts.length > 0) {
-      const { error } = await supabaseAdmin.from("tasks").insert(inserts);
+      // Upsert-ignore so two overlapping webhook deliveries that both resolve a
+      // brand-new item to "insert" can't fail the whole batch on the unique
+      // trello_checkitem_id index; the loser simply no-ops.
+      const { error } = await supabaseAdmin.from("tasks").upsert(inserts, {
+        onConflict: "trello_checkitem_id",
+        ignoreDuplicates: true,
+      });
       if (error) {
         throw new Error(`insert steps failed: ${error.message}`);
       }
     }
 
-    // Remove steps whose checklist item no longer exists on the card.
+    // Remove steps whose checklist item no longer exists on the card - but only
+    // when the card genuinely carried checklist data. A malformed response
+    // missing the `checklists` field must never delete a deal's steps.
+    if (!card.checklistsPresent) {
+      return;
+    }
     const removedIds = [...existingByCheckItemId.values()]
       .filter((row) => !desiredIds.has(row.trello_checkitem_id))
       .map((row) => row.id);
