@@ -13,6 +13,7 @@
 
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { fetchTrelloBoardCards } from "./fetchTrelloBoardCards.ts";
+import { fetchTrelloCard } from "./fetchTrelloCard.ts";
 import { fetchTrelloCardComments } from "./fetchTrelloCardComments.ts";
 import { upsertDealFromCard } from "./upsertDealFromCard.ts";
 import { addTrelloCommentAsDealNote } from "./addTrelloCommentAsDealNote.ts";
@@ -53,7 +54,12 @@ const commentAlreadyBackfilled = async ({
 const backfillCard = async (
   card: Awaited<ReturnType<typeof fetchTrelloBoardCards>>[number],
 ) => {
-  const dealId = await upsertDealFromCard(card);
+  // Re-fetch the full card from the single-card endpoint: it reliably nests
+  // checklist items + members (which the bulk board endpoint may omit), so the
+  // deal's steps are synced during backfill exactly as they are on the webhook
+  // path. One extra call per card is fine for a one-time backfill.
+  const fullCard = await fetchTrelloCard(card.id);
+  const dealId = await upsertDealFromCard(fullCard);
 
   const comments = await fetchTrelloCardComments({
     cardId: card.id,

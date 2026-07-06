@@ -62,13 +62,13 @@ export const syncCardChecklistItems = async (
     }
 
     if (inserts.length > 0) {
-      // Upsert-ignore so two overlapping webhook deliveries that both resolve a
-      // brand-new item to "insert" can't fail the whole batch on the unique
-      // trello_checkitem_id index; the loser simply no-ops.
-      const { error } = await supabaseAdmin.from("tasks").upsert(inserts, {
-        onConflict: "trello_checkitem_id",
-        ignoreDuplicates: true,
-      });
+      // Plain insert (not upsert-on-conflict): uq__tasks__trello_checkitem_id is
+      // a PARTIAL unique index (WHERE trello_checkitem_id IS NOT NULL), which
+      // Postgres cannot use to infer an ON CONFLICT target - an upsert here
+      // errors with "no unique or exclusion constraint matching". Two concurrent
+      // deliveries inserting the same brand-new item is rare and self-heals on
+      // the next card event, so a plain insert is the right trade-off.
+      const { error } = await supabaseAdmin.from("tasks").insert(inserts);
       if (error) {
         throw new Error(`insert steps failed: ${error.message}`);
       }
