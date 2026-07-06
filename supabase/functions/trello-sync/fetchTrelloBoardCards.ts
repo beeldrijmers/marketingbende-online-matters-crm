@@ -22,7 +22,10 @@ export const fetchTrelloBoardCards = async ({
     "name,idList,due,dueComplete,shortUrl,desc,labels",
   );
   url.searchParams.set("attachments", "true");
-  url.searchParams.set("attachment_fields", "url,name");
+  url.searchParams.set(
+    "attachment_fields",
+    "url,name,isUpload,mimeType,bytes,date,fileName",
+  );
   url.searchParams.set("members", "true");
   url.searchParams.set("member_fields", "fullName");
   url.searchParams.set("checklists", "all");

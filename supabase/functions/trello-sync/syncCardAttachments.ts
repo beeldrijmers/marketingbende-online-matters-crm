@@ -1,0 +1,148 @@
+// Imports a Trello card's uploaded files into the CRM: each file is downloaded
+// from Trello (authenticated), stored in the Supabase "attachments" bucket and
+// attached to the deal as a note, so the card's documents live in the CRM and
+// no longer depend on Trello.
+//
+// Idempotent per attachment: every imported note carries a
+// "[trello-bijlage:<id>]" marker; an attachment whose marker already exists on
+// the deal is skipped, and the storage object name is derived from the
+// attachment id so a retried upload can never duplicate the file either.
+//
+// BEST-EFFORT by design: attachment import must never fail the sync of the
+// deal itself (webhook retries would duplicate other work). Failures are
+// logged per attachment and skipped. Returns the number of newly imported
+// attachments.
+
+import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
+import { resolveDefaultSalesId } from "./resolveDefaultSalesId.ts";
+import type { TrelloUploadedAttachment } from "./trelloCardTypes.ts";
+
+// Trello attachment downloads require the key/token as an OAuth header (query
+// params are not accepted on the download endpoint).
+const trelloAuthHeader = (apiKey: string, token: string): string =>
+  `OAuth oauth_consumer_key="${apiKey}", oauth_token="${token}"`;
+
+// Anything bigger is skipped (and logged): the CRM is not a video archive, and
+// edge functions hold the file in memory during the transfer.
+const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
+
+export const attachmentMarker = (attachmentId: string): string =>
+  `[trello-bijlage:${attachmentId}]`;
+
+export const attachmentNoteText = (
+  attachment: Pick<TrelloUploadedAttachment, "id" | "name">,
+): string => `[Trello - bijlage] ${attachment.name}
+
+${attachmentMarker(attachment.id)}`;
+
+// Deterministic storage object name: retries overwrite nothing and create no
+// duplicates. The extension is kept so previews/downloads behave.
+export const storageNameFor = (
+  attachment: Pick<TrelloUploadedAttachment, "id" | "name" | "fileName">,
+): string => {
+  const source = attachment.fileName || attachment.name || "";
+  const dotIndex = source.lastIndexOf(".");
+  const extension =
+    dotIndex > 0 && dotIndex < source.length - 1
+      ? source.slice(dotIndex).toLowerCase()
+      : "";
+  return `trello-${attachment.id}${extension}`;
+};
+
+export const syncCardAttachments = async ({
+  dealId,
+  attachments,
+  apiKey,
+  token,
+}: {
+  dealId: number;
+  attachments: TrelloUploadedAttachment[];
+  apiKey: string;
+  token: string;
+}): Promise<number> => {
+  if (!attachments.length) return 0;
+
+  let imported = 0;
+  for (const attachment of attachments) {
+    try {
+      if (
+        attachment.bytes !== null &&
+        attachment.bytes > MAX_ATTACHMENT_BYTES
+      ) {
+        console.warn(
+          `Skipping Trello attachment ${attachment.id} (${attachment.name}): ${attachment.bytes} bytes exceeds the import limit`,
+        );
+        continue;
+      }
+
+      // Idempotency: skip when this attachment's marker already exists on the
+      // deal (imported by an earlier sync or backfill run).
+      const { data: existing, error: existingError } = await supabaseAdmin
+        .from("deal_notes")
+        .select("id")
+        .eq("deal_id", dealId)
+        .like("text", `%${attachmentMarker(attachment.id)}%`)
+        .limit(1)
+        .maybeSingle();
+      if (existingError) {
+        throw new Error(
+          `Could not check for an existing note: ${existingError.message}`,
+        );
+      }
+      if (existing) continue;
+
+      const response = await fetch(attachment.url, {
+        headers: { Authorization: trelloAuthHeader(apiKey, token) },
+      });
+      if (!response.ok) {
+        throw new Error(
+          `Download failed: ${response.status} ${await response.text()}`,
+        );
+      }
+      const content = await response.arrayBuffer();
+
+      const objectName = storageNameFor(attachment);
+      const contentType = attachment.mimeType || "application/octet-stream";
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from("attachments")
+        .upload(objectName, content, { contentType, upsert: true });
+      if (uploadError) {
+        throw new Error(`Storage upload failed: ${uploadError.message}`);
+      }
+
+      const { data: publicUrl } = supabaseAdmin.storage
+        .from("attachments")
+        .getPublicUrl(objectName);
+
+      const { error: noteError } = await supabaseAdmin
+        .from("deal_notes")
+        .insert({
+          deal_id: dealId,
+          text: attachmentNoteText(attachment),
+          sales_id: await resolveDefaultSalesId(),
+          attachments: [
+            {
+              title: attachment.name,
+              type: contentType,
+              path: objectName,
+              src: publicUrl.publicUrl,
+            },
+          ],
+          // Preserve when the file was attached in Trello; the DB default
+          // (now()) applies for attachments without a date.
+          ...(attachment.date ? { date: attachment.date } : {}),
+        });
+      if (noteError) {
+        throw new Error(`Note insert failed: ${noteError.message}`);
+      }
+
+      imported += 1;
+    } catch (error) {
+      console.error(
+        `Could not import Trello attachment ${attachment.id} (${attachment.name}) for deal ${dealId} (best-effort):`,
+        error,
+      );
+    }
+  }
+  return imported;
+};

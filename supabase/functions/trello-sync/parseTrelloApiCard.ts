@@ -12,7 +12,16 @@ export interface TrelloApiCard {
   shortUrl: string;
   desc: string | null;
   labels?: { name: string }[];
-  attachments?: { url: string; name: string }[];
+  attachments?: {
+    id?: string;
+    url: string;
+    name: string;
+    isUpload?: boolean;
+    mimeType?: string | null;
+    bytes?: number | null;
+    date?: string | null;
+    fileName?: string | null;
+  }[];
   members?: { id: string; fullName: string }[];
   checklists?: {
     id: string;
@@ -39,6 +48,19 @@ export const parseTrelloApiCard = (card: TrelloApiCard): TrelloCardInput => ({
   attachmentUrls: (card.attachments ?? [])
     .map((attachment) => attachment.url)
     .filter(Boolean),
+  // Only real uploads (isUpload) become CRM attachments; pasted links stay in
+  // attachmentUrls for the website/logo heuristics above.
+  uploadedAttachments: (card.attachments ?? [])
+    .filter((attachment) => attachment.isUpload && attachment.id)
+    .map((attachment) => ({
+      id: attachment.id as string,
+      name: attachment.name,
+      url: attachment.url,
+      mimeType: attachment.mimeType ?? null,
+      bytes: attachment.bytes ?? null,
+      date: attachment.date ?? null,
+      fileName: attachment.fileName ?? null,
+    })),
   members: (card.members ?? []).map((member) => ({
     id: member.id,
     fullName: member.fullName,
