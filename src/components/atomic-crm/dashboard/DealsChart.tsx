@@ -58,20 +58,20 @@ export const DealsChart = memo(() => {
         won: dealsByMonth[month]
           .filter((deal: Deal) => deal.stage === "won")
           .reduce((acc: number, deal: Deal) => {
-            acc += deal.amount;
+            acc += deal.amount ?? 0;
             return acc;
           }, 0),
         pending: dealsByMonth[month]
           .filter((deal: Deal) => !["won", "lost"].includes(deal.stage))
           .reduce((acc: number, deal: Deal) => {
             // @ts-expect-error - multiplier type issue
-            acc += deal.amount * multiplier[deal.stage];
+            acc += (deal.amount ?? 0) * multiplier[deal.stage];
             return acc;
           }, 0),
         lost: dealsByMonth[month]
           .filter((deal: Deal) => deal.stage === "lost")
           .reduce((acc: number, deal: Deal) => {
-            acc -= deal.amount;
+            acc -= deal.amount ?? 0;
             return acc;
           }, 0),
       };
@@ -129,22 +129,7 @@ export const DealsChart = memo(() => {
                 )}
               </div>
             )}
-            axisTop={{
-              tickSize: 0,
-              tickPadding: 12,
-              style: {
-                ticks: {
-                  text: {
-                    fill: "var(--color-muted-foreground)",
-                  },
-                },
-                legend: {
-                  text: {
-                    fill: "var(--color-muted-foreground)",
-                  },
-                },
-              },
-            }}
+            axisTop={null}
             axisBottom={{
               legendPosition: "middle",
               legendOffset: 50,

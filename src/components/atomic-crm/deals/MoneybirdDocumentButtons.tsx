@@ -228,7 +228,7 @@ const MoneybirdDocumentDialog = ({
                 {translate("resources.deals.moneybird.amount")}
               </span>
               <span className="text-sm font-medium">
-                {formatAmount(record.amount, currency)}
+                {formatAmount(record.amount ?? 0, currency)}
               </span>
             </div>
 
