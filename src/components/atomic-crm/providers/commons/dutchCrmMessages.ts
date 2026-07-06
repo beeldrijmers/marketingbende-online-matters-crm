@@ -219,6 +219,7 @@ export const dutchCrmMessages = {
         contact_ids: "Contacten",
         category: "Categorie",
         amount: "Budget",
+        revenue_period: "Type omzet",
         expected_closing_date: "Verwachte afsluitdatum",
         start_date: "Startdatum",
         delivery_date: "Opleverdatum",
@@ -534,6 +535,17 @@ export const dutchCrmMessages = {
     dashboard: {
       deals_chart: "Verwachte deal-omzet",
       deals_pipeline: "Deals pipeline",
+      revenue: {
+        title: "Omzet per maand",
+        recurring: "Maandelijks terugkerend",
+        oneoff: "Eenmalig",
+        mrr_label: "Maandelijks terugkerende omzet",
+        mrr_sub: "per maand, lopende abonnementen",
+        oneoff_label: "Eenmalige omzet",
+        oneoff_sub: "eenmalige projecten dit jaar",
+        empty:
+          "Nog geen omzetgegevens. Zet een bedrag en type (maandelijks/eenmalig) op je deals.",
+      },
       latest_activity: "Laatste activiteit",
       latest_activity_error: "Fout bij het laden van de laatste activiteit",
       latest_notes: "Mijn laatste notities",

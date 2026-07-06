@@ -6,6 +6,7 @@ import { DashboardActivityLog } from "./DashboardActivityLog";
 import { DashboardStepper } from "./DashboardStepper";
 import { DealsChart } from "./DealsChart";
 import { HotContacts } from "./HotContacts";
+import { RevenueDashboard } from "./RevenueDashboard";
 import { TasksList } from "./TasksList";
 import { Welcome } from "./Welcome";
 
@@ -67,6 +68,12 @@ export const Dashboard = () => {
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 mt-1">
+      {/* Full-width revenue overview across the top of the dashboard. */}
+      {totalDeal ? (
+        <div className="xl:col-span-12 min-w-0">
+          <RevenueDashboard />
+        </div>
+      ) : null}
       <div className="xl:col-span-3 min-w-0">
         <div className="flex flex-col gap-6">
           {import.meta.env.VITE_IS_DEMO === "true" ? <Welcome /> : null}

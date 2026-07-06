@@ -4,6 +4,7 @@ import {
   resolveCategory,
   resolveStage,
   resolveDealName,
+  resolveRevenuePeriod,
 } from "./resolveDealFields.ts";
 import { findOrCreateCompany } from "./findOrCreateCompany.ts";
 import { resolveDefaultSalesId } from "./resolveDefaultSalesId.ts";
@@ -47,13 +48,14 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
   // client revenue, so no amount is ever attached to them.
   const amount =
     category === "happr" ? null : extractDealAmount(card.name, card.desc);
+  const revenuePeriod = resolveRevenuePeriod(category);
   // The real project start: decoded from the Trello card id so a long-running
   // deal keeps its true creation date instead of the import/backfill time.
   const createdAt = trelloCardCreatedAt(card.id);
 
   const { data: existingDeal, error: fetchError } = await supabaseAdmin
     .from("deals")
-    .select("id, description, amount")
+    .select("id, description, amount, revenue_period")
     .eq("trello_card_id", card.id)
     .maybeSingle();
   if (fetchError) {
@@ -85,6 +87,12 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
     const currentAmount = existingDeal.amount as number | null;
     const canEnrichAmount = amount != null && !currentAmount;
 
+    // Same rule for the revenue period: only classify a deal that has none yet,
+    // and only when the category maps cleanly, so a manual correction stands.
+    const currentRevenuePeriod = existingDeal.revenue_period as string | null;
+    const canEnrichRevenuePeriod =
+      revenuePeriod != null && !currentRevenuePeriod;
+
     const { error: updateError } = await supabaseAdmin
       .from("deals")
       .update({
@@ -98,6 +106,7 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
         ...(createdAt ? { created_at: createdAt } : {}),
         ...(canEnrichDescription ? { description } : {}),
         ...(canEnrichAmount ? { amount } : {}),
+        ...(canEnrichRevenuePeriod ? { revenue_period: revenuePeriod } : {}),
       })
       .eq("id", existingDeal.id);
     if (updateError) {
@@ -120,6 +129,7 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
       expected_closing_date: expectedClosingDate,
       description,
       ...(amount != null ? { amount } : {}),
+      ...(revenuePeriod != null ? { revenue_period: revenuePeriod } : {}),
       ...(createdAt ? { created_at: createdAt } : {}),
       trello_card_id: card.id,
       sales_id: salesId,

@@ -42,3 +42,22 @@ export const resolveStage = (
 // it down to the company name (which already gets its own record).
 export const resolveDealName = (cardName: string): string =>
   cardName.replace(/^go\s*-\s*/i, "").trim();
+
+// Whether a deal's fee recurs monthly or is a one-off, derived from its
+// category: SEO is a monthly subscription, project categories are one-off.
+// Anything else (Happr, overig) is left unclassified (null) so it doesn't
+// count as either kind of revenue. Only set on creation and when a category
+// maps cleanly; a manual edit in the CRM always wins.
+export const resolveRevenuePeriod = (
+  category: string,
+): "maandelijks" | "eenmalig" | null => {
+  if (category === "seo") return "maandelijks";
+  if (
+    category === "eenmalig" ||
+    category === "website-development" ||
+    category === "website-optimalisatie"
+  ) {
+    return "eenmalig";
+  }
+  return null;
+};

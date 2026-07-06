@@ -46,6 +46,9 @@ export const generateDeals = (
       stage: random.arrayElement(dealStages).value,
       description: lorem.paragraphs(datatype.number({ min: 1, max: 4 })),
       amount: datatype.number(1000) * 100,
+      revenue_period: random.arrayElement(["maandelijks", "eenmalig"]) as
+        | "maandelijks"
+        | "eenmalig",
       created_at,
       updated_at: randomDate(new Date(created_at)).toISOString(),
       expected_closing_date,

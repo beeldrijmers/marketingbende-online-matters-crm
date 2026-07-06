@@ -13,6 +13,13 @@ import { contactOptionText } from "../misc/ContactOption";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import { AutocompleteCompanyInput } from "../companies/AutocompleteCompanyInput.tsx";
 
+// Whether the deal's amount recurs monthly or is a one-off fee; drives the
+// revenue dashboard (MRR vs one-off). Left blank when not applicable.
+const REVENUE_PERIOD_CHOICES = [
+  { value: "maandelijks", label: "Maandelijks terugkerend" },
+  { value: "eenmalig", label: "Eenmalig" },
+];
+
 export const DealInputs = () => {
   const isMobile = useIsMobile();
   return (
@@ -84,6 +91,13 @@ const DealMiscInputs = () => {
         defaultValue={0}
         helperText={false}
         validate={required()}
+      />
+      <SelectInput
+        source="revenue_period"
+        choices={REVENUE_PERIOD_CHOICES}
+        optionText="label"
+        optionValue="value"
+        helperText={false}
       />
       <DateInput
         validate={required()}
