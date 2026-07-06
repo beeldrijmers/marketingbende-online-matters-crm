@@ -389,6 +389,37 @@ const getDataProviderWithCustomMethods = () => {
         );
       }
     },
+    // Pull every Trello card into the CRM on demand (the "Synchroniseer Trello"
+    // button). The edge function runs the full, idempotent sync and returns a
+    // summary of what it touched.
+    async syncTrelloCards() {
+      const { data, error } = await getSupabaseClient().functions.invoke<{
+        data: {
+          cardCount: number;
+          synced: number;
+          totalComments: number;
+          totalAttachments: number;
+          archivedAttachments: number;
+        };
+      }>("trello-sync", {
+        method: "POST",
+        body: { trigger: "sync_all" },
+      });
+      if (!data || error) {
+        console.error("trello-sync.sync_all.error", error);
+        const errorDetails = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(
+          errorDetails?.message || "Synchroniseren met Trello is mislukt",
+        );
+      }
+      return data.data;
+    },
     async getConfiguration(): Promise<ConfigurationContextValue> {
       const { data } = await baseDataProvider.getOne("configuration", {
         id: 1,
