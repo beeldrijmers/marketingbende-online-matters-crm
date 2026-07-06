@@ -30,7 +30,7 @@ const Header = () => {
     <>
       <nav className="grow">
         <header className="bg-secondary">
-          <div className="max-w-screen-xl mx-auto px-4">
+          <div className="w-full px-4 lg:px-6">
             <div className="flex justify-between items-center gap-4 lg:grid lg:grid-cols-[1fr_auto_1fr]">
               <Link
                 to="/"

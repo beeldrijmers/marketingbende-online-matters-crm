@@ -1,10 +1,8 @@
 import { Suspense, type ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { useLocation } from "react-router";
 import { Notification } from "@/components/admin/notification";
 import { Error } from "@/components/admin/error";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 
 import { useConfigurationLoader } from "../root/useConfigurationLoader";
 import Header from "./Header";
@@ -20,20 +18,12 @@ const PageLoadingSkeleton = () => (
 
 export const Layout = ({ children }: { children: ReactNode }) => {
   useConfigurationLoader();
-  const location = useLocation();
-  // The deals kanban needs every horizontal pixel it can get; all other pages
-  // stay centered at a comfortable reading width.
-  const fullBleed = location.pathname.startsWith("/deals");
   return (
     <>
       <Header />
-      <main
-        className={cn(
-          "mx-auto pt-4 px-4",
-          fullBleed ? "max-w-full" : "max-w-screen-xl",
-        )}
-        id="main-content"
-      >
+      {/* Every page uses the full window width; a comfortable side padding keeps
+          content off the edges on large screens. */}
+      <main className="w-full pt-4 px-4 lg:px-6" id="main-content">
         <ErrorBoundary FallbackComponent={Error}>
           <Suspense fallback={<PageLoadingSkeleton />}>{children}</Suspense>
         </ErrorBoundary>

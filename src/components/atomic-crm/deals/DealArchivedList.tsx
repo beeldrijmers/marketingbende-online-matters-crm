@@ -5,8 +5,14 @@ import {
   useTranslate,
 } from "ra-core";
 import { useEffect, useState } from "react";
+import { Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import type { Deal } from "../types";
 import { DealCardContent } from "./DealCard";
@@ -55,10 +61,11 @@ export const DealArchivedList = () => {
   return (
     <div className="w-full flex flex-row items-center justify-center">
       <Button
-        variant="ghost"
+        variant="outline"
         onClick={() => setOpenDialog(true)}
         className="my-4"
       >
+        <Archive className="mr-2 size-4" />
         {translate("resources.deals.archived.view")}
       </Button>
       <Dialog open={openDialog} onOpenChange={() => setOpenDialog(false)}>
@@ -66,6 +73,9 @@ export const DealArchivedList = () => {
           <DialogTitle>
             {translate("resources.deals.archived.list_title")}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {translate("resources.deals.archived.list_title")}
+          </DialogDescription>
           <div className="flex flex-col gap-8">
             {Object.entries(archivedListsByDate).map(([date, deals]) => (
               <div key={date} className="flex flex-col gap-4">
