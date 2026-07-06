@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 import { CompanyAvatar } from "../companies/CompanyAvatar";
-import { OwnerChipField } from "../sales/SaleAvatar";
+import { AssigneesField } from "../sales/AssigneesField";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Deal } from "../types";
 
@@ -197,11 +197,9 @@ export const DealCardContent = ({
             )}
 
             <div className="flex items-center justify-between gap-2">
-              <OwnerChipField
-                source="sales_id"
-                record={deal}
+              <AssigneesField
+                ids={deal.assignee_ids}
                 size={16}
-                showParty
                 className="text-xs text-muted-foreground"
               />
               {moneybird && (

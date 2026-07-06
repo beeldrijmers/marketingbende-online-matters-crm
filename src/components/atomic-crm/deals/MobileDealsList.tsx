@@ -16,7 +16,7 @@ import { CompanyAvatar } from "../companies/CompanyAvatar";
 import MobileHeader from "../layout/MobileHeader";
 import { MobileContent } from "../layout/MobileContent";
 import { useConfigurationContext } from "../root/ConfigurationContext";
-import { OwnerChipField } from "../sales/SaleAvatar";
+import { AssigneesField } from "../sales/AssigneesField";
 import type { Deal, DealStage } from "../types";
 import { DealShow } from "./DealShow";
 
@@ -191,11 +191,9 @@ const MobileDealRow = ({ deal }: { deal: Deal }) => {
               empty="Geen bedrag"
             />
           </span>
-          <OwnerChipField
-            source="sales_id"
-            record={deal}
+          <AssigneesField
+            ids={deal.assignee_ids}
             size={16}
-            showParty
             className="text-xs text-muted-foreground"
           />
         </div>
