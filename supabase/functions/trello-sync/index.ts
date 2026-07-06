@@ -13,6 +13,10 @@ import { run as runTrelloBackfill } from "./backfill.ts";
 import { WON_LIST_ID } from "./trelloListMaps.ts";
 import { isMoveToWonList, sendCardDoneNotification } from "./notifyCardDone.ts";
 import { claimWonNotification } from "./claimWonNotification.ts";
+import { syncCardAttachments } from "./syncCardAttachments.ts";
+
+const TRELLO_API_KEY = Deno.env.get("TRELLO_API_KEY") ?? "";
+const TRELLO_TOKEN = Deno.env.get("TRELLO_TOKEN") ?? "";
 
 // Action types that mean "the card (its stage/category/name/steps) may have
 // changed" - the full, authoritative card is re-fetched and upserted for all of
@@ -30,6 +34,9 @@ const CARD_SYNC_ACTIONS = new Set([
   "deleteCheckItem",
   "addChecklistToCard",
   "removeChecklistFromCard",
+  // A newly uploaded file: the re-fetched card carries it and the attachment
+  // import below pulls it into the CRM.
+  "addAttachmentToCard",
 ]);
 
 Deno.serve(async (req) => {
@@ -81,6 +88,14 @@ Deno.serve(async (req) => {
         return new Response("Missing action.data.card.id", { status: 403 });
       const card = await fetchTrelloCard(cardId);
       const dealId = await upsertDealFromCard(card);
+      // Pull any uploaded files on the card into the CRM (idempotent,
+      // best-effort: an attachment failure never fails the card sync).
+      await syncCardAttachments({
+        dealId,
+        attachments: card.uploadedAttachments,
+        apiKey: TRELLO_API_KEY,
+        token: TRELLO_TOKEN,
+      });
       // When the card was just moved into "Klaar", let the team lead know the
       // project is finished (and by whom). Only fires on the actual transition,
       // and claimWonNotification makes sure a retried/duplicate webhook delivery

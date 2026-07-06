@@ -16,6 +16,7 @@ import { fetchTrelloBoardCards } from "./fetchTrelloBoardCards.ts";
 import { fetchTrelloCard } from "./fetchTrelloCard.ts";
 import { fetchTrelloCardComments } from "./fetchTrelloCardComments.ts";
 import { upsertDealFromCard } from "./upsertDealFromCard.ts";
+import { syncCardAttachments } from "./syncCardAttachments.ts";
 import { addTrelloCommentAsDealNote } from "./addTrelloCommentAsDealNote.ts";
 import { resolveCompanyName } from "./companyNameOverrides.ts";
 import { findOrCreateCompany } from "./findOrCreateCompany.ts";
@@ -61,6 +62,15 @@ const backfillCard = async (
   const fullCard = await fetchTrelloCard(card.id);
   const dealId = await upsertDealFromCard(fullCard);
 
+  // Import the card's uploaded files (idempotent: already-imported attachments
+  // are skipped by their marker, so re-running the backfill is safe).
+  const attachmentCount = await syncCardAttachments({
+    dealId,
+    attachments: fullCard.uploadedAttachments,
+    apiKey,
+    token,
+  });
+
   const comments = await fetchTrelloCardComments({
     cardId: card.id,
     apiKey,
@@ -79,7 +89,12 @@ const backfillCard = async (
     });
   }
 
-  return { cardId: card.id, dealId, commentCount: comments.length };
+  return {
+    cardId: card.id,
+    dealId,
+    commentCount: comments.length,
+    attachmentCount,
+  };
 };
 
 // Cards are processed with bounded concurrency rather than one at a time:
@@ -109,6 +124,7 @@ export const run = async (): Promise<{
   cardCount: number;
   synced: number;
   totalComments: number;
+  totalAttachments: number;
 }> => {
   const cards = await fetchTrelloBoardCards({
     boardId: BOARD_ID,
@@ -132,12 +148,14 @@ export const run = async (): Promise<{
 
   let synced = 0;
   let totalComments = 0;
+  let totalAttachments = 0;
   await runWithConcurrency(
     cards,
     async (card) => {
       const result = await backfillCard(card);
       synced += 1;
       totalComments += result.commentCount;
+      totalAttachments += result.attachmentCount;
       // eslint-disable-next-line no-console
       console.log(
         `[${synced}/${cards.length}] "${card.name}" -> deal ${result.dealId} (${result.commentCount} comments)`,
@@ -147,8 +165,10 @@ export const run = async (): Promise<{
   );
 
   // eslint-disable-next-line no-console
-  console.log(`Done. Synced ${synced} deals, ${totalComments} comments.`);
-  return { cardCount: cards.length, synced, totalComments };
+  console.log(
+    `Done. Synced ${synced} deals, ${totalComments} comments, ${totalAttachments} new attachments.`,
+  );
+  return { cardCount: cards.length, synced, totalComments, totalAttachments };
 };
 
 if (import.meta.main) {

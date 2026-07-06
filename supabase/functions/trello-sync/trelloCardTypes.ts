@@ -17,6 +17,23 @@ export interface TrelloCheckItemInput {
   due: string | null;
 }
 
+// A file physically uploaded to the Trello card (isUpload === true), as opposed
+// to a pasted link. These are downloaded into the CRM and attached to the deal
+// as notes, so the card's documents survive without Trello.
+export interface TrelloUploadedAttachment {
+  // Trello's attachment id: stable, and our idempotency key for the import.
+  id: string;
+  name: string;
+  // The authenticated download URL (requires the OAuth key/token header).
+  url: string;
+  mimeType: string | null;
+  bytes: number | null;
+  // When the file was attached in Trello; preserved on the imported note.
+  date: string | null;
+  // The original file name (name can be a human-edited title).
+  fileName: string | null;
+}
+
 export interface TrelloCardInput {
   id: string;
   name: string;
@@ -31,6 +48,8 @@ export interface TrelloCardInput {
   // URLs of the card's attachments — often the client's website, used as a
   // source for the company website/logo.
   attachmentUrls: string[];
+  // Real uploaded files on the card, imported into the CRM as deal notes.
+  uploadedAttachments: TrelloUploadedAttachment[];
   // The people assigned to the card as a whole — used to attribute the card's
   // steps (tasks) to the right CRM user.
   members: TrelloMemberInput[];
