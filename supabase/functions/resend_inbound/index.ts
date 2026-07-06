@@ -10,6 +10,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { addNoteToContact } from "../postmark/addNoteToContact.ts";
 import { addNoteToDeal } from "../postmark/addNoteToDeal.ts";
 import {
+  extractForwardedSender,
   getForwardedMailContent,
   stripSubjectForwardingPrefix,
 } from "../postmark/forwardedParser.ts";
@@ -172,10 +173,17 @@ Deno.serve(async (req) => {
         { status: 200 },
       );
     }
+    // Prefer the forwarded block's own "From:" line: it carries the client's
+    // real display name ("Jan Tester <jan@...>"), where the raw address scan
+    // below can only guess a first name from the address.
+    const forwardedSender = extractForwardedSender(textBody);
     const emailRegex = /[\w.+%-]+@[\w.-]+\.[a-zA-Z]{2,}/g;
-    const bodyEmails = ((textBody.match(emailRegex) || []) as string[]).map(
-      (email) => ({ Email: email, Name: "" }),
-    );
+    const bodyEmails = forwardedSender
+      ? [{ Email: forwardedSender.email, Name: forwardedSender.name }]
+      : ((textBody.match(emailRegex) || []) as string[]).map((email) => ({
+          Email: email,
+          Name: "",
+        }));
     participants = gatherClientParticipants({
       recipients: bodyEmails,
       salesEmails,

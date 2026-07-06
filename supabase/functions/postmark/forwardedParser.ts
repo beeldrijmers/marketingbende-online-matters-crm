@@ -2,8 +2,12 @@
 const FORWARD_SEPARATOR_PATTERNS = [
   // Gmail
   /^-{5,}\s*Forwarded message\s*-{5,}/im,
+  // Gmail (Dutch UI)
+  /^-{5,}\s*Doorgestuurd bericht\s*-{5,}/im,
   // Apple Mail
   /^Begin forwarded message:/im,
+  // Apple Mail (Dutch UI)
+  /^Begin doorgestuurd bericht:/im,
   // Outlook / Exchange
   /^-{5,}\s*Original Message\s*-{5,}/im,
   // French clients (Transféré / Message transféré)
@@ -12,6 +16,20 @@ const FORWARD_SEPARATOR_PATTERNS = [
   // German (Weitergeleitet)
   /^-{5,}\s*Weitergeleitete Nachricht\s*-{5,}/im,
 ];
+
+// The original sender of a forwarded mail, taken from the "From:"-style header
+// line inside the forwarded block. Gives the client's real display name
+// ("Jan Tester") where the address-only heuristic could only guess "Jan" from
+// "jan@...". Null when the body carries no recognisable forwarded sender.
+export const extractForwardedSender = (
+  body: string,
+): { name: string; email: string } | null => {
+  const match = body.match(
+    /^\s*(?:From|Van|De|Von)\s*:\s*"?([^"<\n]*?)"?\s*<([\w.+%-]+@[\w.-]+\.[a-zA-Z]{2,})>/im,
+  );
+  if (!match) return null;
+  return { name: match[1].trim(), email: match[2].toLowerCase() };
+};
 
 export const stripForwardingHeaderBlock = (text: string): string => {
   const lines = text.split("\n");
