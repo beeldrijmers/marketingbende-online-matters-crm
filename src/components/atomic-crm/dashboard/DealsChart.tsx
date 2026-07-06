@@ -81,6 +81,15 @@ export const DealsChart = memo(() => {
     return amountByMonth;
   }, [data]);
 
+  // Maps a nivo series id to the same label the legend above the chart shows.
+  const seriesLabels = {
+    won: wonLabel,
+    pending: translate("crm.dashboard.deals_chart_pending", {
+      _: "Open (gewogen)",
+    }),
+    lost: lostLabel ?? "Verloren",
+  };
+
   if (isPending) return null; // FIXME return skeleton instead
   const range = months.reduce(
     (acc, month) => {
@@ -147,16 +156,31 @@ export const DealsChart = memo(() => {
             enableGridX={true}
             enableGridY={false}
             enableLabel={false}
-            tooltip={({ value, indexValue }) => (
-              <div className="p-2 bg-secondary rounded shadow inline-flex items-center gap-1 text-secondary-foreground">
-                <strong>{indexValue}: </strong>&nbsp;{value > 0 ? "+" : ""}
-                {value.toLocaleString(
-                  acceptedLanguages.at(0) ?? DEFAULT_LOCALE,
-                  {
-                    style: "currency",
-                    currency,
-                  },
-                )}
+            tooltip={({ id, value, color, indexValue }) => (
+              <div className="min-w-40 rounded-md border bg-popover px-3 py-2 text-popover-foreground shadow-md">
+                <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {indexValue}
+                </p>
+                <div className="flex items-center gap-2 text-sm">
+                  <span
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: color }}
+                  />
+                  <span className="text-muted-foreground">
+                    {seriesLabels[id as keyof typeof seriesLabels]}
+                  </span>
+                  <span className="ml-auto pl-3 font-semibold tabular-nums">
+                    {value.toLocaleString(
+                      acceptedLanguages.at(0) ?? DEFAULT_LOCALE,
+                      {
+                        style: "currency",
+                        currency,
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      },
+                    )}
+                  </span>
+                </div>
               </div>
             )}
             axisTop={null}

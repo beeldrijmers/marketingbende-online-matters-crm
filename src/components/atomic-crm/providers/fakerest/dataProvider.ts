@@ -310,6 +310,22 @@ export const createDataProvider = ({
         "De Moneybird-koppeling is niet beschikbaar in de demomodus.",
       );
     },
+    // Pretend the demo user is connected so the document buttons stay visible
+    // (creation still fails with the demo message above).
+    getMoneybirdConnection: async () => ({
+      administrationId: "123456789012345678",
+      administrationName: "Demo administratie",
+    }),
+    connectMoneybird: async () => {
+      throw new Error(
+        "De Moneybird-koppeling is niet beschikbaar in de demomodus.",
+      );
+    },
+    disconnectMoneybird: async () => {
+      throw new Error(
+        "De Moneybird-koppeling is niet beschikbaar in de demomodus.",
+      );
+    },
     // No Trello backend in the demo; ticking a step off simply stays local.
     completeTrelloStep: async () => {},
     getConfiguration: async (): Promise<ConfigurationContextValue> => {

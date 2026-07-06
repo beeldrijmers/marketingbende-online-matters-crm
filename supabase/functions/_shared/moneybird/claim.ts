@@ -16,7 +16,10 @@
 import { supabaseAdmin } from "../supabaseAdmin.ts";
 import type { DocumentKind } from "./types.ts";
 
-const STALE_CLAIM_MS = 5 * 60 * 1000;
+// Must comfortably exceed the maximum edge-function lifetime (400s on paid
+// plans) plus the per-call fetch timeout, so a claim is only ever demoted
+// while its isolate is provably dead — never while it can still finish.
+const STALE_CLAIM_MS = 10 * 60 * 1000;
 
 // The deals column set per document kind.
 const COLUMNS = {
@@ -26,6 +29,7 @@ const COLUMNS = {
     claimedAt: "moneybird_estimate_claimed_at",
     createdBy: "moneybird_estimate_created_by",
     error: "moneybird_estimate_error",
+    administrationId: "moneybird_estimate_administration_id",
   },
   invoice: {
     id: "moneybird_invoice_id",
@@ -33,6 +37,7 @@ const COLUMNS = {
     claimedAt: "moneybird_invoice_claimed_at",
     createdBy: "moneybird_invoice_created_by",
     error: "moneybird_invoice_error",
+    administrationId: "moneybird_invoice_administration_id",
   },
 } as const;
 
@@ -45,7 +50,16 @@ export interface ClaimedDeal {
 }
 
 export type ClaimResult =
-  | { outcome: "claimed"; deal: ClaimedDeal }
+  | {
+      outcome: "claimed";
+      deal: ClaimedDeal;
+      // The administration a PREVIOUS (failed) attempt ran against, recorded by
+      // markDocumentFailed. Null when this is the first attempt. The caller
+      // uses it to reconcile against that administration before creating a new
+      // document in its own, so a document that landed there is adopted
+      // instead of duplicated.
+      previousAdministrationId: string | null;
+    }
   | { outcome: "already_completed"; documentId: string }
   | { outcome: "in_progress" }
   | { outcome: "not_found" };
@@ -76,6 +90,9 @@ export const claimDealForDocument = async (
 
   // Step 2 — the atomic claim. Exactly one concurrent caller can flip a
   // (null | 'failed') status to 'pending'; a losing caller matches no row.
+  // The administration column is deliberately NOT touched here, so the
+  // post-update select still returns the administration of the previous
+  // (failed) attempt.
   const { data: claimed, error: claimError } = await supabaseAdmin
     .from("deals")
     .update({
@@ -86,7 +103,9 @@ export const claimDealForDocument = async (
     })
     .eq("id", dealId)
     .or(`${cols.status}.is.null,${cols.status}.eq.failed`)
-    .select("id, company_id, name, amount, description")
+    .select(
+      `id, company_id, name, amount, description, ${cols.administrationId}`,
+    )
     .maybeSingle();
   if (claimError) {
     throw new Error(
@@ -94,7 +113,18 @@ export const claimDealForDocument = async (
     );
   }
   if (claimed) {
-    return { outcome: "claimed", deal: claimed as ClaimedDeal };
+    const row = claimed as ClaimedDeal & Record<string, string | null>;
+    return {
+      outcome: "claimed",
+      deal: {
+        id: row.id,
+        company_id: row.company_id,
+        name: row.name,
+        amount: row.amount,
+        description: row.description,
+      } as ClaimedDeal,
+      previousAdministrationId: row[cols.administrationId] ?? null,
+    };
   }
 
   // We did not win the claim. Read the current state to explain why.
@@ -120,6 +150,7 @@ export const markDocumentCompleted = async (
   kind: DocumentKind,
   dealId: number | string,
   documentId: string,
+  administrationId: string,
 ): Promise<void> => {
   const cols = COLUMNS[kind];
   const { error } = await supabaseAdmin
@@ -128,6 +159,9 @@ export const markDocumentCompleted = async (
       [cols.id]: documentId,
       [cols.status]: "completed",
       [cols.error]: null,
+      // The administration the document lives in — connections are per user, so
+      // this differs per creator; the UI deep link needs it.
+      [cols.administrationId]: administrationId,
     })
     .eq("id", dealId);
   if (error) {
@@ -144,6 +178,7 @@ export const markDocumentFailed = async (
   kind: DocumentKind,
   dealId: number | string,
   message: string,
+  administrationId: string,
 ): Promise<void> => {
   const cols = COLUMNS[kind];
   const { error } = await supabaseAdmin
@@ -151,6 +186,11 @@ export const markDocumentFailed = async (
     .update({
       [cols.status]: "failed",
       [cols.error]: message.slice(0, 1000),
+      // Record which administration this attempt ran against. The Moneybird
+      // create may have landed there even though we saw a failure, so a retry
+      // (possibly by a user of a DIFFERENT administration) must reconcile
+      // against this one first.
+      [cols.administrationId]: administrationId,
     })
     .eq("id", dealId);
   if (error) {

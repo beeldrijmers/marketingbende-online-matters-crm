@@ -11,6 +11,13 @@
 // column set, and the reference prefix differ.
 export type DocumentKind = "estimate" | "invoice";
 
+// An administration a personal API token has access to, as returned by the
+// non-scoped /administrations.json endpoint (used at connect time).
+export interface MoneybirdAdministration {
+  id: string;
+  name: string;
+}
+
 export interface MoneybirdTaxRate {
   id: string;
   name: string;

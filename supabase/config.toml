@@ -178,5 +178,7 @@ verify_jwt = false
 verify_jwt = false
 [functions.moneybird_invoice]
 verify_jwt = false
+[functions.moneybird_connection]
+verify_jwt = false
 [functions.resend_inbound]
 verify_jwt = false

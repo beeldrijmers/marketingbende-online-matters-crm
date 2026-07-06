@@ -244,7 +244,7 @@ export const englishCrmMessages = {
             "Check the details and create a draft estimate in Moneybird for this deal.",
           confirm: "Create estimate",
           warning:
-            "This creates a real draft estimate in Marketingbende's Moneybird administration. It is not automatically emailed to the client.",
+            "This creates a real draft estimate in your own Moneybird administration. It is not automatically emailed to the client.",
           success: "Estimate created in Moneybird",
           error: "Failed to create the estimate",
         },
@@ -257,7 +257,7 @@ export const englishCrmMessages = {
             "Check the details and create a draft invoice in Moneybird for this deal.",
           confirm: "Create invoice",
           warning:
-            "This creates a real draft invoice in Marketingbende's Moneybird administration. It is NOT sent automatically; send it yourself from Moneybird.",
+            "This creates a real draft invoice in your own Moneybird administration. It is NOT sent automatically; send it yourself from Moneybird.",
           success: "Invoice created in Moneybird",
           error: "Failed to create the invoice",
         },
@@ -278,6 +278,8 @@ export const englishCrmMessages = {
         wrong_currency:
           "The Moneybird integration only works with the EUR currency.",
         creating: "Creating...",
+        not_connected_hint:
+          "Link your own Moneybird administration on your profile page first.",
       },
       inbound: {
         title: "Inbound email",
@@ -635,6 +637,23 @@ export const englishCrmMessages = {
         title: "MCP Server",
         description:
           "Use this URL to connect your AI assistant to your CRM data via the Model Context Protocol (MCP).",
+      },
+      moneybird: {
+        title: "Moneybird",
+        description:
+          "Link your own Moneybird administration to create estimates and invoices from deals. Create a personal API token in Moneybird (profile icon, Settings, Developers, Create token) and paste it here.",
+        token_label: "Personal API token",
+        token_help:
+          "The token is validated with Moneybird and stored encrypted. It is never shown again.",
+        administration_label: "Administration",
+        administration_placeholder: "Choose an administration",
+        connect: "Link Moneybird",
+        connecting: "Linking...",
+        connected: "Linked to administration %{administration}.",
+        connect_success: "Moneybird linked to %{administration}",
+        disconnect: "Unlink",
+        disconnect_confirm: "Yes, unlink",
+        disconnect_success: "Moneybird unlinked",
       },
       password: {
         change: "Change password",

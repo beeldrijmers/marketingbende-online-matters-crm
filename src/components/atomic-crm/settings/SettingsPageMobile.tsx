@@ -47,6 +47,7 @@ import { ChangelogPage } from "../misc/ChangelogPage";
 import ImageEditorField from "../misc/ImageEditorField";
 import type { CrmDataProvider } from "../providers/types";
 import type { SalesFormData } from "../types";
+import { MoneybirdConnectionContent } from "./MoneybirdConnectionSection";
 
 const ChangePasswordButton = () => {
   const translate = useTranslate();
@@ -109,6 +110,7 @@ export const SettingsPageMobile = () => {
           <div className="space-y-6">
             <ProfileSection />
             <PreferencesSection />
+            <MoneybirdSection />
             <InboundEmailSection />
             <McpServerSection />
             <AboutSection />
@@ -450,6 +452,19 @@ const ThemeRow = () => {
         </ToggleGroupItem>
       </ToggleGroup>
     </Item>
+  );
+};
+
+const MoneybirdSection = () => {
+  const translate = useTranslate();
+
+  return (
+    <div>
+      <SectionLabel>{translate("crm.profile.moneybird.title")}</SectionLabel>
+      <div className="rounded-lg border p-4">
+        <MoneybirdConnectionContent />
+      </div>
+    </div>
   );
 };
 

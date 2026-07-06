@@ -30,6 +30,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
+import { useMoneybirdConnection } from "../misc/useMoneybirdConnection";
 import type { CrmDataProvider } from "../providers/types";
 import type { Company, Deal } from "../types";
 
@@ -62,18 +63,42 @@ const MoneybirdDocumentButton = ({
   kind: DocumentKind;
 }) => {
   const translate = useTranslate();
+  const notify = useNotify();
   const [open, setOpen] = useState(false);
   const isPending = statusOf(record, kind) === "pending";
   const Icon = iconFor(kind);
 
+  // Documents are created in the CALLER'S OWN Moneybird administration, so the
+  // create dialog only works for users who linked one. Without a connection the
+  // button stays clickable but explains itself via a notification (works for
+  // keyboard, touch and screen readers alike, unlike a hover-only hint on a
+  // disabled button). When the status query itself errors we let the click
+  // through: the edge function is the source of truth and answers with its own
+  // clear message.
+  const { data: connection, isPending: connectionLoading } =
+    useMoneybirdConnection();
+  const notConnected = !connectionLoading && connection === null;
+  const notConnectedHint = translate(
+    "resources.deals.moneybird.not_connected_hint",
+  );
+
+  const handleClick = () => {
+    if (notConnected) {
+      notify(notConnectedHint, { type: "warning" });
+      return;
+    }
+    setOpen(true);
+  };
+
   return (
     <>
       <Button
-        onClick={() => setOpen(true)}
+        onClick={handleClick}
         size="sm"
         variant="outline"
-        className="flex items-center gap-2 h-9"
-        disabled={isPending}
+        className={`flex items-center gap-2 h-9 ${notConnected ? "opacity-60" : ""}`}
+        disabled={isPending || connectionLoading}
+        title={notConnected ? notConnectedHint : undefined}
       >
         <Icon className="w-4 h-4" />
         {isPending
@@ -121,10 +146,14 @@ const MoneybirdDocumentDialog = ({
     { enabled: Boolean(record.company_id) },
   );
 
+  // Tax rates differ PER administration, so the cache key includes the
+  // administration of the caller's own connection: switching connections never
+  // serves the previous administration's rates from cache.
+  const { data: connection } = useMoneybirdConnection();
   const { data: taxRates, isPending: taxRatesLoading } = useQuery({
-    queryKey: ["moneybird_tax_rates"],
+    queryKey: ["moneybird_tax_rates", connection?.administrationId],
     queryFn: () => dataProvider.getMoneybirdTaxRates(),
-    enabled: open,
+    enabled: open && Boolean(connection),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -326,18 +355,21 @@ const ViewMoneybirdDocumentButton = ({
   const translate = useTranslate();
   const documentId = idOf(record, kind);
 
-  // The administration id is not a secret (it appears in Moneybird URLs); it is
-  // exposed as a public build env var so the deep link can be built client-side.
+  // Documents live in the administration of whoever created them (connections
+  // are per user), so the deep link is built from the administration id stored
+  // on the deal. The id is not a secret; it appears in Moneybird URLs.
+  const administrationId =
+    kind === "estimate"
+      ? record.moneybird_estimate_administration_id
+      : record.moneybird_invoice_administration_id;
+
   const href = useMemo(() => {
-    const adminId = import.meta.env.VITE_MONEYBIRD_ADMIN_ID as
-      | string
-      | undefined;
     const path = kind === "estimate" ? "estimates" : "sales_invoices";
-    if (adminId && documentId) {
-      return `https://moneybird.com/${adminId}/${path}/${documentId}`;
+    if (administrationId && documentId) {
+      return `https://moneybird.com/${administrationId}/${path}/${documentId}`;
     }
     return "https://moneybird.com";
-  }, [documentId, kind]);
+  }, [administrationId, documentId, kind]);
 
   return (
     <Button
