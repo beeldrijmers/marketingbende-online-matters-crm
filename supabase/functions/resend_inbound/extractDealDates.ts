@@ -15,15 +15,27 @@ const MAX_LABEL_TO_DATE_DISTANCE = 40;
 
 // Labels that introduce, respectively, the start date and the delivery date.
 // Longer variants come first so the word-boundary regex matches them whole.
-const START_LABELS = ["startdatum", "aanvang", "start", "begin", "ingang"];
+// Verb forms ("we willen starten op 1 september") count too: word boundaries
+// keep "start" from matching inside "starten", so both are listed.
+const START_LABELS = [
+  "startdatum",
+  "starten",
+  "aanvang",
+  "start",
+  "beginnen",
+  "begin",
+  "ingang",
+];
 const DELIVERY_LABELS = [
   "opleverdatum",
+  "opleveren",
   "oplevering",
   "opgeleverd",
   "deadline",
   "uiterlijk",
   "gereed",
   "klaar",
+  "live",
 ];
 
 // Dutch month names (full + common abbreviations) -> 2-digit month.

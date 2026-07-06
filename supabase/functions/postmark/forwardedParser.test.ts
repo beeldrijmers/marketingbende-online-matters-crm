@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import {
+  extractForwardedSender,
   stripForwardingHeaderBlock,
   stripSubjectForwardingPrefix,
   stripMailSignature,
@@ -317,5 +318,50 @@ describe("forwardedParser", () => {
         "Hello,\nThis is the email body.",
       );
     });
+  });
+});
+
+describe("extractForwardedSender", () => {
+  it("reads the client name and address from a Gmail forward header", () => {
+    const body = `---------- Forwarded message ---------
+From: Jan Tester <jan@zzz-internetest.nl>
+Date: za 5 jul 2026 om 14:00
+Subject: Offerte aanvraag
+To: <info@marketingbende.nl>
+
+Beste John,`;
+    expect(extractForwardedSender(body)).toEqual({
+      name: "Jan Tester",
+      email: "jan@zzz-internetest.nl",
+    });
+  });
+
+  it("supports the Dutch Gmail header and quoted display names", () => {
+    const body = `---------- Doorgestuurd bericht ---------
+Van: "de Vries, Piet" <piet@klant.nl>
+
+Hallo`;
+    expect(extractForwardedSender(body)).toEqual({
+      name: "de Vries, Piet",
+      email: "piet@klant.nl",
+    });
+  });
+
+  it("returns null when there is no forwarded sender line", () => {
+    expect(extractForwardedSender("Gewoon een mailtje zonder forward")).toBe(
+      null,
+    );
+  });
+});
+
+describe("Dutch forward separators", () => {
+  it("strips the Dutch Gmail forwarded header block", () => {
+    const body = `---------- Doorgestuurd bericht ---------
+Van: Jan Tester <jan@klant.nl>
+Datum: za 5 jul 2026
+Onderwerp: Vraag
+
+De echte inhoud.`;
+    expect(getForwardedMailContent(body)).toBe("De echte inhoud.");
   });
 });

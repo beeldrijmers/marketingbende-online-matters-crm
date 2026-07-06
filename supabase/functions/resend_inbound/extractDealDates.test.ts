@@ -101,3 +101,26 @@ describe("extractDealDates", () => {
     ).toEqual({ startDate: "2026-03-20", deliveryDate: null });
   });
 });
+
+describe("verb-form labels", () => {
+  it("recognises 'starten op <datum>' as the start date", () => {
+    expect(
+      extractDealDates("We willen het liefst starten op 1 september 2026."),
+    ).toEqual({ startDate: "2026-09-01", deliveryDate: null });
+  });
+
+  it("recognises 'beginnen' and 'opleveren'", () => {
+    expect(
+      extractDealDates(
+        "We kunnen beginnen op 15-08-2026 en opleveren op 1 oktober 2026.",
+      ),
+    ).toEqual({ startDate: "2026-08-15", deliveryDate: "2026-10-01" });
+  });
+
+  it("recognises 'live' as a delivery label", () => {
+    expect(extractDealDates("De site moet live op 12 december 2026.")).toEqual({
+      startDate: null,
+      deliveryDate: "2026-12-12",
+    });
+  });
+});
