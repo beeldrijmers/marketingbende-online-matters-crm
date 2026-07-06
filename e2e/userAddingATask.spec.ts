@@ -74,9 +74,12 @@ test.describe("user adding a task", () => {
       await page.getByText("1 taak").click();
 
       await expect(page.getByText("Follow up with Jane")).toBeVisible();
-      // Due dates render date-only (no time); month formatting depends on
-      // the active date locale, so match loosely.
-      await expect(page.getByText(/verloopt .*2026/)).toBeVisible();
+      // Due dates render date-only (no time); the "verloopt" label and the date
+      // land in separate text nodes, so assert the parts on the row container
+      // instead of one regex that would have to span both nodes.
+      const mobileTaskRow = page.getByText("Follow up with Jane").locator("..");
+      await expect(mobileTaskRow).toContainText("verloopt");
+      await expect(mobileTaskRow).toContainText("2026");
     } else {
       await expect(page.getByText("Taken")).toBeVisible();
 
@@ -96,7 +99,8 @@ test.describe("user adding a task", () => {
       const taskRow = page.getByText("Follow up with Jane").locator("..");
       await expect(taskRow).toContainText("Bellen");
       await expect(taskRow).toContainText("Follow up with Jane");
-      await expect(taskRow).toContainText(/verloopt .*2026/);
+      await expect(taskRow).toContainText("verloopt");
+      await expect(taskRow).toContainText("2026");
       await expect(taskRow).toContainText("(Betreft: Jane Smith)");
     }
   });
