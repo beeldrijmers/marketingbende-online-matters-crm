@@ -25,6 +25,7 @@ export const upsertDealFromMail = async ({
   deliveryDate,
   salesEmail,
   salesId,
+  assigneeIds,
   noteContent,
   handledCompanyIds,
 }: {
@@ -36,6 +37,10 @@ export const upsertDealFromMail = async ({
   deliveryDate: string | null;
   salesEmail: string;
   salesId: number | null;
+  // Every CRM team member found in the mail's envelope (From/To/Cc). They are
+  // the parties involved, so they become the deal's assignees (and thus the
+  // only ones who can see the card under the per-user visibility rules).
+  assigneeIds: number[];
   noteContent: string;
   handledCompanyIds: Set<number>;
 }): Promise<number | null> => {
@@ -57,7 +62,7 @@ export const upsertDealFromMail = async ({
     // Newest non-archived deal for this company, if any.
     const { data: existingDeal, error: dealError } = await supabaseAdmin
       .from("deals")
-      .select("id, amount, start_date, delivery_date")
+      .select("id, amount, start_date, delivery_date, assignee_ids")
       .eq("company_id", companyId)
       .is("archived_at", null)
       .order("created_at", { ascending: false })
@@ -74,10 +79,19 @@ export const upsertDealFromMail = async ({
       // Fill only the still-empty fields; never overwrite a manual value. The
       // note itself is mirrored separately by linkMailToActiveDeals, so we leave
       // it untouched here to avoid duplicating it.
+      // Add any newly-involved team member to the assignees (union, never
+      // remove), so a colleague who joins the thread starts seeing the card.
+      const currentAssignees = (existingDeal.assignee_ids as number[]) ?? [];
+      const mergedAssignees = [
+        ...new Set([...currentAssignees, ...assigneeIds]),
+      ];
+      const assigneesGrew = mergedAssignees.length > currentAssignees.length;
+
       const enrichment: {
         amount?: number;
         start_date?: string;
         delivery_date?: string;
+        assignee_ids?: number[];
       } = {
         ...(existingDeal.amount == null && amount != null ? { amount } : {}),
         ...(existingDeal.start_date == null && startDate
@@ -86,6 +100,7 @@ export const upsertDealFromMail = async ({
         ...(existingDeal.delivery_date == null && deliveryDate
           ? { delivery_date: deliveryDate }
           : {}),
+        ...(assigneesGrew ? { assignee_ids: mergedAssignees } : {}),
       };
       if (Object.keys(enrichment).length > 0) {
         const { error: updateError } = await supabaseAdmin
@@ -116,6 +131,9 @@ export const upsertDealFromMail = async ({
         ...(deliveryDate ? { delivery_date: deliveryDate } : {}),
         ...(deliveryDate ? { expected_closing_date: deliveryDate } : {}),
         ...(salesId != null ? { sales_id: salesId } : {}),
+        // Assign every involved team member; the trigger fills in the owner as
+        // a fallback only when this list is empty.
+        ...(assigneeIds.length > 0 ? { assignee_ids: assigneeIds } : {}),
       })
       .select("id")
       .single();
