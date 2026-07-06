@@ -15,6 +15,7 @@ import { List } from "@/components/admin/list";
 import { SelectAllButton } from "@/components/admin/select-all-button";
 import { SortButton } from "@/components/admin/sort-button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import type { Company, Contact, Sale, Tag } from "../types";
 import { BulkTagButton } from "./BulkTagButton";
@@ -56,7 +57,10 @@ const ContactListLayoutDesktop = () => {
 
   const hasFilters = filterValues && Object.keys(filterValues).length > 0;
 
-  if (isPending) return null;
+  // While loading, mirror the real layout with skeletons instead of a blank
+  // page; ContactListContent already renders its own row skeletons while the
+  // list is pending.
+  if (isPending) return <ContactListSkeleton />;
 
   if (!data?.length && !hasFilters) return <ContactEmpty />;
 
@@ -74,6 +78,27 @@ const ContactListLayoutDesktop = () => {
     </div>
   );
 };
+
+const ContactListSkeleton = () => (
+  <div className="flex flex-row gap-8">
+    {/* Same width as the ContactListFilter sidebar so nothing shifts. */}
+    <div className="w-52 min-w-52 flex-col gap-6 hidden sm:flex">
+      {Array.from({ length: 4 }, (_, section) => (
+        <div key={section} className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-3 w-36" />
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-3 w-28" />
+        </div>
+      ))}
+    </div>
+    <div className="w-full flex flex-col gap-4">
+      <Card className="py-0 overflow-hidden">
+        <ContactListContent />
+      </Card>
+    </div>
+  </div>
+);
 
 const ContactBulkActionButtons = () => (
   <>
