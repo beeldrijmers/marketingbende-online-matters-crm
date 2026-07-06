@@ -1,5 +1,5 @@
 import { Draggable } from "@hello-pangea/dnd";
-import { CalendarClock, Flag, Receipt } from "lucide-react";
+import { CalendarClock, Flag, PauseCircle, Receipt } from "lucide-react";
 import { useRedirect, RecordContextProvider } from "ra-core";
 import { ReferenceField } from "@/components/admin/reference-field";
 import { SelectField } from "@/components/admin/select-field";
@@ -160,6 +160,15 @@ export const DealCardContent = ({
                     optionValue="value"
                     empty={deal.category}
                   />
+                </Badge>
+              )}
+              {deal.on_hold && (
+                <Badge
+                  variant="outline"
+                  className="shrink-0 gap-1 border-amber-500/50 text-amber-600 dark:text-amber-400"
+                >
+                  <PauseCircle className="size-3 shrink-0" />
+                  In de wacht
                 </Badge>
               )}
             </div>

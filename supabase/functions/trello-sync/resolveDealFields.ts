@@ -3,7 +3,13 @@ import {
   CATEGORY_LIST_TO_CATEGORY,
   LABEL_TO_CATEGORY,
   DEFAULT_CATEGORY,
+  ON_HOLD_LIST_ID,
 } from "./trelloListMaps.ts";
+
+// A card in the Trello "On Hold" list is parked: it keeps its stage and just
+// carries the on_hold marking.
+export const resolveOnHold = (listId: string): boolean =>
+  listId === ON_HOLD_LIST_ID;
 
 // Deal category is derived purely from Trello signals (list or label), never
 // from card-title text, so it stays reproducible for future cards where the

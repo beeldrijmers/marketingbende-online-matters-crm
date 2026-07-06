@@ -11,11 +11,15 @@ export const INTERNAL_COMPANY_NAME = "Marketingbende (intern)";
 // and triggers the team-lead notification.
 export const WON_LIST_ID = "6979f9a8a825b6ff46306ecf";
 
+// The Trello "On Hold" list. "On hold" is no longer a kanban stage but a
+// marking, so a card here maps to the "bezig" stage AND carries on_hold=true.
+export const ON_HOLD_LIST_ID = "6a40ed3ab091e5e140319312";
+
 // Lists whose name directly maps to a deal stage.
 export const LIST_TO_STAGE: Record<string, string> = {
   "6979f9b306e4dba9dc5182fa": "informatie-pipeline", // informatie + pipeline
   "6979f9a8a825b6ff46306ece": "bezig", // Bezig
-  "6a40ed3ab091e5e140319312": "on-hold", // On Hold
+  [ON_HOLD_LIST_ID]: "bezig", // On Hold -> stays "bezig", flagged on_hold
   "6979f9dd197030f0766dfaa5": "facturatie-live", // Facturatie + live project
   "6979f9a8a825b6ff46306ecf": "won", // Klaar
 };

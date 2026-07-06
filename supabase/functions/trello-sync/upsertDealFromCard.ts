@@ -5,6 +5,7 @@ import {
   resolveStage,
   resolveDealName,
   resolveRevenuePeriod,
+  resolveOnHold,
 } from "./resolveDealFields.ts";
 import { findOrCreateCompany } from "./findOrCreateCompany.ts";
 import { resolveDefaultSalesId } from "./resolveDefaultSalesId.ts";
@@ -40,6 +41,7 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
   const companyName = resolveCompanyName(card);
   const category = resolveCategory(card.idList, card.labelNames);
   const stage = resolveStage(card.idList, card.labelNames, card.dueComplete);
+  const onHold = resolveOnHold(card.idList);
   const name = resolveDealName(card.name);
   const expectedClosingDate = card.due ? card.due.slice(0, 10) : null;
   const website = extractCompanyWebsite(card.desc, card.attachmentUrls);
@@ -93,13 +95,20 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
     const canEnrichRevenuePeriod =
       revenuePeriod != null && !currentRevenuePeriod;
 
+    // Monthly recurring deals run their own lifecycle in the CRM (the loopband
+    // sends them back to the start each cycle), so the Trello list must not
+    // drag their stage back to "won" on every sync. For those, leave the stage
+    // to the CRM; all other cards still follow Trello.
+    const isMonthly = (currentRevenuePeriod ?? revenuePeriod) === "maandelijks";
+
     const { error: updateError } = await supabaseAdmin
       .from("deals")
       .update({
         name,
         company_id: companyId,
         category,
-        stage,
+        ...(isMonthly ? {} : { stage }),
+        on_hold: onHold,
         expected_closing_date: expectedClosingDate,
         // Correct the historical import date to the real Trello creation date.
         // Deterministic per card, so re-syncs are idempotent.
@@ -126,6 +135,7 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
       company_id: companyId,
       category,
       stage,
+      on_hold: onHold,
       expected_closing_date: expectedClosingDate,
       description,
       ...(amount != null ? { amount } : {}),

@@ -50,6 +50,7 @@ export const generateDeals = (
         | "maandelijks"
         | "eenmalig",
       assignee_ids: [company.sales_id!],
+      on_hold: false,
       created_at,
       updated_at: randomDate(new Date(created_at)).toISOString(),
       expected_closing_date,

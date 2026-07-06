@@ -85,6 +85,10 @@ create table public.deals (
     -- the card: shared work gets several assignees, private cards just one.
     -- Defaults to the owner (sales_id) on insert via set_sales_id_default.
     assignee_ids bigint[] not null default '{}'::bigint[],
+    -- "On hold" is a marking, not a kanban column: a parked deal stays in its
+    -- current stage on the loopband and just carries this flag (shown as a
+    -- badge on the card).
+    on_hold boolean not null default false,
     -- Set the first time the deal's Trello card moves into "Klaar", so the
     -- team-lead notification is sent at most once even though Trello webhooks
     -- are delivered at-least-once and retried.
