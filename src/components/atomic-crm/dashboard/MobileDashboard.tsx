@@ -1,7 +1,10 @@
 import { useGetList, useTimeout } from "ra-core";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import type { Company, Contact, ContactNote, Deal } from "../types";
+import { ContactCreateSheet } from "../contacts/ContactCreateSheet";
+import { NoteCreateSheet } from "../notes/NoteCreateSheet";
 import { DashboardActivityLog } from "./DashboardActivityLog";
 import { DashboardStepper } from "./DashboardStepper";
 import { Welcome } from "./Welcome";
@@ -63,6 +66,8 @@ export const MobileDashboard = () => {
       pagination: { page: 1, perPage: 1 },
     });
   const oneSecondHasPassed = useTimeout(1000);
+  const [contactCreateOpen, setContactCreateOpen] = useState(false);
+  const [noteCreateOpen, setNoteCreateOpen] = useState(false);
 
   const isPending =
     isPendingContact ||
@@ -81,20 +86,35 @@ export const MobileDashboard = () => {
   const isEmptyCrm =
     !totalContact && !totalContactNotes && !totalDeal && !totalCompany;
 
-  if (isEmptyCrm) {
-    return (
-      <Wrapper>
-        <DashboardStepper step={1} />
-      </Wrapper>
-    );
-  }
-
   return (
     <Wrapper>
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mt-1">
-        {import.meta.env.VITE_IS_DEMO === "true" ? <Welcome /> : null}
-        <DashboardActivityLog />
-      </div>
+      {/* Host the create sheets above the empty-CRM branch so they survive the
+          swap. Creating a company from the stepper's contact form makes the CRM
+          non-empty, which replaces the stepper with the real dashboard; a sheet
+          hosted by the stepper would unmount mid-form (its email/phone fields
+          became unreachable). Kept mounted-but-closed on the real dashboard. */}
+      <ContactCreateSheet
+        open={contactCreateOpen}
+        onOpenChange={setContactCreateOpen}
+      />
+      <NoteCreateSheet open={noteCreateOpen} onOpenChange={setNoteCreateOpen} />
+      {/* Keep the stepper mounted while a create sheet is open, even once the
+          first company makes the CRM non-empty. Otherwise the real dashboard
+          (and its activity log) would mount behind the still-open sheet and cache
+          a half-finished activity list; the log then only mounts after creation
+          finishes, matching desktop (where creation happens on a separate page). */}
+      {isEmptyCrm || contactCreateOpen || noteCreateOpen ? (
+        <DashboardStepper
+          step={1}
+          onNewContact={() => setContactCreateOpen(true)}
+          onNewNote={() => setNoteCreateOpen(true)}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mt-1">
+          {import.meta.env.VITE_IS_DEMO === "true" ? <Welcome /> : null}
+          <DashboardActivityLog />
+        </div>
+      )}
     </Wrapper>
   );
 };

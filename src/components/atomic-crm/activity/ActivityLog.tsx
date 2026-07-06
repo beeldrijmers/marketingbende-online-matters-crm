@@ -23,6 +23,11 @@ export function ActivityLog({
         sort={{ field: "date", order: "DESC" }}
         perPage={pageSize}
         disableSyncWithLocation
+        // An activity feed should reflect what just happened. Without this, the
+        // 60s query staleTime (and the mobile offline-first persisted cache) can
+        // leave a just-created contact/note/company off the list until the cache
+        // expires, so always refetch when the log mounts.
+        queryOptions={{ refetchOnMount: "always" }}
       >
         <ActivityLogIterator />
       </InfiniteListBase>

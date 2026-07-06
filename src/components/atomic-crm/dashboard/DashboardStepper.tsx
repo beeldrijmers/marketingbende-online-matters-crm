@@ -5,40 +5,34 @@ import { Progress } from "@/components/ui/progress";
 import { CheckCircle, Circle, Plus } from "lucide-react";
 import type { Identifier } from "ra-core";
 import { useTranslate } from "ra-core";
-import { useState } from "react";
 import { Link } from "react-router";
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ContactCreateSheet } from "../contacts/ContactCreateSheet";
 import { ContactImportButton } from "../contacts/ContactImportButton";
 import useAppBarHeight from "../misc/useAppBarHeight";
-import { NoteCreateSheet } from "../notes/NoteCreateSheet";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 
 export const DashboardStepper = ({
   step,
   contactId,
+  onNewContact,
+  onNewNote,
 }: {
   step: number;
   contactId?: Identifier;
+  // Opening the contact/note create sheets is delegated to the parent dashboard,
+  // which hosts the sheets outside this stepper. That way creating a company from
+  // the contact form (which makes the CRM non-empty and swaps the stepper out for
+  // the real dashboard) no longer unmounts the still-open sheet mid-form.
+  onNewContact?: () => void;
+  onNewNote?: () => void;
 }) => {
   const translate = useTranslate();
   const { title } = useConfigurationContext();
   const appbarHeight = useAppBarHeight();
   const isMobile = useIsMobile();
-  const [contactCreateOpen, setContactCreateOpen] = useState(false);
-  const [noteCreateOpen, setNoteCreateOpen] = useState(false);
   return (
     <>
-      <ContactCreateSheet
-        open={contactCreateOpen}
-        onOpenChange={setContactCreateOpen}
-      />
-      <NoteCreateSheet
-        open={noteCreateOpen}
-        onOpenChange={setNoteCreateOpen}
-        contact_id={contactId}
-      />
       <div
         className="flex justify-center items-center"
         style={{
@@ -90,7 +84,7 @@ export const DashboardStepper = ({
                   <div className="flex gap-8">
                     {isMobile ? (
                       <Button
-                        onClick={() => setContactCreateOpen(true)}
+                        onClick={onNewContact}
                         className="gap-2"
                         variant="outline"
                       >
@@ -126,7 +120,7 @@ export const DashboardStepper = ({
                   </p>
                   {isMobile ? (
                     <Button
-                      onClick={() => setNoteCreateOpen(true)}
+                      onClick={onNewNote}
                       disabled={step < 2}
                       className="w-fit gap-2"
                     >

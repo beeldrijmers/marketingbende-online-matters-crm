@@ -16,7 +16,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
     visualizer({
-      open: process.env.NODE_ENV !== "CI",
+      // Only pop the bundle report open when explicitly analysing
+      // (ANALYZE=true npm run build); otherwise every local/e2e build would
+      // spawn a browser tab for dist/stats.html. The file is still generated.
+      open: process.env.ANALYZE === "true",
       filename: "./dist/stats.html",
     }),
     createHtmlPlugin({

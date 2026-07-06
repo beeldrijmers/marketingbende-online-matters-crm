@@ -1,16 +1,6 @@
 import { test, expect } from "./fixtures";
 
 test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
-  // Known bug on mobile only: the "new contact" flow there opens a sheet that is
-  // hosted by the DashboardStepper, while creating the company from inside it
-  // makes the CRM non-empty, which reactively swaps the stepper for the real
-  // dashboard and unmounts the still-open sheet mid-form. Empty-CRM/demo-only
-  // (production always has Trello data, so the stepper never shows). Proper fix:
-  // lift the create sheet out of the stepper so it survives the swap.
-  test.fixme(
-    isMobile,
-    "mobile onboarding sheet is unmounted when creating a company (stepper swap)",
-  );
   await page.goto("http://localhost:5175/");
 
   // Expect a title "to contain" a substring.
