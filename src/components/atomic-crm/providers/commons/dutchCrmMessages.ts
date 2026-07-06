@@ -543,7 +543,6 @@ export const dutchCrmMessages = {
       },
     },
     dashboard: {
-      deals_chart: "Verwachte deal-omzet",
       deals_pipeline: "Deals pipeline",
       revenue: {
         title: "Omzet per maand",
