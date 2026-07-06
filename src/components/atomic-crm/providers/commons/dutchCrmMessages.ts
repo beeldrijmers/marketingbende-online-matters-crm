@@ -219,6 +219,7 @@ export const dutchCrmMessages = {
         contact_ids: "Contacten",
         category: "Categorie",
         amount: "Budget",
+        revenue_period: "Type omzet",
         expected_closing_date: "Verwachte afsluitdatum",
         start_date: "Startdatum",
         delivery_date: "Opleverdatum",

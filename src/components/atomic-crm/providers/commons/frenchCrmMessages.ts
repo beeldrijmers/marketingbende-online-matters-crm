@@ -219,6 +219,7 @@ export const frenchCrmMessages = {
         contact_ids: "Contacts",
         category: "Catégorie",
         amount: "Budget",
+        revenue_period: "Type de revenu",
         expected_closing_date: "Date de clôture prévue",
         start_date: "Date de début",
         delivery_date: "Date de livraison",
