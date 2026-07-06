@@ -1,5 +1,6 @@
 import { ResponsiveBar } from "@nivo/bar";
 import { format, startOfMonth } from "date-fns";
+import { nl } from "date-fns/locale";
 import { TrendingUp } from "lucide-react";
 import { useGetList, useTranslate } from "ra-core";
 import { memo, useMemo } from "react";
@@ -54,7 +55,7 @@ export const DealsChart = memo(() => {
 
     const amountByMonth = Object.keys(dealsByMonth).map((month) => {
       return {
-        date: format(month, "MMM"),
+        date: format(month, "MMM", { locale: nl }),
         won: dealsByMonth[month]
           .filter((deal: Deal) => deal.stage === "won")
           .reduce((acc: number, deal: Deal) => {
@@ -91,13 +92,42 @@ export const DealsChart = memo(() => {
   );
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center">
-        <div className="mr-3 flex">
-          <TrendingUp className="text-muted-foreground w-6 h-6" />
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <div className="flex items-center">
+          <div className="mr-3 flex">
+            <TrendingUp className="text-muted-foreground w-6 h-6" />
+          </div>
+          <h2 className="text-xl font-semibold text-foreground">
+            {translate("crm.dashboard.deals_chart")}
+          </h2>
         </div>
-        <h2 className="text-xl font-semibold text-foreground">
-          {translate("crm.dashboard.deals_chart")}
-        </h2>
+        <div className="flex items-center gap-4 text-xs text-muted-foreground ml-auto">
+          <span className="inline-flex items-center gap-1.5">
+            <span
+              className="size-2.5 rounded-full"
+              style={{ backgroundColor: "#61cdbb" }}
+            />
+            {wonLabel}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span
+              className="size-2.5 rounded-full"
+              style={{ backgroundColor: "#97e3d5" }}
+            />
+            {translate("crm.dashboard.deals_chart_pending", {
+              _: "Open (gewogen)",
+            })}
+          </span>
+          {lostLabel && (
+            <span className="inline-flex items-center gap-1.5">
+              <span
+                className="size-2.5 rounded-full"
+                style={{ backgroundColor: "#e25c3b" }}
+              />
+              {lostLabel}
+            </span>
+          )}
+        </div>
       </div>
       <Card className="p-6">
         <div className="h-[400px]">
@@ -106,7 +136,7 @@ export const DealsChart = memo(() => {
             indexBy="date"
             keys={["won", "pending", "lost"]}
             colors={["#61cdbb", "#97e3d5", "#e25c3b"]}
-            margin={{ top: 30, right: 50, bottom: 30, left: 0 }}
+            margin={{ top: 10, right: 50, bottom: 30, left: 10 }}
             padding={0.3}
             valueScale={{
               type: "linear",
@@ -165,33 +195,6 @@ export const DealsChart = memo(() => {
                 },
               },
             }}
-            markers={
-              [
-                {
-                  axis: "y",
-                  value: 0,
-                  lineStyle: { strokeOpacity: 0 },
-                  textStyle: { fill: "#2ebca6" },
-                  legend: wonLabel,
-                  legendPosition: "top-left",
-                  legendOrientation: "vertical",
-                },
-                lostLabel
-                  ? {
-                      axis: "y",
-                      value: 0,
-                      lineStyle: {
-                        stroke: "#f47560",
-                        strokeWidth: 1,
-                      },
-                      textStyle: { fill: "#e25c3b" },
-                      legend: lostLabel,
-                      legendPosition: "bottom-left",
-                      legendOrientation: "vertical",
-                    }
-                  : null,
-              ].filter(Boolean) as any
-            }
           />
         </div>
       </Card>

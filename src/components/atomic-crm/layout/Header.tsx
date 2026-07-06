@@ -104,8 +104,9 @@ const Wordmark = ({ title }: { title: string }) => {
     ? title.trim().replace(/ CRM$/i, "")
     : title.trim();
   return (
-    <h1 className="flex items-center gap-1.5 text-xl leading-none">
-      <span className="font-black italic tracking-wide bg-gradient-to-r from-blue-500 to-violet-500 [.dark_&]:from-blue-400 [.dark_&]:to-violet-400 bg-clip-text text-transparent">
+    <h1 className="flex items-center gap-2 text-xl leading-none">
+      {/* pr-1 gives the italic overhang of the last glyph room before the badge */}
+      <span className="pr-1 font-black italic tracking-wide bg-gradient-to-r from-blue-500 to-violet-500 [.dark_&]:from-blue-400 [.dark_&]:to-violet-400 bg-clip-text text-transparent">
         {mainText}
       </span>
       {hasCrmSuffix && (

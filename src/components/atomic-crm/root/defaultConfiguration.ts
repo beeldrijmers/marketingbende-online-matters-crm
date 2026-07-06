@@ -1,69 +1,38 @@
 import type { ConfigurationContextValue } from "./ConfigurationContext";
+import {
+  companySectors,
+  currency,
+  dealCategories,
+  dealPipelineStatuses,
+  dealStages,
+  noteStatuses,
+  taskTypes,
+  title,
+} from "./appConfiguration";
 
+// The defaults mirror appConfiguration so that the app renders the real
+// Marketingbende x Online Matters configuration even when the localStorage
+// seed is missing (e.g. right after logout, which clears the stored config).
+// Before this, an empty store fell back to the generic Atomic CRM stages
+// ("opportunity"/"won"), breaking the kanban grouping and chart labels.
 export const defaultDarkModeLogo = "./logos/bankai_dark.svg";
 export const defaultLightModeLogo = "./logos/bankai_light.svg";
 
-export const defaultCurrency = "EUR";
+export const defaultCurrency = currency;
 
-export const defaultTitle = "BANKAI CRM";
+export const defaultTitle = title;
 
-export const defaultCompanySectors = [
-  { value: "communication-services", label: "Communicatiediensten" },
-  {
-    value: "consumer-discretionary",
-    label: "Cyclische consumentengoederen",
-  },
-  {
-    value: "consumer-staples",
-    label: "Niet-cyclische consumentengoederen",
-  },
-  { value: "energy", label: "Energie" },
-  { value: "financials", label: "Financiële dienstverlening" },
-  { value: "health-care", label: "Gezondheidszorg" },
-  { value: "industrials", label: "Industrie" },
-  { value: "information-technology", label: "Informatietechnologie" },
-  { value: "materials", label: "Basismaterialen" },
-  { value: "real-estate", label: "Vastgoed" },
-  { value: "utilities", label: "Nutsbedrijven" },
-];
+export const defaultCompanySectors = companySectors;
 
-export const defaultDealStages = [
-  { value: "opportunity", label: "Kans" },
-  { value: "proposal-sent", label: "Voorstel verstuurd" },
-  { value: "in-negociation", label: "In onderhandeling" },
-  { value: "won", label: "Gewonnen" },
-  { value: "lost", label: "Verloren" },
-  { value: "delayed", label: "Vertraagd" },
-];
+export const defaultDealStages = dealStages;
 
-export const defaultDealPipelineStatuses = ["won"];
+export const defaultDealPipelineStatuses = dealPipelineStatuses;
 
-export const defaultDealCategories = [
-  { value: "other", label: "Overig" },
-  { value: "copywriting", label: "Copywriting" },
-  { value: "print-project", label: "Printproject" },
-  { value: "ui-design", label: "UI-ontwerp" },
-  { value: "website-design", label: "Websiteontwerp" },
-];
+export const defaultDealCategories = dealCategories;
 
-export const defaultNoteStatuses = [
-  { value: "cold", label: "Koud", color: "#7dbde8" },
-  { value: "warm", label: "Warm", color: "#e8cb7d" },
-  { value: "hot", label: "Heet", color: "#e88b7d" },
-  { value: "in-contract", label: "In contract", color: "#a4e87d" },
-];
+export const defaultNoteStatuses = noteStatuses;
 
-export const defaultTaskTypes = [
-  { value: "none", label: "Geen" },
-  { value: "email", label: "E-mail" },
-  { value: "demo", label: "Demo" },
-  { value: "lunch", label: "Lunch" },
-  { value: "meeting", label: "Vergadering" },
-  { value: "follow-up", label: "Opvolgen" },
-  { value: "thank-you", label: "Bedankje" },
-  { value: "ship", label: "Opleveren" },
-  { value: "call", label: "Bellen" },
-];
+export const defaultTaskTypes = taskTypes;
 
 export const defaultConfiguration: ConfigurationContextValue = {
   companySectors: defaultCompanySectors,
