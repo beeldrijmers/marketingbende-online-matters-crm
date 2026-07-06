@@ -1,7 +1,6 @@
 import { useCreate, useGetIdentity, useNotify } from "ra-core";
 import { AutocompleteInput } from "@/components/admin/autocomplete-input";
 import type { InputProps } from "ra-core";
-import { useIsMobile } from "@/hooks/use-mobile";
 import type { PopoverProps } from "@radix-ui/react-popover";
 
 export const AutocompleteCompanyInput = ({
@@ -36,7 +35,6 @@ export const AutocompleteCompanyInput = ({
       });
     }
   };
-  const isMobile = useIsMobile();
 
   return (
     <AutocompleteInput
@@ -47,7 +45,10 @@ export const AutocompleteCompanyInput = ({
       createItemLabel="resources.companies.autocomplete.create_item"
       createLabel="resources.companies.autocomplete.create_label"
       validate={validate}
-      modal={modal ?? isMobile}
+      // No modal popover: a Radix modal Popover leaves pointer-events:none on
+      // the body after it closes on selection, freezing the rest of the contact
+      // form (the email field) — reproduced on mobile. Non-modal avoids that.
+      modal={modal}
     />
   );
 };

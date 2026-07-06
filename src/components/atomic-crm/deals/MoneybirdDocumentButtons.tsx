@@ -330,7 +330,8 @@ const ViewMoneybirdDocumentButton = ({
   // exposed as a public build env var so the deep link can be built client-side.
   const href = useMemo(() => {
     const adminId = import.meta.env.VITE_MONEYBIRD_ADMIN_ID as
-      string | undefined;
+      | string
+      | undefined;
     const path = kind === "estimate" ? "estimates" : "sales_invoices";
     if (adminId && documentId) {
       return `https://moneybird.com/${adminId}/${path}/${documentId}`;
