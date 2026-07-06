@@ -135,6 +135,9 @@ export type Deal = {
   start_date?: string | null;
   delivery_date?: string | null;
   sales_id: Identifier;
+  // The sales users this deal is assigned to; a deal is only visible to its
+  // assignees (enforced by RLS). Defaults to the owner.
+  assignee_ids?: Identifier[];
   index: number;
   won_notified_at?: string | null;
   revenue_period?: "maandelijks" | "eenmalig" | null;

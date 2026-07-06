@@ -80,6 +80,11 @@ create table public.deals (
     sales_id bigint,
     index smallint,
     trello_card_id text,
+    -- The sales users this deal is assigned to. A deal is only visible to its
+    -- assignees (RLS in 05_policies.sql), so this is the access-control list for
+    -- the card: shared work gets several assignees, private cards just one.
+    -- Defaults to the owner (sales_id) on insert via set_sales_id_default.
+    assignee_ids bigint[] not null default '{}'::bigint[],
     -- Set the first time the deal's Trello card moves into "Klaar", so the
     -- team-lead notification is sent at most once even though Trello webhooks
     -- are delivered at-least-once and retried.

@@ -220,6 +220,8 @@ export const dutchCrmMessages = {
         category: "Categorie",
         amount: "Budget",
         revenue_period: "Type omzet",
+        assignee_ids: "Toegewezen aan",
+        assignee_ids_helper: "Alleen toegewezen personen zien deze kaart",
         expected_closing_date: "Verwachte afsluitdatum",
         start_date: "Startdatum",
         delivery_date: "Opleverdatum",

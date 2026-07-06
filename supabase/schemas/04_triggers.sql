@@ -20,6 +20,13 @@ create or replace trigger set_deal_sales_id_trigger
     before insert on public.deals
     for each row execute function public.set_sales_id_default();
 
+-- Defaults assignee_ids to the deal's owner. Order-independent: the function
+-- resolves the owner itself, so it does not matter whether this fires before or
+-- after set_deal_sales_id_trigger.
+create or replace trigger set_deal_assignee_default_trigger
+    before insert on public.deals
+    for each row execute function public.set_deal_assignee_default();
+
 create or replace trigger set_deal_notes_sales_id_trigger
     before insert on public.deal_notes
     for each row execute function public.set_sales_id_default();

@@ -35,11 +35,22 @@ create policy "Enable insert for authenticated users only" on public.contact_not
 create policy "Contact Notes Update policy" on public.contact_notes for update to authenticated using (true);
 create policy "Contact Notes Delete Policy" on public.contact_notes for delete to authenticated using (true);
 
--- Deals
-create policy "Enable read access for authenticated users" on public.deals for select to authenticated using (true);
+-- Deals: a deal is only visible to (and editable/deletable by) the sales users
+-- it is assigned to. assignee_ids is the card's access-control list; the
+-- default-assignee trigger (set_sales_id_default) makes every new deal
+-- assigned to at least its owner, so nothing is created invisible. The
+-- moneybird/trello/inbound edge functions run as service_role and bypass RLS,
+-- so the sync/document flows are unaffected. Insert stays open (the creator
+-- assigns themselves via the trigger/form); the read policy then governs
+-- whether they see it back.
+create policy "Enable read access for deal assignees" on public.deals for select to authenticated
+  using ((select id from public.sales where user_id = (select auth.uid())) = any (assignee_ids));
 create policy "Enable insert for authenticated users only" on public.deals for insert to authenticated with check (true);
-create policy "Enable update for authenticated users only" on public.deals for update to authenticated using (true) with check (true);
-create policy "Deals Delete Policy" on public.deals for delete to authenticated using (true);
+create policy "Enable update for deal assignees" on public.deals for update to authenticated
+  using ((select id from public.sales where user_id = (select auth.uid())) = any (assignee_ids))
+  with check (true);
+create policy "Deals Delete Policy" on public.deals for delete to authenticated
+  using ((select id from public.sales where user_id = (select auth.uid())) = any (assignee_ids));
 
 -- Deal Notes
 create policy "Enable read access for authenticated users" on public.deal_notes for select to authenticated using (true);

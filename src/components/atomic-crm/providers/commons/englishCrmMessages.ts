@@ -214,6 +214,8 @@ export const englishCrmMessages = {
         category: "Category",
         amount: "Budget",
         revenue_period: "One-off / recurring",
+        assignee_ids: "Assigned to",
+        assignee_ids_helper: "Only assignees can see this card",
         expected_closing_date: "Expected closing date",
         start_date: "Start date",
         delivery_date: "Delivery date",
