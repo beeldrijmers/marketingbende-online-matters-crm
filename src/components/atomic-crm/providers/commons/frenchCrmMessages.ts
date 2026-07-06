@@ -307,6 +307,13 @@ export const frenchCrmMessages = {
         success: "Affaire désarchivée",
       },
       updated: "Affaire mise à jour",
+      trello_sync: {
+        action: "Synchroniser Trello",
+        pending: "Synchronisation...",
+        success: "Trello synchronisé : %{cards} cartes mises à jour.",
+        error: "Échec de la synchronisation avec Trello",
+      },
+
       empty: {
         before_create: "avant de créer une affaire.",
         description: "Il semble que votre liste d'affaires soit vide.",

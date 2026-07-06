@@ -21,6 +21,7 @@ import { DealEmpty } from "./DealEmpty";
 import { DealListContent } from "./DealListContent";
 import { DealShow } from "./DealShow";
 import { OnlyMineInput } from "./OnlyMineInput";
+import { SyncTrelloButton } from "./SyncTrelloButton";
 
 const DealList = () => {
   const { identity } = useGetIdentity();
@@ -119,6 +120,7 @@ const DealListSkeleton = () => {
 
 const DealActions = () => (
   <TopToolbar>
+    <SyncTrelloButton />
     <FilterButton />
     <ExportButton />
     <CreateButton label="resources.deals.action.new" />

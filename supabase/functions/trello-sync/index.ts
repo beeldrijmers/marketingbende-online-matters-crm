@@ -14,9 +14,22 @@ import { WON_LIST_ID } from "./trelloListMaps.ts";
 import { isMoveToWonList, sendCardDoneNotification } from "./notifyCardDone.ts";
 import { claimWonNotification } from "./claimWonNotification.ts";
 import { syncCardAttachments } from "./syncCardAttachments.ts";
+import { corsHeaders } from "../_shared/cors.ts";
+import { AuthMiddleware } from "../_shared/authentication.ts";
+import { createErrorResponse } from "../_shared/utils.ts";
 
 const TRELLO_API_KEY = Deno.env.get("TRELLO_API_KEY") ?? "";
 const TRELLO_TOKEN = Deno.env.get("TRELLO_TOKEN") ?? "";
+
+// The body an authenticated CRM user sends from the "Synchroniseer Trello"
+// button on the deals board to pull every card into the CRM.
+const isSyncAllTrigger = (rawBody: string): boolean => {
+  try {
+    return JSON.parse(rawBody)?.trigger === "sync_all";
+  } catch {
+    return false;
+  }
+};
 
 // Action types that mean "the card (its stage/category/name/steps) may have
 // changed" - the full, authoritative card is re-fetched and upserted for all of
@@ -40,6 +53,11 @@ const CARD_SYNC_ACTIONS = new Set([
 ]);
 
 Deno.serve(async (req) => {
+  // The "Synchroniseer Trello" button is a browser fetch (cross-origin), so it
+  // sends a CORS preflight; the webhook/CI callers never do.
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
   // Trello sends a HEAD (and sometimes an empty POST) request when a webhook
   // is first registered, purely to confirm the callback URL responds with 2xx.
   if (req.method === "HEAD") return new Response(null, { status: 200 });
@@ -69,6 +87,30 @@ Deno.serve(async (req) => {
   }
 
   const rawBody = await req.text();
+
+  // Authenticated CRM user pressing "Synchroniseer Trello": pull every card in.
+  // Verified with the caller's own Supabase JWT (AuthMiddleware, JWKS), entirely
+  // separate from the Trello webhook HMAC path below. Caught BEFORE the webhook
+  // verification because this request carries no Trello signature.
+  if (isSyncAllTrigger(rawBody)) {
+    return AuthMiddleware(req, async () => {
+      try {
+        const summary = await runTrelloBackfill();
+        return new Response(JSON.stringify({ data: summary }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      } catch (error) {
+        console.error("trello sync_all failed:", error);
+        return createErrorResponse(
+          500,
+          `Synchroniseren met Trello is mislukt: ${
+            error instanceof Error ? error.message : "Onbekende fout"
+          }`,
+        );
+      }
+    });
+  }
 
   const isAuthorized = await verifyTrelloWebhookRequest(req, rawBody);
   if (!isAuthorized) return new Response("Unauthorized", { status: 401 });

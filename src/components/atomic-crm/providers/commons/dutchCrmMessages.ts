@@ -305,6 +305,13 @@ export const dutchCrmMessages = {
         success: "Deal gedearchiveerd",
       },
       updated: "Deal bijgewerkt",
+      trello_sync: {
+        action: "Synchroniseer Trello",
+        pending: "Synchroniseren...",
+        success: "Trello gesynchroniseerd: %{cards} kaarten bijgewerkt.",
+        error: "Synchroniseren met Trello is mislukt",
+      },
+
       empty: {
         before_create: "voordat u een deal aanmaakt.",
         description: "Het lijkt erop dat uw deallijst leeg is.",

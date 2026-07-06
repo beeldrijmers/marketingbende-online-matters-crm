@@ -298,6 +298,13 @@ export const englishCrmMessages = {
         success: "Deal unarchived",
       },
       updated: "Deal updated",
+      trello_sync: {
+        action: "Sync Trello",
+        pending: "Syncing...",
+        success: "Trello synced: %{cards} cards updated.",
+        error: "Failed to sync with Trello",
+      },
+
       empty: {
         before_create: "before creating a deal.",
         description: "It seems your deal list is empty.",
