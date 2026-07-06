@@ -470,6 +470,12 @@ BEGIN
     IF owner_id IS NULL THEN
       SELECT id INTO owner_id FROM sales WHERE user_id = auth.uid();
     END IF;
+    -- Last resort (e.g. an inbound-mail deal whose forwarder is not a known
+    -- sales user): assign the primary admin so a deal is never created
+    -- invisible to absolutely everyone.
+    IF owner_id IS NULL THEN
+      SELECT id INTO owner_id FROM sales WHERE administrator = true ORDER BY id LIMIT 1;
+    END IF;
     NEW.assignee_ids := array_remove(ARRAY[owner_id], NULL);
   END IF;
   RETURN NEW;

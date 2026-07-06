@@ -1,8 +1,24 @@
+drop policy "Enable insert for authenticated users only" on "public"."deal_notes";
+
+drop policy "Enable read access for authenticated users" on "public"."deal_notes";
+
 drop policy "Enable read access for authenticated users" on "public"."deals";
 
 drop policy "Enable update for authenticated users only" on "public"."deals";
 
+drop policy "Enable insert for authenticated users only" on "public"."tasks";
+
+drop policy "Enable read access for authenticated users" on "public"."tasks";
+
+drop policy "Deal Notes Delete Policy" on "public"."deal_notes";
+
+drop policy "Deal Notes Update Policy" on "public"."deal_notes";
+
 drop policy "Deals Delete Policy" on "public"."deals";
+
+drop policy "Task Delete Policy" on "public"."tasks";
+
+drop policy "Task Update Policy" on "public"."tasks";
 
 drop view if exists "public"."activity_log";
 
@@ -30,6 +46,12 @@ BEGIN
     owner_id := NEW.sales_id;
     IF owner_id IS NULL THEN
       SELECT id INTO owner_id FROM sales WHERE user_id = auth.uid();
+    END IF;
+    -- Last resort (e.g. an inbound-mail deal whose forwarder is not a known
+    -- sales user): assign the primary admin so a deal is never created
+    -- invisible to absolutely everyone.
+    IF owner_id IS NULL THEN
+      SELECT id INTO owner_id FROM sales WHERE administrator = true ORDER BY id LIMIT 1;
     END IF;
     NEW.assignee_ids := array_remove(ARRAY[owner_id], NULL);
   END IF;
@@ -157,6 +179,26 @@ create or replace view "public"."contacts_summary" as  SELECT co.id,
 
 
 
+  create policy "Enable insert for deal assignees"
+  on "public"."deal_notes"
+  as permissive
+  for insert
+  to authenticated
+with check ((deal_id IN ( SELECT deals.id
+   FROM public.deals)));
+
+
+
+  create policy "Enable read access for deal assignees"
+  on "public"."deal_notes"
+  as permissive
+  for select
+  to authenticated
+using ((deal_id IN ( SELECT deals.id
+   FROM public.deals)));
+
+
+
   create policy "Enable read access for deal assignees"
   on "public"."deals"
   as permissive
@@ -180,6 +222,46 @@ with check (true);
 
 
 
+  create policy "Enable insert for deal assignees"
+  on "public"."tasks"
+  as permissive
+  for insert
+  to authenticated
+with check (((deal_id IS NULL) OR (deal_id IN ( SELECT deals.id
+   FROM public.deals))));
+
+
+
+  create policy "Enable read access for deal assignees"
+  on "public"."tasks"
+  as permissive
+  for select
+  to authenticated
+using (((deal_id IS NULL) OR (deal_id IN ( SELECT deals.id
+   FROM public.deals))));
+
+
+
+  create policy "Deal Notes Delete Policy"
+  on "public"."deal_notes"
+  as permissive
+  for delete
+  to authenticated
+using ((deal_id IN ( SELECT deals.id
+   FROM public.deals)));
+
+
+
+  create policy "Deal Notes Update Policy"
+  on "public"."deal_notes"
+  as permissive
+  for update
+  to authenticated
+using ((deal_id IN ( SELECT deals.id
+   FROM public.deals)));
+
+
+
   create policy "Deals Delete Policy"
   on "public"."deals"
   as permissive
@@ -188,6 +270,26 @@ with check (true);
 using ((( SELECT sales.id
    FROM public.sales
   WHERE (sales.user_id = ( SELECT auth.uid() AS uid))) = ANY (assignee_ids)));
+
+
+
+  create policy "Task Delete Policy"
+  on "public"."tasks"
+  as permissive
+  for delete
+  to authenticated
+using (((deal_id IS NULL) OR (deal_id IN ( SELECT deals.id
+   FROM public.deals))));
+
+
+
+  create policy "Task Update Policy"
+  on "public"."tasks"
+  as permissive
+  for update
+  to authenticated
+using (((deal_id IS NULL) OR (deal_id IN ( SELECT deals.id
+   FROM public.deals))));
 
 
 CREATE TRIGGER set_deal_assignee_default_trigger BEFORE INSERT ON public.deals FOR EACH ROW EXECUTE FUNCTION public.set_deal_assignee_default();
@@ -213,9 +315,16 @@ grant insert (id, name, company_id, contact_ids, category, stage, description, a
               created_at, updated_at, archived_at, expected_closing_date, sales_id,
               index, trello_card_id, revenue_period, assignee_ids) on table public.deals to anon, authenticated;
 
--- DATA MIGRATION: assign every existing deal to its owner so nothing becomes
--- invisible when the assignee-only read policy takes effect.
+-- DATA MIGRATION: assign every existing deal to its owner. Deals with no owner
+-- fall back to the primary admin, so nothing becomes invisible to everyone when
+-- the assignee-only read policy takes effect.
 update public.deals
 set assignee_ids = array[sales_id]
 where sales_id is not null
   and (assignee_ids is null or array_length(assignee_ids, 1) is null);
+
+update public.deals
+set assignee_ids = array[(select id from public.sales where administrator = true order by id limit 1)]
+where sales_id is null
+  and (assignee_ids is null or array_length(assignee_ids, 1) is null)
+  and exists (select 1 from public.sales where administrator = true);
