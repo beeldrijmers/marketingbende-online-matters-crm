@@ -7,6 +7,7 @@ import { List } from "@/components/admin/list";
 import { ListPagination } from "@/components/admin/list-pagination";
 import { SortButton } from "@/components/admin/sort-button";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { TopToolbar } from "../layout/TopToolbar";
 import { CompanyEmpty } from "./CompanyEmpty";
@@ -33,7 +34,10 @@ const CompanyListLayout = () => {
   const { data, isPending, filterValues } = useListContext();
   const hasFilters = filterValues && Object.keys(filterValues).length > 0;
 
-  if (isPending) return null;
+  // While loading, mirror the real layout with skeletons (sidebar + card
+  // grid) instead of a blank page; ImageList already renders its skeleton
+  // grid while the list is pending.
+  if (isPending) return <CompanyListSkeleton />;
   if (!data?.length && !hasFilters) return <CompanyEmpty />;
 
   return (
@@ -45,6 +49,25 @@ const CompanyListLayout = () => {
     </div>
   );
 };
+
+const CompanyListSkeleton = () => (
+  <div className="w-full flex flex-row gap-8">
+    {/* Same width as the CompanyListFilter sidebar so nothing shifts. */}
+    <div className="w-52 min-w-52 flex-col gap-6 hidden sm:flex">
+      {Array.from({ length: 4 }, (_, section) => (
+        <div key={section} className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-3 w-36" />
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-3 w-28" />
+        </div>
+      ))}
+    </div>
+    <div className="flex flex-col flex-1 gap-4">
+      <ImageList />
+    </div>
+  </div>
+);
 
 const CompanyListActions = () => {
   const translate = useTranslate();
