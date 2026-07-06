@@ -1,9 +1,15 @@
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import type { Attachment } from "./extractAndUploadAttachments.ts";
+import { selectDealsForMail } from "./selectDealsForMail.ts";
 
-// After a mail note has been added to a contact, mirror it onto every active
-// (non-archived) deal that contact is part of, so the deal timeline reflects
-// the correspondence too — this is what makes "where do we stand" obvious.
+// After a mail note has been added to a contact, mirror it onto the contact's
+// active (non-archived) deals, so the deal timeline reflects the
+// correspondence too — this is what makes "where do we stand" obvious.
+//
+// When the contact has SEVERAL active deals, the mail text picks the right
+// card(s): a deal whose name appears in the subject/body receives the note
+// exclusively; without any match the note lands on all active deals (the
+// pre-existing behaviour, and the safer default).
 //
 // Best-effort: the contact note is the primary outcome and has already
 // succeeded by the time this runs, so any failure here is logged and swallowed
@@ -30,12 +36,16 @@ export const linkMailToActiveDeals = async ({
 
     const { data: deals, error: dealsError } = await supabaseAdmin
       .from("deals")
-      .select("id")
+      .select("id, name")
       .contains("contact_ids", [contact.id])
       .is("archived_at", null);
     if (dealsError || !deals?.length) return 0;
 
-    for (const deal of deals) {
+    // The note content starts with the mail subject, so matching against it
+    // covers both subject and body.
+    const targetDeals = selectDealsForMail(deals, noteContent);
+
+    for (const deal of targetDeals) {
       const { error: noteError } = await supabaseAdmin
         .from("deal_notes")
         .insert({
@@ -51,7 +61,7 @@ export const linkMailToActiveDeals = async ({
       }
     }
 
-    return deals.length;
+    return targetDeals.length;
   } catch (error) {
     console.error("linkMailToActiveDeals failed (best-effort):", error);
     return 0;

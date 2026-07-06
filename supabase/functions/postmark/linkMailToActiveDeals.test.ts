@@ -31,13 +31,19 @@ describe("linkMailToActiveDeals", () => {
     vi.clearAllMocks();
   });
 
-  it("mirrors the note to every active deal of the matched contact", async () => {
+  it("mirrors the note to every active deal when the text matches none of them", async () => {
     const insert = vi.fn(() => Promise.resolve({ error: null }));
     mockFrom.mockImplementation((table: string) => {
       if (table === "contacts")
         return contactQuery({ data: { id: 7 }, error: null });
       if (table === "deals")
-        return dealsQuery({ data: [{ id: 1 }, { id: 2 }], error: null });
+        return dealsQuery({
+          data: [
+            { id: 1, name: "Website onderhoud" },
+            { id: 2, name: "Webshop bouwen" },
+          ],
+          error: null,
+        });
       if (table === "deal_notes") return { insert };
       throw new Error(`unexpected table ${table}`);
     });
@@ -54,6 +60,41 @@ describe("linkMailToActiveDeals", () => {
     expect(insert).toHaveBeenCalledWith({
       deal_id: 1,
       text: "Hallo",
+      sales_id: 42,
+      attachments: [],
+    });
+  });
+
+  it("mirrors the note ONLY to the deal named in the mail text", async () => {
+    const insert = vi.fn(() => Promise.resolve({ error: null }));
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "contacts")
+        return contactQuery({ data: { id: 7 }, error: null });
+      if (table === "deals")
+        return dealsQuery({
+          data: [
+            { id: 1, name: "Website onderhoud" },
+            { id: 2, name: "Webshop bouwen" },
+          ],
+          error: null,
+        });
+      if (table === "deal_notes") return { insert };
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const noteContent = "Vraag over webshop bouwen\n\nWanneer gaan we live?";
+    const count = await linkMailToActiveDeals({
+      contactEmail: "klant@acme.com",
+      salesId: 42,
+      noteContent,
+      attachments: [],
+    });
+
+    expect(count).toBe(1);
+    expect(insert).toHaveBeenCalledTimes(1);
+    expect(insert).toHaveBeenCalledWith({
+      deal_id: 2,
+      text: noteContent,
       sales_id: 42,
       attachments: [],
     });
