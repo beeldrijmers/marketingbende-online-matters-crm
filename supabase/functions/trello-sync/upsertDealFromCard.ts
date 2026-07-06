@@ -43,7 +43,10 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
   const expectedClosingDate = card.due ? card.due.slice(0, 10) : null;
   const website = extractCompanyWebsite(card.desc, card.attachmentUrls);
   const description = buildDealDescription(card);
-  const amount = extractDealAmount(card.name, card.desc);
+  // Happr is Marketingbende's own product: its cards are internal work, never
+  // client revenue, so no amount is ever attached to them.
+  const amount =
+    category === "happr" ? null : extractDealAmount(card.name, card.desc);
   // The real project start: decoded from the Trello card id so a long-running
   // deal keeps its true creation date instead of the import/backfill time.
   const createdAt = trelloCardCreatedAt(card.id);

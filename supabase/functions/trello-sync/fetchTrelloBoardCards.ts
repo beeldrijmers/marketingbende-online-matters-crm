@@ -4,17 +4,24 @@ import {
   type TrelloApiCard,
 } from "./parseTrelloApiCard.ts";
 
-// Fetches every open card on a board in one call, for the one-time backfill.
+// Fetches every card on a board in one call, for the (re-runnable) backfill.
+// state "open" is the kanban board itself; "closed" fetches the archived cards
+// (used to import their attachments/history without putting them back on the
+// board).
 export const fetchTrelloBoardCards = async ({
   boardId,
   apiKey,
   token,
+  state = "open",
 }: {
   boardId: string;
   apiKey: string;
   token: string;
+  state?: "open" | "closed";
 }): Promise<TrelloCardInput[]> => {
-  const url = new URL(`https://api.trello.com/1/boards/${boardId}/cards/open`);
+  const url = new URL(
+    `https://api.trello.com/1/boards/${boardId}/cards/${state}`,
+  );
   url.searchParams.set("key", apiKey);
   url.searchParams.set("token", token);
   url.searchParams.set(

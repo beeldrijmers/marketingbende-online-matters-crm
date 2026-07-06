@@ -18,6 +18,7 @@ import { fetchTrelloCardComments } from "./fetchTrelloCardComments.ts";
 import { upsertDealFromCard } from "./upsertDealFromCard.ts";
 import { syncCardAttachments } from "./syncCardAttachments.ts";
 import { addTrelloCommentAsDealNote } from "./addTrelloCommentAsDealNote.ts";
+import { archiveDealByCardId } from "./archiveDealByCardId.ts";
 import { resolveCompanyName } from "./companyNameOverrides.ts";
 import { findOrCreateCompany } from "./findOrCreateCompany.ts";
 import { resolveDefaultSalesId } from "./resolveDefaultSalesId.ts";
@@ -97,6 +98,58 @@ const backfillCard = async (
   };
 };
 
+// Archived Trello cards never made it into the CRM (the backfill covers the
+// open board), but several carry uploaded files the team still needs. Import
+// every archived card that has uploads as an ARCHIVED deal: it gets its
+// description, comments and attachments, but stays off the kanban board and
+// gets no tasks (steps of a finished project are noise).
+const backfillArchivedCardWithUploads = async (
+  card: Awaited<ReturnType<typeof fetchTrelloBoardCards>>[number],
+): Promise<{ attachmentCount: number }> => {
+  const fullCard = await fetchTrelloCard(card.id);
+  if (!fullCard.uploadedAttachments.length) return { attachmentCount: 0 };
+
+  // Strip the checklist items so no tasks are created for archived projects.
+  const dealId = await upsertDealFromCard({
+    ...fullCard,
+    checkItems: [],
+    checklistsPresent: false,
+  });
+
+  // Comments first, while the deal is still active on first import
+  // (addTrelloCommentAsDealNote only touches non-archived deals). On re-runs
+  // the deal is already archived and the comments already imported.
+  const comments = await fetchTrelloCardComments({
+    cardId: card.id,
+    apiKey,
+    token,
+  });
+  for (const comment of comments) {
+    const text = `[Trello - ${comment.authorName}]\n${comment.text}`;
+    if (await commentAlreadyBackfilled({ dealId, date: comment.date, text })) {
+      continue;
+    }
+    await addTrelloCommentAsDealNote({
+      trelloCardId: card.id,
+      authorName: comment.authorName,
+      commentText: comment.text,
+      date: comment.date,
+    });
+  }
+
+  const attachmentCount = await syncCardAttachments({
+    dealId,
+    attachments: fullCard.uploadedAttachments,
+    apiKey,
+    token,
+  });
+
+  // No-op when the deal is already archived (re-runs).
+  await archiveDealByCardId(card.id);
+
+  return { attachmentCount };
+};
+
 // Cards are processed with bounded concurrency rather than one at a time:
 // sequentially, ~40 cards' worth of Trello API calls and Supabase round
 // trips comfortably exceeds the Supabase Edge Function idle timeout (150s).
@@ -125,6 +178,8 @@ export const run = async (): Promise<{
   synced: number;
   totalComments: number;
   totalAttachments: number;
+  archivedCardsWithUploads: number;
+  archivedAttachments: number;
 }> => {
   const cards = await fetchTrelloBoardCards({
     boardId: BOARD_ID,
@@ -164,11 +219,45 @@ export const run = async (): Promise<{
     CARD_CONCURRENCY,
   );
 
+  // Second phase: archived cards that carry uploaded files.
+  const archivedCards = await fetchTrelloBoardCards({
+    boardId: BOARD_ID,
+    apiKey,
+    token,
+    state: "closed",
+  });
+  const archivedWithUploads = archivedCards.filter(
+    (card) => card.uploadedAttachments.length > 0,
+  );
+  // Same company pre-create as above, for the same concurrency reason.
+  const archivedCompanyNames = [
+    ...new Set(archivedWithUploads.map((card) => resolveCompanyName(card))),
+  ];
+  for (const name of archivedCompanyNames) {
+    await findOrCreateCompany({ name, salesId });
+  }
+  let archivedAttachments = 0;
+  await runWithConcurrency(
+    archivedWithUploads,
+    async (card) => {
+      const result = await backfillArchivedCardWithUploads(card);
+      archivedAttachments += result.attachmentCount;
+    },
+    CARD_CONCURRENCY,
+  );
+
   // eslint-disable-next-line no-console
   console.log(
-    `Done. Synced ${synced} deals, ${totalComments} comments, ${totalAttachments} new attachments.`,
+    `Done. Synced ${synced} deals, ${totalComments} comments, ${totalAttachments} new attachments, ${archivedAttachments} attachments from ${archivedWithUploads.length} archived cards.`,
   );
-  return { cardCount: cards.length, synced, totalComments, totalAttachments };
+  return {
+    cardCount: cards.length,
+    synced,
+    totalComments,
+    totalAttachments,
+    archivedCardsWithUploads: archivedWithUploads.length,
+    archivedAttachments,
+  };
 };
 
 if (import.meta.main) {
