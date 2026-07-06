@@ -5,6 +5,7 @@ import { TrendingUp } from "lucide-react";
 import { useGetList, useTranslate } from "ra-core";
 import { memo, useMemo } from "react";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { findDealLabel } from "../deals/dealUtils";
 import { useConfigurationContext } from "../root/ConfigurationContext";
@@ -16,6 +17,28 @@ const multiplier = {
   "on-hold": 0.3,
   "facturatie-live": 0.9,
 };
+
+// Mirrors the loaded layout (title row + chart card) so the dashboard does not
+// jump when the data arrives.
+const DealsChartSkeleton = () => (
+  <div className="flex flex-col gap-4">
+    <div className="flex items-center gap-3">
+      <Skeleton className="h-6 w-6 rounded" />
+      <Skeleton className="h-6 w-48" />
+    </div>
+    <Card className="p-6">
+      <div className="h-[400px] flex items-end gap-6 px-4 pb-6">
+        {[60, 35, 80, 45, 30, 65, 50].map((height, index) => (
+          <Skeleton
+            key={index}
+            className="flex-1 rounded-t-md"
+            style={{ height: `${height}%` }}
+          />
+        ))}
+      </div>
+    </Card>
+  </div>
+);
 
 const threeMonthsAgo = new Date(
   new Date().setMonth(new Date().getMonth() - 6),
@@ -90,7 +113,7 @@ export const DealsChart = memo(() => {
     lost: lostLabel ?? "Verloren",
   };
 
-  if (isPending) return null; // FIXME return skeleton instead
+  if (isPending) return <DealsChartSkeleton />;
   const range = months.reduce(
     (acc, month) => {
       acc.min = Math.min(acc.min, month.lost);
