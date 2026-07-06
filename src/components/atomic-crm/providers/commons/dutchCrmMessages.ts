@@ -545,6 +545,9 @@ export const dutchCrmMessages = {
         mrr_sub: "per maand, lopende abonnementen",
         oneoff_label: "Eenmalige omzet",
         oneoff_sub: "eenmalige projecten dit jaar",
+        forecast: "Prognose (verwacht)",
+        forecast_label: "Verwachte omzet",
+        forecast_sub: "gewogen open pijplijn",
         empty:
           "Nog geen omzetgegevens. Zet een bedrag en type (maandelijks/eenmalig) op je deals.",
       },

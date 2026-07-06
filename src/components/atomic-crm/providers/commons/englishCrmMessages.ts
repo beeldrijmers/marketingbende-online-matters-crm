@@ -538,6 +538,9 @@ export const englishCrmMessages = {
         mrr_sub: "per month, active subscriptions",
         oneoff_label: "One-off revenue",
         oneoff_sub: "one-off projects this year",
+        forecast: "Forecast (expected)",
+        forecast_label: "Expected revenue",
+        forecast_sub: "weighted open pipeline",
         empty:
           "No revenue data yet. Set an amount and type (monthly/one-off) on your deals.",
       },

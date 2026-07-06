@@ -548,6 +548,9 @@ export const frenchCrmMessages = {
         mrr_sub: "par mois, abonnements actifs",
         oneoff_label: "Chiffre d'affaires ponctuel",
         oneoff_sub: "projets ponctuels cette année",
+        forecast: "Prévision (attendu)",
+        forecast_label: "Revenu attendu",
+        forecast_sub: "pipeline ouvert pondéré",
         empty:
           "Pas encore de données de revenus. Renseignez un montant et un type (mensuel/ponctuel) sur vos affaires.",
       },
