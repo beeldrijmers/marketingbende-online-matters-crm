@@ -79,6 +79,9 @@ export const DealCreate = ({ open }: { open: boolean }) => {
           <Form
             defaultValues={{
               sales_id: identity?.id,
+              // Assign the creator by default so they can see the card they
+              // just made; they can add more assignees in the form.
+              assignee_ids: identity?.id ? [identity.id] : [],
               contact_ids: [],
               index: 0,
             }}

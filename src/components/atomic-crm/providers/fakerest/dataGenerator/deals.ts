@@ -49,6 +49,7 @@ export const generateDeals = (
       revenue_period: random.arrayElement(["maandelijks", "eenmalig"]) as
         | "maandelijks"
         | "eenmalig",
+      assignee_ids: [company.sales_id!],
       created_at,
       updated_at: randomDate(new Date(created_at)).toISOString(),
       expected_closing_date,

@@ -66,9 +66,25 @@ const DealLinkedToInputs = () => {
           helperText={false}
         />
       </ReferenceArrayInput>
+
+      {/* Who can see this card. A deal is only visible to its assignees, so an
+          empty list would hide it; the DealCreate default and the DB trigger
+          keep the creator/owner assigned. */}
+      <ReferenceArrayInput source="assignee_ids" reference="sales">
+        <AutocompleteArrayInput
+          label="resources.deals.fields.assignee_ids"
+          optionText={saleOptionText}
+          helperText="resources.deals.fields.assignee_ids_helper"
+        />
+      </ReferenceArrayInput>
     </div>
   );
 };
+
+// A sales user shown as "First Last" in the assignee picker.
+const saleOptionText = (sale: { first_name?: string; last_name?: string }) =>
+  [sale.first_name, sale.last_name].filter(Boolean).join(" ").trim() ||
+  "Onbekend";
 
 const DealMiscInputs = () => {
   const { dealStages, dealCategories } = useConfigurationContext();

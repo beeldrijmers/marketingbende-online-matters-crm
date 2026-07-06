@@ -453,3 +453,31 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION "public"."set_deal_assignee_default"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  owner_id bigint;
+BEGIN
+  -- Every deal must be assigned to at least its owner, otherwise the
+  -- assignee-only read policy would make it invisible to everyone (including
+  -- its creator). Resolve the owner independently of trigger firing order:
+  -- prefer an explicit sales_id, else the caller's own sales row.
+  IF NEW.assignee_ids IS NULL OR array_length(NEW.assignee_ids, 1) IS NULL THEN
+    owner_id := NEW.sales_id;
+    IF owner_id IS NULL THEN
+      SELECT id INTO owner_id FROM sales WHERE user_id = auth.uid();
+    END IF;
+    -- Last resort (e.g. an inbound-mail deal whose forwarder is not a known
+    -- sales user): assign the primary admin so a deal is never created
+    -- invisible to absolutely everyone.
+    IF owner_id IS NULL THEN
+      SELECT id INTO owner_id FROM sales WHERE administrator = true ORDER BY id LIMIT 1;
+    END IF;
+    NEW.assignee_ids := array_remove(ARRAY[owner_id], NULL);
+  END IF;
+  RETURN NEW;
+END;
+$$;

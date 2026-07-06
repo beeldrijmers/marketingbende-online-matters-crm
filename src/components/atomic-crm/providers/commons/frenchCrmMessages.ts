@@ -220,6 +220,9 @@ export const frenchCrmMessages = {
         category: "Catégorie",
         amount: "Budget",
         revenue_period: "Type de revenu",
+        assignee_ids: "Assigné à",
+        assignee_ids_helper:
+          "Seules les personnes assignées voient cette carte",
         expected_closing_date: "Date de clôture prévue",
         start_date: "Date de début",
         delivery_date: "Date de livraison",
