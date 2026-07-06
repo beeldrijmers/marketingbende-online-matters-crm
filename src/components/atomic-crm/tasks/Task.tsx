@@ -126,7 +126,12 @@ export const Task = ({
               <span>
                 {translate("resources.tasks.fields.due_short")}
                 &nbsp;
-                <DateField source="due_date" record={task} showDate showTime />
+                <DateField
+                  source="due_date"
+                  record={task}
+                  showDate
+                  options={{ day: "numeric", month: "short", year: "numeric" }}
+                />
               </span>
               {task.sales_id != null && (
                 <>
