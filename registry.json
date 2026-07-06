@@ -46,6 +46,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/tasks/TasksToClaim.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/tasks/TasksListFilter.tsx",
           "type": "registry:component"
         },
@@ -155,6 +159,10 @@
         },
         {
           "path": "src/components/atomic-crm/settings/ProfilePage.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/settings/MoneybirdConnectionSection.tsx",
           "type": "registry:component"
         },
         {
@@ -430,6 +438,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/misc/useMoneybirdConnection.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/misc/useImportFromJson.ts",
           "type": "registry:component"
         },
@@ -595,6 +607,10 @@
         },
         {
           "path": "src/components/atomic-crm/deals/MobileDealsList.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/DealSteps.tsx",
           "type": "registry:component"
         },
         {
