@@ -17,6 +17,11 @@ import type { MoneybirdCredentials } from "./credentials.ts";
 
 const API_ROOT = "https://moneybird.com/api/v2";
 
+// Hard cap per Moneybird call. Keeps a hung connection from pinning a deal
+// claim anywhere near the STALE_CLAIM_MS window (claim.ts), which must only
+// ever demote claims of provably dead isolates.
+const FETCH_TIMEOUT_MS = 60 * 1000;
+
 // The REST collection path per document kind.
 const collectionPath = (kind: DocumentKind): string =>
   kind === "estimate" ? "estimates" : "sales_invoices";
@@ -28,6 +33,7 @@ const moneybirdFetch = async <T>(
 ): Promise<T> => {
   const response = await fetch(url, {
     ...init,
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     headers: {
       Authorization: `Bearer ${apiToken}`,
       "Content-Type": "application/json",

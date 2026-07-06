@@ -63,8 +63,12 @@ export const MoneybirdConnectionContent = () => {
   >([]);
   const [confirmingDisconnect, setConfirmingDisconnect] = useState(false);
 
-  const invalidateConnection = () =>
+  const invalidateConnection = () => {
     queryClient.invalidateQueries({ queryKey: MONEYBIRD_CONNECTION_QUERY_KEY });
+    // Tax rates are per administration; after a connect/disconnect the cached
+    // rates of the previous administration must never be reused.
+    queryClient.invalidateQueries({ queryKey: ["moneybird_tax_rates"] });
+  };
 
   const { mutate: connect, isPending: connecting } = useMutation({
     mutationKey: ["moneybird_connection", "connect"],
@@ -94,6 +98,11 @@ export const MoneybirdConnectionContent = () => {
       notify(error.message, { type: "error" });
     },
   });
+
+  const canConnect =
+    !connecting &&
+    Boolean(apiToken.trim()) &&
+    (administrations.length === 0 || Boolean(administrationId));
 
   const { mutate: disconnect, isPending: disconnecting } = useMutation({
     mutationKey: ["moneybird_connection", "disconnect"],
@@ -172,6 +181,14 @@ export const MoneybirdConnectionContent = () => {
                 setAdministrations([]);
                 setAdministrationId("");
               }}
+              onKeyDown={(event) => {
+                // On the profile page this section lives inside the profile
+                // <Form>; Enter must connect Moneybird, not submit that form.
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  if (canConnect) connect();
+                }
+              }}
             />
             <p className="text-xs text-muted-foreground">
               {translate("crm.profile.moneybird.token_help")}
@@ -213,11 +230,7 @@ export const MoneybirdConnectionContent = () => {
               type="button"
               variant="outline"
               onClick={() => connect()}
-              disabled={
-                connecting ||
-                !apiToken.trim() ||
-                (administrations.length > 0 && !administrationId)
-              }
+              disabled={!canConnect}
             >
               <Link2 />
               {connecting

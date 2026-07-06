@@ -42,3 +42,34 @@ export const resolveMoneybirdCredentials = async (
   );
   return { apiToken, administrationId: data.administration_id };
 };
+
+// Resolve credentials for a specific ADMINISTRATION rather than a user: any
+// connection row bound to that administration will do, since every such token
+// can see the administration's documents. Used to reconcile a retried deal
+// against the administration a previous (failed) attempt ran in. Returns null
+// when nobody is connected to that administration anymore.
+export const resolveCredentialsForAdministration = async (
+  administrationId: string,
+  encKey: string,
+): Promise<MoneybirdCredentials | null> => {
+  const { data, error } = await supabaseAdmin
+    .from("moneybird_connections")
+    .select("sales_id, api_token_encrypted")
+    .eq("administration_id", administrationId)
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    throw new Error(
+      `Could not load a Moneybird connection for administration ${administrationId}: ${error.message}`,
+    );
+  }
+  if (!data) return null;
+
+  // The AAD is bound to the OWNER of the row we found, not to the caller.
+  const apiToken = await decryptToken(
+    data.api_token_encrypted,
+    encKey,
+    connectionAad(data.sales_id),
+  );
+  return { apiToken, administrationId };
+};

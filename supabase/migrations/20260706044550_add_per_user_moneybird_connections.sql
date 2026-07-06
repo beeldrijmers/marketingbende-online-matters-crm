@@ -257,6 +257,15 @@ grant all on sequence public.moneybird_connections_id_seq to service_role;
 revoke all on sequence public.moneybird_company_contacts_id_seq from anon, authenticated;
 grant all on sequence public.moneybird_company_contacts_id_seq to service_role;
 
+-- MANUALLY ADDED: close the INSERT twin of the existing UPDATE column
+-- restriction on deals. Without this a client could create a new deal with
+-- pre-filled moneybird_* bookkeeping columns (a forged "completed" document
+-- with a deep link into an arbitrary administration). Mirrors 06_grants.sql.
+revoke insert on table public.deals from anon, authenticated;
+grant insert (id, name, company_id, contact_ids, category, stage, description, amount,
+              created_at, updated_at, archived_at, expected_closing_date, sales_id,
+              index, trello_card_id) on table public.deals to anon, authenticated;
+
   create policy "Enable read access for connection owner"
   on "public"."moneybird_connections"
   as permissive

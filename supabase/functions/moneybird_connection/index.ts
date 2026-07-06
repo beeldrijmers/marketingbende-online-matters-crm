@@ -41,7 +41,17 @@ const handleConnect = async (
   salesId: number,
   encKey: string,
 ): Promise<Response> => {
-  const { apiToken, administrationId } = await req.json();
+  // Parse in a dedicated try/catch: a malformed body must be a clean 400 and
+  // must never reach the generic error logging (JSON.parse errors embed a
+  // snippet of the raw body — potentially the plaintext token — in their
+  // message).
+  let body: { apiToken?: unknown; administrationId?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return createErrorResponse(400, "Ongeldige aanvraag.");
+  }
+  const { apiToken, administrationId } = body;
 
   if (typeof apiToken !== "string" || apiToken.trim() === "") {
     return createErrorResponse(400, "Vul een Moneybird API-token in.");

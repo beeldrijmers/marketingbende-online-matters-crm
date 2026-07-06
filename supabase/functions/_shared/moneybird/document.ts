@@ -16,7 +16,10 @@ import {
 import { findOrCreateMoneybirdContact } from "./contact.ts";
 import { createDocument, findDocumentByReference } from "./client.ts";
 import { buildDocumentPayload, documentReference } from "./payload.ts";
-import type { MoneybirdCredentials } from "./credentials.ts";
+import {
+  resolveCredentialsForAdministration,
+  type MoneybirdCredentials,
+} from "./credentials.ts";
 import type { DocumentKind } from "./types.ts";
 
 export type CreateDocumentOutcome =
@@ -24,6 +27,39 @@ export type CreateDocumentOutcome =
   | { kind: "already_completed"; documentId: string }
   | { kind: "in_progress" }
   | { kind: "not_found" };
+
+// Reconciliation across administrations: a previous attempt by ANOTHER user
+// ran against a different administration and failed after its Moneybird create
+// may have landed. Look for the deal's deterministic reference there (using any
+// still-existing connection to that administration) so we adopt that document
+// instead of creating a second real one in our own administration. Best-effort:
+// when nobody is connected to the old administration anymore we log and move
+// on (the possible stray document there cannot be seen by anyone in the CRM).
+const findDocumentInPreviousAdministration = async (
+  documentKind: DocumentKind,
+  dealId: number,
+  previousAdministrationId: string,
+  encKey: string,
+): Promise<{ documentId: string; administrationId: string } | null> => {
+  const previousCredentials = await resolveCredentialsForAdministration(
+    previousAdministrationId,
+    encKey,
+  );
+  if (!previousCredentials) {
+    console.error(
+      `moneybird ${documentKind} retry for deal ${dealId}: previous attempt ran in administration ${previousAdministrationId} but no connection to it exists anymore; cannot reconcile there. A stray document may exist in that administration.`,
+    );
+    return null;
+  }
+  const existing = await findDocumentByReference(
+    previousCredentials,
+    documentKind,
+    documentReference(documentKind, dealId),
+  );
+  return existing
+    ? { documentId: existing.id, administrationId: previousAdministrationId }
+    : null;
+};
 
 export const createDocumentForDeal = async ({
   documentKind,
@@ -33,6 +69,7 @@ export const createDocumentForDeal = async ({
   currency,
   salesId,
   credentials,
+  encKey,
 }: {
   documentKind: DocumentKind;
   dealId: number;
@@ -41,6 +78,7 @@ export const createDocumentForDeal = async ({
   currency: string;
   salesId: number;
   credentials: MoneybirdCredentials;
+  encKey: string;
 }): Promise<CreateDocumentOutcome> => {
   const claim = await claimDealForDocument(documentKind, dealId, salesId);
   if (claim.outcome === "already_completed") {
@@ -51,6 +89,32 @@ export const createDocumentForDeal = async ({
 
   const deal = claim.deal;
   try {
+    // A failed attempt in a DIFFERENT administration may have created a real
+    // document there; adopt it rather than duplicating it in our own.
+    if (
+      claim.previousAdministrationId &&
+      claim.previousAdministrationId !== credentials.administrationId
+    ) {
+      const adopted = await findDocumentInPreviousAdministration(
+        documentKind,
+        dealId,
+        claim.previousAdministrationId,
+        encKey,
+      );
+      if (adopted) {
+        await markDocumentCompleted(
+          documentKind,
+          dealId,
+          adopted.documentId,
+          adopted.administrationId,
+        );
+        return {
+          kind: "created",
+          documentId: adopted.documentId,
+          alreadyExisted: true,
+        };
+      }
+    }
     if (!deal.company_id) {
       throw new Error(
         "Dit deal heeft geen gekoppeld bedrijf; kan geen document aanmaken.",
@@ -113,7 +177,12 @@ export const createDocumentForDeal = async ({
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    await markDocumentFailed(documentKind, dealId, message);
+    await markDocumentFailed(
+      documentKind,
+      dealId,
+      message,
+      credentials.administrationId,
+    );
     throw error;
   }
 };

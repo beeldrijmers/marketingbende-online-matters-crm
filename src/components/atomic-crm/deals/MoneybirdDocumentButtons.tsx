@@ -63,46 +63,48 @@ const MoneybirdDocumentButton = ({
   kind: DocumentKind;
 }) => {
   const translate = useTranslate();
+  const notify = useNotify();
   const [open, setOpen] = useState(false);
   const isPending = statusOf(record, kind) === "pending";
   const Icon = iconFor(kind);
 
   // Documents are created in the CALLER'S OWN Moneybird administration, so the
-  // create button only works for users who linked one. Anyone else sees a
-  // disabled button with a hint pointing to their profile page.
+  // create dialog only works for users who linked one. Without a connection the
+  // button stays clickable but explains itself via a notification (works for
+  // keyboard, touch and screen readers alike, unlike a hover-only hint on a
+  // disabled button). When the status query itself errors we let the click
+  // through: the edge function is the source of truth and answers with its own
+  // clear message.
   const { data: connection, isPending: connectionLoading } =
     useMoneybirdConnection();
-  const notConnected = !connectionLoading && !connection;
+  const notConnected = !connectionLoading && connection === null;
   const notConnectedHint = translate(
     "resources.deals.moneybird.not_connected_hint",
   );
 
-  const button = (
-    <Button
-      onClick={() => setOpen(true)}
-      size="sm"
-      variant="outline"
-      className="flex items-center gap-2 h-9"
-      disabled={isPending || connectionLoading || notConnected}
-    >
-      <Icon className="w-4 h-4" />
-      {isPending
-        ? translate(`resources.deals.moneybird.${kind}.pending`)
-        : translate(`resources.deals.moneybird.${kind}.action`)}
-    </Button>
-  );
+  const handleClick = () => {
+    if (notConnected) {
+      notify(notConnectedHint, { type: "warning" });
+      return;
+    }
+    setOpen(true);
+  };
 
   return (
     <>
-      {notConnected ? (
-        // A disabled button swallows mouse events; the wrapper carries the
-        // explanation for both pointer and assistive tech users.
-        <span title={notConnectedHint} aria-label={notConnectedHint}>
-          {button}
-        </span>
-      ) : (
-        button
-      )}
+      <Button
+        onClick={handleClick}
+        size="sm"
+        variant="outline"
+        className={`flex items-center gap-2 h-9 ${notConnected ? "opacity-60" : ""}`}
+        disabled={isPending || connectionLoading}
+        title={notConnected ? notConnectedHint : undefined}
+      >
+        <Icon className="w-4 h-4" />
+        {isPending
+          ? translate(`resources.deals.moneybird.${kind}.pending`)
+          : translate(`resources.deals.moneybird.${kind}.action`)}
+      </Button>
       {open ? (
         <MoneybirdDocumentDialog
           record={record}
@@ -144,10 +146,14 @@ const MoneybirdDocumentDialog = ({
     { enabled: Boolean(record.company_id) },
   );
 
+  // Tax rates differ PER administration, so the cache key includes the
+  // administration of the caller's own connection: switching connections never
+  // serves the previous administration's rates from cache.
+  const { data: connection } = useMoneybirdConnection();
   const { data: taxRates, isPending: taxRatesLoading } = useQuery({
-    queryKey: ["moneybird_tax_rates"],
+    queryKey: ["moneybird_tax_rates", connection?.administrationId],
     queryFn: () => dataProvider.getMoneybirdTaxRates(),
-    enabled: open,
+    enabled: open && Boolean(connection),
     staleTime: 5 * 60 * 1000,
   });
 

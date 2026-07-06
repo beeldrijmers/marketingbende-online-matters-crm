@@ -2,7 +2,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Import WITHOUT the .ts extension — required for the Vitest "functions"
 // project (the Deno source imports use .ts).
-import { resolveMoneybirdCredentials } from "./credentials";
+import {
+  resolveCredentialsForAdministration,
+  resolveMoneybirdCredentials,
+} from "./credentials";
 import { connectionAad, encryptToken } from "./tokenCrypto";
 
 const mockFrom = vi.hoisted(() => vi.fn());
@@ -25,6 +28,9 @@ const connectionQuery = (result: { data: unknown; error: unknown }) => ({
   select: () => ({
     eq: () => ({
       maybeSingle: () => Promise.resolve(result),
+      limit: () => ({
+        maybeSingle: () => Promise.resolve(result),
+      }),
     }),
   }),
 });
@@ -104,5 +110,52 @@ describe("resolveMoneybirdCredentials", () => {
     await expect(resolveMoneybirdCredentials(7, KEY)).rejects.toThrow(
       "could not be decrypted",
     );
+  });
+});
+
+describe("resolveCredentialsForAdministration", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("decrypts using the AAD of the row OWNER, not the caller", async () => {
+    // The connection row belongs to sales 8; a retry by another user must
+    // still be able to decrypt it for reconciliation.
+    const encrypted = await encryptToken(TOKEN, KEY, connectionAad(8));
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "moneybird_connections")
+        return connectionQuery({
+          data: { sales_id: 8, api_token_encrypted: encrypted },
+          error: null,
+        });
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const credentials = await resolveCredentialsForAdministration(
+      "478715071487280295",
+      KEY,
+    );
+    expect(credentials).toEqual({
+      apiToken: TOKEN,
+      administrationId: "478715071487280295",
+    });
+  });
+
+  it("returns null when nobody is connected to the administration", async () => {
+    mockFrom.mockImplementation(() =>
+      connectionQuery({ data: null, error: null }),
+    );
+    expect(
+      await resolveCredentialsForAdministration("478715071487280295", KEY),
+    ).toBeNull();
+  });
+
+  it("throws on a database error", async () => {
+    mockFrom.mockImplementation(() =>
+      connectionQuery({ data: null, error: { message: "boom" } }),
+    );
+    await expect(
+      resolveCredentialsForAdministration("478715071487280295", KEY),
+    ).rejects.toThrow("boom");
   });
 });

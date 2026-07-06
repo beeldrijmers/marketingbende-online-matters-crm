@@ -60,8 +60,18 @@ const handleCreate = async (
   req: Request,
   salesId: number,
   credentials: MoneybirdCredentials,
+  encKey: string,
 ): Promise<Response> => {
-  const { dealId, taxRateId, description } = await req.json();
+  // Parse in a dedicated try/catch: a malformed body must be a clean 400 and
+  // must never reach the generic error logging (JSON.parse errors embed a
+  // snippet of the raw body in their message).
+  let body: { dealId?: unknown; taxRateId?: unknown; description?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return createErrorResponse(400, "Ongeldige aanvraag.");
+  }
+  const { dealId, taxRateId, description } = body;
 
   if (dealId === undefined || dealId === null) {
     return createErrorResponse(400, "Missing dealId");
@@ -87,6 +97,7 @@ const handleCreate = async (
     currency: DOCUMENT_CURRENCY,
     salesId,
     credentials,
+    encKey,
   });
 
   const noun = kind === "estimate" ? "offerte" : "factuur";
@@ -162,6 +173,7 @@ export const serveMoneybirdDocument = (kind: DocumentKind): void => {
                 req,
                 currentUserSale.id,
                 credentials,
+                encKey,
               );
             }
             return createErrorResponse(405, "Method Not Allowed");
