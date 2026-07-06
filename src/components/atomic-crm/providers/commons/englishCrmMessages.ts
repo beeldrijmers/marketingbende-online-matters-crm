@@ -536,7 +536,6 @@ export const englishCrmMessages = {
       },
     },
     dashboard: {
-      deals_chart: "Upcoming Deal Revenue",
       deals_pipeline: "Deals Pipeline",
       revenue: {
         title: "Revenue per month",

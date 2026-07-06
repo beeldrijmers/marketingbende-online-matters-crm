@@ -546,7 +546,6 @@ export const frenchCrmMessages = {
       },
     },
     dashboard: {
-      deals_chart: "Revenus des affaires à venir",
       deals_pipeline: "Pipeline des affaires",
       revenue: {
         title: "Chiffre d'affaires par mois",
