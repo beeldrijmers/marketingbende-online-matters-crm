@@ -12,7 +12,7 @@ import {
   useTranslate,
 } from "ra-core";
 import type { Identifier } from "ra-core";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -68,10 +68,29 @@ const ContactMergeDialog = ({ open, onClose }: ContactMergeDialogProps) => {
     null,
   );
   const [isMerging, setIsMerging] = useState(false);
+  const queryClient = useQueryClient();
   const { mutateAsync } = useMutation({
     mutationKey: ["contacts", "merge", { loserId: loserContact?.id, winnerId }],
     mutationFn: async () => {
       return dataProvider.mergeContacts(loserContact?.id, winnerId);
+    },
+    // The merge runs in an edge function, outside ra-core's mutation hooks, so
+    // nothing invalidates the react-query cache by itself: without this the
+    // deleted loser keeps showing up in lists and the winner shows pre-merge
+    // data until the 60s staleTime expires.
+    onSuccess: async () => {
+      await Promise.all(
+        [
+          "contacts",
+          "contacts_summary",
+          "contact_notes",
+          "tasks",
+          "deals",
+          "activity_log",
+        ].map((resource) =>
+          queryClient.invalidateQueries({ queryKey: [resource] }),
+        ),
+      );
     },
   });
 

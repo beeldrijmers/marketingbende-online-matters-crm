@@ -17,7 +17,11 @@ import type {
 } from "../../types";
 import type { ConfigurationContextValue } from "../../root/ConfigurationContext";
 import { ATTACHMENTS_BUCKET } from "../commons/attachments";
-import { getIsInitialized } from "./authProvider";
+import {
+  clearCurrentSaleCache,
+  getIsInitialized,
+  markInitializedCache,
+} from "./authProvider";
 import { getSupabaseClient } from "./supabase";
 
 const getBaseDataProvider = () =>
@@ -86,6 +90,19 @@ const getDataProviderWithCustomMethods = () => {
 
       return baseDataProvider.getOne(resource, params);
     },
+    // Same view mapping for reference lists (e.g. the contacts tab on a
+    // company): components can keep using the base resource name, so ra-core's
+    // cache invalidation after create/update/delete on that resource works.
+    async getManyReference(resource: string, params: any) {
+      if (resource === "companies") {
+        return baseDataProvider.getManyReference("companies_summary", params);
+      }
+      if (resource === "contacts") {
+        return baseDataProvider.getManyReference("contacts_summary", params);
+      }
+
+      return baseDataProvider.getManyReference(resource, params);
+    },
 
     async signUp({ email, password, first_name, last_name }: SignUpData) {
       const response = await getSupabaseClient().auth.signUp({
@@ -104,8 +121,8 @@ const getDataProviderWithCustomMethods = () => {
         throw new Error(response?.error?.message || "Failed to create account");
       }
 
-      // Update the is initialized cache
-      (getIsInitialized as any)._is_initialized_cache = true;
+      // Update the is-initialized cache (the real localStorage-backed one).
+      markInitializedCache();
 
       return {
         id: response.data.user.id,
@@ -167,9 +184,23 @@ const getDataProviderWithCustomMethods = () => {
         });
 
       if (!updatedData || error) {
-        console.error("salesCreate.error", error);
-        throw new Error("Failed to update account manager");
+        console.error("salesUpdate.error", error);
+        const errorDetails = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(
+          errorDetails?.message || "Failed to update account manager",
+        );
       }
+
+      // The auth layer caches the current user's sales record; a profile edit
+      // (own name/avatar, or an admin changing roles) must invalidate it or
+      // getIdentity keeps serving the old values until logout.
+      clearCurrentSaleCache();
 
       return updatedData.data;
     },
@@ -190,29 +221,24 @@ const getDataProviderWithCustomMethods = () => {
       return passwordUpdated;
     },
     async unarchiveDeal(deal: Deal) {
-      // get all deals where stage is the same as the deal to unarchive
-      const { data: deals } = await baseDataProvider.getList<Deal>("deals", {
+      // Only the unarchived deal itself is written: it goes back on top of
+      // its column by taking an index below the current minimum. The previous
+      // implementation re-indexed EVERY deal in the stage with up to 1000
+      // parallel PATCHes — racing concurrent kanban drags and leaving the
+      // column half re-indexed when one of them failed. The board sorts by
+      // index and tolerates gaps/duplicates, so a single write is enough.
+      const { data: topDeals } = await baseDataProvider.getList<Deal>("deals", {
         filter: { stage: deal.stage },
-        pagination: { page: 1, perPage: 1000 },
+        pagination: { page: 1, perPage: 1 },
         sort: { field: "index", order: "ASC" },
       });
+      const minIndex = topDeals.at(0)?.index ?? 1;
 
-      // set index for each deal starting from 1, if the deal to unarchive is found, set its index to the last one
-      const updatedDeals = deals.map((d, index) => ({
-        ...d,
-        index: d.id === deal.id ? 0 : index + 1,
-        archived_at: d.id === deal.id ? null : d.archived_at,
-      }));
-
-      return await Promise.all(
-        updatedDeals.map((updatedDeal) =>
-          baseDataProvider.update("deals", {
-            id: updatedDeal.id,
-            data: updatedDeal,
-            previousData: deals.find((d) => d.id === updatedDeal.id),
-          }),
-        ),
-      );
+      return await baseDataProvider.update("deals", {
+        id: deal.id,
+        data: { index: minIndex - 1, archived_at: null },
+        previousData: deal,
+      });
     },
     async isInitialized() {
       return getIsInitialized();
@@ -570,6 +596,15 @@ const applyFullTextSearch = (columns: string[]) => (params: GetListParams) => {
     return params;
   }
   const { q, ...filter } = params.filter;
+  // PostgREST-reserved characters would corrupt the or=(...) expression the
+  // adapter builds (HTTP 400 on e.g. "Bakker (Amsterdam)" or "Jansen,P.").
+  // They can't be escaped inside that expression, so they become word
+  // separators instead — the adapter already splits the term on whitespace
+  // into one ilike-per-word.
+  const sanitizedQ = q.replace(/[,()"\\]/g, " ").trim();
+  if (!sanitizedQ) {
+    return { ...params, filter };
+  }
   return {
     ...params,
     filter: {
@@ -578,17 +613,17 @@ const applyFullTextSearch = (columns: string[]) => (params: GetListParams) => {
         if (column === "email")
           return {
             ...acc,
-            [`email_fts@ilike`]: q,
+            [`email_fts@ilike`]: sanitizedQ,
           };
         if (column === "phone")
           return {
             ...acc,
-            [`phone_fts@ilike`]: q,
+            [`phone_fts@ilike`]: sanitizedQ,
           };
         else
           return {
             ...acc,
-            [`${column}@ilike`]: q,
+            [`${column}@ilike`]: sanitizedQ,
           };
       }, {}),
     },

@@ -184,29 +184,21 @@ export const createDataProvider = ({
       return baseDataProvider.getList(resource, params);
     },
     unarchiveDeal: async (deal: Deal) => {
-      // get all deals where stage is the same as the deal to unarchive
-      const { data: deals } = await baseDataProvider.getList<Deal>("deals", {
+      // Mirrors the Supabase provider: only the unarchived deal itself is
+      // written, taking an index below the column's current minimum so it
+      // lands on top (the board sorts by index and tolerates gaps).
+      const { data: topDeals } = await baseDataProvider.getList<Deal>("deals", {
         filter: { stage: deal.stage },
-        pagination: { page: 1, perPage: 1000 },
+        pagination: { page: 1, perPage: 1 },
         sort: { field: "index", order: "ASC" },
       });
+      const minIndex = topDeals.at(0)?.index ?? 1;
 
-      // set index for each deal starting from 1, if the deal to unarchive is found, set its index to the last one
-      const updatedDeals = deals.map((d, index) => ({
-        ...d,
-        index: d.id === deal.id ? 0 : index + 1,
-        archived_at: d.id === deal.id ? null : d.archived_at,
-      }));
-
-      return await Promise.all(
-        updatedDeals.map((updatedDeal) =>
-          dataProvider.update("deals", {
-            id: updatedDeal.id,
-            data: updatedDeal,
-            previousData: deals.find((d) => d.id === updatedDeal.id),
-          }),
-        ),
-      );
+      return await dataProvider.update("deals", {
+        id: deal.id,
+        data: { index: minIndex - 1, archived_at: null },
+        previousData: deal,
+      });
     },
     signUp: async ({
       email,
