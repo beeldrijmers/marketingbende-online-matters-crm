@@ -5,7 +5,6 @@ import {
   resolveStage,
   resolveDealName,
   resolveRevenuePeriod,
-  resolveOnHold,
 } from "./resolveDealFields.ts";
 import { findOrCreateCompany } from "./findOrCreateCompany.ts";
 import { resolveDefaultSalesId } from "./resolveDefaultSalesId.ts";
@@ -41,7 +40,6 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
   const companyName = resolveCompanyName(card);
   const category = resolveCategory(card.idList, card.labelNames);
   const stage = resolveStage(card.idList, card.labelNames, card.dueComplete);
-  const onHold = resolveOnHold(card.idList);
   const name = resolveDealName(card.name);
   const expectedClosingDate = card.due ? card.due.slice(0, 10) : null;
   const website = extractCompanyWebsite(card.desc, card.attachmentUrls);
@@ -108,7 +106,6 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
         company_id: companyId,
         category,
         ...(isMonthly ? {} : { stage }),
-        on_hold: onHold,
         expected_closing_date: expectedClosingDate,
         // Correct the historical import date to the real Trello creation date.
         // Deterministic per card, so re-syncs are idempotent.
@@ -135,7 +132,6 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
       company_id: companyId,
       category,
       stage,
-      on_hold: onHold,
       expected_closing_date: expectedClosingDate,
       description,
       ...(amount != null ? { amount } : {}),

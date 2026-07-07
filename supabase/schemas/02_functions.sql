@@ -482,6 +482,21 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION "public"."sync_deal_on_hold"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  -- "In de wacht" is a kanban column (stage 'on-hold'). Keep the on_hold flag
+  -- in lock-step with it, so dragging a card into that column automatically
+  -- shows the "In de wacht" badge and dragging it out clears it - no manual
+  -- toggle. Runs after cycle_monthly_deal (which may rewrite the stage), so it
+  -- always reflects the final stage.
+  NEW.on_hold := (NEW.stage = 'on-hold');
+  RETURN NEW;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION "public"."cycle_monthly_deal"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public'

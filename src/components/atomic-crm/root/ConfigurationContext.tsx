@@ -4,9 +4,10 @@ import { useStore } from "ra-core";
 import type { DealStage, LabeledValue, NoteStatus } from "../types";
 import { defaultConfiguration } from "./defaultConfiguration";
 
-// v2: key bumped for the BANKAI rebrand - browsers that seeded the old
-// title/logos into localStorage pick up the new defaults on their next visit.
-export const CONFIGURATION_STORE_KEY = "app.configuration.v2";
+// v3: key bumped so browsers pick up the current deal stages (the "In de
+// wacht" parking column) instead of a stale cached column set. Bump this key
+// whenever the seeded defaults (stages, categories, branding) change.
+export const CONFIGURATION_STORE_KEY = "app.configuration.v3";
 
 export interface ConfigurationContextValue {
   companySectors: LabeledValue[];
