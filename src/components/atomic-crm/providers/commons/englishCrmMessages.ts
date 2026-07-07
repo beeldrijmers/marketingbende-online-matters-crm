@@ -311,7 +311,8 @@ export const englishCrmMessages = {
       trello_sync: {
         action: "Sync Trello",
         pending: "Syncing...",
-        success: "Trello synced: %{cards} cards updated.",
+        success:
+          "Trello synced: %{smart_count} card updated. |||| Trello synced: %{smart_count} cards updated.",
         error: "Failed to sync with Trello",
       },
 
@@ -494,7 +495,7 @@ export const englishCrmMessages = {
       recovery_email_sent:
         "If you're a registered user, you should receive a password recovery email shortly.",
       sign_in_failed: "Failed to log in.",
-      sign_in_google_workspace: "Sign in with Google Workplace",
+      sign_in_google_workspace: "Sign in with Google Workspace",
       signup: {
         create_account: "Create account",
         create_first_user:
@@ -705,6 +706,8 @@ export const englishCrmMessages = {
       },
       password_reset_sent:
         "A reset password email has been sent to your email address",
+      password_reset_error:
+        "The password reset email could not be sent. Please try again.",
       record_not_found: "Record not found",
       title: "Profile",
       updated: "Your profile has been updated",

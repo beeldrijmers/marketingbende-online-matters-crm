@@ -183,7 +183,7 @@ export const SignupPage = () => {
                   domain={googleWorkplaceDomain}
                 >
                   {translate("crm.auth.sign_in_google_workspace", {
-                    _: "Sign in with Google Workplace",
+                    _: "Sign in with Google Workspace",
                   })}
                 </SSOAuthButton>
               ) : null}

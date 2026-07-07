@@ -14,8 +14,10 @@ const ONEOFF_COLOR = "#9bd7cf";
 // as "expected, not yet realized" at a glance.
 const PROGNOSE_COLOR = "#6f9d97";
 
-const formatEuro = (amount: number, locale: string) =>
-  amount.toLocaleString(locale, {
+// Currency is always rendered with Dutch (nl-NL) conventions to stay
+// consistent with the deal cards, pipeline and column totals across the app.
+const formatEuro = (amount: number) =>
+  amount.toLocaleString("nl-NL", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -72,8 +74,6 @@ const LegendDot = ({
 
 export const RevenueDashboard = memo(() => {
   const translate = useTranslate();
-  const locale =
-    (typeof navigator !== "undefined" && navigator.language) || "nl-NL";
 
   const { data, isPending } = useGetList<Deal>("deals", {
     pagination: { perPage: 1000, page: 1 },
@@ -130,7 +130,7 @@ export const RevenueDashboard = memo(() => {
             "crm.dashboard.revenue.mrr_label",
             "Maandelijks terugkerende omzet",
           )}
-          value={formatEuro(model.mrr, locale)}
+          value={formatEuro(model.mrr)}
           sub={t(
             "crm.dashboard.revenue.mrr_sub",
             "per maand, lopende abonnementen",
@@ -140,7 +140,7 @@ export const RevenueDashboard = memo(() => {
           icon={Coins}
           accent={ONEOFF_COLOR}
           label={t("crm.dashboard.revenue.oneoff_label", "Eenmalige omzet")}
-          value={formatEuro(model.oneOffThisYear, locale)}
+          value={formatEuro(model.oneOffThisYear)}
           sub={t(
             "crm.dashboard.revenue.oneoff_sub",
             "eenmalige projecten dit jaar",
@@ -150,7 +150,7 @@ export const RevenueDashboard = memo(() => {
           icon={LineChart}
           accent={PROGNOSE_COLOR}
           label={t("crm.dashboard.revenue.forecast_label", "Verwachte omzet")}
-          value={formatEuro(model.openPipeline, locale)}
+          value={formatEuro(model.openPipeline)}
           sub={t(
             "crm.dashboard.revenue.forecast_sub",
             "open deals, gewogen naar fase",
@@ -206,7 +206,7 @@ export const RevenueDashboard = memo(() => {
                       {seriesLabel(String(id))}
                     </span>
                     <span className="ml-auto pl-3 font-semibold tabular-nums">
-                      {formatEuro(value, locale)}
+                      {formatEuro(value)}
                     </span>
                   </div>
                 </div>

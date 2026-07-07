@@ -252,10 +252,10 @@ export const dutchCrmMessages = {
           pending: "Offerte wordt aangemaakt...",
           dialog_title: "Moneybird-offerte aanmaken",
           dialog_description:
-            "Controleer de gegevens en maak een concept-offerte aan in Moneybird voor dit deal.",
+            "Controleer de gegevens en maak een concept-offerte aan in Moneybird voor deze deal.",
           confirm: "Offerte aanmaken",
           warning:
-            "Dit maakt een echte concept-offerte aan in je eigen Moneybird-administratie. Het wordt niet automatisch naar de klant gemaild.",
+            "Dit maakt een echte concept-offerte aan in uw eigen Moneybird-administratie. De offerte wordt niet automatisch naar de klant gemaild.",
           success: "Offerte aangemaakt in Moneybird",
           error: "Aanmaken van de offerte is mislukt",
         },
@@ -265,10 +265,10 @@ export const dutchCrmMessages = {
           pending: "Factuur wordt aangemaakt...",
           dialog_title: "Moneybird-factuur aanmaken",
           dialog_description:
-            "Controleer de gegevens en maak een concept-factuur aan in Moneybird voor dit deal.",
+            "Controleer de gegevens en maak een concept-factuur aan in Moneybird voor deze deal.",
           confirm: "Factuur aanmaken",
           warning:
-            "Dit maakt een echte concept-factuur aan in je eigen Moneybird-administratie. De factuur wordt NIET automatisch verzonden; verstuur hem zelf vanuit Moneybird.",
+            "Dit maakt een echte concept-factuur aan in uw eigen Moneybird-administratie. De factuur wordt NIET automatisch verzonden; verstuur hem zelf vanuit Moneybird.",
           success: "Factuur aangemaakt in Moneybird",
           error: "Aanmaken van de factuur is mislukt",
         },
@@ -280,7 +280,7 @@ export const dutchCrmMessages = {
         tax_rate_placeholder: "Kies een btw-tarief",
         tax_rate_loading: "Tarieven laden...",
         tax_rate_error:
-          "De btw-tarieven konden niet worden geladen. Controleer je Moneybird-koppeling op je profielpagina en probeer het opnieuw.",
+          "De btw-tarieven konden niet worden geladen. Controleer uw Moneybird-koppeling op uw profielpagina en probeer het opnieuw.",
         tax_rate_retry: "Opnieuw proberen",
         no_contact_hint:
           "Er is geen contactpersoon gekoppeld; het document gaat naar het bedrijf.",
@@ -288,13 +288,13 @@ export const dutchCrmMessages = {
           "Er zijn meerdere contactpersonen gekoppeld; het document gaat naar het bedrijf, niet naar een specifiek contact.",
         warning_title: "Let op: echt document",
         no_company:
-          "Dit deal heeft geen gekoppeld bedrijf; koppel eerst een bedrijf.",
-        no_amount: "Dit deal heeft geen bedrag; stel eerst een bedrag in.",
+          "Deze deal heeft geen gekoppeld bedrijf; koppel eerst een bedrijf.",
+        no_amount: "Deze deal heeft geen bedrag; stel eerst een bedrag in.",
         wrong_currency:
           "De Moneybird-koppeling werkt alleen met de valuta EUR.",
         creating: "Bezig met aanmaken...",
         not_connected_hint:
-          "Koppel eerst je eigen Moneybird-administratie via je profielpagina.",
+          "Koppel eerst uw eigen Moneybird-administratie via uw profielpagina.",
       },
       inbound: {
         title: "Inkomende e-mail",
@@ -306,8 +306,8 @@ export const dutchCrmMessages = {
       },
       unarchived: {
         action: "Terugzetten op het bord",
-        error: "Fout: deal niet gedearchiveerd",
-        success: "Deal gedearchiveerd",
+        error: "Fout: deal niet teruggezet",
+        success: "Deal teruggezet",
       },
       updated: "Deal bijgewerkt",
       scope: {
@@ -318,7 +318,8 @@ export const dutchCrmMessages = {
       trello_sync: {
         action: "Synchroniseer Trello",
         pending: "Synchroniseren...",
-        success: "Trello gesynchroniseerd: %{cards} kaarten bijgewerkt.",
+        success:
+          "Trello gesynchroniseerd: %{smart_count} kaart bijgewerkt. |||| Trello gesynchroniseerd: %{smart_count} kaarten bijgewerkt.",
         error: "Synchroniseren met Trello is mislukt",
       },
 
@@ -549,7 +550,7 @@ export const dutchCrmMessages = {
       yesterday: "Gisteren",
     },
     ownership: {
-      you: "Jij",
+      you: "U",
       unknown: "Onbekend",
       party: {
         online_matters: "Online Matters",
@@ -576,7 +577,7 @@ export const dutchCrmMessages = {
         forecast_label: "Verwachte omzet",
         forecast_sub: "open deals, gewogen naar fase",
         empty:
-          "Nog geen omzetgegevens. Zet een bedrag en type (maandelijks/eenmalig) op je deals.",
+          "Nog geen omzetgegevens. Zet een bedrag en type (maandelijks/eenmalig) op uw deals.",
       },
       latest_activity: "Laatste activiteit",
       latest_activity_error: "Fout bij het laden van de laatste activiteit",
@@ -692,7 +693,7 @@ export const dutchCrmMessages = {
       moneybird: {
         title: "Moneybird",
         description:
-          "Koppel je eigen Moneybird-administratie om offertes en facturen vanuit deals aan te maken. Maak in Moneybird een persoonlijk API-token aan (profielicoon, Instellingen, Ontwikkelaars, Token aanmaken) en plak het hier.",
+          "Koppel uw eigen Moneybird-administratie om offertes en facturen vanuit deals aan te maken. Maak in Moneybird een persoonlijk API-token aan (profielicoon, Instellingen, Ontwikkelaars, Token aanmaken) en plak het hier.",
         token_label: "Persoonlijk API-token",
         token_help:
           "Het token wordt gecontroleerd bij Moneybird en versleuteld opgeslagen. Het wordt daarna nooit meer getoond.",
@@ -711,6 +712,8 @@ export const dutchCrmMessages = {
       },
       password_reset_sent:
         "Er is een e-mail voor het resetten van uw wachtwoord naar uw e-mailadres verzonden",
+      password_reset_error:
+        "De e-mail om uw wachtwoord opnieuw in te stellen kon niet worden verzonden. Probeer het opnieuw.",
       record_not_found: "Record niet gevonden",
       title: "Profiel",
       updated: "Uw profiel is bijgewerkt",

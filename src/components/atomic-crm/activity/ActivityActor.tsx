@@ -44,7 +44,7 @@ export function useActor(salesId?: Identifier): ActorInfo {
   });
   const trimmed = resolved?.trim();
   const name = isCurrentUser
-    ? translate("crm.ownership.you", { _: "Jij" })
+    ? translate("crm.ownership.you", { _: "U" })
     : trimmed && trimmed !== "??"
       ? trimmed
       : translate("crm.activity.someone", { _: "een teamlid" });
@@ -104,7 +104,7 @@ export function ActivityActorAvatar({
               size={size}
               title={
                 isCurrentUser
-                  ? translate("crm.ownership.you", { _: "Jij" })
+                  ? translate("crm.ownership.you", { _: "U" })
                   : undefined
               }
             />

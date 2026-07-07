@@ -61,7 +61,7 @@ export const AssigneesField = ({
     identity?.id != null && String(identity.id) === String(sale.id);
   const nameOf = (sale: Sale) =>
     isSelf(sale)
-      ? translate("crm.ownership.you", { _: "Jij" })
+      ? translate("crm.ownership.you", { _: "U" })
       : saleFullName(sale) ||
         translate("crm.ownership.unknown", { _: "Onbekend" });
 
