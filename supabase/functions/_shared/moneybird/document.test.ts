@@ -46,6 +46,7 @@ const makeBuilder = (
     "lt",
     "is",
     "limit",
+    "contains",
   ]) {
     builder[method] = (...args: unknown[]) => {
       if (method === "update" && updates) updates.push(args[0]);
@@ -76,14 +77,23 @@ const routeTables = (
 
 const CALLER = { apiToken: "token-Y", administrationId: "ADMIN_Y" };
 
-const claimedDeal = (previousAdministrationId: string | null) => ({
+// The pre-claim read: authorization (assignee membership) + the previous
+// attempt's administration hint.
+const preReadDeal = (previousAdministrationId: string | null) => ({
+  data: {
+    id: 7,
+    moneybird_invoice_administration_id: previousAdministrationId,
+  },
+  error: null,
+});
+
+const claimedDeal = () => ({
   data: {
     id: 7,
     company_id: 3,
     name: "Deal",
     amount: 1000,
     description: null,
-    moneybird_invoice_administration_id: previousAdministrationId,
   },
   error: null,
 });
@@ -98,8 +108,9 @@ describe("createDocumentForDeal cross-administration reconciliation", () => {
     const encrypted = await encryptToken("token-X", KEY, connectionAad(8));
     routeTables({
       deals: [
+        makeBuilder(preReadDeal("ADMIN_X")), // authorization + hint read
         makeBuilder({ error: null }, dealUpdates), // stale demotion
-        makeBuilder(claimedDeal("ADMIN_X"), dealUpdates), // atomic claim
+        makeBuilder(claimedDeal(), dealUpdates), // atomic claim
         makeBuilder({ error: null }, dealUpdates), // markDocumentCompleted
       ],
       moneybird_connections: [
@@ -130,11 +141,13 @@ describe("createDocumentForDeal cross-administration reconciliation", () => {
       documentId: "DOC_IN_X",
       alreadyExisted: true,
     });
-    // The reconciliation ran with the PREVIOUS administration's credentials.
+    // The reconciliation ran with the PREVIOUS administration's credentials,
+    // and STRICT: a listing failure there must abort instead of duplicating.
     expect(mockFindDocumentByReference).toHaveBeenCalledWith(
       { apiToken: "token-X", administrationId: "ADMIN_X" },
       "invoice",
       "CRM-INV-7",
+      { strict: true },
     );
     // No new real document was created anywhere.
     expect(mockCreateDocument).not.toHaveBeenCalled();
@@ -151,8 +164,9 @@ describe("createDocumentForDeal cross-administration reconciliation", () => {
     const encrypted = await encryptToken("token-X", KEY, connectionAad(8));
     routeTables({
       deals: [
+        makeBuilder(preReadDeal("ADMIN_X")), // authorization + hint read
         makeBuilder({ error: null }, dealUpdates), // stale demotion
-        makeBuilder(claimedDeal("ADMIN_X"), dealUpdates), // atomic claim
+        makeBuilder(claimedDeal(), dealUpdates), // atomic claim
         makeBuilder({ error: null }, dealUpdates), // markDocumentCompleted
       ],
       moneybird_connections: [
@@ -206,8 +220,9 @@ describe("createDocumentForDeal cross-administration reconciliation", () => {
     const dealUpdates: unknown[] = [];
     routeTables({
       deals: [
+        makeBuilder(preReadDeal(null)), // first attempt: no previous administration
         makeBuilder({ error: null }, dealUpdates), // stale demotion
-        makeBuilder(claimedDeal(null), dealUpdates), // first attempt: no previous administration
+        makeBuilder(claimedDeal(), dealUpdates), // atomic claim
         makeBuilder({ error: null }, dealUpdates), // markDocumentFailed
       ],
       companies: [makeBuilder({ data: { id: 3, name: "Acme" }, error: null })],
@@ -236,6 +251,76 @@ describe("createDocumentForDeal cross-administration reconciliation", () => {
     expect(dealUpdates.at(-1)).toMatchObject({
       moneybird_invoice_status: "failed",
       moneybird_invoice_administration_id: "ADMIN_Y",
+    });
+  });
+
+  it("returns not_found for a caller who is not an assignee of the deal", async () => {
+    // The authorization pre-read matches no row for a non-assignee (same
+    // behaviour as RLS would give a direct query), so nothing is claimed and
+    // nothing reaches Moneybird.
+    routeTables({
+      deals: [makeBuilder({ data: null, error: null })],
+    });
+
+    const outcome = await createDocumentForDeal({
+      documentKind: "invoice",
+      dealId: 7,
+      taxRateId: "rate1",
+      description: "d",
+      currency: "EUR",
+      salesId: 42,
+      credentials: CALLER,
+      encKey: KEY,
+    });
+
+    expect(outcome).toEqual({ kind: "not_found" });
+    expect(mockFindDocumentByReference).not.toHaveBeenCalled();
+    expect(mockCreateDocument).not.toHaveBeenCalled();
+  });
+
+  it("aborts a retry when the previous administration cannot be checked, preserving the hint", async () => {
+    const dealUpdates: unknown[] = [];
+    const encrypted = await encryptToken("token-X", KEY, connectionAad(8));
+    routeTables({
+      deals: [
+        makeBuilder(preReadDeal("ADMIN_X")), // authorization + hint read
+        makeBuilder({ error: null }, dealUpdates), // stale demotion
+        makeBuilder(claimedDeal(), dealUpdates), // atomic claim
+        makeBuilder({ error: null }, dealUpdates), // markDocumentFailed
+      ],
+      moneybird_connections: [
+        makeBuilder({
+          data: { sales_id: 8, api_token_encrypted: encrypted },
+          error: null,
+        }),
+      ],
+    });
+    // The strict reconciliation against ADMIN_X fails (Moneybird hiccup): a
+    // document may exist there, so the attempt must abort...
+    mockFindDocumentByReference.mockRejectedValue(
+      new Error("Could not verify whether an earlier invoice already exists"),
+    );
+
+    await expect(
+      createDocumentForDeal({
+        documentKind: "invoice",
+        dealId: 7,
+        taxRateId: "rate1",
+        description: "d",
+        currency: "EUR",
+        salesId: 42,
+        credentials: CALLER,
+        encKey: KEY,
+      }),
+    ).rejects.toThrow("Could not verify");
+
+    // ...without creating anything...
+    expect(mockCreateDocument).not.toHaveBeenCalled();
+    // ...and the failure keeps pointing at ADMIN_X (where the document may
+    // live) instead of adopting the current caller's ADMIN_Y.
+    expect(dealUpdates.at(-1)).toMatchObject({
+      moneybird_invoice_status: "failed",
+      moneybird_invoice_administration_id: "ADMIN_X",
     });
   });
 });

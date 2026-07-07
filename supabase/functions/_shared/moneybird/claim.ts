@@ -53,8 +53,10 @@ export type ClaimResult =
   | {
       outcome: "claimed";
       deal: ClaimedDeal;
-      // The administration a PREVIOUS (failed) attempt ran against, recorded by
-      // markDocumentFailed. Null when this is the first attempt. The caller
+      // The administration a PREVIOUS attempt ran against: recorded by
+      // markDocumentFailed after a visible failure, and since the claim also
+      // stamps the administration, even a hard-killed attempt leaves its
+      // administration behind. Null when this is the first attempt. The caller
       // uses it to reconcile against that administration before creating a new
       // document in its own, so a document that landed there is adopted
       // instead of duplicated.
@@ -68,8 +70,33 @@ export const claimDealForDocument = async (
   kind: DocumentKind,
   dealId: number | string,
   salesId: number,
+  administrationId: string,
 ): Promise<ClaimResult> => {
   const cols = COLUMNS[kind];
+
+  // Step 0 — authorization + previous-administration hint. Edge functions run
+  // as service_role and bypass RLS, so deal visibility (assignee membership)
+  // must be enforced here explicitly: a caller who is not on the deal's
+  // assignee list gets the same 'not_found' a direct PostgREST query would
+  // give, BEFORE any state is touched. The same read fetches the
+  // administration hint of the previous attempt (the claim update below
+  // overwrites that column, so it must be read first).
+  const { data: preRead, error: preReadError } = await supabaseAdmin
+    .from("deals")
+    .select(`id, ${cols.administrationId}`)
+    .eq("id", dealId)
+    .contains("assignee_ids", [salesId])
+    .maybeSingle();
+  if (preReadError) {
+    throw new Error(
+      `Could not read deal ${dealId} before a ${kind} claim: ${preReadError.message}`,
+    );
+  }
+  if (!preRead) return { outcome: "not_found" };
+  const previousAdministrationId =
+    ((preRead as Record<string, unknown>)[cols.administrationId] as
+      | string
+      | null) ?? null;
 
   // Step 1 — demote a stale 'pending' claim back to 'failed'. This is NOT the
   // concurrency gate (step 2 is); computing the threshold in JS lets us express
@@ -90,9 +117,12 @@ export const claimDealForDocument = async (
 
   // Step 2 — the atomic claim. Exactly one concurrent caller can flip a
   // (null | 'failed') status to 'pending'; a losing caller matches no row.
-  // The administration column is deliberately NOT touched here, so the
-  // post-update select still returns the administration of the previous
-  // (failed) attempt.
+  // The assignee filter repeats the authorization check INSIDE the atomic
+  // update, so a revoked assignment between step 0 and here cannot slip
+  // through. The administration is stamped at claim time: if this isolate is
+  // hard-killed after dispatching the Moneybird create, the stale-claim
+  // demotion keeps this value and a later retry still knows where to
+  // reconcile.
   const { data: claimed, error: claimError } = await supabaseAdmin
     .from("deals")
     .update({
@@ -100,12 +130,12 @@ export const claimDealForDocument = async (
       [cols.claimedAt]: new Date().toISOString(),
       [cols.createdBy]: salesId,
       [cols.error]: null,
+      [cols.administrationId]: administrationId,
     })
     .eq("id", dealId)
+    .contains("assignee_ids", [salesId])
     .or(`${cols.status}.is.null,${cols.status}.eq.failed`)
-    .select(
-      `id, company_id, name, amount, description, ${cols.administrationId}`,
-    )
+    .select(`id, company_id, name, amount, description`)
     .maybeSingle();
   if (claimError) {
     throw new Error(
@@ -113,7 +143,7 @@ export const claimDealForDocument = async (
     );
   }
   if (claimed) {
-    const row = claimed as ClaimedDeal & Record<string, string | null>;
+    const row = claimed as ClaimedDeal;
     return {
       outcome: "claimed",
       deal: {
@@ -122,16 +152,19 @@ export const claimDealForDocument = async (
         name: row.name,
         amount: row.amount,
         description: row.description,
-      } as ClaimedDeal,
-      previousAdministrationId: row[cols.administrationId] ?? null,
+      },
+      previousAdministrationId,
     };
   }
 
-  // We did not win the claim. Read the current state to explain why.
+  // We did not win the claim. Read the current state to explain why. The
+  // assignee filter keeps this consistent with step 0: a non-assignee never
+  // learns whether the deal exists.
   const { data: current, error: readError } = await supabaseAdmin
     .from("deals")
     .select(cols.id)
     .eq("id", dealId)
+    .contains("assignee_ids", [salesId])
     .maybeSingle();
   if (readError) {
     throw new Error(
@@ -178,7 +211,7 @@ export const markDocumentFailed = async (
   kind: DocumentKind,
   dealId: number | string,
   message: string,
-  administrationId: string,
+  administrationId: string | null,
 ): Promise<void> => {
   const cols = COLUMNS[kind];
   const { error } = await supabaseAdmin
@@ -186,10 +219,12 @@ export const markDocumentFailed = async (
     .update({
       [cols.status]: "failed",
       [cols.error]: message.slice(0, 1000),
-      // Record which administration this attempt ran against. The Moneybird
-      // create may have landed there even though we saw a failure, so a retry
-      // (possibly by a user of a DIFFERENT administration) must reconcile
-      // against this one first.
+      // Record which administration a Moneybird create may have LANDED in.
+      // When this attempt dispatched a create, that is the caller's own
+      // administration; when it failed before any create, the caller passes
+      // the previous attempt's administration back (possibly null) so the
+      // reconciliation hint of an earlier attempt is never clobbered by an
+      // attempt that provably created nothing.
       [cols.administrationId]: administrationId,
     })
     .eq("id", dealId);

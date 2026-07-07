@@ -267,12 +267,15 @@ export const englishCrmMessages = {
           error: "Failed to create the invoice",
         },
         company: "Company",
-        amount: "Amount",
+        amount: "Amount (excl. VAT)",
         no_address: "No address known for this company",
         description_label: "Description on the document",
         tax_rate: "VAT rate",
         tax_rate_placeholder: "Choose a VAT rate",
         tax_rate_loading: "Loading rates...",
+        tax_rate_error:
+          "The VAT rates could not be loaded. Check your Moneybird connection on your profile page and try again.",
+        tax_rate_retry: "Try again",
         no_contact_hint:
           "No contact is linked; the document goes to the company.",
         multiple_contacts_hint:
