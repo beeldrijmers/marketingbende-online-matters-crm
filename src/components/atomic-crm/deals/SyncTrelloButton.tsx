@@ -20,8 +20,11 @@ export const SyncTrelloButton = () => {
       notify("resources.deals.trello_sync.success", {
         type: "success",
         messageArgs: {
-          cards: summary.synced,
-          _: `Trello gesynchroniseerd: ${summary.synced} kaarten bijgewerkt.`,
+          smart_count: summary.synced,
+          _:
+            summary.synced === 1
+              ? "Trello gesynchroniseerd: 1 kaart bijgewerkt."
+              : `Trello gesynchroniseerd: ${summary.synced} kaarten bijgewerkt.`,
         },
       });
       refresh();

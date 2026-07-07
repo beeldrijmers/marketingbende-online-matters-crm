@@ -122,8 +122,14 @@ const ProfileForm = ({
       });
     },
     onError: (e) => {
-      notify(`${e}`, {
+      // Surface a friendly localized message; keep the technical detail in the
+      // console for debugging instead of showing the raw Error object.
+      console.error("Password reset request failed:", e);
+      notify("crm.profile.password_reset_error", {
         type: "error",
+        messageArgs: {
+          _: "The password reset email could not be sent. Please try again.",
+        },
       });
     },
   });

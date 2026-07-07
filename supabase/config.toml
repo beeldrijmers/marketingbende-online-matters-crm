@@ -99,11 +99,11 @@ double_confirm_changes = true
 enable_confirmations = false
 
 [auth.email.template.invite]
-subject = "You've been invited to Marketingbende x Online Matters CRM"
+subject = "U bent uitgenodigd voor BANKAI CRM"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.recovery]
-subject = "Reset your Marketingbende x Online Matters CRM Password"
+subject = "Stel uw BANKAI CRM-wachtwoord opnieuw in"
 content_path = "./supabase/templates/recovery.html"
 
 [auth.sms]

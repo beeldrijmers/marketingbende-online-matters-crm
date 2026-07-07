@@ -320,7 +320,8 @@ export const frenchCrmMessages = {
       trello_sync: {
         action: "Synchroniser Trello",
         pending: "Synchronisation...",
-        success: "Trello synchronisé : %{cards} cartes mises à jour.",
+        success:
+          "Trello synchronisé : %{smart_count} carte mise à jour. |||| Trello synchronisé : %{smart_count} cartes mises à jour.",
         error: "Échec de la synchronisation avec Trello",
       },
 
@@ -504,7 +505,7 @@ export const frenchCrmMessages = {
       recovery_email_sent:
         "Si vous êtes un utilisateur enregistré, vous devriez recevoir prochainement un e-mail de récupération de mot de passe.",
       sign_in_failed: "Échec de la connexion.",
-      sign_in_google_workspace: "Connectez-vous avec Google Workplace",
+      sign_in_google_workspace: "Connectez-vous avec Google Workspace",
       signup: {
         create_account: "Créer un compte",
         create_first_user:
@@ -716,6 +717,8 @@ export const frenchCrmMessages = {
       },
       password_reset_sent:
         "Un e-mail de réinitialisation du mot de passe a été envoyé à votre adresse e-mail",
+      password_reset_error:
+        "L'e-mail de réinitialisation du mot de passe n'a pas pu être envoyé. Veuillez réessayer.",
       record_not_found: "Enregistrement introuvable",
       title: "Profil",
       updated: "Votre profil a été mis à jour",

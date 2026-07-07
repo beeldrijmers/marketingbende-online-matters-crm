@@ -241,7 +241,26 @@ export const dutchMessages: TranslationMessages = {
   },
   "ra-supabase": {
     auth: {
+      email: "E-mail",
+      confirm_password: "Bevestig wachtwoord",
+      sign_in_with: "Inloggen met %{provider}",
       forgot_password: "Wachtwoord vergeten?",
+      reset_password: "Wachtwoord resetten",
+      password_reset:
+        "Uw wachtwoord is opnieuw ingesteld. U ontvangt een e-mail met een link om in te loggen.",
+      missing_tokens: "Toegangs- en vernieuwingstokens ontbreken",
+      back_to_login: "Terug naar inloggen",
+    },
+    reset_password: {
+      forgot_password: "Wachtwoord vergeten?",
+      forgot_password_details:
+        "Voer uw e-mailadres in om instructies te ontvangen.",
+    },
+    set_password: {
+      new_password: "Kies uw wachtwoord",
+    },
+    validation: {
+      password_mismatch: "De wachtwoorden komen niet overeen",
     },
   },
 } as const;

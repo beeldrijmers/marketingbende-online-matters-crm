@@ -96,7 +96,7 @@ export const OwnerChip = ({
     isCurrentUser ??
     (sale?.id != null && identity?.id != null && identity.id === sale.id);
   const name = self
-    ? translate("crm.ownership.you", { _: "Jij" })
+    ? translate("crm.ownership.you", { _: "U" })
     : saleFullName(sale) ||
       translate("crm.ownership.unknown", { _: "Onbekend" });
 
