@@ -230,17 +230,27 @@ CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     AS $$
 declare
   sales_count int;
+  derived_partij text;
 begin
   select count(id) into sales_count
   from public.sales;
 
-  insert into public.sales (first_name, last_name, email, user_id, administrator)
+  -- Assign the collaborating party from the sign-up email domain, so a new
+  -- Online Matters account gets its own colour instead of the default.
+  derived_partij := case
+    when new.email like '%@onlinematters.nl' then 'online_matters'
+    when new.email like '%@marketingbende.nl' then 'marketingbende'
+    else 'marketingbende'
+  end;
+
+  insert into public.sales (first_name, last_name, email, user_id, administrator, partij)
   values (
     coalesce(new.raw_user_meta_data ->> 'first_name', new.raw_user_meta_data -> 'custom_claims' ->> 'first_name', 'Pending'),
     coalesce(new.raw_user_meta_data ->> 'last_name', new.raw_user_meta_data -> 'custom_claims' ->> 'last_name', 'Pending'),
     new.email,
     new.id,
-    case when sales_count > 0 then FALSE else TRUE end
+    case when sales_count > 0 then FALSE else TRUE end,
+    derived_partij
   );
   return new;
 end;
