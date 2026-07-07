@@ -279,6 +279,16 @@ alter table public.tasks
 alter table public.tasks
     add constraint tasks_deal_id_fkey foreign key (deal_id) references public.deals(id) on update cascade on delete cascade;
 
+-- Idempotency ledger for the Resend inbound-email webhook. Resend/Svix deliver
+-- at-least-once, so a redelivered or retried event must not re-process the same
+-- mail (which would create duplicate contact/deal notes). The webhook claims
+-- an email_id here before processing; a conflicting insert means "already
+-- handled". Only the edge function (service_role) touches it.
+create table public.inbound_email_events (
+    email_id text primary key,
+    processed_at timestamp with time zone not null default now()
+);
+
 -- Legacy primary key constraint names (from before snake_case rename)
 alter table only public.contact_notes
     add constraint "contactNotes_pkey" primary key (id);

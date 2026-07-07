@@ -17,15 +17,11 @@ const MAX_LABEL_TO_DATE_DISTANCE = 40;
 // Longer variants come first so the word-boundary regex matches them whole.
 // Verb forms ("we willen starten op 1 september") count too: word boundaries
 // keep "start" from matching inside "starten", so both are listed.
-const START_LABELS = [
-  "startdatum",
-  "starten",
-  "aanvang",
-  "start",
-  "beginnen",
-  "begin",
-  "ingang",
-];
+// Deliberately excludes very generic words ("begin", "ingang", "live",
+// "klaar"): they match unrelated sentences ("de site is live sinds 1 januari
+// 2020", "aan het begin van 2020") and would attach a wrong date to the deal.
+// The remaining labels are specific enough to signal an actual project date.
+const START_LABELS = ["startdatum", "starten", "aanvang", "start", "beginnen"];
 const DELIVERY_LABELS = [
   "opleverdatum",
   "opleveren",
@@ -34,8 +30,6 @@ const DELIVERY_LABELS = [
   "deadline",
   "uiterlijk",
   "gereed",
-  "klaar",
-  "live",
 ];
 
 // Dutch month names (full + common abbreviations) -> 2-digit month.

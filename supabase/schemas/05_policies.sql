@@ -16,6 +16,10 @@ alter table public.configuration enable row level security;
 alter table public.favicons_excluded_domains enable row level security;
 alter table public.moneybird_connections enable row level security;
 alter table public.moneybird_company_contacts enable row level security;
+-- No client policies: the inbound-email idempotency ledger is written only by
+-- the webhook (service_role, which bypasses RLS). RLS-on + no-policy means
+-- anon/authenticated can neither read nor write it.
+alter table public.inbound_email_events enable row level security;
 
 -- Companies
 create policy "Enable read access for authenticated users" on public.companies for select to authenticated using (true);

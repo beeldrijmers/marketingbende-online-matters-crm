@@ -60,6 +60,41 @@ const fetchReceivedEmail = async (
   return (await res.json()) as ResendReceivedEmail;
 };
 
+// Claims a Resend email_id for processing, exactly once. Returns true when THIS
+// call won the claim (insert succeeded), false when the mail was already
+// handled by an earlier delivery. Resend/Svix are at-least-once, so without
+// this a redelivered event re-runs the whole pipeline and duplicates every
+// contact/deal note. A claim error (DB hiccup) is treated as "not claimed" so
+// the webhook can still 200 and Svix will redeliver later.
+const claimInboundEmail = async (emailId: string): Promise<boolean> => {
+  const { error } = await supabaseAdmin
+    .from("inbound_email_events")
+    .insert({ email_id: emailId });
+  if (!error) return true;
+  // 23505 = unique_violation: already processed. Anything else is unexpected.
+  if (error.code !== "23505") {
+    console.error(`Could not claim inbound email ${emailId}:`, error.message);
+  }
+  return false;
+};
+
+// Releases a claim so a redelivery can re-attempt, used when processing fails
+// BEFORE any note was written (e.g. the Resend fetch or the single deal-note
+// insert failed). Never called once the participant loop has started writing:
+// there, a retry would duplicate the notes that did succeed.
+const releaseInboundEmail = async (emailId: string): Promise<void> => {
+  const { error } = await supabaseAdmin
+    .from("inbound_email_events")
+    .delete()
+    .eq("email_id", emailId);
+  if (error) {
+    console.error(
+      `Could not release inbound email claim ${emailId}:`,
+      error.message,
+    );
+  }
+};
+
 // Minimal HTML->text fallback for the rare mail without a plain-text part.
 const htmlToText = (html: string): string =>
   html
@@ -107,7 +142,23 @@ Deno.serve(async (req) => {
     return new Response("OK");
   }
 
-  const email = await fetchReceivedEmail(event.data.email_id);
+  // Idempotency gate: claim this email_id before doing any work. A redelivery
+  // (or a retry after a downstream hiccup) finds the claim already taken and
+  // returns 200 without re-processing, so no duplicate notes are created.
+  const emailId = event.data.email_id;
+  if (!(await claimInboundEmail(emailId))) {
+    return new Response("Already processed");
+  }
+
+  // Nothing has been written yet: a fetch failure must release the claim so a
+  // redelivery can retry cleanly.
+  let email: ResendReceivedEmail;
+  try {
+    email = await fetchReceivedEmail(emailId);
+  } catch (error) {
+    await releaseInboundEmail(emailId);
+    throw error;
+  }
 
   const senderEmail = parseEmailAddress(email.from ?? "");
   if (!senderEmail) {
@@ -130,12 +181,17 @@ Deno.serve(async (req) => {
       stripSubjectForwardingPrefix(subject),
       getForwardedMailContent(textBody),
     );
-    return await addNoteToDeal({
+    const dealResponse = await addNoteToDeal({
       salesEmail: senderEmail,
       dealId,
       noteContent: dealNoteContent,
       attachments: [],
     });
+    // A 5xx is transient (DB hiccup): release the claim so the redelivery can
+    // retry. A 4xx (unknown/archived deal, no active sales) is deterministic —
+    // keep the claim so Svix stops retrying a permanent no-op.
+    if (dealResponse.status >= 500) await releaseInboundEmail(emailId);
+    return dealResponse;
   }
 
   // Team (sales) addresses are excluded from the client set and own the note.
@@ -223,6 +279,12 @@ Deno.serve(async (req) => {
   // that resolve to the same company.
   const handledCompanyIds = new Set<number>();
 
+  // The claim is now taken and the loop below starts writing notes. A retry
+  // must therefore NOT re-run this mail (it would duplicate whatever already
+  // succeeded), so every participant is handled best-effort and the webhook
+  // always ends in a 2xx. A participant that hits a transient error is logged
+  // and skipped; the others still get processed.
+  let failedParticipants = 0;
   for (const {
     firstName,
     lastName,
@@ -231,46 +293,65 @@ Deno.serve(async (req) => {
     companyName,
     website,
   } of participants) {
-    const errorResponse = await addNoteToContact({
-      salesEmail: forwarderSalesEmail,
-      email: contactEmail,
-      domain,
-      firstName,
-      lastName,
-      noteContent,
-      attachments: [],
-      companyName,
-      website,
-    });
-    if (errorResponse) return errorResponse;
-
-    if (forwarderSalesId != null) {
-      await linkMailToActiveDeals({
-        contactEmail,
-        salesId: forwarderSalesId,
+    try {
+      const errorResponse = await addNoteToContact({
+        salesEmail: forwarderSalesEmail,
+        email: contactEmail,
+        domain,
+        firstName,
+        lastName,
         noteContent,
         attachments: [],
+        companyName,
+        website,
       });
-    }
+      if (errorResponse) {
+        failedParticipants += 1;
+        console.error(
+          `Inbound mail ${emailId}: could not process participant ${contactEmail} (status ${errorResponse.status})`,
+        );
+        continue;
+      }
 
-    // Open or enrich the company's deal with the extracted value/dates. Runs
-    // after linkMailToActiveDeals so a freshly created deal is not double-noted
-    // (that mirror only touches deals that already existed). Best-effort: any
-    // failure is swallowed inside the helper and never fails the webhook.
-    await upsertDealFromMail({
-      contactEmail,
-      subject,
-      companyNameFallback: companyName,
-      amount,
-      startDate: dates.startDate,
-      deliveryDate: dates.deliveryDate,
-      salesEmail: forwarderSalesEmail,
-      salesId: forwarderSalesId ?? null,
-      assigneeIds: involvedSalesIds,
-      noteContent,
-      handledCompanyIds,
-    });
+      if (forwarderSalesId != null) {
+        await linkMailToActiveDeals({
+          contactEmail,
+          salesId: forwarderSalesId,
+          noteContent,
+          attachments: [],
+        });
+      }
+
+      // Open or enrich the company's deal with the extracted value/dates. Runs
+      // after linkMailToActiveDeals so a freshly created deal is not
+      // double-noted (that mirror only touches deals that already existed).
+      // Best-effort: any failure is swallowed inside the helper.
+      await upsertDealFromMail({
+        contactEmail,
+        subject,
+        companyNameFallback: companyName,
+        amount,
+        startDate: dates.startDate,
+        deliveryDate: dates.deliveryDate,
+        salesEmail: forwarderSalesEmail,
+        salesId: forwarderSalesId ?? null,
+        assigneeIds: involvedSalesIds,
+        noteContent,
+        handledCompanyIds,
+      });
+    } catch (error) {
+      failedParticipants += 1;
+      console.error(
+        `Inbound mail ${emailId}: unexpected error processing participant ${contactEmail}:`,
+        error,
+      );
+    }
   }
 
+  if (failedParticipants > 0) {
+    console.error(
+      `Inbound mail ${emailId}: ${failedParticipants}/${participants.length} participant(s) failed; not retried to avoid duplicating the ones that succeeded.`,
+    );
+  }
   return new Response("OK");
 });
