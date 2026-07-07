@@ -222,6 +222,7 @@ export const frenchCrmMessages = {
         revenue_period: "Type de revenu",
         assignee_ids: "Assigné à",
         on_hold: "En attente",
+        is_internal: "Projet interne",
         assignee_ids_helper:
           "Seules les personnes assignées voient cette carte",
         expected_closing_date: "Date de clôture prévue",
@@ -308,6 +309,11 @@ export const frenchCrmMessages = {
         success: "Affaire désarchivée",
       },
       updated: "Affaire mise à jour",
+      scope: {
+        all: "Tout",
+        internal: "Interne",
+        external: "Externe",
+      },
       trello_sync: {
         action: "Synchroniser Trello",
         pending: "Synchronisation...",

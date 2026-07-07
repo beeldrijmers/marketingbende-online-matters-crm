@@ -141,6 +141,9 @@ export type Deal = {
   index: number;
   // "On hold" marking - a parked deal stays in its stage and shows a badge.
   on_hold?: boolean;
+  // Internal work (Happr, own projects) vs external client work; drives the
+  // Intern/Extern board filter.
+  is_internal?: boolean;
   won_notified_at?: string | null;
   revenue_period?: "maandelijks" | "eenmalig" | null;
   moneybird_estimate_id?: string;
