@@ -46,7 +46,7 @@ export const InternalExternalInput = (_: {
   ];
 
   return (
-    <div className="mt-auto pb-2">
+    <div className="mt-auto flex h-9 items-center">
       <div className="inline-flex rounded-lg border bg-muted/40 p-0.5">
         {options.map((option) => (
           <button

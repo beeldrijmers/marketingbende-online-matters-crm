@@ -17,7 +17,7 @@ export const OnlyMineInput = (_: { alwaysOn: boolean; source: string }) => {
     setFilters(newFilterValues, displayedFilters);
   };
   return (
-    <div className="mt-auto pb-2.25">
+    <div className="mt-auto flex h-9 items-center">
       <div className="flex items-center space-x-2">
         <Switch
           id="only-mine"

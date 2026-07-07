@@ -82,7 +82,7 @@ export const DealCardContent = ({
               : "shadow-sm hover:shadow-md",
           )}
         >
-          <CardContent className="px-3 flex flex-col gap-1.5">
+          <CardContent className="px-3 flex flex-col gap-1">
             <div className="flex items-start gap-2">
               <p className="flex-1 text-sm font-medium leading-snug line-clamp-2">
                 <ReferenceField
@@ -102,9 +102,9 @@ export const DealCardContent = ({
               </ReferenceField>
             </div>
 
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               {formattedAmount ? (
-                <span className="text-base font-bold text-foreground">
+                <span className="text-sm font-bold text-foreground">
                   {formattedAmount}
                   {recurring && (
                     <span className="ml-0.5 text-xs font-medium text-muted-foreground">
@@ -118,7 +118,10 @@ export const DealCardContent = ({
                 </span>
               )}
               {deal.category && (
-                <Badge variant="secondary" className="shrink-0">
+                <Badge
+                  variant="secondary"
+                  className="shrink-0 px-1.5 py-0 text-[11px]"
+                >
                   <SelectField
                     source="category"
                     choices={dealCategories}
@@ -131,29 +134,28 @@ export const DealCardContent = ({
               {deal.on_hold && (
                 <Badge
                   variant="outline"
-                  className="shrink-0 gap-1 border-amber-500/50 text-amber-600 dark:text-amber-400"
+                  className="shrink-0 gap-1 px-1.5 py-0 text-[11px] border-amber-500/50 text-amber-600 dark:text-amber-400"
                 >
                   <PauseCircle className="size-3 shrink-0" />
                   In de wacht
                 </Badge>
               )}
-            </div>
-
-            <div className="flex items-center justify-between gap-2">
-              <AssigneesField
-                ids={deal.assignee_ids}
-                size={16}
-                className="text-xs text-muted-foreground"
-              />
-              {moneybird && (
-                <Badge
-                  variant="outline"
-                  className="shrink-0 gap-1 text-xs font-normal"
-                >
-                  <Receipt className="size-3 shrink-0" />
-                  {moneybird}
-                </Badge>
-              )}
+              <div className="ml-auto flex items-center gap-1.5">
+                {moneybird && (
+                  <Badge
+                    variant="outline"
+                    className="shrink-0 gap-1 px-1.5 py-0 text-[11px] font-normal"
+                  >
+                    <Receipt className="size-3 shrink-0" />
+                    {moneybird}
+                  </Badge>
+                )}
+                <AssigneesField
+                  ids={deal.assignee_ids}
+                  size={16}
+                  showParties={false}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

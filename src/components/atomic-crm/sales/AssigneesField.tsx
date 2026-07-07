@@ -26,10 +26,14 @@ import { SaleAvatar } from "./SaleAvatar";
 export const AssigneesField = ({
   ids,
   size = 16,
+  showParties = true,
   className,
 }: {
   ids?: Identifier[];
   size?: number;
+  // When false, only the avatars are shown (party names stay in the hover
+  // tooltip) - used on the dense board cards to save a row.
+  showParties?: boolean;
   className?: string;
 }) => {
   const translate = useTranslate();
@@ -84,15 +88,16 @@ export const AssigneesField = ({
               </span>
             ))}
           </span>
-          {parties.map((party) => (
-            <Badge
-              key={party}
-              variant="outline"
-              className={PARTY_META[party].className}
-            >
-              {label(party)}
-            </Badge>
-          ))}
+          {showParties &&
+            parties.map((party) => (
+              <Badge
+                key={party}
+                variant="outline"
+                className={PARTY_META[party].className}
+              >
+                {label(party)}
+              </Badge>
+            ))}
         </span>
       </TooltipTrigger>
       <TooltipContent className="flex flex-col gap-1.5 border bg-popover text-popover-foreground">
