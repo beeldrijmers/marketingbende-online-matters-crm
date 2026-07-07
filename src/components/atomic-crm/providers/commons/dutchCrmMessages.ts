@@ -222,6 +222,7 @@ export const dutchCrmMessages = {
         revenue_period: "Type omzet",
         assignee_ids: "Toegewezen aan",
         on_hold: "In de wacht",
+        is_internal: "Intern project",
         assignee_ids_helper: "Alleen toegewezen personen zien deze kaart",
         expected_closing_date: "Verwachte afsluitdatum",
         start_date: "Startdatum",
@@ -306,6 +307,11 @@ export const dutchCrmMessages = {
         success: "Deal gedearchiveerd",
       },
       updated: "Deal bijgewerkt",
+      scope: {
+        all: "Alles",
+        internal: "Intern",
+        external: "Extern",
+      },
       trello_sync: {
         action: "Synchroniseer Trello",
         pending: "Synchroniseren...",

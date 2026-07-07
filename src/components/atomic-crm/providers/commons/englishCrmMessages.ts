@@ -216,6 +216,7 @@ export const englishCrmMessages = {
         revenue_period: "One-off / recurring",
         assignee_ids: "Assigned to",
         on_hold: "On hold",
+        is_internal: "Internal project",
         assignee_ids_helper: "Only assignees can see this card",
         expected_closing_date: "Expected closing date",
         start_date: "Start date",
@@ -299,6 +300,11 @@ export const englishCrmMessages = {
         success: "Deal unarchived",
       },
       updated: "Deal updated",
+      scope: {
+        all: "Everything",
+        internal: "Internal",
+        external: "External",
+      },
       trello_sync: {
         action: "Sync Trello",
         pending: "Syncing...",

@@ -1,5 +1,5 @@
 import { Draggable } from "@hello-pangea/dnd";
-import { CalendarClock, Flag, PauseCircle, Receipt } from "lucide-react";
+import { PauseCircle, Receipt } from "lucide-react";
 import { useRedirect, RecordContextProvider } from "ra-core";
 import { ReferenceField } from "@/components/admin/reference-field";
 import { SelectField } from "@/components/admin/select-field";
@@ -17,37 +17,6 @@ import type { Deal } from "../types";
 const RECURRING_RE = /per\s*maand|p\/m|\/\s*mnd|\bmnd\b|maandelijks/i;
 const isRecurringDeal = (deal: Deal): boolean =>
   RECURRING_RE.test(`${deal.name ?? ""} ${deal.description ?? ""}`);
-
-const formatMonthYear = (iso?: string | null): string | null => {
-  if (!iso) return null;
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString("nl-NL", { month: "short", year: "numeric" });
-};
-
-const formatDayMonth = (iso?: string | null): string | null => {
-  if (!iso) return null;
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
-};
-
-// The synced description carries a "Bron (Trello): <url>" trailer and, when the
-// card had no text, a "Gemigreerd vanuit Trello:" placeholder. Strip both and
-// return the first real line, or null when there is nothing meaningful to show.
-const descriptionSnippet = (raw?: string | null): string | null => {
-  if (!raw) return null;
-  const sourceIdx = raw.indexOf("Bron (Trello):");
-  const body = sourceIdx === -1 ? raw : raw.slice(0, sourceIdx);
-  const firstLine = body
-    .split("\n")
-    .map((line) => line.trim())
-    .find((line) => line.length > 0);
-  if (!firstLine || firstLine.startsWith("Gemigreerd vanuit Trello:")) {
-    return null;
-  }
-  return firstLine;
-};
 
 const moneybirdLabel = (deal: Deal): string | null =>
   deal.moneybird_invoice_id
@@ -94,9 +63,6 @@ export const DealCardContent = ({
       }).format(deal.amount)
     : null;
   const recurring = isRecurringDeal(deal);
-  const startedLabel = formatMonthYear(deal.created_at);
-  const closingLabel = formatDayMonth(deal.expected_closing_date);
-  const snippet = descriptionSnippet(deal.description);
   const moneybird = moneybirdLabel(deal);
 
   return (
@@ -110,15 +76,15 @@ export const DealCardContent = ({
       <RecordContextProvider value={deal}>
         <Card
           className={cn(
-            "py-3 transition-all duration-200",
+            "py-2.5 transition-all duration-200",
             snapshot?.isDragging
               ? "opacity-90 transform rotate-1 shadow-lg"
               : "shadow-sm hover:shadow-md",
           )}
         >
-          <CardContent className="px-3 flex flex-col gap-2">
+          <CardContent className="px-3 flex flex-col gap-1.5">
             <div className="flex items-start gap-2">
-              <p className="flex-1 text-sm font-medium leading-snug">
+              <p className="flex-1 text-sm font-medium leading-snug line-clamp-2">
                 <ReferenceField
                   source="company_id"
                   reference="companies"
@@ -172,29 +138,6 @@ export const DealCardContent = ({
                 </Badge>
               )}
             </div>
-
-            {(startedLabel || closingLabel) && (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                {startedLabel && (
-                  <span className="inline-flex items-center gap-1">
-                    <CalendarClock className="size-3 shrink-0" />
-                    Sinds {startedLabel}
-                  </span>
-                )}
-                {closingLabel && (
-                  <span className="inline-flex items-center gap-1">
-                    <Flag className="size-3 shrink-0" />
-                    Oplevering {closingLabel}
-                  </span>
-                )}
-              </div>
-            )}
-
-            {snippet && (
-              <p className="line-clamp-2 text-xs text-muted-foreground">
-                {snippet}
-              </p>
-            )}
 
             <div className="flex items-center justify-between gap-2">
               <AssigneesField

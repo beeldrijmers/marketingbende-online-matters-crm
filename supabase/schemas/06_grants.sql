@@ -94,7 +94,7 @@ grant all on table public.deals to service_role;
 revoke update on table public.deals from anon, authenticated;
 grant update (id, name, company_id, contact_ids, category, stage, description, amount,
               created_at, updated_at, archived_at, expected_closing_date, sales_id,
-              index, trello_card_id, revenue_period, assignee_ids, on_hold) on table public.deals to anon, authenticated;
+              index, trello_card_id, revenue_period, assignee_ids, on_hold, is_internal) on table public.deals to anon, authenticated;
 
 -- Same story for INSERT: without this, a client could create a new deal with
 -- pre-filled moneybird_* bookkeeping columns (a forged "completed" document
@@ -103,7 +103,7 @@ grant update (id, name, company_id, contact_ids, category, stage, description, a
 revoke insert on table public.deals from anon, authenticated;
 grant insert (id, name, company_id, contact_ids, category, stage, description, amount,
               created_at, updated_at, archived_at, expected_closing_date, sales_id,
-              index, trello_card_id, revenue_period, assignee_ids, on_hold) on table public.deals to anon, authenticated;
+              index, trello_card_id, revenue_period, assignee_ids, on_hold, is_internal) on table public.deals to anon, authenticated;
 
 grant all on table public.deal_notes to anon;
 grant all on table public.deal_notes to authenticated;

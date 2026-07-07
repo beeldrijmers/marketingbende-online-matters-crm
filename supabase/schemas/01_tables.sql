@@ -89,6 +89,9 @@ create table public.deals (
     -- current stage on the loopband and just carries this flag (shown as a
     -- badge on the card).
     on_hold boolean not null default false,
+    -- Internal work (Happr product, Marketingbende/Online Matters own projects)
+    -- vs external client work. Drives the Intern/Extern board filter.
+    is_internal boolean not null default false,
     -- Set the first time the deal's Trello card moves into "Klaar", so the
     -- team-lead notification is sent at most once even though Trello webhooks
     -- are delivered at-least-once and retried.

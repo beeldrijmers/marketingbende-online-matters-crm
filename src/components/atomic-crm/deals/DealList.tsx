@@ -21,6 +21,7 @@ import { DealEmpty } from "./DealEmpty";
 import { DealListContent } from "./DealListContent";
 import { DealShow } from "./DealShow";
 import { OnlyMineInput } from "./OnlyMineInput";
+import { InternalExternalInput } from "./InternalExternalInput";
 import { SyncTrelloButton } from "./SyncTrelloButton";
 
 const DealList = () => {
@@ -48,6 +49,7 @@ const DealList = () => {
         optionValue="value"
       />
     </WrapperField>,
+    <InternalExternalInput source="is_internal" alwaysOn />,
     <OnlyMineInput source="sales_id" alwaysOn />,
   ];
 
