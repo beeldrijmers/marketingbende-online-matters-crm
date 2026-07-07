@@ -85,9 +85,10 @@ create table public.deals (
     -- the card: shared work gets several assignees, private cards just one.
     -- Defaults to the owner (sales_id) on insert via set_sales_id_default.
     assignee_ids bigint[] not null default '{}'::bigint[],
-    -- "On hold" is a marking, not a kanban column: a parked deal stays in its
-    -- current stage on the loopband and just carries this flag (shown as a
-    -- badge on the card).
+    -- "In de wacht" IS a kanban column (stage 'on-hold'). This flag is DERIVED
+    -- from that stage by the sync_deal_on_hold trigger (on_hold := stage =
+    -- 'on-hold') and drives the badge on the card; a direct write to it is
+    -- overwritten by the trigger on the next save.
     on_hold boolean not null default false,
     -- Internal work (Happr product, Marketingbende/Online Matters own projects)
     -- vs external client work. Drives the Intern/Extern board filter.
@@ -306,6 +307,7 @@ create index deal_notes_deal_id_idx on public.deal_notes using btree (deal_id);
 create index deals_company_id_idx on public.deals using btree (company_id);
 create index tasks_sales_id_due_date_idx on public.tasks using btree (sales_id, due_date);
 create index tasks_deal_id_idx on public.tasks using btree (deal_id);
+create index tasks_contact_id_idx on public.tasks using btree (contact_id);
 create unique index uq__tasks__trello_checkitem_id on public.tasks using btree (trello_checkitem_id) where (trello_checkitem_id is not null);
 create unique index uq__deals__trello_card_id on public.deals using btree (trello_card_id) where (trello_card_id is not null);
 create unique index uq__deals__moneybird_estimate_id on public.deals using btree (moneybird_estimate_id) where (moneybird_estimate_id is not null);

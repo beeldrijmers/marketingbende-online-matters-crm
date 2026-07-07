@@ -22,9 +22,11 @@ create or replace trigger set_deal_sales_id_trigger
 
 -- Defaults assignee_ids to the deal's owner. Order-independent: the function
 -- resolves the owner itself, so it does not matter whether this fires before or
--- after set_deal_sales_id_trigger.
+-- after set_deal_sales_id_trigger. Fires on UPDATE too, so an update that
+-- empties assignee_ids (the UPDATE policy has WITH CHECK (true)) can never make
+-- a deal permanently invisible to everyone.
 create or replace trigger set_deal_assignee_default_trigger
-    before insert on public.deals
+    before insert or update on public.deals
     for each row execute function public.set_deal_assignee_default();
 
 -- Sends a monthly recurring deal back to the start of the loopband when it is

@@ -236,9 +236,11 @@ begin
   from public.sales;
 
   -- Assign the collaborating party from the sign-up email domain, so a new
-  -- Online Matters account gets its own colour instead of the default.
+  -- Online Matters / Groeien met Ads account gets its own colour instead of the
+  -- default.
   derived_partij := case
     when new.email like '%@onlinematters.nl' then 'online_matters'
+    when new.email like '%@groeienmetads.nl' then 'groeien_met_ads'
     when new.email like '%@marketingbende.nl' then 'marketingbende'
     else 'marketingbende'
   end;
@@ -521,6 +523,9 @@ BEGIN
      AND NEW.stage = 'won'
      AND OLD.stage IS DISTINCT FROM 'won' THEN
     NEW.stage := 'informatie-pipeline';
+    -- Reset the once-per-cycle notification claim so the next completion of
+    -- this recurring deal notifies the team lead again.
+    NEW.won_notified_at := NULL;
 
     UPDATE public.tasks
       SET done_date = NULL

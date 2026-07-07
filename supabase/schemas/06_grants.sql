@@ -57,8 +57,10 @@ grant all on function public.lowercase_email_jsonb() to anon;
 grant all on function public.lowercase_email_jsonb() to authenticated;
 grant all on function public.lowercase_email_jsonb() to service_role;
 
-grant all on function public.merge_contacts(bigint, bigint) to anon;
-grant all on function public.merge_contacts(bigint, bigint) to authenticated;
+-- The legacy merge_contacts SQL RPC runs under the caller's RLS (no SECURITY
+-- DEFINER) and would corrupt cross-references on invisible assignee-restricted
+-- deals. The frontend uses the merge_contacts edge function instead, so client
+-- roles are deliberately NOT granted this RPC; only service_role.
 grant all on function public.merge_contacts(bigint, bigint) to service_role;
 
 grant all on function public.set_sales_id_default() to anon;
@@ -94,7 +96,8 @@ grant all on table public.deals to service_role;
 revoke update on table public.deals from anon, authenticated;
 grant update (id, name, company_id, contact_ids, category, stage, description, amount,
               created_at, updated_at, archived_at, expected_closing_date, sales_id,
-              index, trello_card_id, revenue_period, assignee_ids, on_hold, is_internal) on table public.deals to anon, authenticated;
+              index, trello_card_id, revenue_period, assignee_ids, on_hold, is_internal,
+              start_date, delivery_date) on table public.deals to anon, authenticated;
 
 -- Same story for INSERT: without this, a client could create a new deal with
 -- pre-filled moneybird_* bookkeeping columns (a forged "completed" document
@@ -103,7 +106,8 @@ grant update (id, name, company_id, contact_ids, category, stage, description, a
 revoke insert on table public.deals from anon, authenticated;
 grant insert (id, name, company_id, contact_ids, category, stage, description, amount,
               created_at, updated_at, archived_at, expected_closing_date, sales_id,
-              index, trello_card_id, revenue_period, assignee_ids, on_hold, is_internal) on table public.deals to anon, authenticated;
+              index, trello_card_id, revenue_period, assignee_ids, on_hold, is_internal,
+              start_date, delivery_date) on table public.deals to anon, authenticated;
 
 grant all on table public.deal_notes to anon;
 grant all on table public.deal_notes to authenticated;
