@@ -13,6 +13,7 @@ import {
   ListTodo,
   Plus,
   Settings,
+  Users,
 } from "lucide-react";
 import { useTranslate } from "ra-core";
 import { Link, matchPath, useLocation, useMatch } from "react-router";
@@ -68,6 +69,12 @@ export const MobileNavigation = () => {
             Icon={Home}
             label={translate("ra.page.dashboard")}
             isActive={currentPath === "/"}
+          />
+          <NavigationButton
+            href="/contacts"
+            Icon={Users}
+            label={translate("resources.contacts.name", { smart_count: 2 })}
+            isActive={currentPath === "/contacts"}
           />
           <NavigationButton
             href="/deals"

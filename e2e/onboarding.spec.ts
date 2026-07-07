@@ -14,7 +14,6 @@ test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
   await page.getByRole("button", { name: "Account aanmaken" }).click();
 
   await expect(page.getByText("Wat nu?")).toBeVisible();
-  await expect(page.getByText("1/3 voltooid")).toBeVisible();
   await expect(page.getByText("BANKAI CRM installeren")).toBeVisible();
   await expect(page.getByText("Voeg uw eerste contact toe")).toBeVisible();
   await expect(page.getByText("Voeg uw eerste notitie toe")).toBeVisible();

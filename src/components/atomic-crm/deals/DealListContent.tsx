@@ -1,6 +1,11 @@
 import { DragDropContext, type OnDragEndResponder } from "@hello-pangea/dnd";
 import isEqual from "lodash/isEqual";
-import { useDataProvider, useListContext, type DataProvider } from "ra-core";
+import {
+  useDataProvider,
+  useListContext,
+  useNotify,
+  type DataProvider,
+} from "ra-core";
 import { useEffect, useState } from "react";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
@@ -13,6 +18,7 @@ export const DealListContent = () => {
   const { dealStages } = useConfigurationContext();
   const { data: unorderedDeals, isPending, refetch } = useListContext<Deal>();
   const dataProvider = useDataProvider();
+  const notify = useNotify();
 
   const [dealsByStage, setDealsByStage] = useState<DealsByStage>(
     getDealsByStage([], dealStages),
@@ -65,9 +71,18 @@ export const DealListContent = () => {
     );
 
     // persist the changes
-    updateDealStage(sourceDeal, destinationDeal, dataProvider).then(() => {
-      refetch();
-    });
+    updateDealStage(sourceDeal, destinationDeal, dataProvider)
+      .then(() => {
+        refetch();
+      })
+      .catch((error) => {
+        // The optimistic local move failed to persist: tell the user and
+        // refetch so the board snaps back to the server state instead of
+        // silently showing unsaved positions.
+        console.error("Failed to persist the deal move:", error);
+        notify("resources.deals.move_error", { type: "error" });
+        refetch();
+      });
   };
 
   return (
@@ -136,7 +151,8 @@ const updateDealStage = async (
     // Fetch all the deals in this stage (because the list may be filtered, but we need to update even non-filtered deals)
     const { data: columnDeals } = await dataProvider.getList("deals", {
       sort: { field: "index", order: "ASC" },
-      pagination: { page: 1, perPage: 100 },
+      // Match the board's perPage so columns beyond 100 deals reindex fully.
+      pagination: { page: 1, perPage: 1000 },
       filter: { stage: source.stage },
     });
     const destinationIndex = destination.index ?? columnDeals.length + 1;
@@ -201,12 +217,12 @@ const updateDealStage = async (
       await Promise.all([
         dataProvider.getList("deals", {
           sort: { field: "index", order: "ASC" },
-          pagination: { page: 1, perPage: 100 },
+          pagination: { page: 1, perPage: 1000 },
           filter: { stage: source.stage },
         }),
         dataProvider.getList("deals", {
           sort: { field: "index", order: "ASC" },
-          pagination: { page: 1, perPage: 100 },
+          pagination: { page: 1, perPage: 1000 },
           filter: { stage: destination.stage },
         }),
       ]);

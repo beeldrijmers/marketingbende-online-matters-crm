@@ -2,12 +2,12 @@ import { AutocompleteInput } from "@/components/admin/autocomplete-input";
 import { ReferenceInput } from "@/components/admin/reference-input";
 import { SelectInput } from "@/components/admin/select-input";
 import { TextInput } from "@/components/admin/text-input";
-import { required, useTranslate } from "ra-core";
+import { required, useRecordContext, useTranslate } from "ra-core";
 import { DateTimeInput } from "@/components/admin";
 
 import { contactOptionText } from "../misc/ContactOption";
 import { useConfigurationContext } from "../root/ConfigurationContext";
-import type { Sale } from "../types";
+import type { Sale, Task } from "../types";
 
 const saleOptionRenderer = (choice: Sale) =>
   `${choice.first_name} ${choice.last_name}`;
@@ -19,15 +19,27 @@ export const TaskFormContent = ({
 }) => {
   const { taskTypes } = useConfigurationContext();
   const translate = useTranslate();
+  // Trello owns the text of trello-sourced steps: local edits would be
+  // overwritten by the next sync, so the field is read-only for those tasks.
+  // In create forms there is no record, so the field stays editable.
+  const record = useRecordContext<Task>();
+  const isTrelloTask = record?.source === "trello";
   return (
     <div className="flex flex-col gap-4">
       <TextInput
-        autoFocus
+        autoFocus={!isTrelloTask}
         source="text"
         validate={required()}
         multiline
         className="m-0"
-        helperText={false}
+        readOnly={isTrelloTask}
+        helperText={
+          isTrelloTask
+            ? translate("resources.tasks.trello_text_readonly", {
+                _: "Deze stap komt uit Trello. Pas de omschrijving aan in Trello; wijzigingen hier worden bij de volgende synchronisatie overschreven.",
+              })
+            : false
+        }
       />
       {selectContact && (
         <ReferenceInput source="contact_id" reference="contacts_summary">

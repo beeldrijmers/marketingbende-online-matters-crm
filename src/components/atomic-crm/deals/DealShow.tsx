@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { Archive, ArchiveRestore } from "lucide-react";
+import { Archive, ArchiveRestore, Pencil } from "lucide-react";
 import {
   InfiniteListBase,
   ShowBase,
@@ -11,6 +11,7 @@ import {
   useTranslate,
   useUpdate,
 } from "ra-core";
+import { useState } from "react";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { EditButton } from "@/components/admin/edit-button";
 import { ReferenceArrayField } from "@/components/admin/reference-array-field";
@@ -19,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import { CompanyAvatar } from "../companies/CompanyAvatar";
 import { NoteCreate } from "../notes/NoteCreate";
@@ -26,10 +28,11 @@ import { NotesIterator } from "../notes/NotesIterator";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Deal } from "../types";
 import { ContactList } from "./ContactList";
+import { DealEditSheet } from "./DealEditSheet";
 import { DealInboundEmail } from "./DealInboundEmail";
 import { DealSteps } from "./DealSteps";
 import { MoneybirdDocumentControl } from "./MoneybirdDocumentButtons";
-import { findDealLabel, formatISODateString } from "./dealUtils";
+import { findDealLabel, formatISODateString, isBeforeToday } from "./dealUtils";
 
 export const DealShow = ({ open, id }: { open: boolean; id?: string }) => {
   const redirect = useRedirect();
@@ -66,15 +69,17 @@ const DealDialogTitle = () => {
 const DealShowContent = () => {
   const translate = useTranslate();
   const { dealStages, dealCategories, currency } = useConfigurationContext();
+  const isMobile = useIsMobile();
   const record = useRecordContext<Deal>();
   if (!record) return null;
 
   const closingLabel = formatISODateString(record.expected_closing_date);
   const startLabel = formatISODateString(record.start_date);
   const deliveryLabel = formatISODateString(record.delivery_date);
-  const closingIsPast =
-    closingLabel !== null &&
-    new Date(record.expected_closing_date as string) < new Date();
+  // Day-level comparison in the local timezone: a deal closing today is not
+  // "past" (new Date("YYYY-MM-DD") parses as UTC midnight, which incorrectly
+  // flagged today's deals for almost the whole day).
+  const closingIsPast = isBeforeToday(record.expected_closing_date);
   const amountLabel =
     record.amount != null
       ? record.amount.toLocaleString("nl-NL", {
@@ -112,7 +117,14 @@ const DealShowContent = () => {
                   <MoneybirdDocumentControl record={record} kind="estimate" />
                   <MoneybirdDocumentControl record={record} kind="invoice" />
                   <ArchiveButton record={record} />
-                  <EditButton />
+                  {/* The desktop EditButton navigates to /deals/:id, a route
+                      that only exists in the desktop Admin. On mobile we edit
+                      in place through a sheet instead. */}
+                  {isMobile ? (
+                    <MobileEditButton record={record} />
+                  ) : (
+                    <EditButton />
+                  )}
                 </>
               )}
             </div>
@@ -250,6 +262,29 @@ const DealShowContent = () => {
           </div>
         </div>
       </div>
+    </>
+  );
+};
+
+const MobileEditButton = ({ record }: { record: Deal }) => {
+  const translate = useTranslate();
+  const [editOpen, setEditOpen] = useState(false);
+  return (
+    <>
+      <Button
+        onClick={() => setEditOpen(true)}
+        size="sm"
+        variant="outline"
+        className="flex items-center gap-2 h-9"
+      >
+        <Pencil className="w-4 h-4" />
+        {translate("ra.action.edit")}
+      </Button>
+      <DealEditSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        dealId={record.id}
+      />
     </>
   );
 };

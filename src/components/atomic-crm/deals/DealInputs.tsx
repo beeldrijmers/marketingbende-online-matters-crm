@@ -15,10 +15,17 @@ import { useConfigurationContext } from "../root/ConfigurationContext";
 import { AutocompleteCompanyInput } from "../companies/AutocompleteCompanyInput.tsx";
 
 // Whether the deal's amount recurs monthly or is a one-off fee; drives the
-// revenue dashboard (MRR vs one-off). Left blank when not applicable.
+// revenue dashboard (MRR vs one-off). Left blank when not applicable. The
+// labels are i18n keys; SelectInput translates them (translateChoice).
 const REVENUE_PERIOD_CHOICES = [
-  { value: "maandelijks", label: "Maandelijks terugkerend" },
-  { value: "eenmalig", label: "Eenmalig" },
+  {
+    value: "maandelijks",
+    label: "resources.deals.revenue_period_options.maandelijks",
+  },
+  {
+    value: "eenmalig",
+    label: "resources.deals.revenue_period_options.eenmalig",
+  },
 ];
 
 export const DealInputs = () => {

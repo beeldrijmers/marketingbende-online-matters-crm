@@ -10,10 +10,13 @@ import { TasksList } from "./TasksList";
 import { Welcome } from "./Welcome";
 
 export const Dashboard = () => {
-  const { total: totalContact, isPending: isPendingContact } =
-    useGetList<Contact>("contacts", {
-      pagination: { page: 1, perPage: 1 },
-    });
+  const {
+    data: contacts,
+    total: totalContact,
+    isPending: isPendingContact,
+  } = useGetList<Contact>("contacts", {
+    pagination: { page: 1, perPage: 1 },
+  });
 
   const { total: totalContactNotes, isPending: isPendingContactNotes } =
     useGetList<ContactNote>("contact_notes", {
@@ -62,7 +65,15 @@ export const Dashboard = () => {
     !totalContact && !totalContactNotes && !totalDeal && !totalCompany;
 
   if (isEmptyCrm) {
-    return <DashboardStepper step={1} />;
+    // Pass the real progress and the first contact id so the stepper's
+    // checklist stays truthful and the "add note" action only links to a
+    // contact that actually exists (never `/contacts/undefined/show`).
+    return (
+      <DashboardStepper
+        step={!totalContact ? 1 : !totalContactNotes ? 2 : 3}
+        contactId={contacts?.[0]?.id}
+      />
+    );
   }
 
   return (

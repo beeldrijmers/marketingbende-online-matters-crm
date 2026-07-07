@@ -47,10 +47,13 @@ const Loading = () => (
 );
 
 export const MobileDashboard = () => {
-  const { total: totalContact, isPending: isPendingContact } =
-    useGetList<Contact>("contacts", {
-      pagination: { page: 1, perPage: 1 },
-    });
+  const {
+    data: contacts,
+    total: totalContact,
+    isPending: isPendingContact,
+  } = useGetList<Contact>("contacts", {
+    pagination: { page: 1, perPage: 1 },
+  });
   const { total: totalContactNotes, isPending: isPendingContactNotes } =
     useGetList<ContactNote>("contact_notes", {
       pagination: { page: 1, perPage: 1 },
@@ -104,8 +107,12 @@ export const MobileDashboard = () => {
           a half-finished activity list; the log then only mounts after creation
           finishes, matching desktop (where creation happens on a separate page). */}
       {isEmptyCrm || contactCreateOpen || noteCreateOpen ? (
+        // Real progress + first contact id: the stepper stays mounted while a
+        // create sheet is open, so after the first contact is created the
+        // checklist ticks off step 2 instead of showing a stale state.
         <DashboardStepper
-          step={1}
+          step={!totalContact ? 1 : !totalContactNotes ? 2 : 3}
+          contactId={contacts?.[0]?.id}
           onNewContact={() => setContactCreateOpen(true)}
           onNewNote={() => setNoteCreateOpen(true)}
         />

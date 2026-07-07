@@ -2,6 +2,7 @@ import {
   EditBase,
   Form,
   useNotify,
+  useRecordContext,
   useTranslate,
   type Identifier,
 } from "ra-core";
@@ -15,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+import type { Task } from "../types";
 import { TaskFormContent } from "./TaskFormContent";
 
 export const TaskEdit = ({
@@ -55,18 +57,7 @@ export const TaskEdit = ({
               </DialogHeader>
               <TaskFormContent />
               <DialogFooter className="w-full sm:justify-between gap-4">
-                <DeleteButton
-                  mutationOptions={{
-                    onSuccess: () => {
-                      close();
-                      notify("resources.tasks.deleted", {
-                        type: "info",
-                        undoable: true,
-                      });
-                    },
-                  }}
-                  redirect={false}
-                />
+                <TaskDeleteButton close={close} />
                 <SaveButton label="ra.action.save" />
               </DialogFooter>
             </Form>
@@ -74,5 +65,32 @@ export const TaskEdit = ({
         </EditBase>
       )}
     </Dialog>
+  );
+};
+
+// Trello owns trello-sourced tasks: deleting them in the CRM would be silently
+// undone by the next Trello sync, so the delete button is hidden for those.
+// The placeholder keeps the save button right-aligned in the footer.
+const TaskDeleteButton = ({ close }: { close: () => void }) => {
+  const notify = useNotify();
+  const record = useRecordContext<Task>();
+
+  if (record?.source === "trello") {
+    return <span aria-hidden="true" />;
+  }
+
+  return (
+    <DeleteButton
+      mutationOptions={{
+        onSuccess: () => {
+          close();
+          notify("resources.tasks.deleted", {
+            type: "info",
+            undoable: true,
+          });
+        },
+      }}
+      redirect={false}
+    />
   );
 };

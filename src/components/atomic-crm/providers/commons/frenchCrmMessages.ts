@@ -332,6 +332,14 @@ export const frenchCrmMessages = {
       invalid_date: "Date invalide",
       no_date: "Pas encore planifiée",
       no_amount: "Pas encore de montant",
+      per_month_suffix: "/mois",
+      move_error:
+        "L'affaire n'a pas pu être déplacée. Le tableau a été rétabli à l'état enregistré.",
+      partial_load: "Affichage de %{loaded} affaires sur %{total}.",
+      revenue_period_options: {
+        maandelijks: "Récurrent mensuel",
+        eenmalig: "Ponctuel",
+      },
       filters: {
         only_mine: "Uniquement mes affaires",
       },
@@ -416,6 +424,8 @@ export const frenchCrmMessages = {
     tasks: {
       name: "Tâche |||| Tâches",
       forcedCaseName: "Tâche",
+      trello_text_readonly:
+        "Cette étape provient de Trello. Modifiez la description dans Trello ; les modifications ici seront écrasées à la prochaine synchronisation.",
       fields: {
         text: "Description",
         due_date: "Date d'échéance",
@@ -566,7 +576,7 @@ export const frenchCrmMessages = {
         oneoff_sub: "projets ponctuels cette année",
         forecast: "Prévision (attendu)",
         forecast_label: "Revenu attendu",
-        forecast_sub: "pipeline ouvert pondéré",
+        forecast_sub: "affaires ouvertes, pondérées par étape",
         empty:
           "Pas encore de données de revenus. Renseignez un montant et un type (mensuel/ponctuel) sur vos affaires.",
       },
