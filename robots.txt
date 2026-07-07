@@ -1,3 +1,4 @@
 # https://www.robotstxt.org/robotstxt.html
+# BANKAI CRM is an internal application and must not be indexed.
 User-agent: *
-Disallow:
+Disallow: /
