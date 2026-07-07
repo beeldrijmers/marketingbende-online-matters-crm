@@ -155,9 +155,12 @@ export const syncCardAttachments = async ({
         throw new Error(`Storage upload failed: ${uploadError.message}`);
       }
 
-      const { data: publicUrl } = supabaseAdmin.storage
+      // The attachments bucket is private; a public URL would not resolve. The
+      // note stores the path (the frontend signs a short-lived URL from it at
+      // display time); a signed URL is generated here just as an initial src.
+      const { data: signed } = await supabaseAdmin.storage
         .from("attachments")
-        .getPublicUrl(objectName);
+        .createSignedUrl(objectName, 60 * 60);
 
       const { error: noteError } = await supabaseAdmin
         .from("deal_notes")
@@ -170,7 +173,7 @@ export const syncCardAttachments = async ({
               title: attachment.name,
               type: contentType,
               path: objectName,
-              src: publicUrl.publicUrl,
+              src: signed?.signedUrl ?? "",
             },
           ],
           // Preserve when the file was attached in Trello; the DB default

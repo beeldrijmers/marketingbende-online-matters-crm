@@ -11,14 +11,14 @@ import {
 
 const mockFrom = vi.hoisted(() => vi.fn());
 const mockStorageUpload = vi.hoisted(() => vi.fn());
-const mockGetPublicUrl = vi.hoisted(() => vi.fn());
+const mockCreateSignedUrl = vi.hoisted(() => vi.fn());
 vi.mock("../_shared/supabaseAdmin.ts", () => ({
   supabaseAdmin: {
     from: (...args: unknown[]) => mockFrom(...args),
     storage: {
       from: () => ({
         upload: (...args: unknown[]) => mockStorageUpload(...args),
-        getPublicUrl: (...args: unknown[]) => mockGetPublicUrl(...args),
+        createSignedUrl: (...args: unknown[]) => mockCreateSignedUrl(...args),
       }),
     },
   },
@@ -77,8 +77,12 @@ describe("storage/note helpers", () => {
 describe("syncCardAttachments", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetPublicUrl.mockReturnValue({
-      data: { publicUrl: "https://cdn.example/attachments/trello-att123.pdf" },
+    mockCreateSignedUrl.mockResolvedValue({
+      data: {
+        signedUrl:
+          "https://cdn.example/attachments/trello-att123.pdf?token=signed",
+      },
+      error: null,
     });
   });
   afterEach(() => {
@@ -124,7 +128,7 @@ describe("syncCardAttachments", () => {
           title: "Offerte klant.pdf",
           type: "application/pdf",
           path: "trello-att123.pdf",
-          src: "https://cdn.example/attachments/trello-att123.pdf",
+          src: "https://cdn.example/attachments/trello-att123.pdf?token=signed",
         },
       ],
       date: baseAttachment.date,

@@ -666,8 +666,10 @@ const uploadToBucket = async (fi: RAFile) => {
   const file = fi.rawFile;
   const fileParts = file.name.split(".");
   const fileExt = fileParts.length > 1 ? `.${file.name.split(".").pop()}` : "";
-  const fileName = `${Math.random()}${fileExt}`;
-  const filePath = `${fileName}`;
+  // Non-guessable object name (crypto UUID, not Math.random). The bucket is
+  // private, so the name is never a security boundary on its own, but an
+  // unpredictable name avoids any chance of collision or enumeration.
+  const filePath = `${crypto.randomUUID()}${fileExt}`;
   const { error: uploadError } = await getSupabaseClient()
     .storage.from(ATTACHMENTS_BUCKET)
     .upload(filePath, dataContent);
@@ -677,12 +679,14 @@ const uploadToBucket = async (fi: RAFile) => {
     throw new Error("Failed to upload attachment");
   }
 
-  const { data } = getSupabaseClient()
+  // Private bucket: store the path and a short-lived signed URL for immediate
+  // use. The display layer re-signs from `path` when this one expires.
+  const { data: signed } = await getSupabaseClient()
     .storage.from(ATTACHMENTS_BUCKET)
-    .getPublicUrl(filePath);
+    .createSignedUrl(filePath, 60 * 60);
 
   fi.path = filePath;
-  fi.src = data.publicUrl;
+  fi.src = signed?.signedUrl ?? fi.src;
 
   // save MIME type
   const mimeType = file.type;
