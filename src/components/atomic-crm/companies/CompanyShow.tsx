@@ -143,31 +143,29 @@ const CompanyShowContent = () => {
                 <ActivityLog companyId={record.id} context="company" />
               </TabsContent>
               <TabsContent value="contacts">
-                {record.nb_contacts ? (
-                  <ReferenceManyField
-                    reference="contacts_summary"
-                    target="company_id"
-                    sort={{ field: "last_name", order: "ASC" }}
-                  >
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-row justify-end space-x-2 mt-1">
-                        {!!record.nb_contacts && (
-                          <SortButton
-                            fields={["last_name", "first_name", "last_seen"]}
-                          />
-                        )}
-                        <CreateRelatedContactButton />
-                      </div>
-                      <ContactsIterator />
-                    </div>
-                  </ReferenceManyField>
-                ) : (
+                {/* Resource "contacts" (mapped to the summary view in the
+                    dataProvider), NOT "contacts_summary" directly: ra-core
+                    invalidates the "contacts" cache after a create/edit, so a
+                    contact added via the button shows up without a hard
+                    refresh. Always rendered — gating on the cached nb_contacts
+                    count hid freshly created contacts entirely. */}
+                <ReferenceManyField
+                  reference="contacts"
+                  target="company_id"
+                  sort={{ field: "last_name", order: "ASC" }}
+                >
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-row justify-end space-x-2 mt-1">
+                      {!!record.nb_contacts && (
+                        <SortButton
+                          fields={["last_name", "first_name", "last_seen"]}
+                        />
+                      )}
                       <CreateRelatedContactButton />
                     </div>
+                    <ContactsIterator />
                   </div>
-                )}
+                </ReferenceManyField>
               </TabsContent>
               <TabsContent value="deals" className="pt-2">
                 {record.nb_deals ? (

@@ -40,9 +40,20 @@ export async function getIsInitialized() {
     return cachedValue === "true";
   }
 
-  const { data } = await getSupabaseClient()
+  const { data, error } = await getSupabaseClient()
     .from("init_state")
     .select("is_initialized");
+
+  // A transient failure (network hiccup, 429/5xx) must NOT read as "not
+  // initialized": checkAuth would then destroy the session (signOut) and send
+  // a logged-in user to /sign-up. Assume initialized — the wrong guess on a
+  // genuinely fresh install merely shows the login page — and don't cache, so
+  // the next call re-checks.
+  if (error) {
+    console.error("getIsInitialized failed; assuming initialized:", error);
+    return true;
+  }
+
   const isInitialized = data?.at(0)?.is_initialized > 0;
 
   if (isInitialized) {
@@ -50,6 +61,21 @@ export async function getIsInitialized() {
   }
 
   return isInitialized;
+}
+
+// Marks the CRM as initialized in the local cache. Called right after the
+// first sign-up, which creates the first sales row (the previous approach —
+// priming a property on the function object — never touched the real cache).
+export function markInitializedCache() {
+  getLocalStorage()?.setItem(IS_INITIALIZED_CACHE_KEY, "true");
+}
+
+// Invalidates the cached sales record. Must be called whenever a sales row is
+// updated (profile edits, admin changes): getIdentity/canAccess read this
+// cache, so without invalidation a name/avatar/role change only becomes
+// visible after logging out.
+export function clearCurrentSaleCache() {
+  getLocalStorage()?.removeItem(CURRENT_SALE_CACHE_KEY);
 }
 
 const getSale = async () => {
