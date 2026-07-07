@@ -57,8 +57,10 @@ grant all on function public.lowercase_email_jsonb() to anon;
 grant all on function public.lowercase_email_jsonb() to authenticated;
 grant all on function public.lowercase_email_jsonb() to service_role;
 
-grant all on function public.merge_contacts(bigint, bigint) to anon;
-grant all on function public.merge_contacts(bigint, bigint) to authenticated;
+-- The legacy merge_contacts SQL RPC runs under the caller's RLS (no SECURITY
+-- DEFINER) and would corrupt cross-references on invisible assignee-restricted
+-- deals. The frontend uses the merge_contacts edge function instead, so client
+-- roles are deliberately NOT granted this RPC; only service_role.
 grant all on function public.merge_contacts(bigint, bigint) to service_role;
 
 grant all on function public.set_sales_id_default() to anon;

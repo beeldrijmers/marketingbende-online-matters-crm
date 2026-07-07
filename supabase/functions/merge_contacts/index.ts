@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { sql, type Selectable } from "https://esm.sh/kysely@0.27.2";
-import { db, type ContactsTable, CompiledQuery } from "../_shared/db.ts";
+import { db, type ContactsTable } from "../_shared/db.ts";
 import { corsHeaders, OptionsMiddleware } from "../_shared/cors.ts";
 import { createErrorResponse } from "../_shared/utils.ts";
 import { AuthMiddleware, UserMiddleware } from "../_shared/authentication.ts";
@@ -76,20 +76,19 @@ function mergeContactData(winner: Contact, loser: Contact) {
   };
 }
 
-async function mergeContacts(
-  loserId: number,
-  winnerId: number,
-  userId: string,
-) {
+async function mergeContacts(loserId: number, winnerId: number) {
   try {
     return await db.transaction().execute(async (trx) => {
-      // Enable RLS by switching to authenticated role and setting user context
-      await trx.executeQuery(CompiledQuery.raw("SET LOCAL ROLE authenticated"));
-      await trx.executeQuery(
-        CompiledQuery.raw(
-          `SELECT set_config('request.jwt.claim.sub', '${userId}', true)`,
-        ),
-      );
+      // Runs with full privileges (the connection role, not authenticated) ON
+      // PURPOSE. Contacts are world-readable to every authenticated user (RLS
+      // using(true)), so UserMiddleware above is the authorization gate. The
+      // merge MUST see all rows: it reassigns tasks and rewrites deals.contact
+      // _ids, and deals/tasks are now assignee-restricted. Under the caller's
+      // RLS, tasks/deals on deals the caller cannot see would be skipped — and
+      // then the contact delete's ON DELETE CASCADE on tasks.contact_id would
+      // silently destroy those orphaned tasks and leave dangling loser ids in
+      // other deals' contact_ids. Running as the owner reassigns everything
+      // first, so the delete cascades nothing.
 
       // 1. Fetch both contacts
       const [winner, loser] = await Promise.all([
@@ -161,7 +160,7 @@ async function mergeContacts(
 Deno.serve(async (req: Request) =>
   OptionsMiddleware(req, async (req) =>
     AuthMiddleware(req, async (req) =>
-      UserMiddleware(req, async (req, user) => {
+      UserMiddleware(req, async (req, _user) => {
         // Handle POST request
         if (req.method === "POST") {
           try {
@@ -170,8 +169,14 @@ Deno.serve(async (req: Request) =>
             if (!loserId || !winnerId) {
               return createErrorResponse(400, "Missing loserId or winnerId");
             }
+            if (loserId === winnerId) {
+              return createErrorResponse(
+                400,
+                "Cannot merge a contact into itself",
+              );
+            }
 
-            const result = await mergeContacts(loserId, winnerId, user.id);
+            const result = await mergeContacts(loserId, winnerId);
 
             return new Response(JSON.stringify(result), {
               headers: { "Content-Type": "application/json", ...corsHeaders },
