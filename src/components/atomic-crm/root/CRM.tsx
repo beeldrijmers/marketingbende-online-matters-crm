@@ -53,7 +53,7 @@ import {
 } from "./defaultConfiguration";
 import { i18nProvider as defaulti18nProvider } from "../providers/commons/i18nProvider";
 import { StartPage } from "../login/StartPage.tsx";
-import { MOBILE_BREAKPOINT } from "@/hooks/use-mobile.ts";
+import { useIsMobile } from "@/hooks/use-mobile.ts";
 import { MobileTasksList } from "../tasks/MobileTasksList.tsx";
 import { ContactListMobile } from "../contacts/ContactList.tsx";
 import { MobileDealsList } from "../deals/MobileDealsList.tsx";
@@ -184,24 +184,7 @@ export const CRM = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store]);
 
-  // Pick the Admin variant from a synchronous viewport read. Using the deferred
-  // useIsMobile() hook here returned false on the first render, so phones first
-  // mounted DesktopAdmin and immediately remounted the entire app (including any
-  // open dialog) as MobileAdmin. The shared useIsMobile hook deliberately keeps
-  // its desktop-first behavior for leaf components that rely on it; only this
-  // top-level Admin switch needs to be correct on the very first render.
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined"
-      ? window.innerWidth < MOBILE_BREAKPOINT
-      : false,
-  );
-  useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-    const onChange = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    mql.addEventListener("change", onChange);
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
+  const isMobile = useIsMobile();
 
   // on login, pre-fetch the configuration to avoid a flickering
   // when accessing the app for the first time
