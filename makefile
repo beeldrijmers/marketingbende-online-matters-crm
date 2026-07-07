@@ -52,6 +52,9 @@ start-app-e2e-ci: build-e2e ## start the app pointing to the e2e supabase instan
 
 start: start-supabase start-app ## start the stack locally
 
+start-remote: ## start the app against the LIVE backend (no Docker/local Supabase)
+	npm run dev:remote
+
 start-demo: ## start the app locally in demo mode
 	npm run dev:demo
 
