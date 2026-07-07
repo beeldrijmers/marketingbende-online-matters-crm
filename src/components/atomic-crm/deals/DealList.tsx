@@ -55,7 +55,9 @@ const DealList = () => {
 
   return (
     <List
-      perPage={100}
+      // The kanban has no pagination, so everything beyond perPage would
+      // silently disappear from the board; 1000 matches MobileDealsList.
+      perPage={1000}
       filter={{ "archived_at@is": null }}
       title={false}
       sort={{ field: "index", order: "DESC" }}
@@ -69,12 +71,13 @@ const DealList = () => {
 };
 
 const DealLayout = () => {
+  const translate = useTranslate();
   const location = useLocation();
   const matchCreate = matchPath("/deals/create", location.pathname);
   const matchShow = matchPath("/deals/:id/show", location.pathname);
   const matchEdit = matchPath("/deals/:id", location.pathname);
 
-  const { data, isPending, filterValues } = useListContext();
+  const { data, isPending, filterValues, total } = useListContext();
   const hasFilters = filterValues && Object.keys(filterValues).length > 0;
 
   if (isPending) return <DealListSkeleton />;
@@ -90,6 +93,16 @@ const DealLayout = () => {
 
   return (
     <div className="w-full">
+      {/* Safety net: should there ever be more deals than one page holds,
+          say so instead of silently hiding them from the board. */}
+      {data && total != null && total > data.length ? (
+        <p className="mb-2 text-xs text-muted-foreground">
+          {translate("resources.deals.partial_load", {
+            loaded: data.length,
+            total,
+          })}
+        </p>
+      ) : null}
       <DealListContent />
       <DealArchivedList />
       <DealCreate open={!!matchCreate} />

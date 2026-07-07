@@ -43,7 +43,10 @@ export const Task = ({
   const queryClient = useQueryClient();
   const dataProvider = useDataProvider<CrmDataProvider>();
   const getContactRepresentation = useGetRecordRepresentation("contacts");
-  const isTrelloStep = task.source === "trello" && !!task.trello_checkitem_id;
+  // Trello owns trello-sourced tasks: deleting them in the CRM would be
+  // silently undone by the next Trello sync, so we never offer delete for them.
+  const isTrelloTask = task.source === "trello";
+  const isTrelloStep = isTrelloTask && !!task.trello_checkitem_id;
 
   const [openEdit, setOpenEdit] = useState(false);
 
@@ -128,6 +131,10 @@ export const Task = ({
             onCheckedChange={handleCheck()}
             disabled={isUpdatePending}
             className="mt-1"
+            // Stop the click from bubbling to the surrounding row: on mobile the
+            // row itself also toggles the task, which would fire the update (and
+            // the Trello write-back) twice for a single tap on the checkbox.
+            onClick={(event) => event.stopPropagation()}
           />
           <div className={`flex-grow ${task.done_date ? "line-through" : ""}`}>
             <div className="text-sm">
@@ -273,12 +280,14 @@ export const Task = ({
             >
               {translate("ra.action.edit")}
             </DropdownMenuItem>
-            <DropdownMenuItem
-              className="cursor-pointer h-12 md:h-8 px-4 md:px-2 text-base md:text-sm"
-              onClick={handleDelete}
-            >
-              {translate("ra.action.delete")}
-            </DropdownMenuItem>
+            {!isTrelloTask && (
+              <DropdownMenuItem
+                className="cursor-pointer h-12 md:h-8 px-4 md:px-2 text-base md:text-sm"
+                onClick={handleDelete}
+              >
+                {translate("ra.action.delete")}
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

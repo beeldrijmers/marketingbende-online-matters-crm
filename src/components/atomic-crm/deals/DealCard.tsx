@@ -1,6 +1,6 @@
 import { Draggable } from "@hello-pangea/dnd";
 import { PauseCircle, Receipt } from "lucide-react";
-import { useRedirect, RecordContextProvider } from "ra-core";
+import { useRedirect, useTranslate, RecordContextProvider } from "ra-core";
 import { ReferenceField } from "@/components/admin/reference-field";
 import { SelectField } from "@/components/admin/select-field";
 import { Badge } from "@/components/ui/badge";
@@ -13,9 +13,12 @@ import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Deal } from "../types";
 
 // A monthly/recurring price hint anywhere in the card text ("EUR 300 p/m",
-// "per maand", "maandelijks") means we show the amount as a /mnd rate.
+// "per maand", "maandelijks") means we show the amount as a monthly rate.
+// The explicit revenue_period field wins; the text scan is a fallback for
+// deals (e.g. imported from Trello) that never got the field set.
 const RECURRING_RE = /per\s*maand|p\/m|\/\s*mnd|\bmnd\b|maandelijks/i;
 const isRecurringDeal = (deal: Deal): boolean =>
+  deal.revenue_period === "maandelijks" ||
   RECURRING_RE.test(`${deal.name ?? ""} ${deal.description ?? ""}`);
 
 const moneybirdLabel = (deal: Deal): string | null =>
@@ -47,6 +50,7 @@ export const DealCardContent = ({
   deal: Deal;
 }) => {
   const { dealCategories, currency } = useConfigurationContext();
+  const translate = useTranslate();
   const redirect = useRedirect();
   const handleClick = () => {
     redirect(`/deals/${deal.id}/show`, undefined, undefined, undefined, {
@@ -108,13 +112,13 @@ export const DealCardContent = ({
                   {formattedAmount}
                   {recurring && (
                     <span className="ml-0.5 text-xs font-medium text-muted-foreground">
-                      /mnd
+                      {translate("resources.deals.per_month_suffix")}
                     </span>
                   )}
                 </span>
               ) : (
                 <span className="text-xs text-muted-foreground">
-                  Nog geen bedrag
+                  {translate("resources.deals.no_amount")}
                 </span>
               )}
               {deal.category && (
@@ -137,7 +141,7 @@ export const DealCardContent = ({
                   className="shrink-0 gap-1 px-1.5 py-0 text-[11px] border-amber-500/50 text-amber-600 dark:text-amber-400"
                 >
                   <PauseCircle className="size-3 shrink-0" />
-                  In de wacht
+                  {translate("resources.deals.fields.on_hold")}
                 </Badge>
               )}
               <div className="ml-auto flex items-center gap-1.5">

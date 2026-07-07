@@ -323,6 +323,14 @@ export const englishCrmMessages = {
       invalid_date: "Invalid date",
       no_date: "Not scheduled yet",
       no_amount: "No amount yet",
+      per_month_suffix: "/mo",
+      move_error:
+        "The deal could not be moved. The board has been restored to the saved state.",
+      partial_load: "Showing %{loaded} of %{total} deals.",
+      revenue_period_options: {
+        maandelijks: "Monthly recurring",
+        eenmalig: "One-off",
+      },
       filters: {
         only_mine: "Only my deals",
       },
@@ -406,6 +414,8 @@ export const englishCrmMessages = {
     tasks: {
       name: "Task |||| Tasks",
       forcedCaseName: "Task",
+      trello_text_readonly:
+        "This step comes from Trello. Edit the description in Trello; changes here are overwritten on the next sync.",
       fields: {
         text: "Description",
         due_date: "Due date",
@@ -556,7 +566,7 @@ export const englishCrmMessages = {
         oneoff_sub: "one-off projects this year",
         forecast: "Forecast (expected)",
         forecast_label: "Expected revenue",
-        forecast_sub: "weighted open pipeline",
+        forecast_sub: "open deals, weighted by stage",
         empty:
           "No revenue data yet. Set an amount and type (monthly/one-off) on your deals.",
       },

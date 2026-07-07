@@ -1,6 +1,10 @@
 import { commands } from "vitest/browser";
 
-import { buildDealInboundEmail, formatISODateString } from "./dealUtils";
+import {
+  buildDealInboundEmail,
+  formatISODateString,
+  isBeforeToday,
+} from "./dealUtils";
 
 describe("formatISODateString", () => {
   let originalTimezone: string;
@@ -50,6 +54,32 @@ describe("formatISODateString", () => {
     expect(formatISODateString(null)).toBeNull();
     expect(formatISODateString(undefined)).toBeNull();
     expect(formatISODateString("")).toBeNull();
+  });
+});
+
+describe("isBeforeToday", () => {
+  // A fixed "now" late in the day: with the old UTC-midnight comparison a
+  // deal closing today would incorrectly count as past for most of the day.
+  const now = new Date(2026, 5, 15, 18, 30); // 15 June 2026, 18:30 local
+
+  it("returns true for a day before today", () => {
+    expect(isBeforeToday("2026-06-14", now)).toBe(true);
+    expect(isBeforeToday("2025-12-31", now)).toBe(true);
+  });
+
+  it("returns false for today, even late in the day", () => {
+    expect(isBeforeToday("2026-06-15", now)).toBe(false);
+  });
+
+  it("returns false for a day after today", () => {
+    expect(isBeforeToday("2026-06-16", now)).toBe(false);
+  });
+
+  it("returns false for missing or malformed dates", () => {
+    expect(isBeforeToday(null, now)).toBe(false);
+    expect(isBeforeToday(undefined, now)).toBe(false);
+    expect(isBeforeToday("", now)).toBe(false);
+    expect(isBeforeToday("15-06-2026", now)).toBe(false);
   });
 });
 

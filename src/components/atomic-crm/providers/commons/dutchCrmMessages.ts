@@ -330,6 +330,14 @@ export const dutchCrmMessages = {
       invalid_date: "Ongeldige datum",
       no_date: "Nog niet gepland",
       no_amount: "Nog geen bedrag",
+      per_month_suffix: "/mnd",
+      move_error:
+        "De deal kon niet worden verplaatst. Het bord is teruggezet naar de opgeslagen situatie.",
+      partial_load: "Er worden %{loaded} van %{total} deals getoond.",
+      revenue_period_options: {
+        maandelijks: "Maandelijks terugkerend",
+        eenmalig: "Eenmalig",
+      },
       filters: {
         only_mine: "Alleen mijn deals",
       },
@@ -413,6 +421,8 @@ export const dutchCrmMessages = {
     tasks: {
       name: "Taak |||| Taken",
       forcedCaseName: "Taak",
+      trello_text_readonly:
+        "Deze stap komt uit Trello. Pas de omschrijving aan in Trello; wijzigingen hier worden bij de volgende synchronisatie overschreven.",
       fields: {
         text: "Omschrijving",
         due_date: "Vervaldatum",
@@ -563,7 +573,7 @@ export const dutchCrmMessages = {
         oneoff_sub: "eenmalige projecten dit jaar",
         forecast: "Prognose (verwacht)",
         forecast_label: "Verwachte omzet",
-        forecast_sub: "gewogen open pijplijn",
+        forecast_sub: "open deals, gewogen naar fase",
         empty:
           "Nog geen omzetgegevens. Zet een bedrag en type (maandelijks/eenmalig) op je deals.",
       },

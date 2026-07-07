@@ -24,6 +24,7 @@ import type { ContactNote, DealNote } from "../types";
 import { NoteAttachments } from "./NoteAttachments";
 import { NoteAuthorLine } from "./NoteAuthorLine";
 import { NoteInputs } from "./NoteInputs";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Note = ({
   showStatus,
@@ -33,7 +34,7 @@ export const Note = ({
   note: DealNote | ContactNote;
   isLast: boolean;
 }) => {
-  const [isHover, setHover] = useState(false);
+  const isMobile = useIsMobile();
   const [isEditing, setEditing] = useState(false);
   const [isExpanded, setExpanded] = useState(false);
   const [isTruncated, setTruncated] = useState(false);
@@ -75,7 +76,6 @@ export const Note = ({
 
   const handleCancelEdit = () => {
     setEditing(false);
-    setHover(false);
   };
 
   const handleNoteUpdate: SubmitHandler<FieldValues> = (values) => {
@@ -85,21 +85,24 @@ export const Note = ({
       {
         onSuccess: () => {
           setEditing(false);
-          setHover(false);
         },
       },
     );
   };
 
   const content = (
-    <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      className="mb-4"
-    >
+    <div className="mb-4 group">
       <div className="flex items-center space-x-4 w-full">
         <NoteAuthorLine note={note} showStatus={showStatus} />
-        <span className={`${isHover ? "visible" : "invisible"}`}>
+        {/* Always shown on touch/mobile (no hover there); on desktop the buttons
+            fade in on hover and on keyboard focus so they stay reachable. */}
+        <span
+          className={cn(
+            "transition-opacity",
+            !isMobile &&
+              "opacity-0 group-hover:opacity-100 focus-within:opacity-100",
+          )}
+        >
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -107,6 +110,7 @@ export const Note = ({
                   variant="ghost"
                   size="sm"
                   onClick={handleEnterEditMode}
+                  aria-label={translate("resources.notes.action.edit")}
                   className="p-1 h-auto cursor-pointer"
                 >
                   <Edit className="w-4 h-4" />
@@ -124,6 +128,7 @@ export const Note = ({
                   variant="ghost"
                   size="sm"
                   onClick={handleDelete}
+                  aria-label={translate("resources.notes.action.delete")}
                   className="p-1 h-auto cursor-pointer"
                 >
                   <Trash2 className="w-4 h-4" />

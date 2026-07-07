@@ -41,20 +41,46 @@ function ucFirst(str: string): string {
 
 const isoDateStringRegex = /^\d{4}-\d{2}-\d{2}$/;
 
+// Parse a YYYY-MM-DD string as local midnight. Some browsers consider a date
+// in that format as UTC, which can cause off-by-one-day issues depending on
+// the user's timezone; parsing the components manually avoids that. Returns
+// null for missing or malformed values (date columns are nullable).
+export function parseISODateStringLocal(
+  dateString: string | null | undefined,
+): Date | null {
+  if (!dateString || !isoDateStringRegex.test(dateString)) {
+    return null;
+  }
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
 // Date columns are nullable in the database, so a missing or malformed value
 // must render as "no date" instead of crashing the page.
 export function formatISODateString(
   dateString: string | null | undefined,
 ): string | null {
-  if (!dateString || !isoDateStringRegex.test(dateString)) {
-    return null;
-  }
-  // Some browsers will consider a date in the format YYYY-MM-DD as UTC, which can cause off-by-one-day issues depending on the user's timezone.
-  // To avoid this, we can parse the date components manually and create a date object in the local timezone.
-  const [year, month, day] = dateString.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
+  const date = parseISODateStringLocal(dateString);
+  return date ? format(date, "PP", { locale: nl }) : null;
+}
 
-  return format(date, "PP", { locale: nl });
+// Whether the given ISO date lies strictly before today (day-level, local
+// timezone). A deal expected to close today is not in the past, so it must
+// not get the "Verleden" badge. Missing or malformed dates return false.
+export function isBeforeToday(
+  dateString: string | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  const date = parseISODateStringLocal(dateString);
+  if (!date) {
+    return false;
+  }
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  );
+  return date.getTime() < startOfToday.getTime();
 }
 
 export function buildDealInboundEmail(

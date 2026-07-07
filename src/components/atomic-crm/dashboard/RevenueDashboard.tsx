@@ -1,13 +1,4 @@
 import { ResponsiveBar } from "@nivo/bar";
-import {
-  format,
-  startOfMonth,
-  addMonths,
-  isAfter,
-  isBefore,
-  isSameMonth,
-} from "date-fns";
-import { nl } from "date-fns/locale";
 import { Repeat, Coins, LineChart, TrendingUp } from "lucide-react";
 import { useGetList, useTranslate } from "ra-core";
 import { memo, useMemo } from "react";
@@ -15,25 +6,7 @@ import { memo, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Deal } from "../types";
-
-// Months of history (including the current one) and months of forecast the
-// chart shows. Realized revenue fills the history, the weighted forecast the
-// future.
-const MONTHS_BACK = 9;
-const MONTHS_FORWARD = 4;
-
-const LOST_STAGE = "lost";
-const WON_STAGE = "won";
-
-// Probability weight per pipeline stage for the forecast of open (not-yet-won)
-// deals - the same philosophy as the "Verwachte deal-omzet" chart.
-const STAGE_WEIGHT: Record<string, number> = {
-  "informatie-pipeline": 0.2,
-  bezig: 0.5,
-  "on-hold": 0.3,
-  "facturatie-live": 0.9,
-};
-const weightForStage = (stage: string): number => STAGE_WEIGHT[stage] ?? 0.5;
+import { buildRevenueModel } from "./revenueModel";
 
 const RECURRING_COLOR = "#0f8f80";
 const ONEOFF_COLOR = "#9bd7cf";
@@ -48,116 +21,6 @@ const formatEuro = (amount: number, locale: string) =>
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   });
-
-// Index signature so the array is assignable to nivo's BarDatum[].
-interface MonthBucket {
-  [key: string]: string | number;
-  date: string;
-  recurring: number;
-  oneoff: number;
-  prognose: number;
-}
-
-// Attribute a one-off deal to the month it lands: its delivery date, else its
-// expected closing date, else when it was created (the Trello card date).
-const oneOffMonth = (deal: Deal): Date | null => {
-  const raw =
-    deal.delivery_date ?? deal.expected_closing_date ?? deal.created_at;
-  if (!raw) return null;
-  const date = new Date(raw);
-  return Number.isNaN(date.getTime()) ? null : date;
-};
-
-const buildRevenueModel = (deals: Deal[], now: Date) => {
-  const currentMonth = startOfMonth(now);
-  const active = deals.filter(
-    (deal) => !deal.archived_at && deal.stage !== LOST_STAGE && deal.amount,
-  );
-
-  const recurring = active.filter((d) => d.revenue_period === "maandelijks");
-  const oneoff = active.filter((d) => d.revenue_period === "eenmalig");
-  const wonOneoff = oneoff.filter((d) => d.stage === WON_STAGE);
-  const openOneoff = oneoff.filter((d) => d.stage !== WON_STAGE);
-
-  // Monthly recurring revenue: every active recurring fee, summed. Projected
-  // flat into the future as the recurring part of the forecast.
-  const mrr = recurring.reduce((sum, d) => sum + (d.amount ?? 0), 0);
-
-  // The expected close month of an open deal, never earlier than this month
-  // (an overdue open deal still shows as "expected now" rather than vanishing).
-  const expectedMonth = (deal: Deal): Date => {
-    const raw = oneOffMonth(deal) ?? now;
-    const month = startOfMonth(raw);
-    return isBefore(month, currentMonth) ? currentMonth : month;
-  };
-
-  const months: MonthBucket[] = [];
-  for (let offset = -(MONTHS_BACK - 1); offset <= MONTHS_FORWARD; offset++) {
-    const monthStart = startOfMonth(addMonths(now, offset));
-    const isFuture = offset > 0;
-
-    // Realized recurring: a subscription contributes its fee to every month
-    // from the month it started up to (and including) the current month.
-    const recurringTotal = isFuture
-      ? 0
-      : recurring.reduce((sum, deal) => {
-          const start = startOfMonth(new Date(deal.created_at));
-          const started =
-            !isAfter(start, monthStart) || isSameMonth(start, monthStart);
-          return started ? sum + (deal.amount ?? 0) : sum;
-        }, 0);
-
-    // Realized one-off: a won project's full fee lands in its delivery month.
-    const oneoffTotal = isFuture
-      ? 0
-      : wonOneoff.reduce((sum, deal) => {
-          const month = oneOffMonth(deal);
-          return month && isSameMonth(startOfMonth(month), monthStart)
-            ? sum + (deal.amount ?? 0)
-            : sum;
-        }, 0);
-
-    // Forecast: projected recurring (future months only) plus the stage-weighted
-    // value of open one-off deals expected to close this month. Only the current
-    // and future months carry a forecast.
-    const prognoseRecurring = isFuture ? mrr : 0;
-    const prognoseOneoff =
-      offset < 0
-        ? 0
-        : openOneoff.reduce((sum, deal) => {
-            return isSameMonth(expectedMonth(deal), monthStart)
-              ? sum + (deal.amount ?? 0) * weightForStage(deal.stage)
-              : sum;
-          }, 0);
-
-    months.push({
-      date: format(monthStart, "MMM", { locale: nl }),
-      recurring: recurringTotal,
-      oneoff: oneoffTotal,
-      prognose: Math.round(prognoseRecurring + prognoseOneoff),
-    });
-  }
-
-  const oneOffThisYear = wonOneoff.reduce((sum, deal) => {
-    const month = oneOffMonth(deal);
-    return month && month.getFullYear() === now.getFullYear()
-      ? sum + (deal.amount ?? 0)
-      : sum;
-  }, 0);
-
-  // Total stage-weighted value still in the open pipeline (one-off + recurring
-  // pipeline deals not yet won), for the forecast tile.
-  const openPipeline = active
-    .filter((d) => d.stage !== WON_STAGE)
-    .reduce((sum, d) => sum + (d.amount ?? 0) * weightForStage(d.stage), 0);
-
-  return {
-    months,
-    mrr,
-    oneOffThisYear,
-    openPipeline: Math.round(openPipeline),
-  };
-};
 
 const StatTile = ({
   icon: Icon,
@@ -288,7 +151,10 @@ export const RevenueDashboard = memo(() => {
           accent={PROGNOSE_COLOR}
           label={t("crm.dashboard.revenue.forecast_label", "Verwachte omzet")}
           value={formatEuro(model.openPipeline, locale)}
-          sub={t("crm.dashboard.revenue.forecast_sub", "gewogen open pijplijn")}
+          sub={t(
+            "crm.dashboard.revenue.forecast_sub",
+            "open deals, gewogen naar fase",
+          )}
         />
       </div>
 

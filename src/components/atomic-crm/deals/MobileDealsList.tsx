@@ -188,7 +188,8 @@ const MobileDealRow = ({ deal }: { deal: Deal }) => {
                 minimumSignificantDigits: 3,
               }}
               locales="nl-NL"
-              empty="Geen bedrag"
+              // NumberField translates a string `empty` prop as an i18n key.
+              empty="resources.deals.no_amount"
             />
           </span>
           <AssigneesField

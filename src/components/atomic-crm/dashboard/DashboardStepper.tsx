@@ -1,7 +1,6 @@
 import { CreateButton } from "@/components/admin/create-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { CheckCircle, Circle, Plus } from "lucide-react";
 import type { Identifier } from "ra-core";
 import { useTranslate } from "ra-core";
@@ -41,22 +40,15 @@ export const DashboardStepper = ({
       >
         <Card className="w-full max-w-[600px]">
           <CardContent className="px-6">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold">
-                {translate("crm.dashboard.stepper.whats_next", {
-                  _: "What's next?",
-                })}
-              </h3>
-              <div className="w-[150px]">
-                <Progress value={(step / 3) * 100} className="mb-2" />
-                <div className="text-right text-sm">
-                  {translate("crm.dashboard.stepper.progress", {
-                    _: `${step}/3 done`,
-                    step,
-                  })}
-                </div>
-              </div>
-            </div>
+            {/* No numeric "x/3" progress here: this fork hides the stepper as
+                soon as the CRM has any data, so a fraction that can never
+                advance beyond the first step would be misleading. The
+                checklist icons below already show what is done. */}
+            <h3 className="text-lg font-bold mb-8">
+              {translate("crm.dashboard.stepper.whats_next", {
+                _: "What's next?",
+              })}
+            </h3>
             <div className="flex flex-col gap-12">
               <div className="flex gap-8 items-center">
                 <CheckCircle className="text-green-600 dark:text-green-500 w-5 h-5 shrink-0" />
@@ -129,13 +121,22 @@ export const DashboardStepper = ({
                         _: "Add note",
                       })}
                     </Button>
-                  ) : (
-                    <Button asChild disabled={step < 2} className="w-fit">
-                      <Link role="button" to={`/contacts/${contactId}/show`}>
+                  ) : step >= 2 && contactId != null ? (
+                    // Only link once there is a contact to attach the note to:
+                    // `disabled` has no effect on an `asChild` link, so a plain
+                    // disabled button is rendered until the step is reachable.
+                    <Button asChild className="w-fit">
+                      <Link to={`/contacts/${contactId}/show`}>
                         {translate("resources.notes.action.add", {
                           _: "Add note",
                         })}
                       </Link>
+                    </Button>
+                  ) : (
+                    <Button disabled className="w-fit">
+                      {translate("resources.notes.action.add", {
+                        _: "Add note",
+                      })}
                     </Button>
                   )}
                 </div>
