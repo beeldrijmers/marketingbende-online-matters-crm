@@ -20,10 +20,16 @@ export const findOrCreateCompany = async ({
   website?: string | null;
   lookupWebsite?: () => Promise<string | null>;
 }): Promise<number> => {
+  // companies.name has no unique constraint (a user can manually create a
+  // company with a name the sync also knows), so pick the oldest match
+  // deterministically instead of letting .maybeSingle() fail on duplicates —
+  // one duplicate name must not permanently break the sync for that company.
   const { data: existing, error: fetchError } = await supabaseAdmin
     .from("companies")
     .select("id, website")
     .eq("name", name)
+    .order("id", { ascending: true })
+    .limit(1)
     .maybeSingle();
   if (fetchError) {
     throw new Error(

@@ -23,3 +23,22 @@ export const claimWonNotification = async (
   }
   return (data?.length ?? 0) > 0;
 };
+
+// Gives the claim back when the notification could not actually be sent, so
+// the one-shot is not burned by a transient Resend failure: the next webhook
+// delivery (Trello is at-least-once) claims and tries again. Only called on a
+// definitive send failure; in the rare case a send succeeded at Resend but
+// reported a failure to us, the worst outcome is one duplicate e-mail — the
+// right trade-off against never notifying at all.
+export const releaseWonNotification = async (dealId: number): Promise<void> => {
+  const { error } = await supabaseAdmin
+    .from("deals")
+    .update({ won_notified_at: null })
+    .eq("id", dealId);
+  if (error) {
+    console.error(
+      `Could not release won-notification claim for deal ${dealId}:`,
+      error.message,
+    );
+  }
+};

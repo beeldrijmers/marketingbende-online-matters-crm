@@ -49,6 +49,43 @@ export const storageNameFor = (
   return `trello-${attachment.id}${extension}`;
 };
 
+// Reads a response body while enforcing the size limit, also for downloads
+// where Trello reported no `bytes` and the response carries no Content-Length:
+// the body is streamed in chunks and abandoned the moment it exceeds the cap,
+// so an unexpectedly huge file can never balloon the function's memory.
+// Returns null when the download is too big.
+export const readBodyWithCap = async (
+  response: Response,
+  maxBytes: number,
+): Promise<Uint8Array | null> => {
+  const contentLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > maxBytes) return null;
+  if (!response.body) {
+    const buffer = new Uint8Array(await response.arrayBuffer());
+    return buffer.byteLength > maxBytes ? null : buffer;
+  }
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  const reader = response.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const combined = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return combined;
+};
+
 export const syncCardAttachments = async ({
   dealId,
   attachments,
@@ -99,7 +136,15 @@ export const syncCardAttachments = async ({
           `Download failed: ${response.status} ${await response.text()}`,
         );
       }
-      const content = await response.arrayBuffer();
+      // The `bytes` check above is advisory (Trello may report null); the
+      // actual download is what must never exceed the limit.
+      const content = await readBodyWithCap(response, MAX_ATTACHMENT_BYTES);
+      if (content === null) {
+        console.warn(
+          `Skipping Trello attachment ${attachment.id} (${attachment.name}): download exceeds the import limit`,
+        );
+        continue;
+      }
 
       const objectName = storageNameFor(attachment);
       const contentType = attachment.mimeType || "application/octet-stream";

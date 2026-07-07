@@ -43,10 +43,20 @@ export const buildCardDoneEmail = ({
   };
 };
 
+// Whether the card-done notification is configured at all. Checked BEFORE
+// claiming the one-shot notification, so an unconfigured environment does not
+// burn the claim (the team lead would then never get the e-mail, even after
+// the secrets are set).
+export const isCardDoneNotificationConfigured = (): boolean =>
+  Boolean(
+    Deno.env.get("NOTIFY_CARD_DONE_EMAIL") && Deno.env.get("RESEND_API_KEY"),
+  );
+
 // Notifies the team lead by e-mail that a project moved to "Klaar". Configured
-// via env; entirely inert (logs and returns) when the recipient or API key is
-// missing, so it can be rolled out before the secrets are set. Best-effort: a
-// failure here never breaks the Trello sync.
+// via env; entirely inert (logs and returns false) when the recipient or API
+// key is missing, so it can be rolled out before the secrets are set.
+// Best-effort: a failure here never breaks the Trello sync — it returns false
+// so the caller can release the notification claim for a later retry.
 export const sendCardDoneNotification = async ({
   projectName,
   doneBy,
@@ -55,14 +65,14 @@ export const sendCardDoneNotification = async ({
   projectName: string;
   doneBy: string;
   cardUrl?: string;
-}): Promise<void> => {
+}): Promise<boolean> => {
   const to = Deno.env.get("NOTIFY_CARD_DONE_EMAIL");
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!to || !apiKey) {
     console.warn(
       "Card-done notification skipped: NOTIFY_CARD_DONE_EMAIL or RESEND_API_KEY not set.",
     );
-    return;
+    return false;
   }
 
   const from =
@@ -92,10 +102,12 @@ export const sendCardDoneNotification = async ({
     if (!response.ok) {
       throw new Error(`${response.status} ${await response.text()}`);
     }
+    return true;
   } catch (error) {
     console.error(
       `Could not send card-done notification for "${projectName}":`,
       (error as Error).message,
     );
+    return false;
   }
 };

@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   attachmentMarker,
   attachmentNoteText,
+  readBodyWithCap,
   storageNameFor,
   syncCardAttachments,
 } from "./syncCardAttachments";
@@ -190,5 +191,43 @@ describe("syncCardAttachments", () => {
 
     expect(imported).toBe(1);
     expect(mockInsert).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("readBodyWithCap", () => {
+  it("rejects a download whose Content-Length exceeds the cap", async () => {
+    const response = new Response("x", {
+      headers: { "content-length": "2048" },
+    });
+    expect(await readBodyWithCap(response, 1024)).toBe(null);
+  });
+
+  it("aborts a streamed download without Content-Length once it exceeds the cap", async () => {
+    const chunk = new Uint8Array(512);
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(chunk);
+        controller.enqueue(chunk);
+        controller.enqueue(chunk);
+        controller.close();
+      },
+    });
+    const response = new Response(stream);
+    response.headers.delete("content-length");
+    expect(await readBodyWithCap(response, 1024)).toBe(null);
+  });
+
+  it("returns the full body when it fits within the cap", async () => {
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array([1, 2, 3]));
+        controller.enqueue(new Uint8Array([4, 5]));
+        controller.close();
+      },
+    });
+    const response = new Response(stream);
+    const body = await readBodyWithCap(response, 1024);
+    expect(body).not.toBe(null);
+    expect(Array.from(body as Uint8Array)).toEqual([1, 2, 3, 4, 5]);
   });
 });

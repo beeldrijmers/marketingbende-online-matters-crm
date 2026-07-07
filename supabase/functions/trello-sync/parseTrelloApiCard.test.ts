@@ -88,3 +88,13 @@ describe("parseTrelloApiCard", () => {
     expect(card.attachmentUrls).toEqual([]);
   });
 });
+
+describe("closed (archived) cards", () => {
+  it("carries the closed flag through", () => {
+    expect(parseTrelloApiCard({ ...base, closed: true }).closed).toBe(true);
+  });
+
+  it("defaults closed to false when the field is missing", () => {
+    expect(parseTrelloApiCard(base).closed).toBe(false);
+  });
+});
