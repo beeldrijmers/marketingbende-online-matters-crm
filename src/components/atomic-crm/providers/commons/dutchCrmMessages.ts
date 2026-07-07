@@ -273,12 +273,15 @@ export const dutchCrmMessages = {
           error: "Aanmaken van de factuur is mislukt",
         },
         company: "Bedrijf",
-        amount: "Bedrag",
+        amount: "Bedrag (excl. btw)",
         no_address: "Geen adres bekend voor dit bedrijf",
         description_label: "Omschrijving op het document",
         tax_rate: "BTW-tarief",
         tax_rate_placeholder: "Kies een btw-tarief",
         tax_rate_loading: "Tarieven laden...",
+        tax_rate_error:
+          "De btw-tarieven konden niet worden geladen. Controleer je Moneybird-koppeling op je profielpagina en probeer het opnieuw.",
+        tax_rate_retry: "Opnieuw proberen",
         no_contact_hint:
           "Er is geen contactpersoon gekoppeld; het document gaat naar het bedrijf.",
         multiple_contacts_hint:

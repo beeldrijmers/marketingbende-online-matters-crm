@@ -18,6 +18,7 @@ import {
   resolveMoneybirdCredentials,
   type MoneybirdCredentials,
 } from "./credentials.ts";
+import { userFacingMessage } from "./errors.ts";
 import type { DocumentKind } from "./types.ts";
 
 // Every administration used so far is EUR-only; every document is created in EUR.
@@ -73,8 +74,18 @@ const handleCreate = async (
   }
   const { dealId, taxRateId, description } = body;
 
-  if (dealId === undefined || dealId === null) {
-    return createErrorResponse(400, "Missing dealId");
+  // dealId must be a positive integer; anything else (NaN, decimals,
+  // booleans) would otherwise surface as a Postgres bigint cast error deep in
+  // the claim — a confusing 500 instead of a clean 400.
+  const numericDealId = Number(dealId);
+  if (
+    dealId === undefined ||
+    dealId === null ||
+    typeof dealId === "boolean" ||
+    !Number.isInteger(numericDealId) ||
+    numericDealId <= 0
+  ) {
+    return createErrorResponse(400, "Ongeldige aanvraag.");
   }
   if (typeof taxRateId !== "string" || taxRateId.trim() === "") {
     return createErrorResponse(400, "Missing taxRateId");
@@ -91,7 +102,7 @@ const handleCreate = async (
 
   const outcome = await createDocumentForDeal({
     documentKind: kind,
-    dealId: Number(dealId),
+    dealId: numericDealId,
     taxRateId,
     description: typeof description === "string" ? description : "",
     currency: DOCUMENT_CURRENCY,
@@ -178,12 +189,17 @@ export const serveMoneybirdDocument = (kind: DocumentKind): void => {
             }
             return createErrorResponse(405, "Method Not Allowed");
           } catch (error) {
+            // Full details go to the server log (and the deal's
+            // moneybird_*_error column); the user only sees messages that
+            // were written for them. Raw internal/API errors are English and
+            // may embed technical identifiers — never show those.
             console.error(`moneybird ${kind} failed:`, error);
             return createErrorResponse(
               500,
-              `Aanmaken van de Moneybird-${noun} is mislukt: ${
-                error instanceof Error ? error.message : "Onbekende fout"
-              }`,
+              userFacingMessage(
+                error,
+                `Aanmaken van de Moneybird-${noun} is mislukt. Probeer het later opnieuw.`,
+              ),
             );
           }
         }),

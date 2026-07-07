@@ -150,7 +150,12 @@ const MoneybirdDocumentDialog = ({
   // administration of the caller's own connection: switching connections never
   // serves the previous administration's rates from cache.
   const { data: connection } = useMoneybirdConnection();
-  const { data: taxRates, isPending: taxRatesLoading } = useQuery({
+  const {
+    data: taxRates,
+    isPending: taxRatesLoading,
+    isError: taxRatesError,
+    refetch: refetchTaxRates,
+  } = useQuery({
     queryKey: ["moneybird_tax_rates", connection?.administrationId],
     queryFn: () => dataProvider.getMoneybirdTaxRates(),
     enabled: open && Boolean(connection),
@@ -299,6 +304,21 @@ const MoneybirdDocumentDialog = ({
                   ))}
                 </SelectContent>
               </Select>
+              {taxRatesError ? (
+                <Alert variant="destructive">
+                  <AlertDescription className="flex flex-col gap-2">
+                    {translate("resources.deals.moneybird.tax_rate_error")}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="self-start"
+                      onClick={() => refetchTaxRates()}
+                    >
+                      {translate("resources.deals.moneybird.tax_rate_retry")}
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              ) : null}
             </div>
 
             {contactCount === 0 ? (

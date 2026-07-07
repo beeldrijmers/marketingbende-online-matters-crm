@@ -20,6 +20,7 @@ import {
   resolveCredentialsForAdministration,
   type MoneybirdCredentials,
 } from "./credentials.ts";
+import { UserFacingError } from "./errors.ts";
 import type { DocumentKind } from "./types.ts";
 
 export type CreateDocumentOutcome =
@@ -51,10 +52,13 @@ const findDocumentInPreviousAdministration = async (
     );
     return null;
   }
+  // Strict: a real document may exist in that administration, so a listing
+  // failure must abort the attempt instead of silently creating a duplicate.
   const existing = await findDocumentByReference(
     previousCredentials,
     documentKind,
     documentReference(documentKind, dealId),
+    { strict: true },
   );
   return existing
     ? { documentId: existing.id, administrationId: previousAdministrationId }
@@ -80,7 +84,12 @@ export const createDocumentForDeal = async ({
   credentials: MoneybirdCredentials;
   encKey: string;
 }): Promise<CreateDocumentOutcome> => {
-  const claim = await claimDealForDocument(documentKind, dealId, salesId);
+  const claim = await claimDealForDocument(
+    documentKind,
+    dealId,
+    salesId,
+    credentials.administrationId,
+  );
   if (claim.outcome === "already_completed") {
     return { kind: "already_completed", documentId: claim.documentId };
   }
@@ -88,6 +97,12 @@ export const createDocumentForDeal = async ({
   if (claim.outcome === "not_found") return { kind: "not_found" };
 
   const deal = claim.deal;
+  // Whether THIS attempt dispatched a Moneybird create. Decides what
+  // markDocumentFailed records as the reconciliation hint: our own
+  // administration once a create may have landed, otherwise the previous
+  // attempt's hint is preserved (an attempt that provably created nothing
+  // must never clobber it).
+  let createDispatched = false;
   try {
     // A failed attempt in a DIFFERENT administration may have created a real
     // document there; adopt it rather than duplicating it in our own.
@@ -116,7 +131,7 @@ export const createDocumentForDeal = async ({
       }
     }
     if (!deal.company_id) {
-      throw new Error(
+      throw new UserFacingError(
         "Dit deal heeft geen gekoppeld bedrijf; kan geen document aanmaken.",
       );
     }
@@ -139,30 +154,34 @@ export const createDocumentForDeal = async ({
 
     // Reconciliation: adopt a document a prior attempt may already have created
     // for this deal (network-timeout case) instead of creating a duplicate.
-    // Scoped to the caller's administration by the credentials.
+    // Scoped to the caller's administration by the credentials. Strict when a
+    // previous attempt failed (a document may genuinely exist and a listing
+    // error must then abort); best-effort on a first attempt (nothing can
+    // exist yet, so a listing hiccup must not block the creation).
     const reference = documentReference(documentKind, dealId);
     const existing = await findDocumentByReference(
       credentials,
       documentKind,
       reference,
+      { strict: claim.previousAdministrationId !== null },
     );
 
-    const documentId = existing
-      ? existing.id
-      : (
-          await createDocument(
-            credentials,
-            documentKind,
-            buildDocumentPayload({
-              kind: documentKind,
-              deal: { id: deal.id, amount: deal.amount },
-              contactId,
-              taxRateId,
-              description,
-              currency,
-            }),
-          )
-        ).id;
+    let documentId: string;
+    if (existing) {
+      documentId = existing.id;
+    } else {
+      const payload = buildDocumentPayload({
+        kind: documentKind,
+        deal: { id: deal.id, amount: deal.amount },
+        contactId,
+        taxRateId,
+        description,
+        currency,
+      });
+      createDispatched = true;
+      documentId = (await createDocument(credentials, documentKind, payload))
+        .id;
+    }
 
     await markDocumentCompleted(
       documentKind,
@@ -181,7 +200,9 @@ export const createDocumentForDeal = async ({
       documentKind,
       dealId,
       message,
-      credentials.administrationId,
+      createDispatched
+        ? credentials.administrationId
+        : claim.previousAdministrationId,
     );
     throw error;
   }

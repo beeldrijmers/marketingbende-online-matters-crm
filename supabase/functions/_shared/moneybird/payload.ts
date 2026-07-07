@@ -2,6 +2,7 @@
 // only), so this module is trivially unit-testable in Node via Vitest. All
 // Moneybird-specific mapping decisions live here with WHY-comments.
 
+import { UserFacingError } from "./errors.ts";
 import type {
   DocumentKind,
   MoneybirdContactInput,
@@ -49,8 +50,13 @@ export const buildDocumentPayload = ({
   currency?: string;
 }): MoneybirdDocumentInput => {
   // A real financial document must never be created with a zero/blank amount.
+  // User-facing: the frontend guards this too, but a race (a colleague
+  // clearing the amount between opening the dialog and submitting) must end
+  // in a message the user can act on.
   if (!deal.amount || deal.amount <= 0) {
-    throw new Error("Deal has no positive amount to put on the document");
+    throw new UserFacingError(
+      "Dit deal heeft geen positief bedrag; vul eerst een bedrag in op het deal.",
+    );
   }
   if (!contactId) {
     throw new Error("Missing Moneybird contact id");

@@ -124,15 +124,22 @@ export const createDocument = (
 // Reconciliation guard for the "our create landed at Moneybird but the response
 // never reached us" case: find a document we previously created for this deal by
 // its deterministic reference. There is no server-side reference filter, so we
-// page recent documents and match client-side. BEST-EFFORT: a listing failure
-// must never block a normal creation, so on any error we log and return null
-// (the atomic deal claim + the partial-unique index remain the primary
-// idempotency guarantees). Runs under the caller's credentials, so it only ever
-// sees (and adopts) documents in the caller's own administration.
+// page recent documents and match client-side. Runs under the caller's
+// credentials, so it only ever sees (and adopts) documents in the caller's own
+// administration.
+//
+// Failure mode is caller-chosen via `strict`:
+//   - strict=false (first attempt, nothing can exist yet): a listing failure is
+//     logged and treated as "no document" — it must never block a normal
+//     creation.
+//   - strict=true (a PREVIOUS attempt failed, a real document may exist): a
+//     listing failure ABORTS the attempt. Proceeding to create here is exactly
+//     the double-document scenario this reconciliation exists to prevent.
 export const findDocumentByReference = async (
   credentials: MoneybirdCredentials,
   kind: DocumentKind,
   reference: string,
+  { strict }: { strict: boolean },
 ): Promise<MoneybirdDocument | null> => {
   const perPage = 100;
   const maxPages = 3;
@@ -149,6 +156,13 @@ export const findDocumentByReference = async (
       if (documents.length < perPage) break; // last page reached
     }
   } catch (error) {
+    if (strict) {
+      throw new Error(
+        `Could not verify whether an earlier ${kind} already exists (reference ${reference}): ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
     console.error(
       `moneybird findDocumentByReference(${kind}) failed (best-effort):`,
       error,

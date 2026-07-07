@@ -274,12 +274,15 @@ export const frenchCrmMessages = {
           error: "Échec de la création de la facture",
         },
         company: "Entreprise",
-        amount: "Montant",
+        amount: "Montant (hors TVA)",
         no_address: "Aucune adresse connue pour cette entreprise",
         description_label: "Description sur le document",
         tax_rate: "Taux de TVA",
         tax_rate_placeholder: "Choisissez un taux de TVA",
         tax_rate_loading: "Chargement des taux...",
+        tax_rate_error:
+          "Impossible de charger les taux de TVA. Vérifiez votre connexion Moneybird sur votre page de profil et réessayez.",
+        tax_rate_retry: "Réessayer",
         no_contact_hint:
           "Aucun contact n'est lié ; le document est adressé à l'entreprise.",
         multiple_contacts_hint:
