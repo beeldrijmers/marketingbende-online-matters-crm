@@ -25,6 +25,8 @@ import { parseEmailAddress, parseEmailContacts } from "./parseEmailAddress.ts";
 import { upsertDealFromMail } from "./upsertDealFromMail.ts";
 import { resolveInvolvedSalesIds } from "./resolveInvolvedSalesIds.ts";
 import { verifySvixSignature } from "./verifySvixSignature.ts";
+import { findCompanyMentionedInText } from "./matchCompanyInText.ts";
+import { attachMailToCompanyDeal } from "./attachMailToCompanyDeal.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const RESEND_WEBHOOK_SECRET = Deno.env.get("RESEND_WEBHOOK_SECRET");
@@ -259,6 +261,31 @@ Deno.serve(async (req) => {
       inboundEmail: INBOUND_EMAIL,
     }).slice(0, 1);
     if (participants.length === 0) {
+      // No client e-mail address anywhere (e.g. a team member forwards an
+      // internal update that only NAMES a client). Try to recognise an
+      // existing customer by name in the subject/body and file the mail on
+      // that customer's deal, instead of creating a bogus company from the
+      // intake/team domain.
+      const strippedSubject = stripSubjectForwardingPrefix(subject);
+      const forwardedContent = getForwardedMailContent(textBody);
+      const { data: companyRows } = await supabaseAdmin
+        .from("companies")
+        .select("id, name");
+      const matchedCompany = findCompanyMentionedInText(
+        `${strippedSubject}\n${forwardedContent}`,
+        (companyRows ?? []) as { id: number; name: string }[],
+      );
+      if (matchedCompany) {
+        await attachMailToCompanyDeal({
+          companyId: matchedCompany.id,
+          subject: strippedSubject,
+          noteContent: getNoteContent(strippedSubject, forwardedContent),
+          salesEmail: forwarderSalesEmail,
+          salesId: forwarderSalesId ?? null,
+          assigneeIds: involvedSalesIds,
+        });
+        return new Response("OK");
+      }
       return new Response(
         `Could not determine any client participant to route the mail to`,
         { status: 200 },
