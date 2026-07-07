@@ -6,7 +6,6 @@ import { TextInput } from "@/components/admin/text-input";
 import { NumberInput } from "@/components/admin/number-input";
 import { DateInput } from "@/components/admin/date-input";
 import { SelectInput } from "@/components/admin/select-input";
-import { BooleanInput } from "@/components/admin/boolean-input";
 import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -130,11 +129,6 @@ const DealMiscInputs = () => {
         defaultValue={dealStages[0]?.value}
         helperText={false}
         validate={required()}
-      />
-      <BooleanInput
-        source="on_hold"
-        label="resources.deals.fields.on_hold"
-        helperText={false}
       />
     </div>
   );

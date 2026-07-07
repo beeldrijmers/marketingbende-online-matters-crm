@@ -4,7 +4,6 @@ import {
   resolveStage,
   resolveDealName,
   resolveRevenuePeriod,
-  resolveOnHold,
 } from "./resolveDealFields";
 
 describe("resolveCategory", () => {
@@ -31,11 +30,7 @@ describe("resolveCategory", () => {
 
 describe("resolveStage", () => {
   it("uses the direct list-to-stage mapping for genuine stage lists", () => {
-    // The Bezig list maps straight to the "bezig" stage.
-    expect(resolveStage("6979f9a8a825b6ff46306ece", [], false)).toBe("bezig");
-    // The On Hold list no longer has its own stage; it stays "bezig" (and is
-    // flagged on_hold separately, see resolveOnHold).
-    expect(resolveStage("6a40ed3ab091e5e140319312", [], false)).toBe("bezig");
+    expect(resolveStage("6a40ed3ab091e5e140319312", [], false)).toBe("on-hold");
   });
 
   it("defaults category-list cards to facturatie-live", () => {
@@ -81,12 +76,5 @@ describe("resolveRevenuePeriod", () => {
   it("leaves internal/other categories unclassified", () => {
     expect(resolveRevenuePeriod("happr")).toBe(null);
     expect(resolveRevenuePeriod("overig")).toBe(null);
-  });
-});
-
-describe("resolveOnHold", () => {
-  it("flags cards in the On Hold list, not others", () => {
-    expect(resolveOnHold("6a40ed3ab091e5e140319312")).toBe(true);
-    expect(resolveOnHold("6979f9a8a825b6ff46306ece")).toBe(false);
   });
 });
