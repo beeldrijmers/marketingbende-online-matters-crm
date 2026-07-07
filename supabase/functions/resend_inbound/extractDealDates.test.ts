@@ -117,10 +117,16 @@ describe("verb-form labels", () => {
     ).toEqual({ startDate: "2026-08-15", deliveryDate: "2026-10-01" });
   });
 
-  it("recognises 'live' as a delivery label", () => {
-    expect(extractDealDates("De site moet live op 12 december 2026.")).toEqual({
-      startDate: null,
-      deliveryDate: "2026-12-12",
-    });
+  it("ignores generic words that are not real date labels", () => {
+    // "live", "begin", "ingang" and "klaar" were dropped as labels: they match
+    // unrelated sentences and would attach a wrong date to the deal.
+    expect(
+      extractDealDates(
+        "Onze huidige site is live sinds 1 januari 2020, we willen iets nieuws.",
+      ),
+    ).toEqual({ startDate: null, deliveryDate: null });
+    expect(
+      extractDealDates("Aan het begin van 2020 zijn we opgericht."),
+    ).toEqual({ startDate: null, deliveryDate: null });
   });
 });
