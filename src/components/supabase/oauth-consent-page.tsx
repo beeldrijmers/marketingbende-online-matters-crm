@@ -53,9 +53,18 @@ export function OAuthConsentPage() {
       try {
         await authProvider.checkAuth({});
       } catch {
-        navigate(
-          `/login?redirect=/oauth/consent?authorization_id=${authorizationId}`,
-        );
+        // Preserve the consent target through login via the location state that
+        // ra-core's useLogin reads (nextPathname + nextSearch). A bare
+        // `?redirect=` query param was dropped, landing the user on `/` with the
+        // authorization_id lost.
+        navigate("/login", {
+          state: {
+            nextPathname: OAuthConsentPage.path,
+            nextSearch: `?${new URLSearchParams({
+              authorization_id: authorizationId,
+            }).toString()}`,
+          },
+        });
         return;
       }
 

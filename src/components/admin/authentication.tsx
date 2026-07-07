@@ -1,9 +1,10 @@
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { Translate, useHandleAuthCallback, useTranslate } from "ra-core";
 import { CircleAlert, LockIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Loading } from "@/components/admin/loading";
+import { getAuthCallbackError } from "@/components/admin/authCallbackError";
 
 /**
  * A standalone page to be used as a redirection target for external authentication services (e.g. OAuth)
@@ -23,7 +24,26 @@ import { Loading } from "@/components/admin/loading";
  * );
  */
 export const AuthCallback = () => {
-  const { error } = useHandleAuthCallback();
+  const location = useLocation();
+  const translate = useTranslate();
+  // A failed invite / recovery / OAuth link carries Supabase error parameters
+  // instead of session tokens. Detect them up front and suppress the default
+  // post-callback redirect so the user actually sees the error message rather
+  // than being bounced silently back to the login screen.
+  const authError = getAuthCallbackError(location.search);
+  const { error } = useHandleAuthCallback(
+    authError ? { onSuccess: () => {}, onError: () => {} } : undefined,
+  );
+
+  if (authError) {
+    return (
+      <AuthError
+        message={translate("crm.auth.link_expired", {
+          _: "De link is verlopen of ongeldig. Vraag een nieuwe aan.",
+        })}
+      />
+    );
+  }
   if (error) {
     return (
       <AuthError

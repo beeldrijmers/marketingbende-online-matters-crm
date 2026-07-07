@@ -12,6 +12,7 @@ import {
   useUpdate,
 } from "ra-core";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { EditButton } from "@/components/admin/edit-button";
 import { ReferenceArrayField } from "@/components/admin/reference-array-field";
@@ -35,9 +36,12 @@ import { MoneybirdDocumentControl } from "./MoneybirdDocumentButtons";
 import { findDealLabel, formatISODateString, isBeforeToday } from "./dealUtils";
 
 export const DealShow = ({ open, id }: { open: boolean; id?: string }) => {
-  const redirect = useRedirect();
+  const navigate = useNavigate();
   const handleClose = () => {
-    redirect("list", "deals");
+    // Replace (not push) the /deals/:id/show entry with the list so the browser
+    // back button lands before the dialog was opened instead of reopening it.
+    // Works for deep links too, unlike navigate(-1).
+    navigate("/deals", { replace: true });
   };
 
   return (

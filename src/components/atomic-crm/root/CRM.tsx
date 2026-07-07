@@ -6,7 +6,7 @@ import type {
 } from "ra-core";
 import { CustomRoutes, localStorageStore, Resource } from "ra-core";
 import { useEffect, useMemo, useState } from "react";
-import { Route } from "react-router";
+import { Navigate, Route, useParams } from "react-router";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
@@ -53,7 +53,7 @@ import {
 } from "./defaultConfiguration";
 import { i18nProvider as defaulti18nProvider } from "../providers/commons/i18nProvider";
 import { StartPage } from "../login/StartPage.tsx";
-import { useIsMobile } from "@/hooks/use-mobile.ts";
+import { MOBILE_BREAKPOINT } from "@/hooks/use-mobile.ts";
 import { MobileTasksList } from "../tasks/MobileTasksList.tsx";
 import { ContactListMobile } from "../contacts/ContactList.tsx";
 import { MobileDealsList } from "../deals/MobileDealsList.tsx";
@@ -184,7 +184,24 @@ export const CRM = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store]);
 
-  const isMobile = useIsMobile();
+  // Pick the Admin variant from a synchronous viewport read. Using the deferred
+  // useIsMobile() hook here returned false on the first render, so phones first
+  // mounted DesktopAdmin and immediately remounted the entire app (including any
+  // open dialog) as MobileAdmin. The shared useIsMobile hook deliberately keeps
+  // its desktop-first behavior for leaf components that rely on it; only this
+  // top-level Admin switch needs to be correct on the very first render.
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined"
+      ? window.innerWidth < MOBILE_BREAKPOINT
+      : false,
+  );
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+    const onChange = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    mql.addEventListener("change", onChange);
+    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
 
   // on login, pre-fetch the configuration to avoid a flickering
   // when accessing the app for the first time
@@ -254,6 +271,15 @@ export const CRM = ({
 // page switch on a fresh round-trip to Supabase.
 const QUERY_STALE_TIME_MS = 60 * 1000;
 
+// Desktop has no standalone note page (notes are shown inline on the contact
+// page). A note deeplink like /contacts/:id/notes/:noteId — which exists on
+// mobile — would otherwise fall through to the contacts edit catch-all (:id/*)
+// and misleadingly open the edit form, so redirect it to the contact show page.
+const ContactNoteRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/contacts/${id}/show`} replace />;
+};
+
 const DesktopAdmin = (
   props: CoreAdminProps & {
     dashboard?: DashboardComponent;
@@ -298,11 +324,20 @@ const DesktopAdmin = (
         <Route path={ChangelogPage.path} element={<ChangelogPage />} />
       </CustomRoutes>
       <Resource name="deals" {...deals} />
-      <Resource name="contacts" {...contacts} />
+      <Resource name="contacts" {...contacts}>
+        {/* Registered before the resource's own catch-all edit route (:id/*);
+            React Router still ranks this more specific route first. */}
+        <Route path=":id/notes/:noteId" element={<ContactNoteRedirect />} />
+      </Resource>
       <Resource name="companies" {...companies} />
       <Resource name="contact_notes" />
       <Resource name="deal_notes" />
-      <Resource name="tasks" />
+      <Resource name="tasks">
+        {/* No standalone desktop tasks page: send /tasks (e.g. reached by
+            crossing the mobile breakpoint) to the dashboard instead of a blank
+            page. */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Resource>
       <Resource name="sales" {...sales} />
       <Resource name="tags" />
     </Admin>
@@ -367,6 +402,14 @@ const MobileAdmin = (
             path={SettingsPageMobile.path}
             element={<SettingsPageMobile />}
           />
+          {/* Mobile edits the profile inline within the settings page, so a
+              /profile deeplink (or crossing the desktop breakpoint) redirects
+              there instead of hitting the catch-all. */}
+          <Route
+            path={ProfilePage.path}
+            element={<Navigate to={SettingsPageMobile.path} replace />}
+          />
+          <Route path={ImportPage.path} element={<ImportPage />} />
           <Route path={ChangelogPage.path} element={<ChangelogPage />} />
         </CustomRoutes>
         <Resource
@@ -384,6 +427,10 @@ const MobileAdmin = (
         />
         <Resource name="deals" list={MobileDealsList} />
         <Resource name="tasks" list={MobileTasksList} />
+        {/* Sales team management has no mobile-specific screens, but the
+            resource must be registered so /sales deeplinks (and crossing the
+            desktop breakpoint) resolve instead of showing "Niet gevonden". */}
+        <Resource name="sales" {...sales} />
       </Admin>
     </PersistQueryClientProvider>
   );

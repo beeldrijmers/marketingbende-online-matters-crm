@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="nl" translate="no" class="notranslate">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no"
+    />
+    <meta name="theme-color" content="#2563EB" />
+    <meta name="google" content="notranslate" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <title>BANKAI CRM</title>
+    <script>
+      // GitHub Pages has no server-side routing, so a path-based URL without a
+      // hash (e.g. crm.marketingbende.nl/deals — a bookmark, refresh or shared
+      // link) is served this 404 page instead of the app. The app uses hash
+      // routing (Vite base "./"), so convert the pathname + query into the hash
+      // form and bounce to the app root: /deals?x=1 -> /#/deals?x=1. The app is
+      // hosted at the domain root (CNAME), so absolute "/#/..." is correct.
+      (function redirectToHashRoute() {
+        var location = window.location;
+        var path = location.pathname.replace(/^\/+/, "");
+        location.replace("/#/" + path + location.search);
+      })();
+    </script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: sans-serif;
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>
+      <p>
+        Deze pagina vereist JavaScript.
+        <a href="/#/">Ga naar BANKAI CRM</a>.
+      </p>
+    </noscript>
+  </body>
+</html>

@@ -497,6 +497,8 @@ export const frenchCrmMessages = {
       first_name: "Prénom",
       last_name: "Nom",
       confirm_password: "Confirmer le mot de passe",
+      link_expired:
+        "Le lien a expiré ou n'est pas valide. Veuillez en demander un nouveau.",
       confirmation_required:
         "Veuillez suivre le lien que nous venons de vous envoyer par email pour confirmer votre compte.",
       recovery_email_sent:

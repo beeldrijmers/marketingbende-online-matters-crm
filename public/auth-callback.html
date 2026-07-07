@@ -118,21 +118,38 @@
     </div>
   </body>
   <script>
-    const getUrlParams = () => {
-      const urlSearchParams = new URLSearchParams(
-        window.location.hash.substring(1),
-      );
-      const access_token = urlSearchParams.get("access_token");
-      const refresh_token = urlSearchParams.get("refresh_token");
-      const type = urlSearchParams.get("type");
-
-      return { access_token, refresh_token, type };
-    };
-
+    // Supabase redirects here after invite / recovery / OAuth flows. On success
+    // the session tokens arrive in the URL fragment; when the link is expired or
+    // invalid the fragment instead carries error parameters (error, error_code,
+    // error_description). Forward whichever parameters are present into the SPA
+    // hash route so the app can either complete the sign-in or show a clear
+    // error message. Previously only the tokens were forwarded, so an expired
+    // invite/recovery link ended silently on the login screen.
     function interceptAuthCallback() {
-      const hash = window.location.hash;
-      const { access_token, refresh_token, type } = getUrlParams();
-      window.location.href = `./#/auth-callback?access_token=${access_token}&refresh_token=${refresh_token}&type=${type}`;
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const queryParams = new URLSearchParams(window.location.search);
+      const readParam = (key) => hashParams.get(key) || queryParams.get(key);
+
+      const forwarded = new URLSearchParams();
+      [
+        "access_token",
+        "refresh_token",
+        "type",
+        "error",
+        "error_code",
+        "error_description",
+      ].forEach((key) => {
+        const value = readParam(key);
+        // Skip null/empty values so we never forward the literal string "null".
+        if (value) {
+          forwarded.set(key, value);
+        }
+      });
+
+      const query = forwarded.toString();
+      window.location.href = query
+        ? `./#/auth-callback?${query}`
+        : "./#/auth-callback";
     }
 
     // Call the function to intercept the auth callback
