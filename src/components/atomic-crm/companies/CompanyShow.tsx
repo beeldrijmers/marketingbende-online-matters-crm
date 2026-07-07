@@ -60,9 +60,11 @@ const CompanyShowContentMobile = () => {
   return (
     <>
       <MobileHeader>
-        <MobileBackButton to="/" />
+        {/* No explicit `to`: fall back to the companies list, matching
+            ContactShowContentMobile (was hardcoded to the dashboard "/"). */}
+        <MobileBackButton />
         <div className="flex flex-1">
-          <Link to="/">
+          <Link to="/companies">
             <h1 className="text-xl font-semibold">
               {translate("resources.companies.forcedCaseName")}
             </h1>
@@ -119,7 +121,9 @@ const CompanyShowContent = () => {
                 {record.name}
               </h5>
             </div>
-            <Tabs defaultValue={currentTab} onValueChange={handleTabChange}>
+            {/* Controlled (not defaultValue) so browser back/forward between
+                tab URLs updates the active tab, not just the URL. */}
+            <Tabs value={currentTab} onValueChange={handleTabChange}>
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="activity">
                   {translate("crm.common.activity")}

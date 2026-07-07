@@ -494,6 +494,7 @@ export const dutchCrmMessages = {
       first_name: "Voornaam",
       last_name: "Achternaam",
       confirm_password: "Bevestig wachtwoord",
+      link_expired: "De link is verlopen of ongeldig. Vraag een nieuwe aan.",
       confirmation_required:
         "Volg de link die we u zojuist per e-mail hebben gestuurd om uw account te bevestigen.",
       recovery_email_sent:

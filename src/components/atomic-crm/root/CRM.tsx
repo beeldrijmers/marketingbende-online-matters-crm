@@ -6,7 +6,7 @@ import type {
 } from "ra-core";
 import { CustomRoutes, localStorageStore, Resource } from "ra-core";
 import { useEffect, useMemo, useState } from "react";
-import { Route } from "react-router";
+import { Navigate, Route, useParams } from "react-router";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
@@ -254,6 +254,15 @@ export const CRM = ({
 // page switch on a fresh round-trip to Supabase.
 const QUERY_STALE_TIME_MS = 60 * 1000;
 
+// Desktop has no standalone note page (notes are shown inline on the contact
+// page). A note deeplink like /contacts/:id/notes/:noteId — which exists on
+// mobile — would otherwise fall through to the contacts edit catch-all (:id/*)
+// and misleadingly open the edit form, so redirect it to the contact show page.
+const ContactNoteRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/contacts/${id}/show`} replace />;
+};
+
 const DesktopAdmin = (
   props: CoreAdminProps & {
     dashboard?: DashboardComponent;
@@ -298,11 +307,20 @@ const DesktopAdmin = (
         <Route path={ChangelogPage.path} element={<ChangelogPage />} />
       </CustomRoutes>
       <Resource name="deals" {...deals} />
-      <Resource name="contacts" {...contacts} />
+      <Resource name="contacts" {...contacts}>
+        {/* Registered before the resource's own catch-all edit route (:id/*);
+            React Router still ranks this more specific route first. */}
+        <Route path=":id/notes/:noteId" element={<ContactNoteRedirect />} />
+      </Resource>
       <Resource name="companies" {...companies} />
       <Resource name="contact_notes" />
       <Resource name="deal_notes" />
-      <Resource name="tasks" />
+      <Resource name="tasks">
+        {/* No standalone desktop tasks page: send /tasks (e.g. reached by
+            crossing the mobile breakpoint) to the dashboard instead of a blank
+            page. */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Resource>
       <Resource name="sales" {...sales} />
       <Resource name="tags" />
     </Admin>
@@ -367,6 +385,14 @@ const MobileAdmin = (
             path={SettingsPageMobile.path}
             element={<SettingsPageMobile />}
           />
+          {/* Mobile edits the profile inline within the settings page, so a
+              /profile deeplink (or crossing the desktop breakpoint) redirects
+              there instead of hitting the catch-all. */}
+          <Route
+            path={ProfilePage.path}
+            element={<Navigate to={SettingsPageMobile.path} replace />}
+          />
+          <Route path={ImportPage.path} element={<ImportPage />} />
           <Route path={ChangelogPage.path} element={<ChangelogPage />} />
         </CustomRoutes>
         <Resource
@@ -384,6 +410,10 @@ const MobileAdmin = (
         />
         <Resource name="deals" list={MobileDealsList} />
         <Resource name="tasks" list={MobileTasksList} />
+        {/* Sales team management has no mobile-specific screens, but the
+            resource must be registered so /sales deeplinks (and crossing the
+            desktop breakpoint) resolve instead of showing "Niet gevonden". */}
+        <Resource name="sales" {...sales} />
       </Admin>
     </PersistQueryClientProvider>
   );

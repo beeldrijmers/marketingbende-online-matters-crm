@@ -1,11 +1,13 @@
 import { CreateButton } from "@/components/admin/create-button";
 import { useTranslate } from "ra-core";
 
+import { useIsMobile } from "@/hooks/use-mobile";
 import useAppBarHeight from "../misc/useAppBarHeight";
 
 export const CompanyEmpty = () => {
   const appbarHeight = useAppBarHeight();
   const translate = useTranslate();
+  const isMobile = useIsMobile();
   return (
     <div
       className="flex flex-col justify-center items-center gap-6 px-4"
@@ -32,7 +34,10 @@ export const CompanyEmpty = () => {
           })}
         </p>
       </div>
-      <CreateButton label="resources.companies.action.create" />
+      {/* MobileAdmin has no companies-create route (creation is desktop-only,
+          matching the mobile create menu which omits companies), so the button
+          would be a dead end on phones. */}
+      {!isMobile && <CreateButton label="resources.companies.action.create" />}
     </div>
   );
 };
