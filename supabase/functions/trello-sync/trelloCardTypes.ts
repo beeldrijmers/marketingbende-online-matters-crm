@@ -41,6 +41,9 @@ export interface TrelloCardInput {
   labelNames: string[];
   due: string | null;
   dueComplete: boolean;
+  // Whether the card is archived in Trello. An archived card's deal is
+  // archived in the CRM instead of being (re)synced onto the board.
+  closed: boolean;
   url: string;
   // The card's markdown description — used to enrich the deal description and
   // to look for a client website (for the company logo).

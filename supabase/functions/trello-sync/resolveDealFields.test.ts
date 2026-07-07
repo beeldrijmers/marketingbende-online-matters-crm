@@ -3,6 +3,7 @@ import {
   resolveCategory,
   resolveStage,
   resolveDealName,
+  resolveIsInternal,
   resolveRevenuePeriod,
 } from "./resolveDealFields";
 
@@ -76,5 +77,54 @@ describe("resolveRevenuePeriod", () => {
   it("leaves internal/other categories unclassified", () => {
     expect(resolveRevenuePeriod("happr")).toBe(null);
     expect(resolveRevenuePeriod("overig")).toBe(null);
+  });
+});
+
+describe("resolveIsInternal", () => {
+  it("classifies Happr product work as internal", () => {
+    expect(
+      resolveIsInternal({
+        category: "happr",
+        dealName: "Happr reserveringswidget",
+        companyName: "Restaurant Happie",
+      }),
+    ).toBe(true);
+  });
+
+  it("classifies the Lightspeed POS integration as internal", () => {
+    expect(
+      resolveIsInternal({
+        category: "overig",
+        dealName: "Koppeling Lightspeed kassa",
+        companyName: "Extern Bedrijf",
+      }),
+    ).toBe(true);
+  });
+
+  it("classifies Marketingbende/Online Matters own work as internal", () => {
+    expect(
+      resolveIsInternal({
+        category: "seo",
+        dealName: "SEO eigen site",
+        companyName: "Marketingbende (intern)",
+      }),
+    ).toBe(true);
+    expect(
+      resolveIsInternal({
+        category: "seo",
+        dealName: "SEO migratie",
+        companyName: "Online Matters",
+      }),
+    ).toBe(true);
+  });
+
+  it("classifies regular client work as external", () => {
+    expect(
+      resolveIsInternal({
+        category: "seo",
+        dealName: "MB Roofing - SEO",
+        companyName: "MB Roofing",
+      }),
+    ).toBe(false);
   });
 });

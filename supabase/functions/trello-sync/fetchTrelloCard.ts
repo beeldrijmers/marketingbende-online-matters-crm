@@ -19,7 +19,10 @@ export const fetchTrelloCard = async (
   const url = new URL(`https://api.trello.com/1/cards/${cardId}`);
   url.searchParams.set("key", apiKey);
   url.searchParams.set("token", token);
-  url.searchParams.set("fields", "name,idList,due,dueComplete,shortUrl,desc");
+  url.searchParams.set(
+    "fields",
+    "name,idList,due,dueComplete,closed,shortUrl,desc",
+  );
   url.searchParams.set("labels", "true");
   url.searchParams.set("label_fields", "name");
   url.searchParams.set("attachments", "true");

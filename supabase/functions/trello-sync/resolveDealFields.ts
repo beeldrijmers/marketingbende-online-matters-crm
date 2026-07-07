@@ -43,6 +43,24 @@ export const resolveStage = (
 export const resolveDealName = (cardName: string): string =>
   cardName.replace(/^go\s*-\s*/i, "").trim();
 
+// Internal (non-billable own work) vs external client work, mirroring the
+// classification rule of migration 20260707020000_add_deal_is_internal: Happr
+// product work, the Lightspeed POS integration and Marketingbende/Online
+// Matters' own projects are internal. Only applied on deal creation; a manual
+// toggle in the CRM always wins afterwards.
+export const resolveIsInternal = ({
+  category,
+  dealName,
+  companyName,
+}: {
+  category: string;
+  dealName: string;
+  companyName: string;
+}): boolean =>
+  category === "happr" ||
+  /lightspeed/i.test(dealName) ||
+  /^(marketingbende|online matters)/i.test(companyName.trim());
+
 // Whether a deal's fee recurs monthly or is a one-off, derived from its
 // category: SEO is a monthly subscription, project categories are one-off.
 // Anything else (Happr, overig) is left unclassified (null) so it doesn't

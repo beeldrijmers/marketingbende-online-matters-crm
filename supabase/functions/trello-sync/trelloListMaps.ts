@@ -40,3 +40,10 @@ export const LABEL_TO_CATEGORY: Record<string, string> = {
 };
 
 export const DEFAULT_CATEGORY = "overig";
+
+// Whether a Trello list id is part of the known board vocabulary above. A
+// list the team adds later is unknown here until the maps are updated; the
+// sync then keeps its hands off the stage of existing deals instead of
+// silently misclassifying every card in that list.
+export const isKnownTrelloList = (listId: string): boolean =>
+  listId in LIST_TO_STAGE || listId in CATEGORY_LIST_TO_CATEGORY;

@@ -15,3 +15,18 @@ export const archiveDealByCardId = async (trelloCardId: string) => {
     );
   }
 };
+
+// The reverse: a card that is un-archived (sent back to the board) in Trello
+// brings its deal back too. A no-op when the deal is not archived.
+export const unarchiveDealByCardId = async (trelloCardId: string) => {
+  const { error } = await supabaseAdmin
+    .from("deals")
+    .update({ archived_at: null })
+    .eq("trello_card_id", trelloCardId)
+    .not("archived_at", "is", null);
+  if (error) {
+    throw new Error(
+      `Could not unarchive deal for Trello card ${trelloCardId}: ${error.message}`,
+    );
+  }
+};

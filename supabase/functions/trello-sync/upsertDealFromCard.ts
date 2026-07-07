@@ -4,8 +4,10 @@ import {
   resolveCategory,
   resolveStage,
   resolveDealName,
+  resolveIsInternal,
   resolveRevenuePeriod,
 } from "./resolveDealFields.ts";
+import { DEFAULT_CATEGORY, isKnownTrelloList } from "./trelloListMaps.ts";
 import { findOrCreateCompany } from "./findOrCreateCompany.ts";
 import { resolveDefaultSalesId } from "./resolveDefaultSalesId.ts";
 import { extractCompanyWebsite } from "./extractCompanyWebsite.ts";
@@ -53,9 +55,20 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
   // deal keeps its true creation date instead of the import/backfill time.
   const createdAt = trelloCardCreatedAt(card.id);
 
+  // A list the team added without updating the sync's vocabulary: log it
+  // loudly. New deals still get the fallback stage/category, but the stage of
+  // existing deals is left to the CRM (below) so a whole column of cards is
+  // never silently dragged to "facturatie-live".
+  const knownList = isKnownTrelloList(card.idList);
+  if (!knownList) {
+    console.warn(
+      `Trello list ${card.idList} (card ${card.id}) is not in the sync's list maps; using fallback stage/category. Update trelloListMaps.ts.`,
+    );
+  }
+
   const { data: existingDeal, error: fetchError } = await supabaseAdmin
     .from("deals")
-    .select("id, description, amount, revenue_period")
+    .select("id, description, amount, revenue_period, category")
     .eq("trello_card_id", card.id)
     .maybeSingle();
   if (fetchError) {
@@ -96,16 +109,26 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
     // Monthly recurring deals run their own lifecycle in the CRM (the loopband
     // sends them back to the start each cycle), so the Trello list must not
     // drag their stage back to "won" on every sync. For those, leave the stage
-    // to the CRM; all other cards still follow Trello.
+    // to the CRM; all other cards still follow Trello. The same restraint
+    // applies to cards in a list the sync doesn't know: their stage is the
+    // CRM's to keep until the list maps are updated.
     const isMonthly = (currentRevenuePeriod ?? revenuePeriod) === "maandelijks";
+
+    // The category is only corrected while the deal still carries the default
+    // ('overig') AND Trello has an explicit signal (category list or label).
+    // Anything else is treated as a value someone chose — in the CRM or via an
+    // earlier explicit Trello signal — and a re-sync must not revert it.
+    const canUpdateCategory =
+      category !== DEFAULT_CATEGORY &&
+      (existingDeal.category as string | null) === DEFAULT_CATEGORY;
 
     const { error: updateError } = await supabaseAdmin
       .from("deals")
       .update({
         name,
         company_id: companyId,
-        category,
-        ...(isMonthly ? {} : { stage }),
+        ...(canUpdateCategory ? { category } : {}),
+        ...(isMonthly || !knownList ? {} : { stage }),
         expected_closing_date: expectedClosingDate,
         // Correct the historical import date to the real Trello creation date.
         // Deterministic per card, so re-syncs are idempotent.
@@ -132,6 +155,9 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
       company_id: companyId,
       category,
       stage,
+      // Internal/external classification, applied on creation only so the
+      // manual toggle in the CRM always wins afterwards.
+      is_internal: resolveIsInternal({ category, dealName: name, companyName }),
       expected_closing_date: expectedClosingDate,
       description,
       ...(amount != null ? { amount } : {}),

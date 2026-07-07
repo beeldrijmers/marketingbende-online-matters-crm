@@ -40,12 +40,16 @@ const commentAlreadyBackfilled = async ({
   date: string;
   text: string;
 }): Promise<boolean> => {
+  // .limit(1): should duplicates ever exist (e.g. two syncs raced before this
+  // check), the check must keep working instead of failing on "multiple rows"
+  // forever after.
   const { data, error } = await supabaseAdmin
     .from("deal_notes")
     .select("id")
     .eq("deal_id", dealId)
     .eq("date", date)
     .eq("text", text)
+    .limit(1)
     .maybeSingle();
   if (error) {
     throw new Error(`Could not check for existing note: ${error.message}`);
@@ -173,6 +177,12 @@ const runWithConcurrency = async <T>(
   );
 };
 
+export interface BackfillFailure {
+  cardId: string;
+  cardName: string;
+  error: string;
+}
+
 export const run = async (): Promise<{
   cardCount: number;
   synced: number;
@@ -180,6 +190,7 @@ export const run = async (): Promise<{
   totalAttachments: number;
   archivedCardsWithUploads: number;
   archivedAttachments: number;
+  failed: BackfillFailure[];
 }> => {
   const cards = await fetchTrelloBoardCards({
     boardId: BOARD_ID,
@@ -204,20 +215,38 @@ export const run = async (): Promise<{
   let synced = 0;
   let totalComments = 0;
   let totalAttachments = 0;
+  // Per-card error isolation: one broken card (a Trello 429, a card deleted
+  // mid-run, one bad record) must not abort the whole run and leave every
+  // remaining card unsynced. Failures are collected and reported in the
+  // summary instead.
+  const failed: BackfillFailure[] = [];
   await runWithConcurrency(
     cards,
     async (card) => {
-      const result = await backfillCard(card);
-      synced += 1;
-      totalComments += result.commentCount;
-      totalAttachments += result.attachmentCount;
-      // eslint-disable-next-line no-console
-      console.log(
-        `[${synced}/${cards.length}] "${card.name}" -> deal ${result.dealId} (${result.commentCount} comments)`,
-      );
+      try {
+        const result = await backfillCard(card);
+        synced += 1;
+        totalComments += result.commentCount;
+        totalAttachments += result.attachmentCount;
+        // eslint-disable-next-line no-console
+        console.log(
+          `[${synced}/${cards.length}] "${card.name}" -> deal ${result.dealId} (${result.commentCount} comments)`,
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        failed.push({ cardId: card.id, cardName: card.name, error: message });
+        console.error(`Backfill failed for card "${card.name}":`, message);
+      }
     },
     CARD_CONCURRENCY,
   );
+  // Every single card failing points at something systemic (credentials, DB
+  // down) — that should surface as a hard error, not a "successful" summary.
+  if (cards.length > 0 && failed.length === cards.length) {
+    throw new Error(
+      `Backfill failed for all ${cards.length} cards; first error: ${failed[0].error}`,
+    );
+  }
 
   // Second phase: archived cards that carry uploaded files.
   const archivedCards = await fetchTrelloBoardCards({
@@ -240,15 +269,24 @@ export const run = async (): Promise<{
   await runWithConcurrency(
     archivedWithUploads,
     async (card) => {
-      const result = await backfillArchivedCardWithUploads(card);
-      archivedAttachments += result.attachmentCount;
+      try {
+        const result = await backfillArchivedCardWithUploads(card);
+        archivedAttachments += result.attachmentCount;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        failed.push({ cardId: card.id, cardName: card.name, error: message });
+        console.error(
+          `Backfill failed for archived card "${card.name}":`,
+          message,
+        );
+      }
     },
     CARD_CONCURRENCY,
   );
 
   // eslint-disable-next-line no-console
   console.log(
-    `Done. Synced ${synced} deals, ${totalComments} comments, ${totalAttachments} new attachments, ${archivedAttachments} attachments from ${archivedWithUploads.length} archived cards.`,
+    `Done. Synced ${synced} deals, ${totalComments} comments, ${totalAttachments} new attachments, ${archivedAttachments} attachments from ${archivedWithUploads.length} archived cards, ${failed.length} failures.`,
   );
   return {
     cardCount: cards.length,
@@ -257,6 +295,7 @@ export const run = async (): Promise<{
     totalAttachments,
     archivedCardsWithUploads: archivedWithUploads.length,
     archivedAttachments,
+    failed,
   };
 };
 

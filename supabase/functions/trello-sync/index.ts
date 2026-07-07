@@ -7,12 +7,22 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { verifyTrelloWebhookRequest } from "./verifyTrelloWebhookRequest.ts";
 import { fetchTrelloCard } from "./fetchTrelloCard.ts";
 import { upsertDealFromCard } from "./upsertDealFromCard.ts";
-import { archiveDealByCardId } from "./archiveDealByCardId.ts";
+import {
+  archiveDealByCardId,
+  unarchiveDealByCardId,
+} from "./archiveDealByCardId.ts";
 import { addTrelloCommentAsDealNote } from "./addTrelloCommentAsDealNote.ts";
 import { run as runTrelloBackfill } from "./backfill.ts";
 import { WON_LIST_ID } from "./trelloListMaps.ts";
-import { isMoveToWonList, sendCardDoneNotification } from "./notifyCardDone.ts";
-import { claimWonNotification } from "./claimWonNotification.ts";
+import {
+  isCardDoneNotificationConfigured,
+  isMoveToWonList,
+  sendCardDoneNotification,
+} from "./notifyCardDone.ts";
+import {
+  claimWonNotification,
+  releaseWonNotification,
+} from "./claimWonNotification.ts";
 import { syncCardAttachments } from "./syncCardAttachments.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { AuthMiddleware } from "../_shared/authentication.ts";
@@ -129,6 +139,18 @@ Deno.serve(async (req) => {
       if (!cardId)
         return new Response("Missing action.data.card.id", { status: 403 });
       const card = await fetchTrelloCard(cardId);
+
+      // A card archived in Trello leaves the board in the CRM too, instead of
+      // being (re)confirmed as an active deal. Re-opening it (old.closed was
+      // true) brings the deal back before the normal sync below.
+      if (card.closed) {
+        await archiveDealByCardId(cardId);
+        return new Response("OK");
+      }
+      if (action.data?.old?.closed === true) {
+        await unarchiveDealByCardId(cardId);
+      }
+
       const dealId = await upsertDealFromCard(card);
       // Pull any uploaded files on the card into the CRM (idempotent,
       // best-effort: an attachment failure never fails the card sync).
@@ -141,16 +163,20 @@ Deno.serve(async (req) => {
       // When the card was just moved into "Klaar", let the team lead know the
       // project is finished (and by whom). Only fires on the actual transition,
       // and claimWonNotification makes sure a retried/duplicate webhook delivery
-      // does not e-mail twice.
+      // does not e-mail twice. The config check runs BEFORE the claim and a
+      // definitive send failure releases it again, so the one-shot is never
+      // burned without an e-mail actually going out.
       if (
         isMoveToWonList(action, WON_LIST_ID) &&
+        isCardDoneNotificationConfigured() &&
         (await claimWonNotification(dealId))
       ) {
-        await sendCardDoneNotification({
+        const sent = await sendCardDoneNotification({
           projectName: card.name,
           doneBy: action.memberCreator?.fullName ?? "Iemand",
           cardUrl: card.url,
         });
+        if (!sent) await releaseWonNotification(dealId);
       }
       return new Response("OK");
     }
@@ -168,11 +194,27 @@ Deno.serve(async (req) => {
         trelloCardId: cardId,
         authorName,
         commentText,
+        // The Trello action timestamp, not the DB default: the backfill
+        // deduplicates comments on (deal, date, text), so a comment imported
+        // live must carry the same date the actions API will later report —
+        // otherwise every "Synchroniseer Trello" run duplicates it.
+        date: action.date,
       });
       return new Response("OK");
     }
 
     if (action.type === "deleteCard") {
+      const cardId = action.data?.card?.id;
+      if (!cardId)
+        return new Response("Missing action.data.card.id", { status: 403 });
+      await archiveDealByCardId(cardId);
+      return new Response("OK");
+    }
+
+    // A card moved to ANOTHER board falls outside this board's webhook: no
+    // further updates would ever reach the CRM. Archive the deal so the board
+    // doesn't keep showing a card that is no longer maintained here.
+    if (action.type === "moveCardFromBoard") {
       const cardId = action.data?.card?.id;
       if (!cardId)
         return new Response("Missing action.data.card.id", { status: 403 });
