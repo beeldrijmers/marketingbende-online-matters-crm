@@ -256,6 +256,11 @@ alter table public.deals
 alter table public.deals
     add constraint deals_moneybird_invoice_created_by_fkey foreign key (moneybird_invoice_created_by) references public.sales(id);
 
+-- stage must be a known pipeline value (five kanban stages + 'lost'); NOT VALID
+-- so it only guards future writes, never rejects a pre-existing row.
+alter table public.deals
+    add constraint deals_stage_check check (stage in ('informatie-pipeline', 'bezig', 'on-hold', 'facturatie-live', 'won', 'lost')) not valid;
+
 alter table public.deal_notes
     add constraint "dealNotes_deal_id_fkey" foreign key (deal_id) references public.deals(id) on update cascade on delete cascade;
 
