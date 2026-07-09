@@ -78,17 +78,25 @@ jobs:
             exit 1
           fi
 
-          echo "=== CLEANUP: deleting bogus records ==="
+          echo "=== CLEANUP: deleting bogus records (exact ids from the inspect run) ==="
 
-          run_sql "DELETE test deal (notes/tasks cascade)" \
-            "delete from deals where name ilike 'Re: FW: Aanpassingen HuntingXL%' returning id, name"
+          # The inspect run identified the exact records the test forward
+          # created: contact 7 ("Inbound", email inbound@crm.marketingbende.nl),
+          # deal 62 ("Re: FW: Aanpassingen HuntingXL"), company 50
+          # ("Marketingbende"). The real customer "Hunting XL" is company 27 and
+          # is NOT touched. Deleting by exact id avoids any pattern ambiguity.
+          run_sql "DELETE test deal 62 (notes/tasks cascade)" \
+            "delete from deals where id = 62 and name ilike 'Re: FW: Aanpassingen HuntingXL%' returning id, name"
 
-          run_sql "DELETE leaked intake contact (notes/tasks cascade)" \
-            "delete from contacts where lower(email_jsonb::text) like '%@inbound.marketingbende.nl%' returning id, first_name, last_name"
+          run_sql "DELETE leaked intake contact 7 (notes/tasks cascade)" \
+            "delete from contacts where id = 7 and last_name = 'Inbound' returning id, first_name, last_name"
 
-          run_sql "DELETE the Marketingbende company ONLY if now empty (guarded)" \
-            "delete from companies c where c.name = 'Marketingbende' and not exists (select 1 from contacts x where x.company_id = c.id) and not exists (select 1 from deals d where d.company_id = c.id) returning id, name"
+          run_sql "DELETE company 50 (Marketingbende) ONLY if now empty (guarded)" \
+            "delete from companies c where c.id = 50 and c.name = 'Marketingbende' and not exists (select 1 from contacts x where x.company_id = c.id) and not exists (select 1 from deals d where d.company_id = c.id) returning id, name"
 
-          echo "=== POST-CLEANUP verification ==="
-          run_sql "remaining suspects (should be empty)" \
-            "select 'contact' as kind, id::text from contacts where lower(email_jsonb::text) like '%@inbound.marketingbende.nl%' union all select 'deal', id::text from deals where name ilike 'Re: FW: Aanpassingen HuntingXL%' union all select 'company', id::text from companies where name = 'Marketingbende'"
+          echo "=== POST-CLEANUP verification (all three should be empty) ==="
+          run_sql "remaining suspects" \
+            "select 'contact' as kind, id::text from contacts where id = 7 union all select 'deal', id::text from deals where id = 62 union all select 'company', id::text from companies where id = 50"
+
+          run_sql "real customer Hunting XL is untouched" \
+            "select id, name, (select count(*) from deals d where d.company_id = c.id) as n_deals from companies c where c.id = 27"
