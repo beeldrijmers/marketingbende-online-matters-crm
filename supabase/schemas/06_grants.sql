@@ -222,18 +222,17 @@ revoke all on sequence public.moneybird_connections_id_seq from anon, authentica
 grant all on sequence public.moneybird_company_contacts_id_seq to service_role;
 revoke all on sequence public.moneybird_company_contacts_id_seq from anon, authenticated;
 
--- Default privileges
+-- Default privileges: secure-by-default for NEW objects. Only service_role
+-- (and postgres) get automatic access; anon/authenticated are granted exactly
+-- what they need per object above. This prevents a sensitive new table from
+-- being silently auto-exposed to client roles (the root cause of the recurring
+-- grant incidents). Existing objects are unaffected - default privileges only
+-- apply at object-creation time.
 alter default privileges for role postgres in schema public grant all on sequences to postgres;
-alter default privileges for role postgres in schema public grant all on sequences to anon;
-alter default privileges for role postgres in schema public grant all on sequences to authenticated;
 alter default privileges for role postgres in schema public grant all on sequences to service_role;
 
 alter default privileges for role postgres in schema public grant all on functions to postgres;
-alter default privileges for role postgres in schema public grant all on functions to anon;
-alter default privileges for role postgres in schema public grant all on functions to authenticated;
 alter default privileges for role postgres in schema public grant all on functions to service_role;
 
 alter default privileges for role postgres in schema public grant all on tables to postgres;
-alter default privileges for role postgres in schema public grant all on tables to anon;
-alter default privileges for role postgres in schema public grant all on tables to authenticated;
 alter default privileges for role postgres in schema public grant all on tables to service_role;
