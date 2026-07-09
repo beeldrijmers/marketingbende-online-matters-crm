@@ -125,6 +125,16 @@ grant all on table public.tasks to anon;
 grant all on table public.tasks to authenticated;
 grant all on table public.tasks to service_role;
 
+-- tasks.source and tasks.trello_checkitem_id are the Trello-sync idempotency
+-- keys, written only by the edge function (service role). Client roles must not
+-- forge them, so - as with the deals moneybird columns - the table-wide
+-- insert/update grant is revoked and re-granted for the user-managed columns
+-- only (a table-wide grant otherwise beats a column-level revoke).
+revoke insert on table public.tasks from anon, authenticated;
+grant insert (id, contact_id, deal_id, type, text, due_date, done_date, sales_id) on table public.tasks to anon, authenticated;
+revoke update on table public.tasks from anon, authenticated;
+grant update (id, contact_id, deal_id, type, text, due_date, done_date, sales_id) on table public.tasks to anon, authenticated;
+
 grant all on table public.configuration to anon;
 grant all on table public.configuration to authenticated;
 grant all on table public.configuration to service_role;
