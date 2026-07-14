@@ -206,6 +206,15 @@ export const englishCrmMessages = {
         "facturatie-live": "Invoice and take the project live.",
         won: "Completed.",
       },
+      workflow: {
+        overdue: "Overdue",
+        today: "Today",
+        next: "Next",
+        plan_overdue: "Plan overdue",
+        plan_next: "Plan next step",
+        complete: "Done",
+        more: "+%{count}",
+      },
       fields: {
         name: "Name",
         description: "Description",
@@ -565,6 +574,13 @@ export const englishCrmMessages = {
     },
     dashboard: {
       deals_pipeline: "Deals Pipeline",
+      deal_actions: {
+        title: "Needs action",
+        subtitle: "The most important next steps from your kanban.",
+        open_board: "Kanban",
+        empty: "There are no open deals to handle.",
+        more: "%{count} more on the kanban board",
+      },
       revenue: {
         title: "Revenue per month",
         recurring: "Monthly recurring",

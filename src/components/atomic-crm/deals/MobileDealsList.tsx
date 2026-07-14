@@ -3,6 +3,7 @@ import {
   InfiniteListBase,
   RecordContextProvider,
   useGetIdentity,
+  useGetList,
   useListContext,
   useTranslate,
 } from "ra-core";
@@ -17,8 +18,10 @@ import MobileHeader from "../layout/MobileHeader";
 import { MobileContent } from "../layout/MobileContent";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import { AssigneesField } from "../sales/AssigneesField";
-import type { Deal, DealStage } from "../types";
+import type { Deal, DealStage, Task } from "../types";
 import { DealShow } from "./DealShow";
+import { DealWorkflowIndicator } from "./DealWorkflowIndicator";
+import { buildOpenTasksByDeal } from "./dealWorkflow";
 
 /**
  * Mobile deals view: the kanban board is desktop-only, so on mobile the deals
@@ -81,6 +84,12 @@ const DealsLayoutMobile = () => {
   const location = useLocation();
   const { dealStages } = useConfigurationContext();
   const { data, error, isPending } = useListContext<Deal>();
+  const { data: tasks = [] } = useGetList<Task>("tasks", {
+    pagination: { page: 1, perPage: 1000 },
+    sort: { field: "due_date", order: "ASC" },
+    filter: {},
+  });
+  const tasksByDeal = useMemo(() => buildOpenTasksByDeal(tasks), [tasks]);
 
   // The deal detail is a URL-driven dialog (same pattern as the desktop board):
   // tapping a row navigates to /deals/:id/show, which this list matches and
@@ -128,7 +137,10 @@ const DealsLayoutMobile = () => {
                 </h2>
                 {group.deals.map((deal) => (
                   <RecordContextProvider key={deal.id} value={deal}>
-                    <MobileDealRow deal={deal} />
+                    <MobileDealRow
+                      deal={deal}
+                      openTasks={tasksByDeal.get(deal.id) ?? []}
+                    />
                   </RecordContextProvider>
                 ))}
               </div>
@@ -153,7 +165,13 @@ const MobileDealsListSkeleton = () => (
   </div>
 );
 
-const MobileDealRow = ({ deal }: { deal: Deal }) => {
+const MobileDealRow = ({
+  deal,
+  openTasks,
+}: {
+  deal: Deal;
+  openTasks: Task[];
+}) => {
   const { currency } = useConfigurationContext();
   return (
     <Link to={`/deals/${deal.id}/show`} className="no-underline">
@@ -198,6 +216,7 @@ const MobileDealRow = ({ deal }: { deal: Deal }) => {
             className="text-xs text-muted-foreground"
           />
         </div>
+        <DealWorkflowIndicator deal={deal} openTasks={openTasks} />
       </Card>
     </Link>
   );

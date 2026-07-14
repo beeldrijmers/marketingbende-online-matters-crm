@@ -2,15 +2,17 @@ import { DragDropContext, type OnDragEndResponder } from "@hello-pangea/dnd";
 import isEqual from "lodash/isEqual";
 import {
   useDataProvider,
+  useGetList,
   useListContext,
   useNotify,
   type DataProvider,
 } from "ra-core";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
-import type { Deal } from "../types";
+import type { Deal, Task } from "../types";
 import { DealColumn } from "./DealColumn";
+import { buildOpenTasksByDeal } from "./dealWorkflow";
 import type { DealsByStage } from "./stages";
 import { getDealsByStage } from "./stages";
 
@@ -19,6 +21,12 @@ export const DealListContent = () => {
   const { data: unorderedDeals, isPending, refetch } = useListContext<Deal>();
   const dataProvider = useDataProvider();
   const notify = useNotify();
+  const { data: tasks = [] } = useGetList<Task>("tasks", {
+    pagination: { page: 1, perPage: 1000 },
+    sort: { field: "due_date", order: "ASC" },
+    filter: {},
+  });
+  const tasksByDeal = useMemo(() => buildOpenTasksByDeal(tasks), [tasks]);
 
   const [dealsByStage, setDealsByStage] = useState<DealsByStage>(
     getDealsByStage([], dealStages),
@@ -93,6 +101,7 @@ export const DealListContent = () => {
             <DealColumn
               stage={stage.value}
               deals={dealsByStage[stage.value]}
+              tasksByDeal={tasksByDeal}
               key={stage.value}
             />
           ))}
