@@ -10,8 +10,7 @@ grant usage on schema public to authenticated;
 grant usage on schema public to service_role;
 
 -- Function grants
-grant all on function public.cleanup_note_attachments() to anon;
-grant all on function public.cleanup_note_attachments() to authenticated;
+revoke all on function public.cleanup_note_attachments() from public, anon, authenticated;
 grant all on function public.cleanup_note_attachments() to service_role;
 
 grant all on function public.get_avatar_for_email(text) to anon;
@@ -33,25 +32,38 @@ grant all on function public.handle_company_saved() to anon;
 grant all on function public.handle_company_saved() to authenticated;
 grant all on function public.handle_company_saved() to service_role;
 
-grant all on function public.handle_contact_note_created_or_updated() to anon;
-grant all on function public.handle_contact_note_created_or_updated() to authenticated;
+revoke all on function public.handle_contact_note_created_or_updated() from public, anon, authenticated;
 grant all on function public.handle_contact_note_created_or_updated() to service_role;
 
 grant all on function public.handle_contact_saved() to anon;
 grant all on function public.handle_contact_saved() to authenticated;
 grant all on function public.handle_contact_saved() to service_role;
 
-grant all on function public.handle_new_user() to anon;
-grant all on function public.handle_new_user() to authenticated;
+revoke all on function public.handle_new_user() from public, anon, authenticated;
 grant all on function public.handle_new_user() to service_role;
 
-grant all on function public.handle_update_user() to anon;
-grant all on function public.handle_update_user() to authenticated;
+revoke all on function public.handle_update_user() from public, anon, authenticated;
 grant all on function public.handle_update_user() to service_role;
 
-grant all on function public.is_admin() to anon;
+revoke all on function public.is_active_crm_user() from public, anon;
+grant all on function public.is_active_crm_user() to authenticated;
+grant all on function public.is_active_crm_user() to service_role;
+
+revoke all on function public.is_admin() from public, anon;
 grant all on function public.is_admin() to authenticated;
 grant all on function public.is_admin() to service_role;
+
+revoke all on function public.ensure_deal_next_action(bigint) from public, anon, authenticated;
+grant all on function public.ensure_deal_next_action(bigint) to service_role;
+
+revoke all on function public.handle_deal_next_action() from public, anon, authenticated;
+grant all on function public.handle_deal_next_action() to service_role;
+
+revoke all on function public.set_task_due_date_default() from public, anon, authenticated;
+grant all on function public.set_task_due_date_default() to service_role;
+
+revoke all on function public.handle_task_next_action() from public, anon, authenticated;
+grant all on function public.handle_task_next_action() to service_role;
 
 grant all on function public.lowercase_email_jsonb() to anon;
 grant all on function public.lowercase_email_jsonb() to authenticated;
@@ -173,7 +185,7 @@ grant all on table public.contacts_summary to anon;
 grant all on table public.contacts_summary to authenticated;
 grant all on table public.contacts_summary to service_role;
 
-grant all on table public.init_state to anon;
+revoke all on table public.init_state from anon;
 grant all on table public.init_state to authenticated;
 grant all on table public.init_state to service_role;
 

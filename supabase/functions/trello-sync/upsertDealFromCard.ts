@@ -15,6 +15,7 @@ import { extractDealAmount } from "./extractDealAmount.ts";
 import { lookupCompanyWebsite } from "./lookupCompanyWebsite.ts";
 import { trelloCardCreatedAt } from "./trelloCardDate.ts";
 import { syncCardChecklistItems } from "./syncCardChecklistItems.ts";
+import { syncDealContactsFromCard } from "./syncDealContactsFromCard.ts";
 import type { TrelloCardInput } from "./trelloCardTypes.ts";
 
 // The prefix of the auto-generated placeholder description used before a card
@@ -34,8 +35,9 @@ const buildDealDescription = (card: TrelloCardInput): string => {
 };
 
 // Creates or updates the deal linked to a Trello card (matched via
-// trello_card_id). Fields that Trello doesn't own (amount, sales_id,
-// contact_ids) are only set on creation and never overwritten. The description
+// trello_card_id). Fields that Trello doesn't own (amount, sales_id) are only
+// enriched when empty. Contact ids are unioned with contacts found on the card
+// and existing company contacts. The description
 // is enriched from the card, but only when the existing one is still the
 // auto-generated placeholder (or empty), so manual edits survive future syncs.
 export const upsertDealFromCard = async (card: TrelloCardInput) => {
@@ -68,7 +70,7 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
 
   const { data: existingDeal, error: fetchError } = await supabaseAdmin
     .from("deals")
-    .select("id, description, amount, revenue_period, category")
+    .select("id, description, amount, revenue_period, category, contact_ids")
     .eq("trello_card_id", card.id)
     .maybeSingle();
   if (fetchError) {
@@ -87,6 +89,24 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
     // it has none yet).
     lookupWebsite: () => lookupCompanyWebsite(companyName),
   });
+
+  let contactIds = (existingDeal?.contact_ids as number[] | null) ?? [];
+  try {
+    contactIds = await syncDealContactsFromCard({
+      card,
+      companyId,
+      companyName,
+      currentContactIds: contactIds,
+      salesId,
+    });
+  } catch (error) {
+    // Contact enrichment is valuable but must never block the core card/deal
+    // sync. A later webhook or manual backfill retries it automatically.
+    console.error(
+      `Could not enrich contacts for Trello card ${card.id}:`,
+      (error as Error).message,
+    );
+  }
 
   if (existingDeal) {
     const currentDescription = existingDeal.description as string | null;
@@ -127,6 +147,7 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
       .update({
         name,
         company_id: companyId,
+        ...(contactIds.length > 0 ? { contact_ids: contactIds } : {}),
         ...(canUpdateCategory ? { category } : {}),
         ...(isMonthly || !knownList ? {} : { stage }),
         expected_closing_date: expectedClosingDate,
@@ -153,6 +174,7 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
     .insert({
       name,
       company_id: companyId,
+      ...(contactIds.length > 0 ? { contact_ids: contactIds } : {}),
       category,
       stage,
       // Internal/external classification, applied on creation only so the

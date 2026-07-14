@@ -34,10 +34,27 @@ function getLocalStorage(): Storage | null {
 }
 
 export async function getIsInitialized() {
+  // This hosted CRM is provisioned and invite-only. Never expose the legacy
+  // first-user sign-up screen on a transient database/RLS failure. Projects
+  // that intentionally need the open-source bootstrap flow can opt in locally.
+  if (import.meta.env.VITE_ALLOW_INITIAL_SETUP !== "true") {
+    return true;
+  }
+
   const storage = getLocalStorage();
   const cachedValue = storage?.getItem(IS_INITIALIZED_CACHE_KEY);
   if (cachedValue != null) {
     return cachedValue === "true";
+  }
+
+  // Production deliberately denies anonymous access to init_state. The
+  // isolated E2E onboarding test opts into the empty-installation screen via
+  // a test-only URL; markInitializedCache takes over immediately after sign-up.
+  if (
+    import.meta.env.MODE === "e2e" &&
+    new URLSearchParams(window.location.search).get("initial-setup") === "true"
+  ) {
+    return false;
   }
 
   const { data, error } = await getSupabaseClient()

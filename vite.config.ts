@@ -78,6 +78,9 @@ export default defineConfig({
           "import.meta.env.VITE_ATTACHMENTS_BUCKET": JSON.stringify(
             process.env.VITE_ATTACHMENTS_BUCKET,
           ),
+          "import.meta.env.VITE_SENTRY_DSN": JSON.stringify(
+            process.env.VITE_SENTRY_DSN,
+          ),
         }
       : undefined,
   base: "./",
@@ -88,7 +91,10 @@ export default defineConfig({
     exclude: ["@supabase/realtime-js"],
   },
   build: {
-    sourcemap: true,
+    // GitHub Pages serves every file in dist publicly. Do not publish source
+    // maps containing the complete application source; Sentry still captures
+    // stack traces and React component stacks through the runtime SDK.
+    sourcemap: false,
     rollupOptions: {
       output: {
         // Stable vendor chunks: the app deploys often, and without this every

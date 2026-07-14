@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, FileText, Receipt } from "lucide-react";
 import {
   useGetOne,
@@ -177,6 +177,7 @@ const MoneybirdDocumentDialog = ({
   const blocked = missingCompany || missingAmount || wrongCurrency;
 
   const contactCount = record.contact_ids?.length ?? 0;
+  const queryClient = useQueryClient();
 
   const { mutateAsync } = useMutation({
     mutationKey: ["deals", "moneybird", kind, record.id],
@@ -192,6 +193,7 @@ const MoneybirdDocumentDialog = ({
     try {
       setIsCreating(true);
       await mutateAsync();
+      await queryClient.invalidateQueries({ queryKey: ["deals"] });
       notify(`resources.deals.moneybird.${kind}.success`, { type: "success" });
       refresh();
       onClose();

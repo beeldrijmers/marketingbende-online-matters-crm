@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CircleX, Pencil, Save } from "lucide-react";
 import {
   Form,
@@ -40,6 +40,7 @@ export const ProfilePage = () => {
   const translate = useTranslate();
   const notify = useNotify();
   const dataProvider = useDataProvider<CrmDataProvider>();
+  const queryClient = useQueryClient();
 
   const { mutate } = useMutation({
     mutationKey: ["signup"],
@@ -53,7 +54,8 @@ export const ProfilePage = () => {
       }
       return dataProvider.salesUpdate(identity.id, data);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["sales"] });
       refetchIdentity();
       refetchUser();
       setEditMode(false);
@@ -101,6 +103,7 @@ const ProfileForm = ({
   const { identity, refetch } = useGetIdentity();
   const { isDirty } = useFormState();
   const dataProvider = useDataProvider<CrmDataProvider>();
+  const queryClient = useQueryClient();
 
   const { mutate: updatePassword } = useMutation({
     mutationKey: ["updatePassword"],
@@ -114,7 +117,8 @@ const ProfileForm = ({
       }
       return dataProvider.updatePassword(identity.id);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["sales"] });
       notify("crm.profile.password_reset_sent", {
         messageArgs: {
           _: "A reset password email has been sent to your email address",

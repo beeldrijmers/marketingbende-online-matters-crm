@@ -25,11 +25,13 @@ export const TasksListByDueDate = ({
   scope = "mine",
   emptyPlaceholder,
   pendingPlaceholder,
+  limit,
 }: {
   filterByContact?: Identifier;
   scope?: "mine" | "all";
   emptyPlaceholder?: React.ReactNode;
   pendingPlaceholder?: React.ReactNode;
+  limit?: number;
 }) => {
   const { identity } = useGetIdentity();
   const isMobile = useIsMobile();
@@ -56,10 +58,11 @@ export const TasksListByDueDate = ({
 
   const showContact = filterByContact == null;
 
-  const ongoingTasks = useMemo(
-    () => tasks?.filter((task) => !isDone(task) || isRecentlyDone(task)) || [],
-    [tasks],
-  );
+  const ongoingTasks = useMemo(() => {
+    const ongoing =
+      tasks?.filter((task) => !isDone(task) || isRecentlyDone(task)) || [];
+    return limit == null ? ongoing : ongoing.slice(0, limit);
+  }, [limit, tasks]);
 
   // Steps synced from Trello often have no due date. new Date(null) is 1970, so
   // without this guard those tasks would all be classed as "overdue"; instead

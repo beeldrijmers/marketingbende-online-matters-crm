@@ -42,6 +42,12 @@ create or replace trigger sync_deal_on_hold_trigger
     before insert or update on public.deals
     for each row execute function public.sync_deal_on_hold();
 
+-- Keep every actionable deal supplied with one dated next step. A concrete
+-- manual or Trello task replaces the generic automatic reminder.
+create or replace trigger ensure_deal_next_action_trigger
+    after insert or update of stage, expected_closing_date, archived_at, sales_id on public.deals
+    for each row execute function public.handle_deal_next_action();
+
 create or replace trigger set_deal_notes_sales_id_trigger
     before insert on public.deal_notes
     for each row execute function public.set_sales_id_default();
@@ -49,6 +55,14 @@ create or replace trigger set_deal_notes_sales_id_trigger
 create or replace trigger set_task_sales_id_trigger
     before insert on public.tasks
     for each row execute function public.set_sales_id_default();
+
+create or replace trigger set_task_due_date_default_trigger
+    before insert or update of deal_id, due_date on public.tasks
+    for each row execute function public.set_task_due_date_default();
+
+create or replace trigger ensure_next_action_after_task_change_trigger
+    after insert or update of deal_id, done_date or delete on public.tasks
+    for each row execute function public.handle_task_next_action();
 
 -- Auto-fetch company logo from website favicon on save
 create or replace trigger company_saved

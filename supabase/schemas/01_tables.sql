@@ -166,14 +166,14 @@ create table public.tasks (
     due_date timestamp with time zone,
     done_date timestamp with time zone,
     sales_id bigint,
-    -- Where the task originated: a person created it ('manual') or it mirrors a
-    -- Trello checklist item ('trello'). Trello-sourced tasks are kept in sync
-    -- with, and written back to, their card.
+    -- Where the task originated: a person ('manual'), a mirrored Trello
+    -- checklist item ('trello'), or the CRM's next-action guard ('auto').
+    -- Trello-sourced tasks are kept in sync with, and written back to, their card.
     source text not null default 'manual',
     -- The Trello checklist item this task mirrors (null for manual tasks). Used
     -- as the idempotency key for the sync and to write completions back.
     trello_checkitem_id text,
-    constraint tasks_source_check check (source in ('manual', 'trello')),
+    constraint tasks_source_check check (source in ('manual', 'trello', 'auto')),
     constraint tasks_contact_or_deal_check
         check (contact_id is not null or deal_id is not null)
 );
@@ -313,6 +313,16 @@ create index deals_company_id_idx on public.deals using btree (company_id);
 create index tasks_sales_id_due_date_idx on public.tasks using btree (sales_id, due_date);
 create index tasks_deal_id_idx on public.tasks using btree (deal_id);
 create index tasks_contact_id_idx on public.tasks using btree (contact_id);
+create index companies_sales_id_idx on public.companies using btree (sales_id);
+create index contacts_sales_id_idx on public.contacts using btree (sales_id);
+create index contact_notes_sales_id_idx on public.contact_notes using btree (sales_id);
+create index deal_notes_sales_id_idx on public.deal_notes using btree (sales_id);
+create index deals_sales_id_idx on public.deals using btree (sales_id);
+create index deals_moneybird_estimate_created_by_idx on public.deals using btree (moneybird_estimate_created_by);
+create index deals_moneybird_invoice_created_by_idx on public.deals using btree (moneybird_invoice_created_by);
+create index contacts_email_jsonb_idx on public.contacts using gin (email_jsonb);
+create index deals_active_stage_closing_idx on public.deals using btree (stage, expected_closing_date) where (archived_at is null);
+create index tasks_open_due_date_idx on public.tasks using btree (due_date) where (done_date is null);
 create unique index uq__tasks__trello_checkitem_id on public.tasks using btree (trello_checkitem_id) where (trello_checkitem_id is not null);
 create unique index uq__deals__trello_card_id on public.deals using btree (trello_card_id) where (trello_card_id is not null);
 create unique index uq__deals__moneybird_estimate_id on public.deals using btree (moneybird_estimate_id) where (moneybird_estimate_id is not null);

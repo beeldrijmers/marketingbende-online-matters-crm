@@ -127,8 +127,31 @@ const DealsLayoutMobile = () => {
           </p>
         ) : (
           <div className="flex flex-col gap-6">
+            <nav
+              aria-label="Spring naar dealfase"
+              className="sticky top-14 z-10 -mx-4 flex gap-2 overflow-x-auto border-y bg-background/95 px-4 py-2 backdrop-blur"
+            >
+              {groups.map((group) => (
+                <button
+                  key={group.key}
+                  type="button"
+                  className="shrink-0 rounded-full border bg-background px-3 py-1.5 text-xs font-medium"
+                  onClick={() =>
+                    document
+                      .getElementById(`deal-stage-${group.key}`)
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }
+                >
+                  {group.label} · {group.deals.length}
+                </button>
+              ))}
+            </nav>
             {groups.map((group) => (
-              <div key={group.key} className="flex flex-col gap-2">
+              <section
+                id={`deal-stage-${group.key}`}
+                key={group.key}
+                className="flex scroll-mt-28 flex-col gap-2"
+              >
                 <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   {group.label}
                   <span className="text-muted-foreground/70">
@@ -143,7 +166,7 @@ const DealsLayoutMobile = () => {
                     />
                   </RecordContextProvider>
                 ))}
-              </div>
+              </section>
             ))}
           </div>
         )}

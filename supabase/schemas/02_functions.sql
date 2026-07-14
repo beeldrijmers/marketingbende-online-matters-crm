@@ -274,14 +274,190 @@ begin
 end;
 $$;
 
+CREATE OR REPLACE FUNCTION "public"."is_active_crm_user"() RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+  select exists (
+    select 1
+    from public.sales
+    where user_id = auth.uid()
+      and disabled = false
+  );
+$$;
+
 CREATE OR REPLACE FUNCTION "public"."is_admin"() RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
 begin
   return exists (
-    select 1 from public.sales where user_id = auth.uid() and administrator = true
+    select 1
+    from public.sales
+    where user_id = auth.uid()
+      and administrator = true
+      and disabled = false
   );
+end;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."ensure_deal_next_action"("target_deal_id" bigint) RETURNS void
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+declare
+  deal_record record;
+  action_text text;
+  action_due timestamptz;
+begin
+  select id, stage, archived_at, expected_closing_date, sales_id
+  into deal_record
+  from public.deals
+  where id = target_deal_id;
+
+  if not found then
+    return;
+  end if;
+
+  -- Completed, lost, archived and consciously paused deals should not create
+  -- noise in the action queue. Any old automatic reminder can be removed.
+  if deal_record.archived_at is not null
+     or deal_record.stage in ('won', 'lost', 'on-hold') then
+    delete from public.tasks
+    where deal_id = target_deal_id
+      and source = 'auto'
+      and done_date is null;
+    return;
+  end if;
+
+  -- A real manual/Trello task always wins. Remove the generic reminder once a
+  -- person or Trello supplied a concrete next step.
+  if exists (
+    select 1
+    from public.tasks
+    where deal_id = target_deal_id
+      and done_date is null
+      and source <> 'auto'
+  ) then
+    delete from public.tasks
+    where deal_id = target_deal_id
+      and source = 'auto'
+      and done_date is null;
+    return;
+  end if;
+
+  if exists (
+    select 1
+    from public.tasks
+    where deal_id = target_deal_id
+      and done_date is null
+      and source = 'auto'
+  ) then
+    return;
+  end if;
+
+  action_text := case deal_record.stage
+    when 'informatie-pipeline' then 'Kwalificeer de deal en plan het vervolggesprek'
+    when 'bezig' then 'Werk de volgende dealstap af'
+    when 'facturatie-live' then 'Controleer de gegevens en maak de Moneybird-factuur'
+    else 'Plan de volgende stap voor deze deal'
+  end;
+
+  action_due := case
+    when deal_record.expected_closing_date is not null
+         and deal_record.expected_closing_date >= current_date
+      then deal_record.expected_closing_date::timestamptz + interval '9 hours'
+    when deal_record.stage = 'facturatie-live'
+      then now() + interval '1 day'
+    when deal_record.stage = 'informatie-pipeline'
+      then now() + interval '1 day'
+    else now() + interval '3 days'
+  end;
+
+  insert into public.tasks (
+    deal_id,
+    type,
+    text,
+    due_date,
+    sales_id,
+    source
+  ) values (
+    target_deal_id,
+    'none',
+    action_text,
+    action_due,
+    deal_record.sales_id,
+    'auto'
+  );
+end;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."handle_deal_next_action"() RETURNS trigger
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+begin
+  perform public.ensure_deal_next_action(new.id);
+  return new;
+end;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."set_task_due_date_default"() RETURNS trigger
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+declare
+  deal_record record;
+begin
+  if new.due_date is not null then
+    return new;
+  end if;
+
+  if new.deal_id is not null then
+    select stage, expected_closing_date
+    into deal_record
+    from public.deals
+    where id = new.deal_id;
+
+    new.due_date := case
+      when deal_record.expected_closing_date is not null
+           and deal_record.expected_closing_date >= current_date
+        then deal_record.expected_closing_date::timestamptz + interval '9 hours'
+      when deal_record.stage in ('facturatie-live', 'informatie-pipeline')
+        then now() + interval '1 day'
+      else now() + interval '3 days'
+    end;
+  else
+    new.due_date := now() + interval '3 days';
+  end if;
+
+  return new;
+end;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."handle_task_next_action"() RETURNS trigger
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+declare
+  current_deal_id bigint;
+  previous_deal_id bigint;
+begin
+  current_deal_id := case when tg_op = 'DELETE' then old.deal_id else new.deal_id end;
+  previous_deal_id := case when tg_op = 'UPDATE' then old.deal_id else null end;
+
+  if current_deal_id is not null then
+    perform public.ensure_deal_next_action(current_deal_id);
+  end if;
+
+  if previous_deal_id is not null and previous_deal_id is distinct from current_deal_id then
+    perform public.ensure_deal_next_action(previous_deal_id);
+  end if;
+
+  if tg_op = 'DELETE' then
+    return old;
+  end if;
+  return new;
 end;
 $$;
 

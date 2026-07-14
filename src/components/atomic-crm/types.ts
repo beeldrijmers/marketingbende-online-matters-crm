@@ -175,7 +175,7 @@ export type Tag = {
   color: string;
 };
 
-export type TaskSource = "manual" | "trello";
+export type TaskSource = "manual" | "trello" | "auto";
 
 export type Task = {
   // A task is anchored to a contact, a deal, or both. Trello-synced deal steps
@@ -187,8 +187,8 @@ export type Task = {
   due_date: string;
   done_date?: string | null;
   sales_id?: Identifier;
-  // 'trello' tasks mirror a Trello checklist item and are kept in two-way sync
-  // with their card via trello_checkitem_id.
+  // 'trello' tasks mirror a checklist item; 'auto' is the dated fallback the
+  // CRM creates while a deal has no concrete manual/Trello next step.
   source?: TaskSource;
   trello_checkitem_id?: string | null;
 } & Pick<RaRecord, "id">;

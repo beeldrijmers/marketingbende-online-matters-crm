@@ -173,6 +173,7 @@ const ProfileSection = () => {
           ...data,
           [field]: value,
         } as SalesFormData);
+        await queryClient.invalidateQueries({ queryKey: ["sales"] });
         refetchIdentity();
         refetchUser();
         notify("crm.profile.updated", {
@@ -202,6 +203,7 @@ const ProfileSection = () => {
       if (!data) return;
       try {
         await dataProvider.salesUpdate(data.id, values);
+        await queryClient.invalidateQueries({ queryKey: ["sales"] });
         refetchIdentity();
         refetchUser();
         notify("crm.profile.updated", {
@@ -214,7 +216,7 @@ const ProfileSection = () => {
         });
       }
     },
-    [data, dataProvider, refetchIdentity, refetchUser, notify],
+    [data, dataProvider, queryClient, refetchIdentity, refetchUser, notify],
   );
 
   if (!identity || !data) return null;

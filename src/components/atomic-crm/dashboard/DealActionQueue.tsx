@@ -26,7 +26,7 @@ import {
 import { Task } from "../tasks/Task";
 import type { Deal, Task as TaskRecord } from "../types";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 3;
 
 export const DealActionQueue = () => {
   const translate = useTranslate();

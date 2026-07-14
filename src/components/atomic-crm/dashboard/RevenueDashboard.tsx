@@ -1,7 +1,14 @@
 import { ResponsiveBar } from "@nivo/bar";
-import { Repeat, Coins, LineChart, TrendingUp } from "lucide-react";
+import {
+  AlertTriangle,
+  Repeat,
+  Coins,
+  LineChart,
+  TrendingUp,
+} from "lucide-react";
 import { useGetList, useTranslate } from "ra-core";
 import { memo, useMemo } from "react";
+import { Link } from "react-router";
 
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -153,10 +160,26 @@ export const RevenueDashboard = memo(() => {
           value={formatEuro(model.openPipeline)}
           sub={t(
             "crm.dashboard.revenue.forecast_sub",
-            "open deals, gewogen naar fase",
+            "geplande open deals, gewogen naar fase",
           )}
         />
       </div>
+
+      {model.unplannedDealCount > 0 ? (
+        <Link
+          to="/deals"
+          className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm no-underline"
+        >
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <span className="min-w-0 flex-1 text-foreground">
+            <strong>{model.unplannedDealCount} deals zonder planning</strong>
+            <span className="block text-xs text-muted-foreground">
+              {formatEuro(model.unplannedPipeline)} gewogen pipeline is bewust
+              niet in een maand geplaatst. Voeg een verwachte afsluitdatum toe.
+            </span>
+          </span>
+        </Link>
+      ) : null}
 
       <Card className="p-6">
         <div className="h-[360px]">

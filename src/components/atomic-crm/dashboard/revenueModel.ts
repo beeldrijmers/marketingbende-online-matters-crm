@@ -23,8 +23,6 @@ const WON_STAGE = "won";
 // counts as a running subscription (MRR / realized revenue) once it reaches
 // one of these stages; before that it is open pipeline and belongs to the
 // forecast instead.
-const REALIZED_RECURRING_STAGES = ["facturatie-live", WON_STAGE];
-
 // Probability weight per pipeline stage for the forecast of open (not-yet-won)
 // deals - the same philosophy as the "Verwachte deal-omzet" chart.
 const STAGE_WEIGHT: Record<string, number> = {
@@ -49,6 +47,8 @@ export interface RevenueModel {
   mrr: number;
   oneOffThisYear: number;
   openPipeline: number;
+  unplannedDealCount: number;
+  unplannedPipeline: number;
 }
 
 // A deal is recurring only when explicitly marked as monthly. A deal without
@@ -68,11 +68,33 @@ const oneOffMonth = (deal: Deal): Date | null => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+// Forecasting requires a deliberate planning date. created_at describes when
+// the card entered the CRM and must never silently become this month's close.
+const forecastMonth = (deal: Deal): Date | null => {
+  const raw = deal.expected_closing_date ?? deal.delivery_date;
+  if (!raw) return null;
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const hasCompletedInvoice = (deal: Deal): boolean =>
+  Boolean(deal.moneybird_invoice_id) &&
+  deal.moneybird_invoice_status === "completed";
+
+const isRealizedRecurring = (deal: Deal): boolean =>
+  deal.stage === WON_STAGE ||
+  (deal.stage === "facturatie-live" && hasCompletedInvoice(deal));
+
 export const buildRevenueModel = (deals: Deal[], now: Date): RevenueModel => {
   const currentMonth = startOfMonth(now);
   const lastForecastMonth = startOfMonth(addMonths(now, MONTHS_FORWARD));
   const active = deals.filter(
-    (deal) => !deal.archived_at && deal.stage !== LOST_STAGE && deal.amount,
+    (deal) =>
+      !deal.archived_at &&
+      deal.stage !== LOST_STAGE &&
+      deal.stage !== "on-hold" &&
+      !deal.on_hold &&
+      deal.amount,
   );
 
   const recurring = active.filter(isRecurringDeal);
@@ -81,9 +103,7 @@ export const buildRevenueModel = (deals: Deal[], now: Date): RevenueModel => {
   // Realized revenue only counts deals that are actually invoiced: running
   // (live/won) subscriptions and won one-off projects. Deals still in the
   // Nieuw/Bezig/In de wacht stages are forecast, not realized.
-  const liveRecurring = recurring.filter((deal) =>
-    REALIZED_RECURRING_STAGES.includes(deal.stage),
-  );
+  const liveRecurring = recurring.filter(isRealizedRecurring);
   const wonOneoff = oneoff.filter((deal) => deal.stage === WON_STAGE);
 
   // Open pipeline: every active deal that is not realized yet. This single
@@ -91,9 +111,11 @@ export const buildRevenueModel = (deals: Deal[], now: Date): RevenueModel => {
   // bars, so the tile and the chart always tell the same story.
   const openDeals = active.filter((deal) =>
     isRecurringDeal(deal)
-      ? !REALIZED_RECURRING_STAGES.includes(deal.stage)
+      ? !isRealizedRecurring(deal)
       : deal.stage !== WON_STAGE,
   );
+  const plannedOpenDeals = openDeals.filter((deal) => forecastMonth(deal));
+  const unplannedOpenDeals = openDeals.filter((deal) => !forecastMonth(deal));
 
   // Monthly recurring revenue: every running subscription fee, summed.
   // Projected flat into the future as the recurring part of the forecast.
@@ -105,7 +127,7 @@ export const buildRevenueModel = (deals: Deal[], now: Date): RevenueModel => {
   // deal vanishes from the bars and their sum matches the forecast tile
   // (plus the projected MRR).
   const expectedMonth = (deal: Deal): Date => {
-    const raw = oneOffMonth(deal) ?? now;
+    const raw = forecastMonth(deal)!;
     const month = startOfMonth(raw);
     if (isBefore(month, currentMonth)) return currentMonth;
     if (isAfter(month, lastForecastMonth)) return lastForecastMonth;
@@ -145,7 +167,7 @@ export const buildRevenueModel = (deals: Deal[], now: Date): RevenueModel => {
     const prognoseOpen =
       offset < 0
         ? 0
-        : openDeals.reduce((sum, deal) => {
+        : plannedOpenDeals.reduce((sum, deal) => {
             return isSameMonth(expectedMonth(deal), monthStart)
               ? sum + (deal.amount ?? 0) * weightForStage(deal.stage)
               : sum;
@@ -168,7 +190,11 @@ export const buildRevenueModel = (deals: Deal[], now: Date): RevenueModel => {
 
   // Total stage-weighted value of the open pipeline, for the forecast tile.
   // Same population and weights as the forecast bars above.
-  const openPipeline = openDeals.reduce(
+  const openPipeline = plannedOpenDeals.reduce(
+    (sum, deal) => sum + (deal.amount ?? 0) * weightForStage(deal.stage),
+    0,
+  );
+  const unplannedPipeline = unplannedOpenDeals.reduce(
     (sum, deal) => sum + (deal.amount ?? 0) * weightForStage(deal.stage),
     0,
   );
@@ -178,5 +204,7 @@ export const buildRevenueModel = (deals: Deal[], now: Date): RevenueModel => {
     mrr,
     oneOffThisYear,
     openPipeline: Math.round(openPipeline),
+    unplannedDealCount: unplannedOpenDeals.length,
+    unplannedPipeline: Math.round(unplannedPipeline),
   };
 };

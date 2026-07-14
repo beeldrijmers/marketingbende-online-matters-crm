@@ -1,5 +1,5 @@
 import { useFieldValue, useTranslate } from "ra-core";
-import { createRef, useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { ReactCropperElement } from "react-cropper";
 import { Cropper } from "react-cropper";
 import { useDropzone } from "react-dropzone";
@@ -90,7 +90,7 @@ const ImageEditorField = (props: ImageEditorFieldProps) => {
 const ImageEditorDialog = (props: ImageEditorDialogProps) => {
   const translate = useTranslate();
   const { setValue, handleSubmit } = useFormContext();
-  const cropperRef = createRef<ReactCropperElement>();
+  const cropperRef = useRef<ReactCropperElement>(null);
   const initialValue = useFieldValue({ source: props.source });
   const [file, setFile] = useState<File | undefined>();
   const [imageSrc, setImageSrc] = useState<string | undefined>(

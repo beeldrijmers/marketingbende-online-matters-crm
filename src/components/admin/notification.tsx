@@ -56,6 +56,10 @@ export const Notification = (props: ToasterProps) => {
           window.addEventListener("beforeunload", beforeunload);
         }
 
+        const removeBeforeUnloadListener = () => {
+          window.removeEventListener("beforeunload", beforeunload);
+        };
+
         const mutation = takeMutation();
 
         const handleExited = () => {
@@ -63,7 +67,7 @@ export const Notification = (props: ToasterProps) => {
             if (mutation) {
               mutation({ isUndo: false });
             }
-            window.removeEventListener("beforeunload", beforeunload);
+            removeBeforeUnloadListener();
           }
         };
 
@@ -71,7 +75,7 @@ export const Notification = (props: ToasterProps) => {
           if (mutation) {
             mutation({ isUndo: true });
           }
-          window.removeEventListener("beforeunload", beforeunload);
+          removeBeforeUnloadListener();
         };
 
         const finalMessage = message
@@ -96,6 +100,10 @@ export const Notification = (props: ToasterProps) => {
           onDismiss: handleExited,
           onAutoClose: handleExited,
         });
+
+        // A route/layout change can unmount the toaster before Sonner invokes
+        // onDismiss. Never leave a stale navigation blocker behind.
+        return removeBeforeUnloadListener;
       }
     }
   }, [notifications, takeMutation, takeNotification, translate]);
