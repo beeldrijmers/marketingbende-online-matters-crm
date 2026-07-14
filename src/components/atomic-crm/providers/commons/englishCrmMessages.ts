@@ -496,8 +496,11 @@ export const englishCrmMessages = {
         "Please follow the link we just sent you by email to confirm your account.",
       recovery_email_sent:
         "If you're a registered user, you should receive a password recovery email shortly.",
+      hide_password: "Hide password",
+      show_password: "Show password",
       sign_in_failed: "Failed to log in.",
       sign_in_google_workspace: "Sign in with Google Workspace",
+      signing_in: "Signing in...",
       signup: {
         create_account: "Create account",
         create_first_user:
