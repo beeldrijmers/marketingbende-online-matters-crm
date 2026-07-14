@@ -564,7 +564,9 @@ export const frenchCrmMessages = {
       at_company: "chez",
       to: "à",
       load_more: "Charger plus d'activité",
+      open_item: "Ouvrir",
       someone: "un membre de l'équipe",
+      trello_attachment: "Pièce jointe Trello",
       today: "Aujourd'hui",
       yesterday: "Hier",
     },
@@ -585,11 +587,22 @@ export const frenchCrmMessages = {
     dashboard: {
       deals_pipeline: "Pipeline des affaires",
       deal_actions: {
-        title: "À traiter",
-        subtitle: "Les prochaines étapes prioritaires de votre kanban.",
+        title: "Ceci requiert votre attention",
+        subtitle:
+          "Uniquement les écarts : en retard, aujourd'hui, expiré ou non planifié.",
         open_board: "Kanban",
-        empty: "Il n'y a aucune affaire ouverte à traiter.",
-        more: "Encore %{count} sur le tableau kanban",
+        empty_title: "Tout est sous contrôle",
+        empty: "Il n'y a aucune affaire en retard ou non planifiée.",
+        next_task: "Prochaine tâche",
+        recommended_action: "Prochaine étape recommandée",
+        summary: "Résumé des points d'attention",
+        counts: {
+          overdue: "%{count} en retard",
+          today: "%{count} aujourd'hui",
+          planning: "%{count} planifications expirées",
+          unplanned: "%{count} sans planification",
+        },
+        more: "Encore %{count} points d'attention sur le tableau kanban",
       },
       revenue: {
         title: "Chiffre d'affaires par mois",

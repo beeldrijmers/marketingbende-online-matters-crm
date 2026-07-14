@@ -104,7 +104,6 @@ const DealLayout = () => {
         </p>
       ) : null}
       <DealListContent />
-      <DealArchivedList />
       <DealCreate open={!!matchCreate} />
       <DealEdit open={!!matchEdit && !matchCreate} id={matchEdit?.params.id} />
       <DealShow open={!!matchShow} id={matchShow?.params.id} />
@@ -137,6 +136,7 @@ const DealActions = () => (
   <TopToolbar>
     <SyncTrelloButton />
     <FilterButton />
+    <DealArchivedList />
     <ExportButton />
     <CreateButton label="resources.deals.action.new" />
   </TopToolbar>

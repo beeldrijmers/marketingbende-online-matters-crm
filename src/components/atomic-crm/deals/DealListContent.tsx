@@ -95,8 +95,8 @@ export const DealListContent = () => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="overflow-x-auto pb-2">
-        <div className="flex gap-4">
+      <div className="h-[calc(100dvh-11rem)] min-h-80 overflow-x-auto overscroll-contain pb-2">
+        <div className="flex h-full gap-4">
           {dealStages.map((stage) => (
             <DealColumn
               stage={stage.value}

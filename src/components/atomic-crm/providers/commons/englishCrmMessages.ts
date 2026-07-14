@@ -554,7 +554,9 @@ export const englishCrmMessages = {
       at_company: "at",
       to: "to",
       load_more: "Load more activity",
+      open_item: "Open",
       someone: "a team member",
+      trello_attachment: "Trello attachment",
       today: "Today",
       yesterday: "Yesterday",
     },
@@ -575,11 +577,22 @@ export const englishCrmMessages = {
     dashboard: {
       deals_pipeline: "Deals Pipeline",
       deal_actions: {
-        title: "Needs action",
-        subtitle: "The most important next steps from your kanban.",
+        title: "This needs your attention",
+        subtitle:
+          "Exceptions only: overdue, due today, expired or not yet planned.",
         open_board: "Kanban",
-        empty: "There are no open deals to handle.",
-        more: "%{count} more on the kanban board",
+        empty_title: "Everything is under control",
+        empty: "There are no overdue or unplanned deals.",
+        next_task: "Next task",
+        recommended_action: "Recommended next step",
+        summary: "Attention summary",
+        counts: {
+          overdue: "%{count} overdue",
+          today: "%{count} today",
+          planning: "%{count} plans expired",
+          unplanned: "%{count} without a plan",
+        },
+        more: "%{count} more attention items on the kanban board",
       },
       revenue: {
         title: "Revenue per month",

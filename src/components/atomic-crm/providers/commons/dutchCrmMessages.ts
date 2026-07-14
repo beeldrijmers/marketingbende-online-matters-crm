@@ -560,7 +560,9 @@ export const dutchCrmMessages = {
       at_company: "bij",
       to: "aan",
       load_more: "Meer activiteit laden",
+      open_item: "Openen",
       someone: "een teamlid",
+      trello_attachment: "Trello-bijlage",
       today: "Vandaag",
       yesterday: "Gisteren",
     },
@@ -581,11 +583,22 @@ export const dutchCrmMessages = {
     dashboard: {
       deals_pipeline: "Deals pipeline",
       deal_actions: {
-        title: "Af te handelen",
-        subtitle: "De belangrijkste volgende stappen uit uw kanban.",
+        title: "Dit heeft je aandacht nodig",
+        subtitle:
+          "Alleen afwijkingen: te laat, vandaag, verlopen of nog niet gepland.",
         open_board: "Kanban",
-        empty: "Er zijn geen open deals om af te handelen.",
-        more: "Nog %{count} op het kanbanbord",
+        empty_title: "Alles onder controle",
+        empty: "Er zijn geen achterstallige of ongeplande deals.",
+        next_task: "Volgende taak",
+        recommended_action: "Aanbevolen volgende stap",
+        summary: "Samenvatting aandachtspunten",
+        counts: {
+          overdue: "%{count} te laat",
+          today: "%{count} vandaag",
+          planning: "%{count} planning verlopen",
+          unplanned: "%{count} zonder planning",
+        },
+        more: "Nog %{count} aandachtspunten op het kanbanbord",
       },
       revenue: {
         title: "Omzet per maand",
