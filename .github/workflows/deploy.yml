@@ -61,7 +61,7 @@ jobs:
                   git config --global user.name github-actions-bot
 
             - name: ⚙️ Setup supabase
-              uses: supabase/setup-cli@v1
+              uses: supabase/setup-cli@v2
 
             - name: 📥 Download deps
               run: npm ci
