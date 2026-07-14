@@ -16,7 +16,6 @@ import { lookupCompanyWebsite } from "./lookupCompanyWebsite.ts";
 import { trelloCardCreatedAt } from "./trelloCardDate.ts";
 import { syncCardChecklistItems } from "./syncCardChecklistItems.ts";
 import type { TrelloCardInput } from "./trelloCardTypes.ts";
-import { redactSensitiveDescription } from "./redactSensitiveDescription.ts";
 
 // The prefix of the auto-generated placeholder description used before a card
 // carried a real description. A deal whose description is still this placeholder
@@ -28,7 +27,7 @@ const LEGACY_DESCRIPTION_PREFIX = "Gemigreerd vanuit Trello:";
 // has one, with a link back to the source card appended; otherwise the legacy
 // placeholder so the source is always traceable.
 const buildDealDescription = (card: TrelloCardInput): string => {
-  const trimmed = redactSensitiveDescription(card.desc ?? "").trim();
+  const trimmed = (card.desc ?? "").trim();
   return trimmed
     ? `${trimmed}\n\nBron (Trello): ${card.url}`
     : `${LEGACY_DESCRIPTION_PREFIX} ${card.url}`;
@@ -95,16 +94,6 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
       card.desc.trim().length > 0 &&
       (!currentDescription ||
         currentDescription.startsWith(LEGACY_DESCRIPTION_PREFIX));
-    // Older imports may already contain credentials because the first Trello
-    // backfill copied card descriptions verbatim. Only scrub descriptions that
-    // are traceably owned by this Trello card; never rewrite a manual CRM note.
-    const redactedCurrentDescription = redactSensitiveDescription(
-      currentDescription ?? "",
-    );
-    const canRedactImportedDescription =
-      !!currentDescription &&
-      currentDescription.includes(`Bron (Trello): ${card.url}`) &&
-      redactedCurrentDescription !== currentDescription;
 
     // Back-fill the amount only when the deal has none yet; never overwrite a
     // value someone entered/adjusted manually in the CRM.
@@ -144,11 +133,7 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
         // Correct the historical import date to the real Trello creation date.
         // Deterministic per card, so re-syncs are idempotent.
         ...(createdAt ? { created_at: createdAt } : {}),
-        ...(canEnrichDescription
-          ? { description }
-          : canRedactImportedDescription
-            ? { description: redactedCurrentDescription }
-            : {}),
+        ...(canEnrichDescription ? { description } : {}),
         ...(canEnrichAmount ? { amount } : {}),
         ...(canEnrichRevenuePeriod ? { revenue_period: revenuePeriod } : {}),
       })
