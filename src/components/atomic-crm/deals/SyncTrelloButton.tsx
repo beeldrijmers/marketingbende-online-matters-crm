@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { useDataProvider, useNotify, useRefresh, useTranslate } from "ra-core";
 
@@ -13,16 +13,22 @@ export const SyncTrelloButton = () => {
   const notify = useNotify();
   const refresh = useRefresh();
   const dataProvider = useDataProvider<CrmDataProvider>();
+  const queryClient = useQueryClient();
 
   const { mutate, isPending } = useMutation({
     mutationKey: ["trello-sync", "sync_all"],
     mutationFn: () => dataProvider.syncTrelloCards(),
-    onSuccess: (summary) => {
+    onSuccess: async (summary) => {
       const notification = getTrelloSyncNotification(summary);
       notify(notification.message, {
         type: notification.type,
         messageArgs: notification.messageArgs,
       });
+      await Promise.all(
+        ["deals", "tasks", "companies", "contacts", "deal_notes"].map(
+          (resource) => queryClient.invalidateQueries({ queryKey: [resource] }),
+        ),
+      );
       refresh();
     },
     onError: (error) => {

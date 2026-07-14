@@ -710,6 +710,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/dashboard/RevenueDisclosure.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/dashboard/RevenueDashboard.tsx",
           "type": "registry:component"
         },
@@ -743,6 +747,10 @@
         },
         {
           "path": "src/components/atomic-crm/dashboard/Dashboard.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/dashboard/BillingQueue.tsx",
           "type": "registry:component"
         },
         {

@@ -21,10 +21,10 @@ export function DashboardActivityLog() {
         </h2>
       </div>
       {isMobile ? (
-        <ActivityLog pageSize={10} />
+        <ActivityLog pageSize={5} />
       ) : (
         <Card className="p-6">
-          <ActivityLog pageSize={10} />
+          <ActivityLog pageSize={5} />
         </Card>
       )}
     </div>

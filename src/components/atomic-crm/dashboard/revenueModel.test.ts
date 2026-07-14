@@ -34,6 +34,8 @@ describe("buildRevenueModel", () => {
           revenue_period: "maandelijks",
           stage: "facturatie-live",
           amount: 300,
+          moneybird_invoice_id: "invoice-1",
+          moneybird_invoice_status: "completed",
         }),
         makeDeal({ revenue_period: "maandelijks", stage: "won", amount: 200 }),
         // Open recurring deals (not yet won/live) must NOT count as MRR.
@@ -62,6 +64,8 @@ describe("buildRevenueModel", () => {
           revenue_period: "maandelijks",
           stage: "facturatie-live",
           amount: 300,
+          moneybird_invoice_id: "invoice-1",
+          moneybird_invoice_status: "completed",
         }),
         makeDeal({
           revenue_period: "maandelijks",
@@ -117,9 +121,9 @@ describe("buildRevenueModel", () => {
           stage: "informatie-pipeline",
           amount: 400,
         }),
-        // No revenue_period, treated as one-off: 600 * 0.3 (on-hold)
+        // Paused work is deliberately excluded from the forecast.
         makeDeal({ revenue_period: null, stage: "on-hold", amount: 600 }),
-        // Live recurring is realized (MRR), not open pipeline.
+        // Facturatie/live without an actual Moneybird invoice is still backlog.
         makeDeal({
           revenue_period: "maandelijks",
           stage: "facturatie-live",
@@ -129,7 +133,9 @@ describe("buildRevenueModel", () => {
         makeDeal({ revenue_period: "eenmalig", stage: "won", amount: 999 }),
       ];
       const model = buildRevenueModel(deals, NOW);
-      expect(model.openPipeline).toBe(1000 * 0.5 + 400 * 0.2 + 600 * 0.3);
+      expect(model.openPipeline).toBe(
+        Math.round(1000 * 0.5 + 400 * 0.2 + 999 * 0.9),
+      );
     });
 
     it("distributes the same population over the forecast bars: bars sum to tile + projected MRR", () => {
@@ -138,6 +144,8 @@ describe("buildRevenueModel", () => {
           revenue_period: "maandelijks",
           stage: "facturatie-live",
           amount: 250,
+          moneybird_invoice_id: "invoice-1",
+          moneybird_invoice_status: "completed",
         }),
         makeDeal({
           revenue_period: "eenmalig",
@@ -151,7 +159,7 @@ describe("buildRevenueModel", () => {
           amount: 500,
           expected_closing_date: "2026-08-10",
         }),
-        // Overdue open deal: clamped into the current month, not dropped.
+        // Paused deals do not pollute the forecast.
         makeDeal({
           revenue_period: null,
           stage: "on-hold",
@@ -183,6 +191,24 @@ describe("buildRevenueModel", () => {
       const model = buildRevenueModel(deals, NOW);
       const pastMonths = model.months.slice(0, MONTHS_BACK - 1);
       expect(pastMonths.every((m) => m.prognose === 0)).toBe(true);
+    });
+
+    it("keeps deals without a closing date out of month bars", () => {
+      const model = buildRevenueModel(
+        [
+          makeDeal({
+            amount: 2000,
+            expected_closing_date: null,
+            stage: "bezig",
+          }),
+        ],
+        NOW,
+      );
+
+      expect(model.openPipeline).toBe(0);
+      expect(model.unplannedPipeline).toBe(1000);
+      expect(model.unplannedDealCount).toBe(1);
+      expect(model.months.every((month) => month.prognose === 0)).toBe(true);
     });
   });
 

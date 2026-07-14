@@ -31,6 +31,7 @@ jobs:
             POSTMARK_WEBHOOK_PASSWORD: ${{secrets.POSTMARK_WEBHOOK_PASSWORD}}
             POSTMARK_WEBHOOK_AUTHORIZED_IPS: ${{secrets.POSTMARK_WEBHOOK_AUTHORIZED_IPS}}
             VITE_GOOGLE_WORKPLACE_DOMAIN: ${{secrets.VITE_GOOGLE_WORKPLACE_DOMAIN}}
+            VITE_SENTRY_DSN: ${{secrets.VITE_SENTRY_DSN}}
             TRELLO_API_KEY: ${{secrets.TRELLO_API_KEY}}
             TRELLO_TOKEN: ${{secrets.TRELLO_TOKEN}}
             TRELLO_SYNC_DEFAULT_SALES_EMAIL: ${{secrets.TRELLO_SYNC_DEFAULT_SALES_EMAIL}}
@@ -85,12 +86,15 @@ jobs:
                       '{
                           site_url: $site_url,
                           uri_allow_list: $uri_allow_list,
+                          disable_signup: true,
+                          password_min_length: 12,
+                          password_hibp_enabled: true,
                           mailer_subjects_invite: $invite_subject,
                           mailer_templates_invite_content: $invite_content,
                           mailer_subjects_recovery: $recovery_subject,
                           mailer_templates_recovery_content: $recovery_content
                       }' > /tmp/auth-config.json
-                  curl -s -X PATCH "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/config/auth" \
+                  curl --fail-with-body -sS -X PATCH "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/config/auth" \
                       -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
                       -H "Content-Type: application/json" \
                       -d @/tmp/auth-config.json \

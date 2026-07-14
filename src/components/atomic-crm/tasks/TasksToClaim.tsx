@@ -11,7 +11,7 @@ import type { Deal, Task } from "../types";
 // Unassigned Trello-synced steps that anyone can pick up ("oppakken"). A single
 // click claims the step by setting its owner to the current user, after which it
 // moves into that person's "Mijn taken" list.
-export const TasksToClaim = () => {
+export const TasksToClaim = ({ limit }: { limit?: number }) => {
   const translate = useTranslate();
   const { identity } = useGetIdentity();
   const [update] = useUpdate();
@@ -27,6 +27,8 @@ export const TasksToClaim = () => {
       (tasks ?? []).filter((task) => task.sales_id == null && !task.done_date),
     [tasks],
   );
+  const visibleClaimable =
+    limit == null ? claimable : claimable.slice(0, limit);
 
   if (claimable.length === 0) {
     return null;
@@ -49,7 +51,7 @@ export const TasksToClaim = () => {
         <span className="text-xs font-normal">({claimable.length})</span>
       </div>
       <ul className="flex flex-col divide-y divide-border">
-        {claimable.map((task) => (
+        {visibleClaimable.map((task) => (
           <li
             key={task.id}
             className="flex items-start justify-between gap-2 py-2"
@@ -87,6 +89,11 @@ export const TasksToClaim = () => {
           </li>
         ))}
       </ul>
+      {limit != null && claimable.length > limit ? (
+        <p className="text-right text-xs text-muted-foreground">
+          Nog {claimable.length - limit} stappen op te pakken
+        </p>
+      ) : null}
     </div>
   );
 };

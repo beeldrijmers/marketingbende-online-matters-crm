@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDataProvider, useNotify, useRedirect, useTranslate } from "ra-core";
 import type { SubmitHandler } from "react-hook-form";
 import { SimpleForm } from "@/components/admin/simple-form";
@@ -13,13 +13,15 @@ export function SalesCreate() {
   const notify = useNotify();
   const translate = useTranslate();
   const redirect = useRedirect();
+  const queryClient = useQueryClient();
 
   const { mutate } = useMutation({
     mutationKey: ["signup"],
     mutationFn: async (data: SalesFormData) => {
       return dataProvider.salesCreate(data);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["sales"] });
       notify("resources.sales.create.success", {
         messageArgs: {
           _: "User created. They will soon receive an email to set their password.",

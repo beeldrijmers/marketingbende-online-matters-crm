@@ -22,22 +22,22 @@ alter table public.moneybird_company_contacts enable row level security;
 alter table public.inbound_email_events enable row level security;
 
 -- Companies
-create policy "Enable read access for authenticated users" on public.companies for select to authenticated using (true);
-create policy "Enable insert for authenticated users only" on public.companies for insert to authenticated with check (true);
-create policy "Enable update for authenticated users only" on public.companies for update to authenticated using (true) with check (true);
-create policy "Company Delete Policy" on public.companies for delete to authenticated using (true);
+create policy "Enable read access for authenticated users" on public.companies for select to authenticated using (public.is_active_crm_user());
+create policy "Enable insert for authenticated users only" on public.companies for insert to authenticated with check (public.is_active_crm_user());
+create policy "Enable update for authenticated users only" on public.companies for update to authenticated using (public.is_active_crm_user()) with check (public.is_active_crm_user());
+create policy "Company Delete Policy" on public.companies for delete to authenticated using (public.is_active_crm_user());
 
 -- Contacts
-create policy "Enable read access for authenticated users" on public.contacts for select to authenticated using (true);
-create policy "Enable insert for authenticated users only" on public.contacts for insert to authenticated with check (true);
-create policy "Enable update for authenticated users only" on public.contacts for update to authenticated using (true) with check (true);
-create policy "Contact Delete Policy" on public.contacts for delete to authenticated using (true);
+create policy "Enable read access for authenticated users" on public.contacts for select to authenticated using (public.is_active_crm_user());
+create policy "Enable insert for authenticated users only" on public.contacts for insert to authenticated with check (public.is_active_crm_user());
+create policy "Enable update for authenticated users only" on public.contacts for update to authenticated using (public.is_active_crm_user()) with check (public.is_active_crm_user());
+create policy "Contact Delete Policy" on public.contacts for delete to authenticated using (public.is_active_crm_user());
 
 -- Contact Notes
-create policy "Enable read access for authenticated users" on public.contact_notes for select to authenticated using (true);
-create policy "Enable insert for authenticated users only" on public.contact_notes for insert to authenticated with check (true);
-create policy "Contact Notes Update policy" on public.contact_notes for update to authenticated using (true);
-create policy "Contact Notes Delete Policy" on public.contact_notes for delete to authenticated using (true);
+create policy "Enable read access for authenticated users" on public.contact_notes for select to authenticated using (public.is_active_crm_user());
+create policy "Enable insert for authenticated users only" on public.contact_notes for insert to authenticated with check (public.is_active_crm_user());
+create policy "Contact Notes Update policy" on public.contact_notes for update to authenticated using (public.is_active_crm_user());
+create policy "Contact Notes Delete Policy" on public.contact_notes for delete to authenticated using (public.is_active_crm_user());
 
 -- Deals: a deal is only visible to (and editable/deletable by) the sales users
 -- it is assigned to. assignee_ids is the card's access-control list; the
@@ -48,13 +48,13 @@ create policy "Contact Notes Delete Policy" on public.contact_notes for delete t
 -- assigns themselves via the trigger/form); the read policy then governs
 -- whether they see it back.
 create policy "Enable read access for deal assignees" on public.deals for select to authenticated
-  using ((select id from public.sales where user_id = (select auth.uid())) = any (assignee_ids));
-create policy "Enable insert for authenticated users only" on public.deals for insert to authenticated with check (true);
+  using ((select id from public.sales where user_id = (select auth.uid()) and disabled = false) = any (assignee_ids));
+create policy "Enable insert for authenticated users only" on public.deals for insert to authenticated with check (public.is_active_crm_user());
 create policy "Enable update for deal assignees" on public.deals for update to authenticated
-  using ((select id from public.sales where user_id = (select auth.uid())) = any (assignee_ids))
-  with check (true);
+  using ((select id from public.sales where user_id = (select auth.uid()) and disabled = false) = any (assignee_ids))
+  with check (public.is_active_crm_user());
 create policy "Deals Delete Policy" on public.deals for delete to authenticated
-  using ((select id from public.sales where user_id = (select auth.uid())) = any (assignee_ids));
+  using ((select id from public.sales where user_id = (select auth.uid()) and disabled = false) = any (assignee_ids));
 
 -- Deal Notes: a note follows its deal's visibility. The subquery on deals is
 -- itself under the deals RLS, so "deal_id in (select id from public.deals)"
@@ -71,34 +71,34 @@ create policy "Deal Notes Delete Policy" on public.deal_notes for delete to auth
   using (deal_id in (select id from public.deals));
 
 -- Sales
-create policy "Enable read access for authenticated users" on public.sales for select to authenticated using (true);
+create policy "Enable read access for authenticated users" on public.sales for select to authenticated using (public.is_active_crm_user());
 
 -- Tags
-create policy "Enable read access for authenticated users" on public.tags for select to authenticated using (true);
-create policy "Enable insert for authenticated users only" on public.tags for insert to authenticated with check (true);
-create policy "Enable update for authenticated users only" on public.tags for update to authenticated using (true);
-create policy "Enable delete for authenticated users only" on public.tags for delete to authenticated using (true);
+create policy "Enable read access for authenticated users" on public.tags for select to authenticated using (public.is_active_crm_user());
+create policy "Enable insert for authenticated users only" on public.tags for insert to authenticated with check (public.is_active_crm_user());
+create policy "Enable update for authenticated users only" on public.tags for update to authenticated using (public.is_active_crm_user());
+create policy "Enable delete for authenticated users only" on public.tags for delete to authenticated using (public.is_active_crm_user());
 
 -- Tasks: a deal-linked task follows its deal's visibility; contact-only tasks
 -- (deal_id null) stay visible to all, since contacts are not access-restricted.
 -- The deals subquery is under RLS, so deal tasks are hidden for deals the user
 -- is not assigned to.
 create policy "Enable read access for deal assignees" on public.tasks for select to authenticated
-  using (deal_id is null or deal_id in (select id from public.deals));
+  using (public.is_active_crm_user() and (deal_id is null or deal_id in (select id from public.deals)));
 create policy "Enable insert for deal assignees" on public.tasks for insert to authenticated
-  with check (deal_id is null or deal_id in (select id from public.deals));
+  with check (public.is_active_crm_user() and (deal_id is null or deal_id in (select id from public.deals)));
 create policy "Task Update Policy" on public.tasks for update to authenticated
-  using (deal_id is null or deal_id in (select id from public.deals));
+  using (public.is_active_crm_user() and (deal_id is null or deal_id in (select id from public.deals)));
 create policy "Task Delete Policy" on public.tasks for delete to authenticated
-  using (deal_id is null or deal_id in (select id from public.deals));
+  using (public.is_active_crm_user() and (deal_id is null or deal_id in (select id from public.deals)));
 
 -- Configuration (admin-only for writes)
-create policy "Enable read for authenticated" on public.configuration for select to authenticated using (true);
+create policy "Enable read for authenticated" on public.configuration for select to authenticated using (public.is_active_crm_user());
 create policy "Enable insert for admins" on public.configuration for insert to authenticated with check (public.is_admin());
 create policy "Enable update for admins" on public.configuration for update to authenticated using (public.is_admin()) with check (public.is_admin());
 
 -- Favicons excluded domains
-create policy "Enable access for authenticated users only" on public.favicons_excluded_domains to authenticated using (true) with check (true);
+create policy "Enable access for authenticated users only" on public.favicons_excluded_domains to authenticated using (public.is_active_crm_user()) with check (public.is_active_crm_user());
 
 -- Moneybird connections (owner-only: a user may only see their own connection
 -- row; the encrypted token column is additionally hidden from client roles via

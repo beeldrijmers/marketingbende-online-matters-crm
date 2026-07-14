@@ -15,7 +15,7 @@ import { buildOpenTasksByDeal } from "../deals/dealWorkflow";
 import type { Contact, Deal, Task } from "../types";
 import { rankHotLeads } from "./hotLeads";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 3;
 const currencyFormatter = new Intl.NumberFormat("nl-NL", {
   currency: "EUR",
   maximumFractionDigits: 0,

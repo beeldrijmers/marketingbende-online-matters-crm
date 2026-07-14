@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   useDataProvider,
   useEditController,
@@ -33,6 +33,7 @@ export function SalesEdit() {
   const notify = useNotify();
   const redirect = useRedirect();
   const translate = useTranslate();
+  const queryClient = useQueryClient();
 
   const { mutate } = useMutation({
     mutationKey: ["signup"],
@@ -46,7 +47,8 @@ export function SalesEdit() {
       }
       return dataProvider.salesUpdate(record.id, data);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["sales"] });
       redirect("/sales");
       notify("resources.sales.edit.success", {
         messageArgs: {
