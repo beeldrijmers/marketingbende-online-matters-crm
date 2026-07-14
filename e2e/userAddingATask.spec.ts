@@ -42,7 +42,7 @@ test.describe("user adding a task", () => {
   test("user adding a task", async ({ page, isMobile, menu, dismissToast }) => {
     await page.goto("http://localhost:5175/");
     await page.getByLabel("E-mail").fill("john@doe.com");
-    await page.getByLabel("Wachtwoord").fill("password");
+    await page.getByLabel("Wachtwoord", { exact: true }).fill("password");
     await page.getByRole("button", { name: "Inloggen" }).click();
 
     await expect(page).toHaveTitle(/BANKAI CRM/);
