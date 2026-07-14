@@ -184,10 +184,20 @@ export const englishCrmMessages = {
         tasks: "Tasks",
       },
       hot: {
-        empty_change_status:
-          'Change the status of a contact by adding a note to that contact and clicking on "show options".',
-        empty_hint: 'Contacts with a "hot" status will appear here.',
-        title: "Hot Contacts",
+        active_deals:
+          "%{smart_count} active deal |||| %{smart_count} active deals",
+        empty_hint:
+          "As soon as there is an active client deal, the relationship appears here automatically.",
+        empty_title: "No active leads yet",
+        hot_label: "Hot",
+        missing_contact: "Link a contact",
+        more: "%{count} more hot leads on the kanban board",
+        open_board: "All leads",
+        pipeline: "%{amount} pipeline",
+        subtitle:
+          "Automatically determined from deals, follow-up and activity.",
+        title: "Hot contacts & leads",
+        unnamed_contact: "Unnamed contact",
       },
     },
     deals: {

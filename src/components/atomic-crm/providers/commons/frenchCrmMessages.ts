@@ -189,10 +189,20 @@ export const frenchCrmMessages = {
         tasks: "Tâches",
       },
       hot: {
-        empty_change_status:
-          'Changez le statut d\'un contact en ajoutant une note à ce contact et en cliquant sur "afficher les options".',
-        empty_hint: 'Les contacts avec un statut "chaud" apparaîtront ici.',
-        title: "Contacts chauds",
+        active_deals:
+          "%{smart_count} affaire active |||| %{smart_count} affaires actives",
+        empty_hint:
+          "Dès qu'une affaire client est active, la relation apparaît automatiquement ici.",
+        empty_title: "Aucun lead actif pour le moment",
+        hot_label: "Chaud",
+        missing_contact: "Associer un contact",
+        more: "Encore %{count} leads chauds sur le tableau kanban",
+        open_board: "Tous les leads",
+        pipeline: "%{amount} de pipeline",
+        subtitle:
+          "Déterminé automatiquement à partir des affaires, du suivi et de l'activité.",
+        title: "Contacts & leads chauds",
+        unnamed_contact: "Contact sans nom",
       },
     },
     deals: {
