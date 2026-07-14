@@ -15,8 +15,7 @@ concurrency:
     cancel-in-progress: true
 
 permissions:
-    contents: write
-    checks: write
+    contents: read
 
 jobs:
     lint:
@@ -26,10 +25,10 @@ jobs:
         if: ${{ !github.event.pull_request.draft || github.event_name == 'push' }}
         steps:
             - name: 📥 Checkout repo
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: ⚙️ Setup node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: 22
                   cache: npm
@@ -38,12 +37,9 @@ jobs:
               run: npm ci
 
             - name: 🔬 Lint
-              uses: wearerequired/lint-action@v2
-              with:
-                  eslint: true
-                  eslint_args: "**/*.{mjs,ts,tsx}"
-                  prettier: true
-                  prettier_args: "--config ./.prettierrc.json \"**/*.{js,json,ts,tsx,css,md,html}\""
+              run: |
+                  npm run lint
+                  npm run prettier
 
 
     typecheck:
@@ -53,10 +49,10 @@ jobs:
         if: ${{ !github.event.pull_request.draft || github.event_name == 'push' }}
         steps:
             - name: 📥 Checkout repo
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: ⚙️ Setup node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: 22
                   cache: npm
@@ -74,10 +70,10 @@ jobs:
         if: ${{ !github.event.pull_request.draft || github.event_name == 'push' }}
         steps:
             - name: 📥 Checkout repo
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: ⚙️ Setup node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: 22
                   cache: npm
@@ -98,10 +94,10 @@ jobs:
       runs-on: ubuntu-latest
       steps:
       - name: 📥 Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: ⚙️ Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
             node-version: 22
             cache: npm
@@ -121,10 +117,10 @@ jobs:
         if: ${{ !github.event.pull_request.draft || github.event_name == 'push' }}
         steps:
             - name: 📥 Checkout repo
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: ⚙️ Setup node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: 22
                   cache: npm

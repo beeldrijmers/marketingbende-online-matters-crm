@@ -8,7 +8,7 @@ import { TasksListContent } from "../tasks/TasksListContent";
 export const TasksList = () => {
   const translate = useTranslate();
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-3">
       <div className="flex items-center">
         <div className="mr-3 flex">
           <CheckSquare className="text-muted-foreground w-6 h-6" />
@@ -20,7 +20,7 @@ export const TasksList = () => {
         </h2>
         <AddTask display="icon" selectContact />
       </div>
-      <Card className="p-6">
+      <Card className="p-4">
         <TasksListContent compact />
       </Card>
     </div>

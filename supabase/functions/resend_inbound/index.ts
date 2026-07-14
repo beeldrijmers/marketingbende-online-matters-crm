@@ -27,6 +27,7 @@ import { resolveInvolvedSalesIds } from "./resolveInvolvedSalesIds.ts";
 import { verifySvixSignature } from "./verifySvixSignature.ts";
 import { findCompanyMentionedInText } from "./matchCompanyInText.ts";
 import { attachMailToCompanyDeal } from "./attachMailToCompanyDeal.ts";
+import { htmlToText } from "./htmlToText.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const RESEND_WEBHOOK_SECRET = Deno.env.get("RESEND_WEBHOOK_SECRET");
@@ -96,21 +97,6 @@ const releaseInboundEmail = async (emailId: string): Promise<void> => {
     );
   }
 };
-
-// Minimal HTML->text fallback for the rare mail without a plain-text part.
-const htmlToText = (html: string): string =>
-  html
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/(p|div|tr|li|h[1-6])>/gi, "\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") {

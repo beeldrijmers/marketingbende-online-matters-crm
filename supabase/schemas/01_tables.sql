@@ -323,6 +323,18 @@ create index deals_moneybird_invoice_created_by_idx on public.deals using btree 
 create index contacts_email_jsonb_idx on public.contacts using gin (email_jsonb);
 create index deals_active_stage_closing_idx on public.deals using btree (stage, expected_closing_date) where (archived_at is null);
 create index tasks_open_due_date_idx on public.tasks using btree (due_date) where (done_date is null);
+-- The activity_log view is queried as one date-descending read model. These
+-- source indexes let PostgreSQL satisfy each UNION ALL branch without scanning
+-- and sorting every source table for the five newest dashboard events.
+create index companies_activity_date_idx on public.companies using btree (created_at desc);
+create index contacts_activity_date_idx on public.contacts using btree (first_seen desc);
+create index contact_notes_activity_date_idx on public.contact_notes using btree (date desc);
+create index deals_activity_date_idx on public.deals using btree (created_at desc);
+create index deal_notes_activity_date_idx on public.deal_notes using btree (date desc);
+create index contacts_company_activity_idx on public.contacts using btree (company_id, first_seen desc);
+create index deals_company_activity_idx on public.deals using btree (company_id, created_at desc);
+create index contact_notes_contact_activity_idx on public.contact_notes using btree (contact_id, date desc);
+create index deal_notes_deal_activity_idx on public.deal_notes using btree (deal_id, date desc);
 create unique index uq__tasks__trello_checkitem_id on public.tasks using btree (trello_checkitem_id) where (trello_checkitem_id is not null);
 create unique index uq__deals__trello_card_id on public.deals using btree (trello_card_id) where (trello_card_id is not null);
 create unique index uq__deals__moneybird_estimate_id on public.deals using btree (moneybird_estimate_id) where (moneybird_estimate_id is not null);

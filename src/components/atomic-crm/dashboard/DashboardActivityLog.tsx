@@ -9,7 +9,7 @@ export function DashboardActivityLog() {
   const isMobile = useIsMobile();
   const translate = useTranslate();
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-3">
       <div className="flex items-center">
         <div className="mr-3 flex">
           <Clock className="text-muted-foreground w-6 h-6" />
@@ -23,7 +23,7 @@ export function DashboardActivityLog() {
       {isMobile ? (
         <ActivityLog pageSize={5} />
       ) : (
-        <Card className="p-6">
+        <Card className="p-4">
           <ActivityLog pageSize={5} />
         </Card>
       )}

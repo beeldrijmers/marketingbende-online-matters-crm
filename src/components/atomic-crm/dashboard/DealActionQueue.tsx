@@ -59,7 +59,7 @@ export const DealActionQueue = () => {
   );
 
   return (
-    <section className="flex min-w-0 flex-col gap-4">
+    <section className="flex min-w-0 flex-col gap-3">
       <div className="flex items-center gap-3">
         <BriefcaseBusiness className="size-6 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">
@@ -116,7 +116,7 @@ export const DealActionQueue = () => {
             <RecordContextProvider key={deal.id} value={deal}>
               <div
                 className={cn(
-                  "flex flex-col gap-3 border-l-2 border-l-transparent p-4",
+                  "flex flex-col gap-2.5 border-l-2 border-l-transparent p-3.5",
                   workflow.kind === "overdue" && "border-l-destructive",
                   workflow.kind === "today" && "border-l-amber-500",
                 )}

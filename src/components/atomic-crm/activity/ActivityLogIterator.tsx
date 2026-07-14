@@ -131,9 +131,9 @@ export function ActivityLogIterator() {
   const groups = groupActivitiesByDay(data ?? [], translate, locale);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {groups.map((group) => (
-        <section key={group.key} className="space-y-4">
+        <section key={group.key} className="space-y-3">
           <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {group.label}
           </h3>
