@@ -47,6 +47,13 @@ export async function getIsInitialized() {
     return cachedValue === "true";
   }
 
+  // The isolated E2E database starts empty, while production deliberately
+  // denies anonymous access to init_state. Force only that test fixture into
+  // the bootstrap screen; markInitializedCache takes over after sign-up.
+  if (import.meta.env.VITE_FORCE_INITIAL_SETUP === "true") {
+    return false;
+  }
+
   const { data, error } = await getSupabaseClient()
     .from("init_state")
     .select("is_initialized");
