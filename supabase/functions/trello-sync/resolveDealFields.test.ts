@@ -34,8 +34,14 @@ describe("resolveStage", () => {
     expect(resolveStage("6a40ed3ab091e5e140319312", [], false)).toBe("on-hold");
   });
 
-  it("defaults category-list cards to facturatie-live", () => {
+  it("places active category-list cards in Bezig", () => {
     expect(resolveStage("6982ffae219bd60c27be88b5", ["Eenmalig"], false)).toBe(
+      "bezig",
+    );
+  });
+
+  it("keeps facturatie-live exclusive to the real Trello workflow list", () => {
+    expect(resolveStage("6979f9dd197030f0766dfaa5", ["SEO"], false)).toBe(
       "facturatie-live",
     );
   });
@@ -50,6 +56,10 @@ describe("resolveStage", () => {
     expect(resolveStage("6982ffae219bd60c27be88b5", ["Eenmalig"], true)).toBe(
       "won",
     );
+  });
+
+  it("puts a new unknown list in Nieuw instead of a late workflow phase", () => {
+    expect(resolveStage("future-list", [], false)).toBe("informatie-pipeline");
   });
 });
 

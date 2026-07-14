@@ -45,7 +45,8 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
   const category = resolveCategory(card.idList, card.labelNames);
   const stage = resolveStage(card.idList, card.labelNames, card.dueComplete);
   const name = resolveDealName(card.name);
-  const expectedClosingDate = card.due ? card.due.slice(0, 10) : null;
+  const startDate = card.start ? card.start.slice(0, 10) : null;
+  const deliveryDate = card.due ? card.due.slice(0, 10) : null;
   const website = extractCompanyWebsite(card.desc, card.attachmentUrls);
   const description = buildDealDescription(card);
   // Happr is Marketingbende's own product: its cards are internal work, never
@@ -126,14 +127,6 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
     const canEnrichRevenuePeriod =
       revenuePeriod != null && !currentRevenuePeriod;
 
-    // Monthly recurring deals run their own lifecycle in the CRM (the loopband
-    // sends them back to the start each cycle), so the Trello list must not
-    // drag their stage back to "won" on every sync. For those, leave the stage
-    // to the CRM; all other cards still follow Trello. The same restraint
-    // applies to cards in a list the sync doesn't know: their stage is the
-    // CRM's to keep until the list maps are updated.
-    const isMonthly = (currentRevenuePeriod ?? revenuePeriod) === "maandelijks";
-
     // The category is only corrected while the deal still carries the default
     // ('overig') AND Trello has an explicit signal (category list or label).
     // Anything else is treated as a value someone chose — in the CRM or via an
@@ -149,8 +142,19 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
         company_id: companyId,
         ...(contactIds.length > 0 ? { contact_ids: contactIds } : {}),
         ...(canUpdateCategory ? { category } : {}),
-        ...(isMonthly || !knownList ? {} : { stage }),
-        expected_closing_date: expectedClosingDate,
+        // Trello is authoritative for a card's known workflow list. Monthly
+        // deals may still be cycled back by the DB trigger after reaching won,
+        // but moves between active Trello lists are no longer ignored.
+        ...(knownList ? { stage } : {}),
+        // Trello dates enrich planning when present. Their absence never wipes
+        // dates someone entered manually in the CRM.
+        ...(startDate ? { start_date: startDate } : {}),
+        ...(deliveryDate
+          ? {
+              delivery_date: deliveryDate,
+              expected_closing_date: deliveryDate,
+            }
+          : {}),
         // Correct the historical import date to the real Trello creation date.
         // Deterministic per card, so re-syncs are idempotent.
         ...(createdAt ? { created_at: createdAt } : {}),
@@ -180,7 +184,13 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
       // Internal/external classification, applied on creation only so the
       // manual toggle in the CRM always wins afterwards.
       is_internal: resolveIsInternal({ category, dealName: name, companyName }),
-      expected_closing_date: expectedClosingDate,
+      ...(startDate ? { start_date: startDate } : {}),
+      ...(deliveryDate
+        ? {
+            delivery_date: deliveryDate,
+            expected_closing_date: deliveryDate,
+          }
+        : {}),
       description,
       ...(amount != null ? { amount } : {}),
       ...(revenuePeriod != null ? { revenue_period: revenuePeriod } : {}),

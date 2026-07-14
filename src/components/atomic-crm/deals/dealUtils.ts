@@ -83,6 +83,28 @@ export function isBeforeToday(
   return date.getTime() < startOfToday.getTime();
 }
 
+// Inclusive calendar-day duration (start and finish on the same date = 1 day).
+// UTC calendar arithmetic avoids 23/25-hour DST days changing the result.
+export function getDealDurationDays(
+  startDateString: string | null | undefined,
+  endDateString: string | null | undefined,
+  now: Date = new Date(),
+): number | null {
+  const start = parseISODateStringLocal(startDateString);
+  const end = endDateString
+    ? parseISODateStringLocal(endDateString)
+    : new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (!start || !end || end.getTime() < start.getTime()) return null;
+
+  const startUtc = Date.UTC(
+    start.getFullYear(),
+    start.getMonth(),
+    start.getDate(),
+  );
+  const endUtc = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+  return Math.floor((endUtc - startUtc) / 86_400_000) + 1;
+}
+
 export function buildDealInboundEmail(
   dealId: Identifier,
   inboundEmail: string | undefined,

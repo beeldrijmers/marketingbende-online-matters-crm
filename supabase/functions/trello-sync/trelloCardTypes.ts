@@ -39,6 +39,9 @@ export interface TrelloCardInput {
   name: string;
   idList: string;
   labelNames: string[];
+  // Trello's native project start date. When present it enriches the CRM's
+  // start_date, so the deal detail can show the planned/actual duration.
+  start: string | null;
   due: string | null;
   dueComplete: boolean;
   // Whether the card is archived in Trello. An archived card's deal is

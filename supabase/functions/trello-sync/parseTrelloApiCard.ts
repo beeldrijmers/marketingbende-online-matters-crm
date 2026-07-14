@@ -7,6 +7,7 @@ export interface TrelloApiCard {
   id: string;
   name: string;
   idList: string;
+  start?: string | null;
   due: string | null;
   dueComplete: boolean;
   closed?: boolean;
@@ -42,6 +43,7 @@ export const parseTrelloApiCard = (card: TrelloApiCard): TrelloCardInput => ({
   name: card.name,
   idList: card.idList,
   labelNames: (card.labels ?? []).map((label) => label.name),
+  start: card.start ?? null,
   due: card.due,
   dueComplete: card.dueComplete,
   closed: card.closed ?? false,

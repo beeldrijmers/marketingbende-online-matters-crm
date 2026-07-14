@@ -33,7 +33,12 @@ import { DealEditSheet } from "./DealEditSheet";
 import { DealInboundEmail } from "./DealInboundEmail";
 import { DealSteps } from "./DealSteps";
 import { MoneybirdDocumentControl } from "./MoneybirdDocumentButtons";
-import { findDealLabel, formatISODateString, isBeforeToday } from "./dealUtils";
+import {
+  findDealLabel,
+  formatISODateString,
+  getDealDurationDays,
+  isBeforeToday,
+} from "./dealUtils";
 
 export const DealShow = ({ open, id }: { open: boolean; id?: string }) => {
   const navigate = useNavigate();
@@ -80,6 +85,11 @@ const DealShowContent = () => {
   const closingLabel = formatISODateString(record.expected_closing_date);
   const startLabel = formatISODateString(record.start_date);
   const deliveryLabel = formatISODateString(record.delivery_date);
+  const isFinished = record.stage === "won" || record.stage === "lost";
+  const durationDays =
+    isFinished && !record.delivery_date
+      ? null
+      : getDealDurationDays(record.start_date, record.delivery_date);
   // Day-level comparison in the local timezone: a deal closing today is not
   // "past" (new Date("YYYY-MM-DD") parses as UTC midnight, which incorrectly
   // flagged today's deals for almost the whole day).
@@ -176,6 +186,22 @@ const DealShowContent = () => {
                   })}
                 </span>
                 <span className="text-sm">{deliveryLabel}</span>
+              </div>
+            )}
+
+            {durationDays != null && (
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground tracking-wide">
+                  {translate("resources.deals.fields.duration", {
+                    _: "Looptijd",
+                  })}
+                </span>
+                <span className="text-sm">
+                  {translate("resources.deals.duration_days", {
+                    smart_count: durationDays,
+                    _: `${durationDays} ${durationDays === 1 ? "dag" : "dagen"}`,
+                  })}
+                </span>
               </div>
             )}
 

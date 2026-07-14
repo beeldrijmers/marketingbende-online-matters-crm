@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { getTrelloSyncNotification } from "./trelloSyncNotification";
+import {
+  formatTrelloSyncDuration,
+  getTrelloSyncNotification,
+} from "./trelloSyncNotification";
 
 const summary = {
   cardCount: 46,
@@ -9,6 +12,14 @@ const summary = {
   totalAttachments: 2,
   archivedCardsWithUploads: 3,
   archivedAttachments: 1,
+  durationMs: 18_400,
+  stageCounts: {
+    "informatie-pipeline": 5,
+    bezig: 21,
+    "on-hold": 2,
+    "facturatie-live": 7,
+    won: 11,
+  },
   failed: [],
 };
 
@@ -19,7 +30,12 @@ describe("getTrelloSyncNotification", () => {
       type: "success",
       messageArgs: {
         smart_count: 46,
-        _: "Trello gesynchroniseerd: 46 kaarten verwerkt.",
+        duration: "18 sec",
+        stage_summary:
+          "Nieuw 5 · Bezig 21 · In de wacht 2 · Facturatie & live 7 · Klaar 11",
+        _:
+          "Trello gesynchroniseerd: 46 kaarten in 18 sec. " +
+          "Nieuw 5 · Bezig 21 · In de wacht 2 · Facturatie & live 7 · Klaar 11",
       },
     });
   });
@@ -41,7 +57,13 @@ describe("getTrelloSyncNotification", () => {
         synced: 44,
         failed_count: 2,
         failed_names: "Klant A, Klant B",
-        _: "Trello deels gesynchroniseerd: 44 actieve kaarten verwerkt. 2 mislukt (Klant A, Klant B).",
+        duration: "18 sec",
+        stage_summary:
+          "Nieuw 5 · Bezig 21 · In de wacht 2 · Facturatie & live 7 · Klaar 11",
+        _:
+          "Trello deels gesynchroniseerd in 18 sec: 44 actieve kaarten verwerkt. " +
+          "2 mislukt (Klant A, Klant B). Nieuw 5 · Bezig 21 · In de wacht 2 · " +
+          "Facturatie & live 7 · Klaar 11",
       },
     });
   });
@@ -57,5 +79,17 @@ describe("getTrelloSyncNotification", () => {
       getTrelloSyncNotification({ ...summary, synced: 41, failed }).messageArgs
         .failed_names,
     ).toBe("A, B, C +2");
+  });
+});
+
+describe("formatTrelloSyncDuration", () => {
+  it("shows seconds while a normal sync completes", () => {
+    expect(formatTrelloSyncDuration(400)).toBe("1 sec");
+    expect(formatTrelloSyncDuration(18_400)).toBe("18 sec");
+  });
+
+  it("keeps a longer sync readable", () => {
+    expect(formatTrelloSyncDuration(60_000)).toBe("1 min");
+    expect(formatTrelloSyncDuration(92_000)).toBe("1 min 32 sec");
   });
 });

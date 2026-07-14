@@ -256,6 +256,7 @@ export const englishCrmMessages = {
         expected_closing_date: "Expected closing date",
         start_date: "Start date",
         delivery_date: "Delivery date",
+        duration: "Duration",
         stage: "Stage",
       },
       action: {
@@ -346,10 +347,12 @@ export const englishCrmMessages = {
       trello_sync: {
         action: "Sync Trello",
         pending: "Syncing...",
+        stage_summary:
+          "New %{new_count} · Active %{active_count} · On hold %{hold_count} · Billing & live %{live_count} · Done %{won_count}",
         success:
-          "Trello synced: %{smart_count} card processed. |||| Trello synced: %{smart_count} cards processed.",
+          "Trello synced: %{smart_count} card in %{duration}. %{stage_summary} |||| Trello synced: %{smart_count} cards in %{duration}. %{stage_summary}",
         partial:
-          "Trello partly synced: %{synced} active cards processed. %{failed_count} failed (%{failed_names}).",
+          "Trello partly synced in %{duration}: %{synced} active cards processed. %{failed_count} failed (%{failed_names}). %{stage_summary}",
         error: "Failed to sync with Trello",
       },
 
@@ -360,6 +363,7 @@ export const englishCrmMessages = {
       },
       invalid_date: "Invalid date",
       no_date: "Not scheduled yet",
+      duration_days: "%{smart_count} day |||| %{smart_count} days",
       no_amount: "No amount yet",
       per_month_suffix: "/mo",
       move_error:

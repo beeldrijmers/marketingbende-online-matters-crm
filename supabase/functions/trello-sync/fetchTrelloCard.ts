@@ -21,7 +21,7 @@ export const fetchTrelloCard = async (
   url.searchParams.set("token", token);
   url.searchParams.set(
     "fields",
-    "name,idList,due,dueComplete,closed,shortUrl,desc",
+    "name,idList,start,due,dueComplete,closed,shortUrl,desc",
   );
   url.searchParams.set("labels", "true");
   url.searchParams.set("label_fields", "name");

@@ -83,13 +83,13 @@ export const Dashboard = () => {
       <div className="flex min-w-0 flex-col gap-5 xl:col-span-8">
         <DealActionQueue />
         <BillingQueue />
+        {totalDeal ? <RevenueDisclosure /> : null}
         <DashboardActivityLog />
       </div>
       <div className="flex min-w-0 flex-col gap-5 xl:col-span-4">
         {import.meta.env.VITE_IS_DEMO === "true" ? <Welcome /> : null}
         <HotContacts />
         <TasksList />
-        {totalDeal ? <RevenueDisclosure /> : null}
       </div>
     </div>
   );

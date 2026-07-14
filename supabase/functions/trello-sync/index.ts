@@ -50,6 +50,8 @@ const CARD_SYNC_ACTIONS = new Set([
   "updateCard",
   "addLabelToCard",
   "removeLabelToCard",
+  "addMemberToCard",
+  "removeMemberFromCard",
   "moveCardToBoard",
   "updateCheckItemStateOnCard",
   "createCheckItem",

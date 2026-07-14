@@ -427,6 +427,14 @@ const getDataProviderWithCustomMethods = () => {
           totalAttachments: number;
           archivedCardsWithUploads: number;
           archivedAttachments: number;
+          durationMs: number;
+          stageCounts: {
+            "informatie-pipeline": number;
+            bezig: number;
+            "on-hold": number;
+            "facturatie-live": number;
+            won: number;
+          };
           failed: Array<{
             cardId: string;
             cardName: string;
