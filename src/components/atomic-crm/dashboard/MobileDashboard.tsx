@@ -8,6 +8,7 @@ import { NoteCreateSheet } from "../notes/NoteCreateSheet";
 import { DashboardActivityLog } from "./DashboardActivityLog";
 import { DealActionQueue } from "./DealActionQueue";
 import { DashboardStepper } from "./DashboardStepper";
+import { HotContacts } from "./HotContacts";
 import { Welcome } from "./Welcome";
 import MobileHeader from "../layout/MobileHeader";
 import { MobileContent } from "../layout/MobileContent";
@@ -121,6 +122,7 @@ export const MobileDashboard = () => {
         <div className="flex flex-col gap-6 mt-1">
           {import.meta.env.VITE_IS_DEMO === "true" ? <Welcome /> : null}
           <DealActionQueue />
+          <HotContacts />
           <DashboardActivityLog />
         </div>
       )}

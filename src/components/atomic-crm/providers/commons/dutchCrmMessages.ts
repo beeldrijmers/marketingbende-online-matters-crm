@@ -189,10 +189,19 @@ export const dutchCrmMessages = {
         tasks: "Taken",
       },
       hot: {
-        empty_change_status:
-          'Wijzig de status van een contact door een notitie aan dat contact toe te voegen en op "opties tonen" te klikken.',
-        empty_hint: 'Contacten met de status "hot" verschijnen hier.',
-        title: "Hot contacten",
+        active_deals:
+          "%{smart_count} actieve deal |||| %{smart_count} actieve deals",
+        empty_hint:
+          "Zodra er een actieve klantdeal is, verschijnt de relatie hier automatisch.",
+        empty_title: "Nog geen actieve leads",
+        hot_label: "Hot",
+        missing_contact: "Contact nog koppelen",
+        more: "Nog %{count} hot leads op het kanbanbord",
+        open_board: "Alle leads",
+        pipeline: "%{amount} pipeline",
+        subtitle: "Automatisch bepaald uit deals, opvolging en activiteit.",
+        title: "Hot contacten & leads",
+        unnamed_contact: "Naamloos contact",
       },
     },
     deals: {
