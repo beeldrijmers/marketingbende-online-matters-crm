@@ -33,7 +33,7 @@ export function ActivityLogContactNoteCreated({
   return (
     <ActivityLogNote
       header={
-        <div className="flex items-start gap-2 w-full">
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <ActivityActorAvatar salesId={activity.sales_id} />
           <ReferenceField
             source="contact_id"
@@ -43,7 +43,7 @@ export function ActivityLogContactNoteCreated({
             <ContactAvatar />
           </ReferenceField>
 
-          <span className="text-muted-foreground text-sm flex-grow">
+          <span className="basis-full text-sm leading-5 text-muted-foreground sm:basis-auto sm:flex-grow">
             {translate(
               isCurrentUser
                 ? "crm.activity.you_added_note"

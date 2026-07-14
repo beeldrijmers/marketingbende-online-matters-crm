@@ -68,28 +68,34 @@ export const getDealWorkflow = (
     return { kind: "complete", nextTask: null, openTaskCount: 0 };
   }
 
-  const sortedTasks = [...openTasks].filter((task) => !task.done_date);
-  sortedTasks.sort(compareTasks);
-  const nextTask = sortedTasks[0] ?? null;
-  const today = localTodayKey(now);
-
-  if (nextTask) {
-    const due = dayKey(nextTask.due_date);
-    const kind: DealWorkflowKind = !due
-      ? "unscheduled"
-      : due < today
-        ? "overdue"
-        : due === today
-          ? "today"
-          : "scheduled";
-    return { kind, nextTask, openTaskCount: sortedTasks.length };
-  }
-
+  // A consciously paused deal should not pollute the attention queue, even if
+  // an older open task is still attached to it. It becomes actionable again
+  // when the deal is resumed.
   if (deal.on_hold || deal.stage === "on-hold") {
     return { kind: "on_hold", nextTask: null, openTaskCount: 0 };
   }
 
+  const sortedTasks = [...openTasks].filter((task) => !task.done_date);
+  sortedTasks.sort(compareTasks);
+  const nextTask = sortedTasks[0] ?? null;
+  const today = localTodayKey(now);
   const closingDate = dayKey(deal.expected_closing_date);
+
+  if (nextTask) {
+    const due = dayKey(nextTask.due_date);
+    const kind: DealWorkflowKind =
+      due && due < today
+        ? "overdue"
+        : due === today
+          ? "today"
+          : closingDate && closingDate < today
+            ? "overdue_closing"
+            : !due
+              ? "unscheduled"
+              : "scheduled";
+    return { kind, nextTask, openTaskCount: sortedTasks.length };
+  }
+
   if (closingDate && closingDate < today) {
     return { kind: "overdue_closing", nextTask: null, openTaskCount: 0 };
   }
@@ -108,6 +114,17 @@ const workflowPriority: Record<DealWorkflowKind, number> = {
   complete: 7,
 };
 
+const attentionWorkflowKinds = new Set<DealWorkflowKind>([
+  "overdue",
+  "today",
+  "overdue_closing",
+  "missing",
+  "unscheduled",
+]);
+
+export const needsDealAttention = (workflow: DealWorkflow): boolean =>
+  attentionWorkflowKinds.has(workflow.kind);
+
 export type RankedDealWorkflow = {
   deal: Deal;
   workflow: DealWorkflow;
@@ -123,7 +140,7 @@ export const rankDealsForAttention = (
       deal,
       workflow: getDealWorkflow(deal, tasksByDeal.get(deal.id) ?? [], now),
     }))
-    .filter(({ workflow }) => workflow.kind !== "complete")
+    .filter(({ workflow }) => needsDealAttention(workflow))
     .sort((left, right) => {
       const priority =
         workflowPriority[left.workflow.kind] -
@@ -131,14 +148,42 @@ export const rankDealsForAttention = (
       if (priority !== 0) return priority;
 
       const leftDue = dayKey(
-        left.workflow.nextTask?.due_date ??
-          left.deal.expected_closing_date ??
-          left.deal.updated_at,
+        left.workflow.kind === "overdue_closing"
+          ? left.deal.expected_closing_date
+          : (left.workflow.nextTask?.due_date ??
+              left.deal.expected_closing_date ??
+              left.deal.updated_at),
       );
       const rightDue = dayKey(
-        right.workflow.nextTask?.due_date ??
-          right.deal.expected_closing_date ??
-          right.deal.updated_at,
+        right.workflow.kind === "overdue_closing"
+          ? right.deal.expected_closing_date
+          : (right.workflow.nextTask?.due_date ??
+              right.deal.expected_closing_date ??
+              right.deal.updated_at),
       );
       return (leftDue ?? "9999-12-31").localeCompare(rightDue ?? "9999-12-31");
     });
+
+export type DealAttentionCounts = {
+  overdue: number;
+  planning: number;
+  today: number;
+  total: number;
+  unplanned: number;
+};
+
+export const summarizeDealAttention = (
+  rankedDeals: RankedDealWorkflow[],
+): DealAttentionCounts =>
+  rankedDeals.reduce<DealAttentionCounts>(
+    (counts, { workflow }) => {
+      counts.total += 1;
+      if (workflow.kind === "overdue") counts.overdue += 1;
+      else if (workflow.kind === "today") counts.today += 1;
+      else if (workflow.kind === "overdue_closing") counts.planning += 1;
+      else if (workflow.kind === "missing" || workflow.kind === "unscheduled")
+        counts.unplanned += 1;
+      return counts;
+    },
+    { overdue: 0, planning: 0, today: 0, total: 0, unplanned: 0 },
+  );

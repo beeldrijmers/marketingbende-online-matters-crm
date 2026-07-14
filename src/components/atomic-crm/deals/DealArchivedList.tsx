@@ -7,6 +7,7 @@ import {
 import { useEffect, useState } from "react";
 import { Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +19,7 @@ import type { Deal } from "../types";
 import { DealCardContent } from "./DealCard";
 import { getRelativeTimeString } from "./dealUtils";
 
-export const DealArchivedList = () => {
+export const DealArchivedList = ({ className }: { className?: string }) => {
   const translate = useTranslate();
   const [locale = "en"] = useLocaleState();
   const { identity } = useGetIdentity();
@@ -59,11 +60,11 @@ export const DealArchivedList = () => {
   );
 
   return (
-    <div className="w-full flex flex-row items-center justify-center">
+    <>
       <Button
         variant="outline"
         onClick={() => setOpenDialog(true)}
-        className="my-4"
+        className={cn("shrink-0", className)}
       >
         <Archive className="mr-2 size-4" />
         {translate("resources.deals.archived.view")}
@@ -94,6 +95,6 @@ export const DealArchivedList = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 };

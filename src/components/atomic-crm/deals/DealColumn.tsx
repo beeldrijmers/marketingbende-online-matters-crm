@@ -20,8 +20,8 @@ export const DealColumn = ({
   const totalAmount = deals.reduce((sum, deal) => sum + (deal.amount ?? 0), 0);
   const { dealStages, currency } = useConfigurationContext();
   return (
-    <div className="flex flex-1 min-w-56 flex-col">
-      <div className="flex items-center justify-center gap-2">
+    <div className="flex h-full min-w-56 flex-1 flex-col overflow-hidden">
+      <div className="flex shrink-0 items-center justify-center gap-2">
         <h3 className="rounded-full bg-muted px-3 py-0.5 text-sm font-semibold text-foreground">
           {findDealLabel(dealStages, stage)}
         </h3>
@@ -41,7 +41,7 @@ export const DealColumn = ({
             ref={droppableProvided.innerRef}
             {...droppableProvided.droppableProps}
             className={cn(
-              "flex flex-col rounded-2xl mt-1.5 gap-1.5 border-2 border-dashed border-transparent p-1 pb-3 transition-colors duration-200 overflow-y-auto max-h-[calc(100dvh-14rem)] min-h-[8rem]",
+              "mt-1.5 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain rounded-2xl border-2 border-dashed border-transparent p-1 pb-3 [scrollbar-gutter:stable] transition-colors duration-200",
               snapshot.isDraggingOver && "border-primary/40 bg-muted",
             )}
           >

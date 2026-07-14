@@ -3,6 +3,7 @@ import {
   buildOpenTasksByDeal,
   getDealWorkflow,
   rankDealsForAttention,
+  summarizeDealAttention,
 } from "./dealWorkflow";
 
 const now = new Date(2026, 6, 14, 12);
@@ -67,28 +68,68 @@ describe("dealWorkflow", () => {
     ).toBe("overdue_closing");
   });
 
+  it("flags expired planning even when the next task is in the future", () => {
+    expect(
+      getDealWorkflow(
+        deal({ expected_closing_date: "2026-07-13" }),
+        [task({ due_date: "2026-07-20" })],
+        now,
+      ),
+    ).toMatchObject({
+      kind: "overdue_closing",
+      nextTask: { id: 10 },
+    });
+  });
+
   it("does not demand a next action for paused or completed work", () => {
-    expect(getDealWorkflow(deal({ stage: "on-hold" }), [], now).kind).toBe(
-      "on_hold",
-    );
+    expect(
+      getDealWorkflow(deal({ stage: "on-hold" }), [task()], now).kind,
+    ).toBe("on_hold");
     expect(getDealWorkflow(deal({ stage: "won" }), [], now).kind).toBe(
       "complete",
     );
   });
 
-  it("puts overdue and unplanned deals ahead of future work", () => {
+  it("only returns work that genuinely needs attention", () => {
     const deals = [
       deal({ id: 1 }),
       deal({ id: 2, expected_closing_date: "2026-07-10" }),
       deal({ id: 3 }),
+      deal({ id: 4, expected_closing_date: "2026-07-31" }),
+      deal({ id: 5, stage: "on-hold" }),
     ];
     const tasks = buildOpenTasksByDeal([
       task({ deal_id: 1, due_date: "2026-07-20" }),
       task({ deal_id: 3, due_date: "2026-07-13" }),
+      task({ deal_id: 4, due_date: "" }),
     ]);
 
     expect(
       rankDealsForAttention(deals, tasks, now).map(({ deal }) => deal.id),
-    ).toEqual([3, 2, 1]);
+    ).toEqual([3, 2, 4]);
+  });
+
+  it("summarizes the reasons that deals need attention", () => {
+    const deals = [
+      deal({ id: 1 }),
+      deal({ id: 2, expected_closing_date: "2026-07-10" }),
+      deal({ id: 3 }),
+      deal({ id: 4, expected_closing_date: "2026-07-31" }),
+    ];
+    const tasks = buildOpenTasksByDeal([
+      task({ deal_id: 1, due_date: "2026-07-13" }),
+      task({ deal_id: 3, due_date: "2026-07-14" }),
+      task({ deal_id: 4, due_date: "" }),
+    ]);
+
+    expect(
+      summarizeDealAttention(rankDealsForAttention(deals, tasks, now)),
+    ).toEqual({
+      overdue: 1,
+      planning: 1,
+      today: 1,
+      total: 4,
+      unplanned: 1,
+    });
   });
 });
