@@ -598,6 +598,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/trelloStageWriteback.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/stages.ts",
           "type": "registry:component"
         },
@@ -698,6 +702,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/dashboard/integrationStatusModel.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/dashboard/hotLeads.ts",
           "type": "registry:component"
         },
@@ -727,6 +735,10 @@
         },
         {
           "path": "src/components/atomic-crm/dashboard/LatestNotes.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/dashboard/IntegrationStatus.tsx",
           "type": "registry:component"
         },
         {

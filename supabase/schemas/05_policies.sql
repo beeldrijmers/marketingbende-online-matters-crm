@@ -20,6 +20,12 @@ alter table public.moneybird_company_contacts enable row level security;
 -- the webhook (service_role, which bypasses RLS). RLS-on + no-policy means
 -- anon/authenticated can neither read nor write it.
 alter table public.inbound_email_events enable row level security;
+alter table public.integration_runs enable row level security;
+
+-- Integration history contains operational metadata but no credentials. It is
+-- visible to active CRM users; only edge functions write it (no write policy).
+create policy "Enable read access for active CRM users" on public.integration_runs
+    for select to authenticated using (public.is_active_crm_user());
 
 -- Companies
 create policy "Enable read access for authenticated users" on public.companies for select to authenticated using (public.is_active_crm_user());

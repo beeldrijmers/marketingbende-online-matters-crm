@@ -27,6 +27,12 @@ import {
   emptyTrelloSyncStageCounts,
   type TrelloSyncStageCounts,
 } from "./stageCounts.ts";
+import {
+  completeTrelloIntegrationRun,
+  failTrelloIntegrationRun,
+  startTrelloIntegrationRun,
+  type TrelloRunKind,
+} from "./integrationRun.ts";
 
 const BOARD_ID = "6979f9a8a825b6ff46306e8a"; // SEO - Online Matters
 
@@ -204,7 +210,7 @@ const getActiveTrelloStageCounts = async (): Promise<TrelloSyncStageCounts> => {
   return countTrelloSyncStages(data ?? []);
 };
 
-export const run = async (): Promise<{
+export interface TrelloSyncSummary {
   cardCount: number;
   synced: number;
   totalComments: number;
@@ -214,8 +220,11 @@ export const run = async (): Promise<{
   durationMs: number;
   stageCounts: TrelloSyncStageCounts;
   failed: BackfillFailure[];
-}> => {
-  const startedAt = Date.now();
+}
+
+const executeTrelloSync = async (
+  startedAt: number,
+): Promise<TrelloSyncSummary> => {
   const cards = await fetchTrelloBoardCards({
     boardId: BOARD_ID,
     apiKey,
@@ -328,6 +337,24 @@ export const run = async (): Promise<{
   };
 };
 
+export const run = async ({
+  runKind = "manual",
+}: {
+  runKind?: TrelloRunKind;
+} = {}): Promise<TrelloSyncSummary> => {
+  const startedAt = Date.now();
+  const runId = await startTrelloIntegrationRun({ runKind, startedAt });
+
+  try {
+    const summary = await executeTrelloSync(startedAt);
+    await completeTrelloIntegrationRun(runId, summary);
+    return summary;
+  } catch (error) {
+    await failTrelloIntegrationRun({ runId, startedAt, error });
+    throw error;
+  }
+};
+
 if (import.meta.main) {
-  await run();
+  await run({ runKind: "backfill" });
 }

@@ -415,6 +415,27 @@ const getDataProviderWithCustomMethods = () => {
         );
       }
     },
+    // Keep the Trello card in the same workflow stage when a linked deal is
+    // dragged between columns in the CRM. The edge function checks that the
+    // signed-in sales user is assigned to the deal before calling Trello.
+    async moveTrelloDealToStage(dealId: Identifier, stage: string) {
+      const { error } = await getSupabaseClient().functions.invoke(
+        "trello-card-stage",
+        { method: "POST", body: { dealId, stage } },
+      );
+      if (error) {
+        const errorDetails = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(
+          errorDetails?.message || "Kon de Trello-kaart niet verplaatsen",
+        );
+      }
+    },
     // Pull every Trello card into the CRM on demand (the "Synchroniseer Trello"
     // button). The edge function runs the full, idempotent sync and returns a
     // summary of what it touched.

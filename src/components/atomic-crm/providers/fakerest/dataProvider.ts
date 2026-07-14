@@ -320,6 +320,8 @@ export const createDataProvider = ({
     },
     // No Trello backend in the demo; ticking a step off simply stays local.
     completeTrelloStep: async () => {},
+    // Demo deals are not linked to live Trello cards.
+    moveTrelloDealToStage: async () => {},
     syncTrelloCards: async () => {
       throw new Error(
         "De Trello-synchronisatie is niet beschikbaar in de demomodus.",

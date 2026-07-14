@@ -5,21 +5,22 @@ import {
   useGetList,
   useListContext,
   useNotify,
-  type DataProvider,
 } from "ra-core";
 import { useEffect, useMemo, useState } from "react";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
+import type { CrmDataProvider } from "../providers/types";
 import type { Deal, Task } from "../types";
 import { DealColumn } from "./DealColumn";
 import { buildOpenTasksByDeal } from "./dealWorkflow";
 import type { DealsByStage } from "./stages";
 import { getDealsByStage } from "./stages";
+import { writeLinkedDealStageToTrello } from "./trelloStageWriteback";
 
 export const DealListContent = () => {
   const { dealStages } = useConfigurationContext();
   const { data: unorderedDeals, isPending, refetch } = useListContext<Deal>();
-  const dataProvider = useDataProvider();
+  const dataProvider = useDataProvider<CrmDataProvider>();
   const notify = useNotify();
   const { data: tasks = [] } = useGetList<Task>("tasks", {
     pagination: { page: 1, perPage: 1000 },
@@ -88,7 +89,10 @@ export const DealListContent = () => {
         // refetch so the board snaps back to the server state instead of
         // silently showing unsaved positions.
         console.error("Failed to persist the deal move:", error);
-        notify("resources.deals.move_error", { type: "error" });
+        notify(
+          error instanceof Error ? error.message : "resources.deals.move_error",
+          { type: "error" },
+        );
         refetch();
       });
   };
@@ -147,13 +151,18 @@ const updateDealStageLocal = (
   }
 };
 
+type DealBoardDataProvider = Pick<
+  CrmDataProvider,
+  "getList" | "update" | "moveTrelloDealToStage"
+>;
+
 const updateDealStage = async (
   source: Deal,
   destination: {
     stage: string;
     index?: number; // undefined if dropped after the last item
   },
-  dataProvider: DataProvider,
+  dataProvider: DealBoardDataProvider,
 ) => {
   if (source.stage === destination.stage) {
     // moving deal inside the same column
@@ -221,6 +230,11 @@ const updateDealStage = async (
     }
   } else {
     // moving deal across columns
+    // Trello is the upstream source for linked cards. Move it first so a
+    // failed Trello write never leaves the CRM in a stage that the next pull
+    // would immediately overwrite. Unlinked CRM-only deals skip this call.
+    await writeLinkedDealStageToTrello(source, destination.stage, dataProvider);
+
     // Fetch all the deals in both stages (because the list may be filtered, but we need to update even non-filtered deals)
     const [{ data: sourceDeals }, { data: destinationDeals }] =
       await Promise.all([
