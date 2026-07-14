@@ -1,5 +1,5 @@
 import type { Deal } from "../types";
-import { getBillingState } from "./BillingQueue";
+import { getBillingState } from "./billingQueueModel";
 
 const deal = (overrides: Partial<Deal> = {}): Deal =>
   ({
