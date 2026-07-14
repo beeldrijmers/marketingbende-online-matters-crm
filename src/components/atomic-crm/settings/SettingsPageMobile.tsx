@@ -44,6 +44,7 @@ import {
 import { MobileContent } from "../layout/MobileContent";
 import MobileHeader from "../layout/MobileHeader";
 import { ChangelogPage } from "../misc/ChangelogPage";
+import { GmailComposeButton } from "../misc/CopyPaste";
 import ImageEditorField from "../misc/ImageEditorField";
 import type { CrmDataProvider } from "../providers/types";
 import type { SalesFormData } from "../types";
@@ -326,6 +327,7 @@ const InlineEditRow = ({
         <ItemActions>
           <input
             ref={inputRef}
+            aria-label={label}
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={handleSave}
@@ -485,6 +487,10 @@ const InboundEmailSection = () => {
       <ItemGroup className="rounded-lg border overflow-hidden">
         <CopyPasteRow value={import.meta.env.VITE_INBOUND_EMAIL} />
       </ItemGroup>
+      <GmailComposeButton
+        bcc={import.meta.env.VITE_INBOUND_EMAIL}
+        className="mt-2"
+      />
     </div>
   );
 };

@@ -50,6 +50,15 @@ describe("DealInboundEmail", () => {
       .click();
 
     expect(writeText).toHaveBeenCalledWith("deal-42@inbound.example.com");
+
+    const gmailLink = screen.getByRole("link", { name: /gmail/i });
+    await expect
+      .element(gmailLink)
+      .toHaveAttribute(
+        "href",
+        "https://mail.google.com/mail/?view=cm&fs=1&bcc=deal-42%40inbound.example.com",
+      );
+    await expect.element(gmailLink).toHaveAttribute("target", "_blank");
   });
 
   it("renders nothing when VITE_INBOUND_EMAIL is not set", async () => {

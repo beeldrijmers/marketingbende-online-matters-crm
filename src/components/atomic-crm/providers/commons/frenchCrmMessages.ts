@@ -321,7 +321,9 @@ export const frenchCrmMessages = {
         action: "Synchroniser Trello",
         pending: "Synchronisation...",
         success:
-          "Trello synchronisé : %{smart_count} carte mise à jour. |||| Trello synchronisé : %{smart_count} cartes mises à jour.",
+          "Trello synchronisé : %{smart_count} carte traitée. |||| Trello synchronisé : %{smart_count} cartes traitées.",
+        partial:
+          "Trello partiellement synchronisé : %{synced} cartes actives traitées. %{failed_count} échec(s) (%{failed_names}).",
         error: "Échec de la synchronisation avec Trello",
       },
 
@@ -529,6 +531,7 @@ export const frenchCrmMessages = {
       task_count: "%{smart_count} tâche |||| %{smart_count} tâches",
       copied: "Copié !",
       copy: "Copier",
+      open_gmail_with_bcc: "Ouvrir Gmail avec l’adresse CRM en Cci",
       loading: "Chargement...",
       me: "Moi",
     },

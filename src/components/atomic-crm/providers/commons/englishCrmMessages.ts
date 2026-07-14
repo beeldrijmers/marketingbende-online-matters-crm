@@ -312,7 +312,9 @@ export const englishCrmMessages = {
         action: "Sync Trello",
         pending: "Syncing...",
         success:
-          "Trello synced: %{smart_count} card updated. |||| Trello synced: %{smart_count} cards updated.",
+          "Trello synced: %{smart_count} card processed. |||| Trello synced: %{smart_count} cards processed.",
+        partial:
+          "Trello partly synced: %{synced} active cards processed. %{failed_count} failed (%{failed_names}).",
         error: "Failed to sync with Trello",
       },
 
@@ -518,6 +520,7 @@ export const englishCrmMessages = {
       show_less: "Show less",
       copied: "Copied!",
       copy: "Copy",
+      open_gmail_with_bcc: "Open Gmail with CRM address in Bcc",
       loading: "Loading...",
       me: "Me",
       task_count: "%{smart_count} task |||| %{smart_count} tasks",

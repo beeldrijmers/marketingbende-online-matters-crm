@@ -198,6 +198,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/sales/AssigneesField.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/root/useConfigurationLoader.ts",
           "type": "registry:component"
         },
@@ -367,6 +371,10 @@
         },
         {
           "path": "src/components/atomic-crm/notes/utils.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/notes/useSignedAttachmentUrl.ts",
           "type": "registry:component"
         },
         {
@@ -586,6 +594,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/trelloSyncNotification.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/stages.ts",
           "type": "registry:component"
         },
@@ -598,6 +610,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/SyncTrelloButton.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/OnlyMineInput.tsx",
           "type": "registry:component"
         },
@@ -607,6 +623,10 @@
         },
         {
           "path": "src/components/atomic-crm/deals/MobileDealsList.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/InternalExternalInput.tsx",
           "type": "registry:component"
         },
         {
@@ -638,6 +658,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/DealEditSheet.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/DealEdit.tsx",
           "type": "registry:component"
         },
@@ -662,11 +686,19 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/dashboard/revenueModel.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/dashboard/Welcome.tsx",
           "type": "registry:component"
         },
         {
           "path": "src/components/atomic-crm/dashboard/TasksList.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/dashboard/RevenueDashboard.tsx",
           "type": "registry:component"
         },
         {
@@ -683,10 +715,6 @@
         },
         {
           "path": "src/components/atomic-crm/dashboard/DealsPipeline.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "src/components/atomic-crm/dashboard/DealsChart.tsx",
           "type": "registry:component"
         },
         {
