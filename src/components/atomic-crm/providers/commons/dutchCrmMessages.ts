@@ -212,6 +212,15 @@ export const dutchCrmMessages = {
         "facturatie-live": "Factureren en het project live zetten.",
         won: "Afgerond.",
       },
+      workflow: {
+        overdue: "Te laat",
+        today: "Vandaag",
+        next: "Volgende",
+        plan_overdue: "Planning verlopen",
+        plan_next: "Plan volgende stap",
+        complete: "Klaar",
+        more: "+%{count}",
+      },
       fields: {
         name: "Naam",
         description: "Omschrijving",
@@ -571,6 +580,13 @@ export const dutchCrmMessages = {
     },
     dashboard: {
       deals_pipeline: "Deals pipeline",
+      deal_actions: {
+        title: "Af te handelen",
+        subtitle: "De belangrijkste volgende stappen uit uw kanban.",
+        open_board: "Kanban",
+        empty: "Er zijn geen open deals om af te handelen.",
+        more: "Nog %{count} op het kanbanbord",
+      },
       revenue: {
         title: "Omzet per maand",
         recurring: "Maandelijks terugkerend",

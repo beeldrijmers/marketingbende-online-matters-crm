@@ -212,6 +212,15 @@ export const frenchCrmMessages = {
         "facturatie-live": "Facturer et mettre le projet en ligne.",
         won: "Terminé.",
       },
+      workflow: {
+        overdue: "En retard",
+        today: "Aujourd'hui",
+        next: "Suivante",
+        plan_overdue: "Planification dépassée",
+        plan_next: "Planifier la prochaine étape",
+        complete: "Terminé",
+        more: "+%{count}",
+      },
       fields: {
         name: "Nom",
         description: "Description",
@@ -575,6 +584,13 @@ export const frenchCrmMessages = {
     },
     dashboard: {
       deals_pipeline: "Pipeline des affaires",
+      deal_actions: {
+        title: "À traiter",
+        subtitle: "Les prochaines étapes prioritaires de votre kanban.",
+        open_board: "Kanban",
+        empty: "Il n'y a aucune affaire ouverte à traiter.",
+        more: "Encore %{count} sur le tableau kanban",
+      },
       revenue: {
         title: "Chiffre d'affaires par mois",
         recurring: "Récurrent mensuel",

@@ -1,18 +1,21 @@
 import { Droppable } from "@hello-pangea/dnd";
+import type { Identifier } from "ra-core";
 
 import { cn } from "@/lib/utils";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
-import type { Deal } from "../types";
+import type { Deal, Task } from "../types";
 import { findDealLabel } from "./dealUtils";
 import { DealCard } from "./DealCard";
 
 export const DealColumn = ({
   stage,
   deals,
+  tasksByDeal,
 }: {
   stage: string;
   deals: Deal[];
+  tasksByDeal: Map<Identifier, Task[]>;
 }) => {
   const totalAmount = deals.reduce((sum, deal) => sum + (deal.amount ?? 0), 0);
   const { dealStages, currency } = useConfigurationContext();
@@ -43,7 +46,12 @@ export const DealColumn = ({
             )}
           >
             {deals.map((deal, index) => (
-              <DealCard key={deal.id} deal={deal} index={index} />
+              <DealCard
+                key={deal.id}
+                deal={deal}
+                index={index}
+                openTasks={tasksByDeal.get(deal.id) ?? []}
+              />
             ))}
             {droppableProvided.placeholder}
           </div>

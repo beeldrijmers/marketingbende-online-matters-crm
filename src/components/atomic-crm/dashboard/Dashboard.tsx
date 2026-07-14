@@ -1,7 +1,8 @@
 import { useGetList } from "ra-core";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Company, Contact, ContactNote } from "../types";
+import type { Company, Contact, ContactNote, Deal } from "../types";
+import { DealActionQueue } from "./DealActionQueue";
 import { DashboardActivityLog } from "./DashboardActivityLog";
 import { DashboardStepper } from "./DashboardStepper";
 import { HotContacts } from "./HotContacts";
@@ -23,7 +24,7 @@ export const Dashboard = () => {
       pagination: { page: 1, perPage: 1 },
     });
 
-  const { total: totalDeal, isPending: isPendingDeal } = useGetList<Contact>(
+  const { total: totalDeal, isPending: isPendingDeal } = useGetList<Deal>(
     "deals",
     {
       pagination: { page: 1, perPage: 1 },
@@ -84,20 +85,22 @@ export const Dashboard = () => {
           <RevenueDashboard />
         </div>
       ) : null}
-      <div className="xl:col-span-3 min-w-0">
+      <div className="xl:col-span-8 min-w-0">
+        <DealActionQueue />
+      </div>
+      <div className="xl:col-span-4 min-w-0">
+        <TasksList />
+      </div>
+      <div className="xl:col-span-4 min-w-0">
         <div className="flex flex-col gap-6">
           {import.meta.env.VITE_IS_DEMO === "true" ? <Welcome /> : null}
           <HotContacts />
         </div>
       </div>
-      <div className="xl:col-span-6 min-w-0">
+      <div className="xl:col-span-8 min-w-0">
         <div className="flex flex-col gap-6">
           <DashboardActivityLog />
         </div>
-      </div>
-
-      <div className="xl:col-span-3 min-w-0">
-        <TasksList />
       </div>
     </div>
   );

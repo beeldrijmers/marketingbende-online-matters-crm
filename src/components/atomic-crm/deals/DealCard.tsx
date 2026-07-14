@@ -10,13 +10,16 @@ import { cn } from "@/lib/utils";
 import { CompanyAvatar } from "../companies/CompanyAvatar";
 import { AssigneesField } from "../sales/AssigneesField";
 import { useConfigurationContext } from "../root/ConfigurationContext";
-import type { Deal } from "../types";
+import type { Deal, Task } from "../types";
+import { DealWorkflowIndicator } from "./DealWorkflowIndicator";
 
 // A monthly/recurring price hint anywhere in the card text ("EUR 300 p/m",
 // "per maand", "maandelijks") means we show the amount as a monthly rate.
 // The explicit revenue_period field wins; the text scan is a fallback for
 // deals (e.g. imported from Trello) that never got the field set.
 const RECURRING_RE = /per\s*maand|p\/m|\/\s*mnd|\bmnd\b|maandelijks/i;
+const EMPTY_TASKS: Task[] = [];
+
 const isRecurringDeal = (deal: Deal): boolean =>
   deal.revenue_period === "maandelijks" ||
   RECURRING_RE.test(`${deal.name ?? ""} ${deal.description ?? ""}`);
@@ -28,13 +31,26 @@ const moneybirdLabel = (deal: Deal): string | null =>
       ? "Offerte"
       : null;
 
-export const DealCard = ({ deal, index }: { deal: Deal; index: number }) => {
+export const DealCard = ({
+  deal,
+  index,
+  openTasks,
+}: {
+  deal: Deal;
+  index: number;
+  openTasks: Task[];
+}) => {
   if (!deal) return null;
 
   return (
     <Draggable draggableId={String(deal.id)} index={index}>
       {(provided, snapshot) => (
-        <DealCardContent provided={provided} snapshot={snapshot} deal={deal} />
+        <DealCardContent
+          provided={provided}
+          snapshot={snapshot}
+          deal={deal}
+          openTasks={openTasks}
+        />
       )}
     </Draggable>
   );
@@ -44,10 +60,12 @@ export const DealCardContent = ({
   provided,
   snapshot,
   deal,
+  openTasks = EMPTY_TASKS,
 }: {
   provided?: any;
   snapshot?: any;
   deal: Deal;
+  openTasks?: Task[];
 }) => {
   const { dealCategories, currency } = useConfigurationContext();
   const translate = useTranslate();
@@ -161,6 +179,7 @@ export const DealCardContent = ({
                 />
               </div>
             </div>
+            <DealWorkflowIndicator deal={deal} openTasks={openTasks} />
           </CardContent>
         </Card>
       </RecordContextProvider>

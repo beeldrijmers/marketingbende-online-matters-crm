@@ -6,6 +6,7 @@ import type { Company, Contact, ContactNote, Deal } from "../types";
 import { ContactCreateSheet } from "../contacts/ContactCreateSheet";
 import { NoteCreateSheet } from "../notes/NoteCreateSheet";
 import { DashboardActivityLog } from "./DashboardActivityLog";
+import { DealActionQueue } from "./DealActionQueue";
 import { DashboardStepper } from "./DashboardStepper";
 import { Welcome } from "./Welcome";
 import MobileHeader from "../layout/MobileHeader";
@@ -117,8 +118,9 @@ export const MobileDashboard = () => {
           onNewNote={() => setNoteCreateOpen(true)}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mt-1">
+        <div className="flex flex-col gap-6 mt-1">
           {import.meta.env.VITE_IS_DEMO === "true" ? <Welcome /> : null}
+          <DealActionQueue />
           <DashboardActivityLog />
         </div>
       )}
