@@ -4,6 +4,7 @@ import { useDataProvider, useNotify, useRefresh, useTranslate } from "ra-core";
 
 import { Button } from "@/components/ui/button";
 import type { CrmDataProvider } from "../providers/types";
+import { getTrelloSyncNotification } from "./trelloSyncNotification";
 
 // Top-right button on the deals board that pulls every Trello card into the
 // CRM on demand. The sync is idempotent, so re-clicking is always safe.
@@ -17,15 +18,10 @@ export const SyncTrelloButton = () => {
     mutationKey: ["trello-sync", "sync_all"],
     mutationFn: () => dataProvider.syncTrelloCards(),
     onSuccess: (summary) => {
-      notify("resources.deals.trello_sync.success", {
-        type: "success",
-        messageArgs: {
-          smart_count: summary.synced,
-          _:
-            summary.synced === 1
-              ? "Trello gesynchroniseerd: 1 kaart bijgewerkt."
-              : `Trello gesynchroniseerd: ${summary.synced} kaarten bijgewerkt.`,
-        },
+      const notification = getTrelloSyncNotification(summary);
+      notify(notification.message, {
+        type: notification.type,
+        messageArgs: notification.messageArgs,
       });
       refresh();
     },

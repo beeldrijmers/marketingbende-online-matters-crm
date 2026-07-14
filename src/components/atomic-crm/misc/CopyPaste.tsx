@@ -1,4 +1,4 @@
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, ExternalLink, Mail } from "lucide-react";
 import { useTranslate } from "ra-core";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,43 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+const buildGmailComposeUrl = (bcc: string) => {
+  const searchParams = new URLSearchParams({
+    view: "cm",
+    fs: "1",
+    bcc,
+  });
+  return `https://mail.google.com/mail/?${searchParams.toString()}`;
+};
+
+export const GmailComposeButton = ({
+  bcc,
+  className,
+}: {
+  bcc: string;
+  className?: string;
+}) => {
+  const translate = useTranslate();
+  const label = translate("crm.common.open_gmail_with_bcc", {
+    _: "Open Gmail with the CRM address in Bcc",
+  });
+
+  return (
+    <Button asChild variant="outline" className={`w-full ${className ?? ""}`}>
+      <a
+        href={buildGmailComposeUrl(bcc)}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={label}
+      >
+        <Mail className="size-4" />
+        {label}
+        <ExternalLink className="size-3.5 text-muted-foreground" />
+      </a>
+    </Button>
+  );
+};
 
 export const CopyPaste = ({ value }: { value: string }) => {
   const translate = useTranslate();

@@ -425,7 +425,13 @@ const getDataProviderWithCustomMethods = () => {
           synced: number;
           totalComments: number;
           totalAttachments: number;
+          archivedCardsWithUploads: number;
           archivedAttachments: number;
+          failed: Array<{
+            cardId: string;
+            cardName: string;
+            error: string;
+          }>;
         };
       }>("trello-sync", {
         method: "POST",

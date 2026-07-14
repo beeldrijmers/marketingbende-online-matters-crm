@@ -319,7 +319,9 @@ export const dutchCrmMessages = {
         action: "Synchroniseer Trello",
         pending: "Synchroniseren...",
         success:
-          "Trello gesynchroniseerd: %{smart_count} kaart bijgewerkt. |||| Trello gesynchroniseerd: %{smart_count} kaarten bijgewerkt.",
+          "Trello gesynchroniseerd: %{smart_count} kaart verwerkt. |||| Trello gesynchroniseerd: %{smart_count} kaarten verwerkt.",
+        partial:
+          "Trello deels gesynchroniseerd: %{synced} actieve kaarten verwerkt. %{failed_count} mislukt (%{failed_names}).",
         error: "Synchroniseren met Trello is mislukt",
       },
 
@@ -524,6 +526,7 @@ export const dutchCrmMessages = {
       show_less: "Minder tonen",
       copied: "Gekopieerd!",
       copy: "Kopiëren",
+      open_gmail_with_bcc: "Open Gmail met CRM-adres in BCC",
       loading: "Bezig met laden...",
       me: "Ik",
       task_count: "%{smart_count} taak |||| %{smart_count} taken",

@@ -1,6 +1,6 @@
 import { useRecordContext, useTranslate } from "ra-core";
 
-import { CopyPaste } from "../misc/CopyPaste";
+import { CopyPaste, GmailComposeButton } from "../misc/CopyPaste";
 import type { Deal } from "../types";
 import { buildDealInboundEmail } from "./dealUtils";
 
@@ -23,7 +23,10 @@ export const DealInboundEmail = () => {
       <p className="text-sm text-muted-foreground">
         {translate("resources.deals.inbound.description")}
       </p>
-      <CopyPaste value={inboundEmail} />
+      <div className="space-y-2">
+        <CopyPaste value={inboundEmail} />
+        <GmailComposeButton bcc={inboundEmail} />
+      </div>
     </div>
   );
 };

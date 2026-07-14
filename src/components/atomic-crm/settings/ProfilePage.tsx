@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { CopyPaste } from "../misc/CopyPaste";
+import { CopyPaste, GmailComposeButton } from "../misc/CopyPaste";
 import ImageEditorField from "../misc/ImageEditorField";
 import type { CrmDataProvider } from "../providers/types";
 import type { Sale, SalesFormData } from "../types";
@@ -247,6 +247,7 @@ const ProfileForm = ({
                 })}
               </p>
               <CopyPaste value={import.meta.env.VITE_INBOUND_EMAIL} />
+              <GmailComposeButton bcc={import.meta.env.VITE_INBOUND_EMAIL} />
             </div>
           </CardContent>
         </Card>

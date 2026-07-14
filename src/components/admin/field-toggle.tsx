@@ -4,6 +4,11 @@ import { GripVertical } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
+const handleDragOver = (event: React.DragEvent) => {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
+};
+
 /**
  * A toggleable field item with drag-and-drop reordering, used by ColumnsSelector
  *
@@ -110,15 +115,11 @@ export const FieldToggle = (props: FieldToggleProps) => {
     );
   };
 
-  const handleDragOver = (event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  };
-
   return (
     <li
       key={source}
       role="option"
+      aria-selected={selected}
       draggable={onMove ? "true" : undefined}
       onDrag={onMove ? handleDrag : undefined}
       onDragStart={onMove ? handleDragStart : undefined}
