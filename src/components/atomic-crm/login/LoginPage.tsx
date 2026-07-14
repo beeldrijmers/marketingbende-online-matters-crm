@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { Form, required, useLogin, useNotify, useTranslate } from "ra-core";
 import type { SubmitHandler, FieldValues } from "react-hook-form";
 import { Link, useLocation, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { TextInput } from "@/components/admin/text-input";
 import { Notification } from "@/components/admin/notification";
+import { Spinner } from "@/components/ui/spinner";
 import { useConfigurationContext } from "@/components/atomic-crm/root/ConfigurationContext.tsx";
 import { SSOAuthButton } from "./SSOAuthButton";
 
@@ -20,12 +22,14 @@ import { SSOAuthButton } from "./SSOAuthButton";
 export const LoginPage = (props: { redirectTo?: string }) => {
   const {
     darkModeLogo,
+    lightModeLogo,
     title,
     googleWorkplaceDomain,
     disableEmailPasswordAuthentication,
   } = useConfigurationContext();
   const { redirectTo } = props;
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const hasDisplayedRecoveryNotification = useRef(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -102,6 +106,19 @@ export const LoginPage = (props: { redirectTo?: string }) => {
         </div>
         <div className="flex flex-col justify-center w-full p-4 lg:p-8">
           <div className="w-full space-y-6 lg:mx-auto lg:max-w-sm">
+            <div className="flex items-center justify-center gap-2 lg:hidden">
+              <img
+                className="[.light_&]:hidden h-6"
+                src={darkModeLogo}
+                alt=""
+              />
+              <img
+                className="[.dark_&]:hidden h-6"
+                src={lightModeLogo}
+                alt=""
+              />
+              <span className="text-lg font-medium">{title}</span>
+            </div>
             <div className="text-center">
               <h1 className="text-2xl font-semibold tracking-tight">
                 {translate("ra.auth.sign_in")}
@@ -113,21 +130,63 @@ export const LoginPage = (props: { redirectTo?: string }) => {
                   label="ra.auth.email"
                   source="email"
                   type="email"
+                  autoComplete="email"
+                  disabled={loading}
                   validate={required()}
                 />
-                <TextInput
-                  label="ra.auth.password"
-                  source="password"
-                  type="password"
-                  validate={required()}
-                />
+                <div className="relative">
+                  <TextInput
+                    label="ra.auth.password"
+                    source="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    disabled={loading}
+                    inputClassName="pr-10"
+                    validate={required()}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-7 size-7 text-muted-foreground hover:text-foreground"
+                    aria-label={translate(
+                      showPassword
+                        ? "crm.auth.hide_password"
+                        : "crm.auth.show_password",
+                      {
+                        _: showPassword ? "Hide password" : "Show password",
+                      },
+                    )}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    disabled={loading}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
+                  </Button>
+                </div>
                 <div className="flex flex-col gap-4">
                   <Button
                     type="submit"
                     className="cursor-pointer"
                     disabled={loading}
                   >
-                    {translate("ra.auth.sign_in")}
+                    {loading ? (
+                      <>
+                        <Spinner
+                          size="small"
+                          className="size-4 text-primary-foreground"
+                        />
+                        {translate("crm.auth.signing_in", {
+                          _: "Signing in...",
+                        })}
+                      </>
+                    ) : (
+                      translate("ra.auth.sign_in")
+                    )}
                   </Button>
                 </div>
               </Form>

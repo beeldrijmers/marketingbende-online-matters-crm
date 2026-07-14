@@ -502,8 +502,11 @@ export const dutchCrmMessages = {
         "Volg de link die we u zojuist per e-mail hebben gestuurd om uw account te bevestigen.",
       recovery_email_sent:
         "Als u een geregistreerde gebruiker bent, ontvangt u binnenkort een e-mail om uw wachtwoord te herstellen.",
+      hide_password: "Wachtwoord verbergen",
+      show_password: "Wachtwoord tonen",
       sign_in_failed: "Inloggen mislukt.",
       sign_in_google_workspace: "Inloggen met Google Workspace",
+      signing_in: "Bezig met inloggen...",
       signup: {
         create_account: "Account aanmaken",
         create_first_user:
