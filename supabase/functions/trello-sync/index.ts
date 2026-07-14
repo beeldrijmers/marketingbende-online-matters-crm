@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     req.headers.get("x-admin-backfill-secret") === adminBackfillSecret
   ) {
     try {
-      const summary = await runTrelloBackfill();
+      const summary = await runTrelloBackfill({ runKind: "backfill" });
       return new Response(JSON.stringify(summary), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
   if (isSyncAllTrigger(rawBody)) {
     return AuthMiddleware(req, async () => {
       try {
-        const summary = await runTrelloBackfill();
+        const summary = await runTrelloBackfill({ runKind: "manual" });
         return new Response(JSON.stringify({ data: summary }), {
           status: 200,
           headers: { "Content-Type": "application/json", ...corsHeaders },

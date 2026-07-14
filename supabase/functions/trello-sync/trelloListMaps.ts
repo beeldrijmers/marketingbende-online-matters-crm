@@ -41,6 +41,37 @@ export const LABEL_TO_CATEGORY: Record<string, string> = {
 
 export const DEFAULT_CATEGORY = "overig";
 
+// Reverse mapping used when a CRM kanban move is written back to Trello.
+// "Bezig" is special: project categories retain their dedicated Trello list,
+// while SEO/overig use the generic Bezig list.
+export const STAGE_TO_LIST: Record<string, string> = {
+  "informatie-pipeline": "6979f9b306e4dba9dc5182fa",
+  bezig: "6979f9a8a825b6ff46306ece",
+  "on-hold": "6a40ed3ab091e5e140319312",
+  "facturatie-live": "6979f9dd197030f0766dfaa5",
+  won: WON_LIST_ID,
+};
+
+export const CATEGORY_TO_ACTIVE_LIST: Record<string, string> = {
+  eenmalig: "6982ffae219bd60c27be88b5",
+  "website-development": "69c0f7bd1a66e8c764d484ee",
+  "website-optimalisatie": "69b56f4098ee1bc8c55e21ec",
+  happr: "6979f9a8a825b6ff46306ecd",
+};
+
+export const resolveTrelloListForDealStage = ({
+  stage,
+  category,
+}: {
+  stage: string;
+  category: string | null;
+}): string | null => {
+  if (stage === "bezig" && category) {
+    return CATEGORY_TO_ACTIVE_LIST[category] ?? STAGE_TO_LIST.bezig;
+  }
+  return STAGE_TO_LIST[stage] ?? null;
+};
+
 // Whether a Trello list id is part of the known board vocabulary above. A
 // list the team adds later is unknown here until the maps are updated; the
 // sync then keeps its hands off the stage of existing deals instead of

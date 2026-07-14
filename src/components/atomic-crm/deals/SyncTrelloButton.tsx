@@ -41,8 +41,15 @@ export const SyncTrelloButton = () => {
         messageArgs: notification.messageArgs,
       });
       await Promise.all(
-        ["deals", "tasks", "companies", "contacts", "deal_notes"].map(
-          (resource) => queryClient.invalidateQueries({ queryKey: [resource] }),
+        [
+          "deals",
+          "tasks",
+          "companies",
+          "contacts",
+          "deal_notes",
+          "integration_runs",
+        ].map((resource) =>
+          queryClient.invalidateQueries({ queryKey: [resource] }),
         ),
       );
       refresh();

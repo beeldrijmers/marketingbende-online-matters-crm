@@ -134,6 +134,7 @@ export type Deal = {
   expected_closing_date: string | null;
   start_date?: string | null;
   delivery_date?: string | null;
+  trello_card_id?: string | null;
   sales_id: Identifier;
   // The sales users this deal is assigned to; a deal is only visible to its
   // assignees (enforced by RLS). Defaults to the owner.
@@ -158,6 +159,29 @@ export type Deal = {
   moneybird_invoice_created_by?: Identifier;
   moneybird_invoice_error?: string;
   moneybird_invoice_administration_id?: string;
+} & Pick<RaRecord, "id">;
+
+export type IntegrationRun = {
+  integration: "trello";
+  run_kind: "manual" | "backfill";
+  status: "running" | "success" | "partial" | "failed";
+  started_at: string;
+  finished_at: string | null;
+  duration_ms: number | null;
+  items_processed: number;
+  failed_count: number;
+  summary: {
+    cardCount?: number;
+    synced?: number;
+    stageCounts?: {
+      "informatie-pipeline": number;
+      bezig: number;
+      "on-hold": number;
+      "facturatie-live": number;
+      won: number;
+    };
+  };
+  error: string | null;
 } & Pick<RaRecord, "id">;
 
 export type DealNote = {

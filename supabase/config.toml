@@ -176,6 +176,8 @@ verify_jwt = false
 verify_jwt = false
 [functions.trello-sync]
 verify_jwt = false
+[functions.trello-card-stage]
+verify_jwt = false
 [functions.moneybird_estimate]
 verify_jwt = false
 [functions.moneybird_invoice]

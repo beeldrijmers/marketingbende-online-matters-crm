@@ -166,3 +166,5 @@ verify_jwt = false
 verify_jwt = false
 [functions.users]
 verify_jwt = false
+[functions.trello-card-stage]
+verify_jwt = false

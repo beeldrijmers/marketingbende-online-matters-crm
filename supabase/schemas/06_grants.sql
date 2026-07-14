@@ -172,6 +172,12 @@ grant select (id, sales_id, administration_id, administration_name, created_at, 
 grant all on table public.moneybird_company_contacts to service_role;
 revoke all on table public.moneybird_company_contacts from anon, authenticated;
 
+-- Integration run history: edge functions write with service_role; active CRM
+-- users can only read it through the matching RLS policy.
+grant all on table public.integration_runs to service_role;
+revoke all on table public.integration_runs from anon, authenticated;
+grant select on table public.integration_runs to authenticated;
+
 -- View grants
 grant all on table public.activity_log to anon;
 grant all on table public.activity_log to authenticated;
@@ -233,6 +239,9 @@ revoke all on sequence public.moneybird_connections_id_seq from anon, authentica
 
 grant all on sequence public.moneybird_company_contacts_id_seq to service_role;
 revoke all on sequence public.moneybird_company_contacts_id_seq from anon, authenticated;
+
+grant all on sequence public.integration_runs_id_seq to service_role;
+revoke all on sequence public.integration_runs_id_seq from anon, authenticated;
 
 -- Default privileges: secure-by-default for NEW objects. Only service_role
 -- (and postgres) get automatic access; anon/authenticated are granted exactly

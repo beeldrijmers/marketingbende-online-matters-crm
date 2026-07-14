@@ -7,6 +7,7 @@ import { DealActionQueue } from "./DealActionQueue";
 import { DashboardActivityLog } from "./DashboardActivityLog";
 import { DashboardStepper } from "./DashboardStepper";
 import { HotContacts } from "./HotContacts";
+import { IntegrationStatus } from "./IntegrationStatus";
 import { RevenueDisclosure } from "./RevenueDisclosure";
 import { TasksList } from "./TasksList";
 import { Welcome } from "./Welcome";
@@ -88,6 +89,7 @@ export const Dashboard = () => {
       </div>
       <div className="flex min-w-0 flex-col gap-5 xl:col-span-4">
         {import.meta.env.VITE_IS_DEMO === "true" ? <Welcome /> : null}
+        {import.meta.env.VITE_IS_DEMO !== "true" ? <IntegrationStatus /> : null}
         <HotContacts />
         <TasksList />
       </div>
