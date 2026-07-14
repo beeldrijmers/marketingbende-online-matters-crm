@@ -34,8 +34,8 @@ export function ActivityLogNote({ header, text, link }: ActivityLogNoteProps) {
   return (
     <article className="min-w-0">
       <div className="flex min-w-0 items-start">{header}</div>
-      <div className="mt-2 min-w-0 sm:ml-7">
-        <div className="relative max-w-3xl rounded-lg border bg-muted/25 px-3 py-2.5">
+      <div className="mt-1.5 min-w-0 sm:ml-7">
+        <div className="relative w-full rounded-lg border bg-muted/25 px-3 py-2">
           {note.source === "trello" ? (
             <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
               <Badge

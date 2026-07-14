@@ -45,16 +45,14 @@ export const Dashboard = () => {
 
   if (isPending) {
     return (
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 mt-1">
-        <div className="xl:col-span-3">
-          <Skeleton className="h-64 w-full" />
-        </div>
-        <div className="xl:col-span-6 flex flex-col gap-6">
+      <div className="mt-1 grid grid-cols-1 items-start gap-5 xl:grid-cols-12">
+        <div className="flex flex-col gap-5 xl:col-span-8">
           <Skeleton className="h-48 w-full" />
           <Skeleton className="h-64 w-full" />
         </div>
-        <div className="xl:col-span-3">
+        <div className="flex flex-col gap-5 xl:col-span-4">
           <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-48 w-full" />
         </div>
       </div>
     );
@@ -79,32 +77,20 @@ export const Dashboard = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 mt-1">
-      <div className="xl:col-span-8 min-w-0">
+    <div className="mt-1 grid grid-cols-1 items-start gap-5 xl:grid-cols-12">
+      {/* Independent desktop columns prevent a tall card from creating an empty
+          grid cell underneath the shorter card next to it. */}
+      <div className="flex min-w-0 flex-col gap-5 xl:col-span-8">
         <DealActionQueue />
-      </div>
-      <div className="xl:col-span-4 min-w-0">
-        <div className="flex flex-col gap-6">
-          {import.meta.env.VITE_IS_DEMO === "true" ? <Welcome /> : null}
-          <HotContacts />
-        </div>
-      </div>
-      <div className="xl:col-span-7 min-w-0">
         <BillingQueue />
+        <DashboardActivityLog />
       </div>
-      <div className="xl:col-span-5 min-w-0">
+      <div className="flex min-w-0 flex-col gap-5 xl:col-span-4">
+        {import.meta.env.VITE_IS_DEMO === "true" ? <Welcome /> : null}
+        <HotContacts />
         <TasksList />
+        {totalDeal ? <RevenueDisclosure /> : null}
       </div>
-      <div className="xl:col-span-12 min-w-0">
-        <div className="flex flex-col gap-6">
-          <DashboardActivityLog />
-        </div>
-      </div>
-      {totalDeal ? (
-        <div className="xl:col-span-12 min-w-0">
-          <RevenueDisclosure />
-        </div>
-      ) : null}
     </div>
   );
 };

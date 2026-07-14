@@ -8,17 +8,45 @@ export type HotLead = {
   contact: Contact | null;
   deals: Deal[];
   primaryDeal: Deal;
+  reasons: HotLeadReason[];
   score: number;
+  tier: HotLeadTier;
   totalAmount: number;
   workflow: DealWorkflow;
 };
 
+export type HotLeadTier = "hot" | "warm" | "watch";
+
+export type HotLeadReason =
+  | "active_delivery"
+  | "active_opportunity"
+  | "closing_overdue"
+  | "high_value"
+  | "hot_contact"
+  | "multiple_deals"
+  | "recent_activity"
+  | "ready_to_invoice"
+  | "urgent_follow_up";
+
 type ScoredDeal = {
   contact: Contact | null;
   deal: Deal;
+  reasons: HotLeadReason[];
   score: number;
   workflow: DealWorkflow;
 };
+
+// Deliberately kept in one exported object so the weights and thresholds can
+// be tuned from real conversion results without hunting through the ranking
+// implementation. The UI also shows the resulting score and strongest signals.
+export const HOT_LEAD_CALIBRATION = {
+  relationshipBonusPerExtraDeal: 6,
+  relationshipBonusMaximum: 18,
+  tiers: {
+    hot: 75,
+    warm: 55,
+  },
+} as const;
 
 const stageScore: Record<string, number> = {
   bezig: 45,
@@ -62,6 +90,38 @@ const recentActivityScore = (updatedAt: string, now: Date): number => {
   if (ageInDays <= 7) return 15;
   if (ageInDays <= 30) return 8;
   return 0;
+};
+
+const getDealReasons = (
+  deal: Deal,
+  workflow: DealWorkflow,
+  contact: Contact | null,
+  now: Date,
+): HotLeadReason[] => {
+  const reasons: HotLeadReason[] = [];
+
+  if (workflow.kind === "overdue" || workflow.kind === "today") {
+    reasons.push("urgent_follow_up");
+  } else if (workflow.kind === "overdue_closing") {
+    reasons.push("closing_overdue");
+  }
+
+  if (deal.stage === "bezig") reasons.push("active_delivery");
+  if (deal.stage === "informatie-pipeline") reasons.push("active_opportunity");
+  if (deal.stage === "facturatie-live") reasons.push("ready_to_invoice");
+  if ((deal.amount ?? 0) >= 5_000) reasons.push("high_value");
+  if (recentActivityScore(deal.updated_at, now) === 15) {
+    reasons.push("recent_activity");
+  }
+  if (contact?.status === "hot") reasons.push("hot_contact");
+
+  return reasons;
+};
+
+export const getHotLeadTier = (score: number): HotLeadTier => {
+  if (score >= HOT_LEAD_CALIBRATION.tiers.hot) return "hot";
+  if (score >= HOT_LEAD_CALIBRATION.tiers.warm) return "warm";
+  return "watch";
 };
 
 const compareContacts = (left: Contact, right: Contact): number =>
@@ -120,7 +180,13 @@ export const rankHotLeads = (
         recentActivityScore(deal.updated_at, now) +
         (contact ? (contactStatusScore[contact.status] ?? 0) : 0);
 
-      return { contact, deal, score, workflow };
+      return {
+        contact,
+        deal,
+        reasons: getDealReasons(deal, workflow, contact, now),
+        score,
+        workflow,
+      };
     });
 
   const groups = new Map<string, ScoredDeal[]>();
@@ -144,14 +210,26 @@ export const rankHotLeads = (
       );
       const primary = group[0];
       const contact = group.find((candidate) => candidate.contact)?.contact;
-      const relationshipBonus = Math.min((group.length - 1) * 6, 18);
+      const relationshipBonus = Math.min(
+        (group.length - 1) * HOT_LEAD_CALIBRATION.relationshipBonusPerExtraDeal,
+        HOT_LEAD_CALIBRATION.relationshipBonusMaximum,
+      );
+      const score = primary.score + relationshipBonus;
+      const reasons = [
+        ...(group.length > 1
+          ? (["multiple_deals"] satisfies HotLeadReason[])
+          : []),
+        ...primary.reasons,
+      ];
 
       return {
         activeDealCount: group.length,
         contact: contact ?? null,
         deals: group.map(({ deal }) => deal),
         primaryDeal: primary.deal,
-        score: primary.score + relationshipBonus,
+        reasons,
+        score,
+        tier: getHotLeadTier(score),
         totalAmount: group.reduce(
           (total, { deal }) => total + Math.max(deal.amount ?? 0, 0),
           0,

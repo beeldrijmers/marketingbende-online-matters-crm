@@ -1,0 +1,70 @@
+name: 🩺 Production smoke
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-smoke
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: 🩺 Authenticated CRM check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CRM_BASE_URL: https://crm.marketingbende.nl
+      CRM_SMOKE_EMAIL: ${{ secrets.CRM_SMOKE_EMAIL }}
+      CRM_SMOKE_PASSWORD: ${{ secrets.CRM_SMOKE_PASSWORD }}
+
+    steps:
+      - name: 🔐 Check monitor credentials
+        id: credentials
+        run: |
+          if [ -n "$CRM_SMOKE_EMAIL" ] && [ -n "$CRM_SMOKE_PASSWORD" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Add CRM_SMOKE_EMAIL and CRM_SMOKE_PASSWORD repository secrets to activate the authenticated monitor."
+            echo "### Monitor wacht op inloggegevens" >> "$GITHUB_STEP_SUMMARY"
+            echo "Voeg de repository-secrets \`CRM_SMOKE_EMAIL\` en \`CRM_SMOKE_PASSWORD\` toe; er worden nooit wachtwoorden gelogd." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: 📥 Checkout repo
+        if: steps.credentials.outputs.configured == 'true'
+        uses: actions/checkout@v6
+
+      - name: ⚙️ Setup node
+        if: steps.credentials.outputs.configured == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 📥 Install dependencies
+        if: steps.credentials.outputs.configured == 'true'
+        run: npm ci
+
+      - name: 🎭 Install Chromium
+        if: steps.credentials.outputs.configured == 'true'
+        run: npx playwright install --with-deps chromium-headless-shell 1>/dev/null
+
+      - name: 🩺 Check production
+        if: steps.credentials.outputs.configured == 'true'
+        run: npx playwright test --config playwright.production.config.ts
+
+      - name: 📎 Upload failure evidence
+        if: failure() && steps.credentials.outputs.configured == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: production-smoke-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7

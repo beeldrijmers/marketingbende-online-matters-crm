@@ -1,6 +1,6 @@
 import type { Contact, Deal, Task } from "../types";
 import { buildOpenTasksByDeal } from "../deals/dealWorkflow";
-import { rankHotLeads } from "./hotLeads";
+import { HOT_LEAD_CALIBRATION, getHotLeadTier, rankHotLeads } from "./hotLeads";
 
 const now = new Date(2026, 6, 14, 12);
 
@@ -66,8 +66,10 @@ describe("rankHotLeads", () => {
     expect(leads[0]).toMatchObject({
       activeDealCount: 2,
       contact: null,
+      tier: "hot",
       totalAmount: 5_000,
     });
+    expect(leads[0].reasons).toContain("multiple_deals");
   });
 
   it("does not present paused, completed or internal work as a hot lead", () => {
@@ -98,6 +100,7 @@ describe("rankHotLeads", () => {
     );
 
     expect(lead.contact?.id).toBe(11);
+    expect(lead.reasons).toContain("hot_contact");
   });
 
   it("ranks urgent follow-up above a quieter active relationship", () => {
@@ -125,5 +128,12 @@ describe("rankHotLeads", () => {
 
     expect(leads.map(({ primaryDeal }) => primaryDeal.id)).toEqual([2, 1]);
     expect(leads[0].workflow.kind).toBe("today");
+    expect(leads[0].reasons).toContain("urgent_follow_up");
+  });
+
+  it("uses explicit, calibratable score bands", () => {
+    expect(getHotLeadTier(HOT_LEAD_CALIBRATION.tiers.hot)).toBe("hot");
+    expect(getHotLeadTier(HOT_LEAD_CALIBRATION.tiers.warm)).toBe("warm");
+    expect(getHotLeadTier(HOT_LEAD_CALIBRATION.tiers.warm - 1)).toBe("watch");
   });
 });

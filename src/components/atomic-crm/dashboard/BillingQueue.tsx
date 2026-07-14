@@ -47,7 +47,7 @@ export const BillingQueue = () => {
   ).length;
 
   return (
-    <section className="flex min-w-0 flex-col gap-4">
+    <section className="flex min-w-0 flex-col gap-3">
       <div className="flex items-start gap-3">
         <ReceiptText className="mt-0.5 size-6 shrink-0 text-emerald-600 dark:text-emerald-400" />
         <div className="min-w-0 flex-1">
@@ -86,7 +86,7 @@ export const BillingQueue = () => {
         ) : (
           queue.slice(0, PAGE_SIZE).map(({ deal, state }) => (
             <RecordContextProvider key={deal.id} value={deal}>
-              <div className="flex min-w-0 items-center gap-3 p-4">
+              <div className="flex min-w-0 items-center gap-3 p-3.5">
                 <ReferenceField
                   source="company_id"
                   reference="companies"

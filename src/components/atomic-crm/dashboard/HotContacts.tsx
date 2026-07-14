@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 import { CompanyAvatar } from "../companies/CompanyAvatar";
 import { DealWorkflowBadge } from "../deals/DealWorkflowIndicator";
@@ -55,7 +56,7 @@ export const HotContacts = () => {
   const isPending = dealsPending || tasksPending || contactsPending;
 
   return (
-    <section className="flex min-w-0 flex-col gap-4">
+    <section className="flex min-w-0 flex-col gap-3">
       <div className="flex items-start gap-3">
         <Flame className="mt-0.5 size-6 shrink-0 text-orange-500" />
         <div className="min-w-0 flex-1">
@@ -104,7 +105,7 @@ export const HotContacts = () => {
                 key={lead.primaryDeal.id}
                 value={lead.primaryDeal}
               >
-                <div className="flex min-w-0 items-start gap-3 p-4">
+                <div className="flex min-w-0 items-start gap-3 p-3.5">
                   <ReferenceField
                     source="company_id"
                     reference="companies"
@@ -130,9 +131,23 @@ export const HotContacts = () => {
                           {lead.primaryDeal.name}
                         </span>
                       </Link>
-                      <Badge className="bg-orange-500/10 text-orange-700 dark:text-orange-300">
-                        <Flame />
-                        {translate("resources.contacts.hot.hot_label")}
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "shrink-0 tabular-nums",
+                          lead.tier === "hot" &&
+                            "border-orange-500/30 bg-orange-500/10 text-orange-700 dark:text-orange-300",
+                          lead.tier === "warm" &&
+                            "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+                          lead.tier === "watch" &&
+                            "border-border bg-muted/40 text-muted-foreground",
+                        )}
+                      >
+                        {lead.tier === "hot" ? <Flame /> : null}
+                        {translate(
+                          `resources.contacts.hot.tiers.${lead.tier}`,
+                        )}{" "}
+                        · {lead.score}
                       </Badge>
                     </div>
 
@@ -174,6 +189,15 @@ export const HotContacts = () => {
                     <div className="mt-2">
                       <DealWorkflowBadge workflow={lead.workflow} />
                     </div>
+
+                    <p className="mt-1.5 truncate text-xs text-muted-foreground">
+                      {lead.reasons
+                        .slice(0, 2)
+                        .map((reason) =>
+                          translate(`resources.contacts.hot.reasons.${reason}`),
+                        )
+                        .join(" · ")}
+                    </p>
                   </div>
                 </div>
               </RecordContextProvider>
