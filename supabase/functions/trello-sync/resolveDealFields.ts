@@ -21,11 +21,12 @@ export const resolveCategory = (listId: string, labels: string[]): string => {
   return DEFAULT_CATEGORY;
 };
 
-// The 5 genuine stage lists map directly to a stage. The 4 category lists
-// have no stage information in their list membership, so a card there
-// defaults to "facturatie-live" unless it's marked done (either via the
-// "Afgerond" label or Trello's own due-complete checkbox), in which case
-// it's "won".
+// The 5 genuine stage lists map directly to a stage. The 4 project/category
+// lists represent active production work, so they belong in "Bezig" unless
+// marked done. Only the actual "Facturatie + live project" list maps to the
+// later facturatie-live phase. An entirely unknown list starts conservatively
+// in "Nieuw"; existing deals in unknown lists keep their CRM stage in the
+// upsert layer until the list map is updated.
 export const resolveStage = (
   listId: string,
   labels: string[],
@@ -34,7 +35,9 @@ export const resolveStage = (
   const stageFromList = LIST_TO_STAGE[listId];
   if (stageFromList) return stageFromList;
 
-  return labels.includes("Afgerond") || dueComplete ? "won" : "facturatie-live";
+  if (labels.includes("Afgerond") || dueComplete) return "won";
+  if (listId in CATEGORY_LIST_TO_CATEGORY) return "bezig";
+  return "informatie-pipeline";
 };
 
 // The deal name is the full card title with only the "GO - " noise prefix

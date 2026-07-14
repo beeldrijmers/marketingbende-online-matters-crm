@@ -22,6 +22,11 @@ import { archiveDealByCardId } from "./archiveDealByCardId.ts";
 import { resolveCompanyName } from "./companyNameOverrides.ts";
 import { findOrCreateCompany } from "./findOrCreateCompany.ts";
 import { resolveDefaultSalesId } from "./resolveDefaultSalesId.ts";
+import {
+  countTrelloSyncStages,
+  emptyTrelloSyncStageCounts,
+  type TrelloSyncStageCounts,
+} from "./stageCounts.ts";
 
 const BOARD_ID = "6979f9a8a825b6ff46306e8a"; // SEO - Online Matters
 
@@ -183,6 +188,22 @@ export interface BackfillFailure {
   error: string;
 }
 
+const getActiveTrelloStageCounts = async (): Promise<TrelloSyncStageCounts> => {
+  const { data, error } = await supabaseAdmin
+    .from("deals")
+    .select("stage")
+    .not("trello_card_id", "is", null)
+    .is("archived_at", null);
+
+  if (error) {
+    // The cards themselves are already synchronized. Keep that successful
+    // result usable even if this non-critical reporting query fails.
+    console.error("Could not summarize Trello deal stages:", error.message);
+    return emptyTrelloSyncStageCounts();
+  }
+  return countTrelloSyncStages(data ?? []);
+};
+
 export const run = async (): Promise<{
   cardCount: number;
   synced: number;
@@ -190,8 +211,11 @@ export const run = async (): Promise<{
   totalAttachments: number;
   archivedCardsWithUploads: number;
   archivedAttachments: number;
+  durationMs: number;
+  stageCounts: TrelloSyncStageCounts;
   failed: BackfillFailure[];
 }> => {
+  const startedAt = Date.now();
   const cards = await fetchTrelloBoardCards({
     boardId: BOARD_ID,
     apiKey,
@@ -284,9 +308,12 @@ export const run = async (): Promise<{
     CARD_CONCURRENCY,
   );
 
+  const stageCounts = await getActiveTrelloStageCounts();
+  const durationMs = Date.now() - startedAt;
+
   // eslint-disable-next-line no-console
   console.log(
-    `Done. Synced ${synced} deals, ${totalComments} comments, ${totalAttachments} new attachments, ${archivedAttachments} attachments from ${archivedWithUploads.length} archived cards, ${failed.length} failures.`,
+    `Done in ${durationMs}ms. Synced ${synced} deals, ${totalComments} comments, ${totalAttachments} new attachments, ${archivedAttachments} attachments from ${archivedWithUploads.length} archived cards, ${failed.length} failures.`,
   );
   return {
     cardCount: cards.length,
@@ -295,6 +322,8 @@ export const run = async (): Promise<{
     totalAttachments,
     archivedCardsWithUploads: archivedWithUploads.length,
     archivedAttachments,
+    durationMs,
+    stageCounts,
     failed,
   };
 };

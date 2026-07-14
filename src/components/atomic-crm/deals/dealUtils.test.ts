@@ -3,6 +3,7 @@ import { commands } from "vitest/browser";
 import {
   buildDealInboundEmail,
   formatISODateString,
+  getDealDurationDays,
   isBeforeToday,
 } from "./dealUtils";
 
@@ -54,6 +55,24 @@ describe("formatISODateString", () => {
     expect(formatISODateString(null)).toBeNull();
     expect(formatISODateString(undefined)).toBeNull();
     expect(formatISODateString("")).toBeNull();
+  });
+});
+
+describe("getDealDurationDays", () => {
+  it("counts an inclusive planned project duration", () => {
+    expect(getDealDurationDays("2026-07-01", "2026-07-31")).toBe(31);
+    expect(getDealDurationDays("2026-07-14", "2026-07-14")).toBe(1);
+  });
+
+  it("uses today for an active deal without an end date", () => {
+    expect(
+      getDealDurationDays("2026-07-10", null, new Date(2026, 6, 14, 18, 0)),
+    ).toBe(5);
+  });
+
+  it("returns null for invalid or reversed dates", () => {
+    expect(getDealDurationDays(null, "2026-07-31")).toBeNull();
+    expect(getDealDurationDays("2026-08-01", "2026-07-31")).toBeNull();
   });
 });
 

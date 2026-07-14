@@ -261,6 +261,7 @@ export const dutchCrmMessages = {
         expected_closing_date: "Verwachte afsluitdatum",
         start_date: "Startdatum",
         delivery_date: "Opleverdatum",
+        duration: "Looptijd",
         stage: "Fase",
       },
       action: {
@@ -352,10 +353,12 @@ export const dutchCrmMessages = {
       trello_sync: {
         action: "Synchroniseer Trello",
         pending: "Synchroniseren...",
+        stage_summary:
+          "Nieuw %{new_count} · Bezig %{active_count} · In de wacht %{hold_count} · Facturatie & live %{live_count} · Klaar %{won_count}",
         success:
-          "Trello gesynchroniseerd: %{smart_count} kaart verwerkt. |||| Trello gesynchroniseerd: %{smart_count} kaarten verwerkt.",
+          "Trello gesynchroniseerd: %{smart_count} kaart in %{duration}. %{stage_summary} |||| Trello gesynchroniseerd: %{smart_count} kaarten in %{duration}. %{stage_summary}",
         partial:
-          "Trello deels gesynchroniseerd: %{synced} actieve kaarten verwerkt. %{failed_count} mislukt (%{failed_names}).",
+          "Trello deels gesynchroniseerd in %{duration}: %{synced} actieve kaarten verwerkt. %{failed_count} mislukt (%{failed_names}). %{stage_summary}",
         error: "Synchroniseren met Trello is mislukt",
       },
 
@@ -366,6 +369,7 @@ export const dutchCrmMessages = {
       },
       invalid_date: "Ongeldige datum",
       no_date: "Nog niet gepland",
+      duration_days: "%{smart_count} dag |||| %{smart_count} dagen",
       no_amount: "Nog geen bedrag",
       per_month_suffix: "/mnd",
       move_error:

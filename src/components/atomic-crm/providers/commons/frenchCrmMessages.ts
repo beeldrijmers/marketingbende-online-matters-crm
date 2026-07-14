@@ -263,6 +263,7 @@ export const frenchCrmMessages = {
         expected_closing_date: "Date de clôture prévue",
         start_date: "Date de début",
         delivery_date: "Date de livraison",
+        duration: "Durée",
         stage: "Étape",
       },
       action: {
@@ -355,10 +356,12 @@ export const frenchCrmMessages = {
       trello_sync: {
         action: "Synchroniser Trello",
         pending: "Synchronisation...",
+        stage_summary:
+          "Nouveau %{new_count} · En cours %{active_count} · En attente %{hold_count} · Facturation & actif %{live_count} · Terminé %{won_count}",
         success:
-          "Trello synchronisé : %{smart_count} carte traitée. |||| Trello synchronisé : %{smart_count} cartes traitées.",
+          "Trello synchronisé : %{smart_count} carte en %{duration}. %{stage_summary} |||| Trello synchronisé : %{smart_count} cartes en %{duration}. %{stage_summary}",
         partial:
-          "Trello partiellement synchronisé : %{synced} cartes actives traitées. %{failed_count} échec(s) (%{failed_names}).",
+          "Trello partiellement synchronisé en %{duration} : %{synced} cartes actives traitées. %{failed_count} échec(s) (%{failed_names}). %{stage_summary}",
         error: "Échec de la synchronisation avec Trello",
       },
 
@@ -369,6 +372,7 @@ export const frenchCrmMessages = {
       },
       invalid_date: "Date invalide",
       no_date: "Pas encore planifiée",
+      duration_days: "%{smart_count} jour |||| %{smart_count} jours",
       no_amount: "Pas encore de montant",
       per_month_suffix: "/mois",
       move_error:

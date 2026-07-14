@@ -26,7 +26,7 @@ export const fetchTrelloBoardCards = async ({
   url.searchParams.set("token", token);
   url.searchParams.set(
     "fields",
-    "name,idList,due,dueComplete,closed,shortUrl,desc,labels",
+    "name,idList,start,due,dueComplete,closed,shortUrl,desc,labels",
   );
   url.searchParams.set("attachments", "true");
   url.searchParams.set(

@@ -5,6 +5,7 @@ const base: TrelloApiCard = {
   id: "card1",
   name: "Stadshuys - onboarding",
   idList: "list1",
+  start: null,
   due: null,
   dueComplete: false,
   shortUrl: "https://trello.com/c/abc",
@@ -96,5 +97,22 @@ describe("closed (archived) cards", () => {
 
   it("defaults closed to false when the field is missing", () => {
     expect(parseTrelloApiCard(base).closed).toBe(false);
+  });
+});
+
+describe("project dates", () => {
+  it("carries Trello start and due dates through to the sync input", () => {
+    const card = parseTrelloApiCard({
+      ...base,
+      start: "2026-07-01T00:00:00.000Z",
+      due: "2026-07-31T00:00:00.000Z",
+    });
+    expect(card.start).toBe("2026-07-01T00:00:00.000Z");
+    expect(card.due).toBe("2026-07-31T00:00:00.000Z");
+  });
+
+  it("defaults a missing Trello start date to null", () => {
+    const { start: _start, ...withoutStart } = base;
+    expect(parseTrelloApiCard(withoutStart).start).toBeNull();
   });
 });
