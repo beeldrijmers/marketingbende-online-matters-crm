@@ -47,10 +47,13 @@ export async function getIsInitialized() {
     return cachedValue === "true";
   }
 
-  // The isolated E2E database starts empty, while production deliberately
-  // denies anonymous access to init_state. Force only that test fixture into
-  // the bootstrap screen; markInitializedCache takes over after sign-up.
-  if (import.meta.env.VITE_FORCE_INITIAL_SETUP === "true") {
+  // Production deliberately denies anonymous access to init_state. The
+  // isolated E2E onboarding test opts into the empty-installation screen via
+  // a test-only URL; markInitializedCache takes over immediately after sign-up.
+  if (
+    import.meta.env.MODE === "e2e" &&
+    new URLSearchParams(window.location.search).get("initial-setup") === "true"
+  ) {
     return false;
   }
 
