@@ -630,6 +630,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/dashboardDealKanbanModel.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/SyncTrelloButton.tsx",
           "type": "registry:component"
         },
@@ -711,6 +715,14 @@
         },
         {
           "path": "src/components/atomic-crm/deals/ContactList.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/AttentionPipelineHeader.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/AttentionMovePrompt.tsx",
           "type": "registry:component"
         },
         {

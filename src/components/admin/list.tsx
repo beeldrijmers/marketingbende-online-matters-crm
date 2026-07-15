@@ -103,6 +103,7 @@ export const ListView = <RecordType extends RaRecord = RaRecord>(
 ) => {
   const {
     disableBreadcrumb,
+    disableHeader,
     filters,
     pagination = defaultPagination,
     title,
@@ -143,19 +144,23 @@ export const ListView = <RecordType extends RaRecord = RaRecord>(
       )}
 
       <FilterContext.Provider value={filters}>
-        <div className="flex justify-between items-start flex-wrap gap-2 my-2">
-          <h2 className="text-2xl font-bold tracking-tight mb-2">
-            {finalTitle}
-          </h2>
-          {actions ?? (
-            <div className="flex items-center gap-2">
-              {filters && filters.length > 0 ? <FilterButton /> : null}
-              {hasCreate ? <CreateButton /> : null}
-              {<ExportButton />}
+        {!disableHeader ? (
+          <>
+            <div className="flex justify-between items-start flex-wrap gap-2 my-2">
+              <h2 className="text-2xl font-bold tracking-tight mb-2">
+                {finalTitle}
+              </h2>
+              {actions ?? (
+                <div className="flex items-center gap-2">
+                  {filters && filters.length > 0 ? <FilterButton /> : null}
+                  {hasCreate ? <CreateButton /> : null}
+                  {<ExportButton />}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        <FilterForm />
+            <FilterForm />
+          </>
+        ) : null}
 
         <div className={cn("my-2", props.className)}>{children}</div>
         {pagination}
@@ -205,6 +210,7 @@ export const Empty = () => {
 export interface ListViewProps<RecordType extends RaRecord = RaRecord> {
   children?: ReactNode;
   disableBreadcrumb?: boolean;
+  disableHeader?: boolean;
   render?: (props: ListControllerResult<RecordType, Error>) => ReactNode;
   actions?: ReactElement | false;
   filters?: ReactNode[];

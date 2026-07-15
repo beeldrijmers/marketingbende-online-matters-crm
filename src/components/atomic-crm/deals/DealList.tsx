@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { InputProps } from "ra-core";
 import { useGetIdentity, useListContext, useTranslate } from "ra-core";
 import { Link, matchPath, useLocation } from "react-router";
@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import { TopToolbar } from "../layout/TopToolbar";
+import type { Deal } from "../types";
+import { AttentionMovePrompt } from "./AttentionMovePrompt";
 import { DealArchivedList } from "./DealArchivedList";
 import { DealCreate } from "./DealCreate";
 import { DealEdit } from "./DealEdit";
@@ -26,8 +28,10 @@ import { InternalExternalInput } from "./InternalExternalInput";
 import { SyncTrelloButton } from "./SyncTrelloButton";
 import {
   type DashboardDealSelection,
+  getDashboardDealSelectionPath,
   getDashboardDealSelectionFilter,
 } from "./dashboardDealSelection";
+import { findDealLabel } from "./dealUtils";
 
 type DealListProps = {
   dashboardSelection?: DashboardDealSelection;
@@ -37,6 +41,7 @@ export const DealList = ({ dashboardSelection }: DealListProps = {}) => {
   const { identity } = useGetIdentity();
   const { dealCategories } = useConfigurationContext();
   const translate = useTranslate();
+  const attentionPipeline = dashboardSelection?.kind === "attention";
 
   if (!identity) return null;
 
@@ -71,10 +76,12 @@ export const DealList = ({ dashboardSelection }: DealListProps = {}) => {
         "archived_at@is": null,
         ...getDashboardDealSelectionFilter(dashboardSelection ?? null),
       }}
-      title={dashboardSelection?.label ?? false}
+      disableBreadcrumb={attentionPipeline}
+      disableHeader={attentionPipeline}
+      title={attentionPipeline ? false : (dashboardSelection?.label ?? false)}
       sort={{ field: "index", order: "DESC" }}
-      filters={dealFilters}
-      actions={<DealActions />}
+      filters={attentionPipeline ? undefined : dealFilters}
+      actions={attentionPipeline ? false : <DealActions />}
       pagination={null}
       storeKey={
         dashboardSelection ? `deals.${dashboardSelection.kind}` : undefined
@@ -92,6 +99,18 @@ const DealLayout = ({
 }) => {
   const translate = useTranslate();
   const location = useLocation();
+  const { dealStages } = useConfigurationContext();
+  const [recentMove, setRecentMove] = useState<{
+    deal: Deal;
+    destinationStage: string;
+  } | null>(null);
+  const attentionPipeline = dashboardSelection?.kind === "attention";
+  const detailBasePath = dashboardSelection
+    ? getDashboardDealSelectionPath(dashboardSelection.kind)
+    : undefined;
+  const dashboardDealId = dashboardSelection
+    ? new URLSearchParams(location.search).get("deal")
+    : null;
   const matchCreate = dashboardSelection
     ? null
     : matchPath("/deals/create", location.pathname);
@@ -102,7 +121,7 @@ const DealLayout = ({
     ? null
     : matchPath("/deals/:id", location.pathname);
 
-  const { data, isPending, filterValues, total } = useListContext();
+  const { data, isPending, filterValues, total } = useListContext<Deal>();
   const hasFilters = filterValues && Object.keys(filterValues).length > 0;
   const dashboardSelectionCount = total ?? dashboardSelection?.ids.length ?? 0;
 
@@ -119,7 +138,7 @@ const DealLayout = ({
 
   return (
     <div className="w-full">
-      {dashboardSelection ? (
+      {dashboardSelection && !attentionPipeline ? (
         <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2">
           <p className="text-sm text-muted-foreground">
             {translate("resources.deals.dashboard_selection", {
@@ -145,10 +164,33 @@ const DealLayout = ({
           })}
         </p>
       ) : null}
-      <DealListContent />
+      <DealListContent
+        attentionPipeline={attentionPipeline}
+        detailBasePath={detailBasePath}
+        onDealStageChange={
+          attentionPipeline
+            ? (deal, destinationStage) =>
+                setRecentMove({ deal, destinationStage })
+            : undefined
+        }
+      />
       <DealCreate open={!!matchCreate} />
       <DealEdit open={!!matchEdit && !matchCreate} id={matchEdit?.params.id} />
-      <DealShow open={!!matchShow} id={matchShow?.params.id} />
+      <DealShow
+        closeTo={detailBasePath ?? "/deals"}
+        open={dashboardSelection ? !!dashboardDealId : !!matchShow}
+        id={dashboardDealId ?? matchShow?.params.id}
+      />
+      {recentMove ? (
+        <AttentionMovePrompt
+          deal={recentMove.deal}
+          destinationLabel={
+            findDealLabel(dealStages, recentMove.destinationStage) ??
+            recentMove.destinationStage
+          }
+          onDismiss={() => setRecentMove(null)}
+        />
+      ) : null}
     </div>
   );
 };

@@ -1,36 +1,26 @@
 import { ResourceContextProvider, useGetList, useTranslate } from "ra-core";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { getBillingState } from "../dashboard/billingQueueModel";
 import type { Deal, Task } from "../types";
+import { AttentionPipelineHeader } from "./AttentionPipelineHeader";
 import { DealList } from "./DealList";
 import { MobileDealsList } from "./MobileDealsList";
+import {
+  filterAttentionDeals,
+  selectAttentionDeals,
+  selectBillingDealIds,
+  type AttentionPipelineFilter,
+} from "./dashboardDealKanbanModel";
 import {
   createDashboardDealSelection,
   type DashboardDealSelection,
 } from "./dashboardDealSelection";
-import { buildOpenTasksByDeal, rankDealsForAttention } from "./dealWorkflow";
-
-export const selectAttentionDealIds = (
-  deals: Deal[],
-  tasks: Task[],
-  now: Date = new Date(),
-) =>
-  rankDealsForAttention(deals, buildOpenTasksByDeal(tasks), now).map(
-    ({ deal }) => deal.id,
-  );
-
-export const selectBillingDealIds = (deals: Deal[]) =>
-  deals
-    .filter(
-      (deal) =>
-        deal.stage === "facturatie-live" && getBillingState(deal) != null,
-    )
-    .map((deal) => deal.id);
+import { summarizeDealAttention } from "./dealWorkflow";
 
 const useAttentionDealSelection = () => {
   const translate = useTranslate();
+  const [filter, setFilter] = useState<AttentionPipelineFilter>("all");
   const { data: deals = [], isPending: dealsPending } = useGetList<Deal>(
     "deals",
     {
@@ -50,16 +40,30 @@ const useAttentionDealSelection = () => {
   const label = translate("crm.dashboard.deal_actions.title", {
     _: "Dit heeft je aandacht nodig",
   });
+  const rankedDeals = useMemo(
+    () => selectAttentionDeals(deals, tasks),
+    [deals, tasks],
+  );
+  const counts = useMemo(
+    () => summarizeDealAttention(rankedDeals),
+    [rankedDeals],
+  );
   const selection = useMemo(
     () =>
       createDashboardDealSelection(
-        selectAttentionDealIds(deals, tasks),
+        filterAttentionDeals(rankedDeals, filter).map(({ deal }) => deal.id),
         "attention",
         label,
       ),
-    [deals, label, tasks],
+    [filter, label, rankedDeals],
   );
-  return { isPending: dealsPending || tasksPending, selection };
+  return {
+    counts,
+    filter,
+    isPending: dealsPending || tasksPending,
+    selection,
+    setFilter,
+  };
 };
 
 const useBillingDealSelection = () => {
@@ -103,13 +107,28 @@ const DashboardDealKanban = ({
 };
 
 const AttentionDealsPage = ({ mobile = false }: { mobile?: boolean }) => {
-  const { isPending, selection } = useAttentionDealSelection();
+  const { counts, filter, isPending, selection, setFilter } =
+    useAttentionDealSelection();
+  if (isPending) return <DashboardDealKanbanSkeleton />;
+
   return (
-    <DashboardDealKanban
-      isPending={isPending}
-      mobile={mobile}
-      selection={selection}
-    />
+    <ResourceContextProvider value="deals">
+      <AttentionPipelineHeader
+        counts={counts}
+        filter={filter}
+        mobile={mobile}
+        onFilterChange={setFilter}
+      />
+      {mobile ? (
+        <MobileDealsList
+          attentionPipeline
+          dashboardSelection={selection}
+          hideHeader
+        />
+      ) : (
+        <DealList dashboardSelection={selection} />
+      )}
+    </ResourceContextProvider>
   );
 };
 
