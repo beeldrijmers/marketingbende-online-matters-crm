@@ -626,6 +626,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/dashboardDealSelection.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/SyncTrelloButton.tsx",
           "type": "registry:component"
         },

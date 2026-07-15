@@ -169,6 +169,62 @@ jobs:
               name: 📡 Deploy supabase functions
               run: npx supabase functions deploy
 
+            # Keep the periodic Gmail caller inside Supabase so its 15-minute
+            # cadence is not subject to GitHub Actions schedule delays. The
+            # existing Gmail workflow remains available for manual recovery.
+            # Values are streamed to the CLI over a temporary named pipe; they
+            # never appear in Git history, command arguments, files, or output.
+            - if: ${{ env.IS_SUPABASE_CONFIGURED && env.GMAIL_SYNC_SECRET && env.VITE_SUPABASE_URL }}
+              name: ⏱️ Provision Supabase Gmail Cron
+              shell: bash
+              run: |
+                  project_url_b64=$(printf '%s' "$VITE_SUPABASE_URL" | base64 | tr -d '\n')
+                  gmail_secret_b64=$(printf '%s' "$GMAIL_SYNC_SECRET" | base64 | tr -d '\n')
+                  sql_fifo=$(mktemp)
+                  rm -f "$sql_fifo"
+                  mkfifo -m 600 "$sql_fifo"
+                  trap 'rm -f "$sql_fifo"' EXIT
+                  (
+                    printf '%s\n' \
+                      'do $vault$' \
+                      'declare' \
+                      '  project_url_secret_id uuid;' \
+                      '  gmail_sync_secret_id uuid;' \
+                      "  project_url_value text := convert_from(decode('$project_url_b64', 'base64'), 'utf8');" \
+                      "  gmail_sync_secret_value text := convert_from(decode('$gmail_secret_b64', 'base64'), 'utf8');" \
+                      'begin' \
+                      "  select id into project_url_secret_id from vault.secrets where name = 'marketingbende_crm_project_url';" \
+                      '  if project_url_secret_id is null then' \
+                      "    perform vault.create_secret(project_url_value, 'marketingbende_crm_project_url', 'CRM project URL for the Gmail Cron job');" \
+                      '  else' \
+                      "    perform vault.update_secret(project_url_secret_id, project_url_value, 'marketingbende_crm_project_url', 'CRM project URL for the Gmail Cron job');" \
+                      '  end if;' \
+                      "  select id into gmail_sync_secret_id from vault.secrets where name = 'marketingbende_gmail_sync_secret';" \
+                      '  if gmail_sync_secret_id is null then' \
+                      "    perform vault.create_secret(gmail_sync_secret_value, 'marketingbende_gmail_sync_secret', 'Authentication for the Gmail Cron Edge Function call');" \
+                      '  else' \
+                      "    perform vault.update_secret(gmail_sync_secret_id, gmail_sync_secret_value, 'marketingbende_gmail_sync_secret', 'Authentication for the Gmail Cron Edge Function call');" \
+                      '  end if;' \
+                      '  perform cron.alter_job(' \
+                      "    job_id := (select jobid from cron.job where jobname = 'marketingbende-gmail-sync')," \
+                      '    active := true' \
+                      '  );' \
+                      'end' \
+                      '$vault$;'
+                  ) > "$sql_fifo" &
+                  writer_pid=$!
+                  if ! npx supabase db query --linked --file "$sql_fifo" >/dev/null 2>&1; then
+                    kill "$writer_pid" >/dev/null 2>&1 || true
+                    wait "$writer_pid" 2>/dev/null || true
+                    echo "::error::Could not provision the Gmail Cron Vault values"
+                    exit 1
+                  fi
+                  wait "$writer_pid"
+                  rm -f "$sql_fifo"
+                  trap - EXIT
+                  npx supabase db query --linked \
+                    "select jobname, schedule, active from cron.job where jobname = 'marketingbende-gmail-sync';"
+
             # Keep a dedicated, non-admin account for the authenticated
             # production monitor. The service key is fetched ephemerally with
             # the already-scoped Supabase management token and is never logged
