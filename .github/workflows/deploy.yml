@@ -224,6 +224,8 @@ jobs:
                   trap - EXIT
                   npx supabase db query --linked \
                     "select jobname, schedule, active from cron.job where jobname = 'marketingbende-gmail-sync';"
+                  npx supabase db query --linked \
+                    "select started_at, status, items_processed, failed_count from public.integration_runs where integration = 'gmail' and run_kind = 'scheduled' order by started_at desc limit 1;"
 
             # Keep a dedicated, non-admin account for the authenticated
             # production monitor. The service key is fetched ephemerally with
