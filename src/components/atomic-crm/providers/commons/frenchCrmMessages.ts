@@ -750,6 +750,27 @@ export const frenchCrmMessages = {
       label: "Navigation CRM",
     },
     profile: {
+      gmail: {
+        title: "Gmail",
+        description:
+          "Connectez directement votre compte Gmail. Le CRM classe automatiquement les e-mails reçus et envoyés avec les bons contacts et affaires ; le Cci reste disponible en solution de secours.",
+        connect: "Connecter Gmail",
+        connecting: "Ouverture de Google…",
+        connect_success:
+          "Gmail est connecté. La synchronisation automatique est active.",
+        oauth_error:
+          "La connexion Gmail n'a pas été terminée. Réessayez ou vérifiez l'autorisation Google.",
+        connected: "Connecté à %{email}.",
+        last_sync: "Dernière synchronisation : %{date}",
+        not_synced: "pas encore exécutée",
+        sync: "Synchroniser maintenant",
+        syncing: "Synchronisation…",
+        sync_success: "%{count} messages Gmail traités",
+        sync_error: "Problème de synchronisation : %{error}",
+        disconnect: "Déconnecter",
+        disconnect_confirm: "Oui, déconnecter Gmail",
+        disconnect_success: "Gmail déconnecté",
+      },
       inbound: {
         description:
           "Vous pouvez commencer à envoyer des e-mails vers l'adresse de réception de votre serveur, par exemple en l'ajoutant au champ %{field}. Le CRM traitera les e-mails et ajoutera des notes aux contacts correspondants.",

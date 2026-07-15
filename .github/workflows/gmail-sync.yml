@@ -1,0 +1,40 @@
+name: 📬 Gmail synchronisatie
+
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gmail-periodic-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: 📬 Synchroniseer gekoppelde mailboxen
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      GMAIL_SYNC_SECRET: ${{ secrets.GMAIL_SYNC_SECRET }}
+
+    steps:
+      - name: 📬 Start Gmail API-sync
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$GMAIL_SYNC_SECRET" ]; then
+            echo "::error::Missing SUPABASE_URL or GMAIL_SYNC_SECRET secret"
+            exit 1
+          fi
+          endpoint="${SUPABASE_URL%/}/functions/v1/gmail-sync"
+          http_code=$(curl -sS --max-time 840 -o /tmp/gmail-sync.json -w "%{http_code}" \
+            -X POST "$endpoint" \
+            -H "x-gmail-sync-secret: ${GMAIL_SYNC_SECRET}" \
+            -H "Content-Type: application/json")
+          cat /tmp/gmail-sync.json || true
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Gmail synchronization returned HTTP $http_code"
+            exit 1
+          fi

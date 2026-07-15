@@ -37,13 +37,16 @@ export const IntegrationStatus = () => {
   } = useGetList<IntegrationRun>(
     "integration_runs",
     {
-      pagination: { page: 1, perPage: 1 },
+      pagination: { page: 1, perPage: 20 },
       sort: { field: "started_at", order: "DESC" },
-      filter: { integration: "trello" },
+      filter: {},
     },
     { refetchInterval: 30_000 },
   );
-  const run = data[0];
+  const trelloRun = data.find(
+    (candidate) => candidate.integration === "trello",
+  );
+  const gmailRun = data.find((candidate) => candidate.integration === "gmail");
 
   return (
     <section className="flex min-w-0 flex-col gap-3">
@@ -52,7 +55,7 @@ export const IntegrationStatus = () => {
         <div className="min-w-0 flex-1">
           <h2 className="text-xl font-semibold text-foreground">Koppelingen</h2>
           <p className="text-xs text-muted-foreground">
-            Live status van Trello en de laatste volledige controle
+            Live status van Gmail, Trello en de laatste volledige controles
           </p>
         </div>
       </div>
@@ -74,8 +77,11 @@ export const IntegrationStatus = () => {
               </p>
             </div>
           </div>
-        ) : run ? (
-          <RunDetails run={run} />
+        ) : trelloRun || gmailRun ? (
+          <div className="divide-y">
+            {trelloRun ? <RunDetails run={trelloRun} label="Trello" /> : null}
+            {gmailRun ? <RunDetails run={gmailRun} label="Gmail" /> : null}
+          </div>
         ) : (
           <div className="flex items-start gap-3 p-4">
             <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-500" />
@@ -99,7 +105,7 @@ export const IntegrationStatus = () => {
   );
 };
 
-const RunDetails = ({ run }: { run: IntegrationRun }) => {
+const RunDetails = ({ run, label }: { run: IntegrationRun; label: string }) => {
   const health = getIntegrationHealth(run);
   const counts = run.summary?.stageCounts;
   const timestamp = run.finished_at ?? run.started_at;
@@ -110,7 +116,7 @@ const RunDetails = ({ run }: { run: IntegrationRun }) => {
         <StatusIcon health={health} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold">Trello</p>
+            <p className="text-sm font-semibold">{label}</p>
             <StatusBadge health={health} />
           </div>
           <p className="mt-1 text-xs text-muted-foreground">

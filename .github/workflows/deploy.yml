@@ -41,6 +41,12 @@ jobs:
             # administration with a personal token); this key encrypts those
             # tokens at rest (AES-256-GCM, generated with: openssl rand -base64 32).
             MONEYBIRD_ENC_KEY: ${{secrets.MONEYBIRD_ENC_KEY}}
+            GOOGLE_CLIENT_ID: ${{secrets.GOOGLE_CLIENT_ID}}
+            GOOGLE_CLIENT_SECRET: ${{secrets.GOOGLE_CLIENT_SECRET}}
+            GMAIL_ENC_KEY: ${{secrets.GMAIL_ENC_KEY}}
+            GMAIL_SYNC_SECRET: ${{secrets.GMAIL_SYNC_SECRET}}
+            CRM_SMOKE_EMAIL: ${{secrets.CRM_SMOKE_EMAIL}}
+            CRM_SMOKE_PASSWORD: ${{secrets.CRM_SMOKE_PASSWORD}}
             RESEND_API_KEY: ${{secrets.RESEND_API_KEY}}
             RESEND_WEBHOOK_SECRET: ${{secrets.RESEND_WEBHOOK_SECRET}}
 
@@ -135,6 +141,18 @@ jobs:
               name: 📡 Push supabase moneybird encryption key secret
               run: npx supabase secrets set MONEYBIRD_ENC_KEY=${{ env.MONEYBIRD_ENC_KEY }}
 
+            - if: ${{ env.IS_SUPABASE_CONFIGURED && env.GMAIL_ENC_KEY && env.GMAIL_SYNC_SECRET }}
+              name: 📡 Push supabase Gmail encryption and sync secrets
+              run: |
+                  npx supabase secrets set GMAIL_ENC_KEY=${{ env.GMAIL_ENC_KEY }}
+                  npx supabase secrets set GMAIL_SYNC_SECRET=${{ env.GMAIL_SYNC_SECRET }}
+
+            - if: ${{ env.IS_SUPABASE_CONFIGURED && env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET }}
+              name: 📡 Push supabase Google OAuth client secrets
+              run: |
+                  npx supabase secrets set GOOGLE_CLIENT_ID=${{ env.GOOGLE_CLIENT_ID }}
+                  npx supabase secrets set GOOGLE_CLIENT_SECRET=${{ env.GOOGLE_CLIENT_SECRET }}
+
             - if: ${{ env.IS_SUPABASE_CONFIGURED && env.RESEND_API_KEY && env.RESEND_WEBHOOK_SECRET }}
               name: 📡 Push supabase resend inbound secrets
               run: |
@@ -150,6 +168,57 @@ jobs:
             - if: ${{ env.IS_SUPABASE_CONFIGURED }}
               name: 📡 Deploy supabase functions
               run: npx supabase functions deploy
+
+            # Keep a dedicated, non-admin account for the authenticated
+            # production monitor. The service key is fetched ephemerally with
+            # the already-scoped Supabase management token and is never logged
+            # or persisted as a repository secret.
+            - if: ${{ env.IS_SUPABASE_CONFIGURED && env.CRM_SMOKE_EMAIL && env.CRM_SMOKE_PASSWORD }}
+              name: 🩺 Provision production smoke user
+              run: |
+                  api_keys=$(npx supabase projects api-keys \
+                    --project-ref "$SUPABASE_PROJECT_ID" \
+                    --reveal \
+                    --output json)
+                  service_role_key=$(printf '%s' "$api_keys" | jq -r \
+                    '.[] | select(.name == "service_role") | .api_key' | head -n 1)
+                  if [ -z "$service_role_key" ] || [ "$service_role_key" = "null" ]; then
+                    echo "::error::Could not retrieve the Supabase service role key"
+                    exit 1
+                  fi
+
+                  auth_url="${VITE_SUPABASE_URL%/}/auth/v1/admin/users"
+                  curl --fail-with-body -sS "$auth_url?per_page=1000" \
+                    -H "apikey: $service_role_key" \
+                    -H "Authorization: Bearer $service_role_key" \
+                    > /tmp/smoke-users.json
+                  user_id=$(jq -r --arg email "$CRM_SMOKE_EMAIL" \
+                    '.users[]? | select((.email | ascii_downcase) == ($email | ascii_downcase)) | .id' \
+                    /tmp/smoke-users.json | head -n 1)
+
+                  if [ -n "$user_id" ]; then
+                    jq -n --arg password "$CRM_SMOKE_PASSWORD" \
+                      '{password: $password, email_confirm: true, user_metadata: {first_name: "CRM", last_name: "Monitor"}}' \
+                      > /tmp/smoke-user.json
+                    curl --fail-with-body -sS -X PUT "$auth_url/$user_id" \
+                      -H "apikey: $service_role_key" \
+                      -H "Authorization: Bearer $service_role_key" \
+                      -H "Content-Type: application/json" \
+                      -d @/tmp/smoke-user.json > /dev/null
+                    echo "Smoke monitor user updated"
+                  else
+                    jq -n --arg email "$CRM_SMOKE_EMAIL" --arg password "$CRM_SMOKE_PASSWORD" \
+                      '{email: $email, password: $password, email_confirm: true, user_metadata: {first_name: "CRM", last_name: "Monitor"}}' \
+                      > /tmp/smoke-user.json
+                    curl --fail-with-body -sS -X POST "$auth_url" \
+                      -H "apikey: $service_role_key" \
+                      -H "Authorization: Bearer $service_role_key" \
+                      -H "Content-Type: application/json" \
+                      -d @/tmp/smoke-user.json > /dev/null
+                    echo "Smoke monitor user created"
+                  fi
+
+                  rm -f /tmp/smoke-users.json /tmp/smoke-user.json
 
             - if: ${{ !env.SUPABASE_ACCESS_TOKEN }}
               name: Check SUPABASE_ACCESS_TOKEN secret
@@ -206,6 +275,14 @@ jobs:
             - if: ${{ !env.MONEYBIRD_ENC_KEY }}
               name: Check MONEYBIRD_ENC_KEY secret
               run: echo ':warning:MONEYBIRD_ENC_KEY secret is missing' >> $GITHUB_STEP_SUMMARY
+
+            - if: ${{ !env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GMAIL_ENC_KEY || !env.GMAIL_SYNC_SECRET }}
+              name: Check Gmail integration secrets
+              run: echo ':warning:Gmail OAuth/sync secrets are incomplete' >> $GITHUB_STEP_SUMMARY
+
+            - if: ${{ !env.CRM_SMOKE_EMAIL || !env.CRM_SMOKE_PASSWORD }}
+              name: Check production smoke credentials
+              run: echo ':warning:Production smoke credentials are incomplete' >> $GITHUB_STEP_SUMMARY
 
             - if: ${{ !env.IS_SUPABASE_CONFIGURED }}
               name: Supabase deployment skipped

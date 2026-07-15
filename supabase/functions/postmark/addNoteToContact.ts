@@ -153,25 +153,18 @@ export const addNoteToContact = async ({
     );
   }
 
-  const { contact, error } = await getOrCreateContactFromEmailInfo({
-    email,
-    firstName,
-    lastName,
-    salesId: sales.id,
-    domain,
-    companyName,
-    website,
-  })
-    .then((contact) => ({
-      contact,
-    }))
-    .catch((error) => {
-      return {
-        error,
-      };
+  let contact;
+  try {
+    contact = await getOrCreateContactFromEmailInfo({
+      email,
+      firstName,
+      lastName,
+      salesId: sales.id,
+      domain,
+      companyName,
+      website,
     });
-
-  if (error) {
+  } catch (error) {
     console.error(
       "Error in getOrCreateContactFromEmailInfo for email:",
       email,

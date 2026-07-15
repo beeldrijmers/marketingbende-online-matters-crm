@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 
-export type TrelloRunKind = "manual" | "backfill";
+export type TrelloRunKind = "manual" | "backfill" | "scheduled";
 
 interface TrelloRunSummary {
   synced: number;

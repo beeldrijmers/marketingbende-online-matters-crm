@@ -16,6 +16,8 @@ alter table public.configuration enable row level security;
 alter table public.favicons_excluded_domains enable row level security;
 alter table public.moneybird_connections enable row level security;
 alter table public.moneybird_company_contacts enable row level security;
+alter table public.gmail_connections enable row level security;
+alter table public.gmail_oauth_states enable row level security;
 -- No client policies: the inbound-email idempotency ledger is written only by
 -- the webhook (service_role, which bypasses RLS). RLS-on + no-policy means
 -- anon/authenticated can neither read nor write it.
@@ -112,6 +114,11 @@ create policy "Enable access for authenticated users only" on public.favicons_ex
 -- moneybird_connection edge function (service role, bypasses RLS), so there are
 -- deliberately NO insert/update/delete policies for authenticated.
 create policy "Enable read access for connection owner" on public.moneybird_connections for select to authenticated
+    using (sales_id in (select id from public.sales where user_id = (select auth.uid())));
+
+-- Gmail connection metadata is owner-readable, but refresh tokens are also
+-- hidden at the grant layer. OAuth state and every write stay service-role only.
+create policy "Enable read access for Gmail connection owner" on public.gmail_connections for select to authenticated
     using (sales_id in (select id from public.sales where user_id = (select auth.uid())));
 
 -- Moneybird company contacts: a server-side cache used exclusively by the

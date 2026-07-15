@@ -358,6 +358,74 @@ const getDataProviderWithCustomMethods = () => {
         );
       }
     },
+    async getGmailConnection() {
+      const { data, error } = await getSupabaseClient()
+        .from("gmail_connections")
+        .select(
+          "id, sales_id, email, sync_status, last_synced_at, last_error, created_at, updated_at",
+        )
+        .maybeSingle();
+      if (error) {
+        console.error("gmail_connections.get.error", error);
+        throw new Error("Failed to load the Gmail connection");
+      }
+      return data
+        ? {
+            email: data.email as string,
+            status: data.sync_status as "connected" | "syncing" | "error",
+            lastSyncedAt: (data.last_synced_at as string | null) ?? null,
+            lastError: (data.last_error as string | null) ?? null,
+          }
+        : null;
+    },
+    async connectGmail() {
+      const { data, error } = await getSupabaseClient().functions.invoke<{
+        data: { authorizationUrl: string };
+      }>("gmail-connection", { method: "POST", body: {} });
+      if (!data || error) {
+        const details = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(details?.message || "Gmail koppelen is mislukt");
+      }
+      return data.data;
+    },
+    async syncGmail() {
+      const { data, error } = await getSupabaseClient().functions.invoke<{
+        data: { processed: number; skipped: number; failed: number };
+      }>("gmail-sync", { method: "POST", body: {} });
+      if (!data || error) {
+        const details = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(details?.message || "Gmail synchroniseren is mislukt");
+      }
+      return data.data;
+    },
+    async disconnectGmail() {
+      const { error } = await getSupabaseClient().functions.invoke(
+        "gmail-connection",
+        { method: "DELETE" },
+      );
+      if (error) {
+        const details = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(details?.message || "Gmail loskoppelen is mislukt");
+      }
+    },
     async createMoneybirdDocument(
       kind: "estimate" | "invoice",
       params: {

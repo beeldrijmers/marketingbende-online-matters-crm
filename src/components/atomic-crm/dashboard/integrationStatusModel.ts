@@ -26,27 +26,28 @@ export const getIntegrationHealth = (
   if (run.status === "running") {
     return {
       label: "Synchroniseert",
-      description: "Trello-updates worden nu verwerkt.",
+      description: `${run.integration === "gmail" ? "Gmail-berichten" : "Trello-updates"} worden nu verwerkt.`,
       tone: "running",
     };
   }
   if (run.status === "partial") {
+    const item = run.integration === "gmail" ? "bericht" : "kaart";
     return {
       label: "Aandacht nodig",
-      description: `${run.failed_count} kaart${run.failed_count === 1 ? "" : "en"} niet verwerkt.`,
+      description: `${run.failed_count} ${item}${run.failed_count === 1 ? "" : "en"} niet verwerkt.`,
       tone: "warning",
     };
   }
   if (run.status === "failed") {
     return {
       label: "Synchronisatie mislukt",
-      description: "Trello is niet volledig bijgewerkt.",
+      description: `${run.integration === "gmail" ? "Gmail" : "Trello"} is niet volledig bijgewerkt.`,
       tone: "danger",
     };
   }
   return {
     label: "Bijgewerkt",
-    description: `${run.items_processed} kaarten verwerkt zonder fouten.`,
+    description: `${run.items_processed} ${run.integration === "gmail" ? "berichten" : "kaarten"} verwerkt zonder fouten.`,
     tone: "success",
   };
 };

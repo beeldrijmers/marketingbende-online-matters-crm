@@ -1,11 +1,15 @@
 name: 🔁 Trello backfill
 
-# Manually-triggered re-run of the historical Trello-card backfill against the
-# deployed trello-sync edge function. Re-processes every card so existing deals
-# and companies pick up the latest enrichment (descriptions, company websites/
-# logos). Safe to re-run: manual edits are never overwritten.
+# Full Trello reconciliation in addition to live webhooks. The schedule repairs
+# missed/delayed webhook events and re-applies authoritative stage/list mapping.
 on:
+  schedule:
+    - cron: "17 */4 * * *"
   workflow_dispatch:
+
+concurrency:
+  group: trello-full-reconciliation
+  cancel-in-progress: false
 
 jobs:
   backfill:
@@ -25,10 +29,16 @@ jobs:
             exit 1
           fi
           endpoint="${SUPABASE_URL%/}/functions/v1/trello-sync"
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+            run_kind="scheduled"
+          else
+            run_kind="backfill"
+          fi
           echo "POST $endpoint"
           http_code=$(curl -sS --max-time 600 -o /tmp/backfill-response.json -w "%{http_code}" \
             -X POST "$endpoint" \
             -H "x-admin-backfill-secret: ${ADMIN_BACKFILL_SECRET}" \
+            -H "x-run-kind: ${run_kind}" \
             -H "Content-Type: application/json")
           echo "HTTP status: $http_code"
           echo "----- response body -----"

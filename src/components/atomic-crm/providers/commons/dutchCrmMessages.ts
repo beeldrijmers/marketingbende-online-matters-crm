@@ -744,6 +744,27 @@ export const dutchCrmMessages = {
       label: "CRM-navigatie",
     },
     profile: {
+      gmail: {
+        title: "Gmail",
+        description:
+          "Koppel uw Gmail-account rechtstreeks. Het CRM verwerkt ontvangen en verzonden e-mails automatisch bij de juiste contacten en deals; BCC blijft beschikbaar als terugvaloptie.",
+        connect: "Gmail koppelen",
+        connecting: "Naar Google…",
+        connect_success:
+          "Gmail is gekoppeld. De automatische synchronisatie is actief.",
+        oauth_error:
+          "Gmail koppelen is niet afgerond. Probeer het opnieuw of controleer de toestemming bij Google.",
+        connected: "Gekoppeld met %{email}.",
+        last_sync: "Laatste synchronisatie: %{date}",
+        not_synced: "nog niet uitgevoerd",
+        sync: "Nu synchroniseren",
+        syncing: "Synchroniseren…",
+        sync_success: "%{count} Gmail-berichten verwerkt",
+        sync_error: "Synchronisatieprobleem: %{error}",
+        disconnect: "Loskoppelen",
+        disconnect_confirm: "Ja, Gmail loskoppelen",
+        disconnect_success: "Gmail losgekoppeld",
+      },
       inbound: {
         description:
           "U kunt e-mails sturen naar het inkomende e-mailadres van uw server, bijvoorbeeld door dit toe te voegen aan het veld %{field}. Het CRM verwerkt de e-mails en voegt notities toe aan de bijbehorende contacten.",

@@ -48,6 +48,7 @@ import { GmailComposeButton } from "../misc/CopyPaste";
 import ImageEditorField from "../misc/ImageEditorField";
 import type { CrmDataProvider } from "../providers/types";
 import type { SalesFormData } from "../types";
+import { GmailConnectionContent } from "./GmailConnectionSection";
 import { MoneybirdConnectionContent } from "./MoneybirdConnectionSection";
 
 const ChangePasswordButton = () => {
@@ -111,6 +112,7 @@ export const SettingsPageMobile = () => {
           <div className="space-y-6">
             <ProfileSection />
             <PreferencesSection />
+            <GmailSection />
             <MoneybirdSection />
             <InboundEmailSection />
             <McpServerSection />
@@ -467,6 +469,19 @@ const MoneybirdSection = () => {
       <SectionLabel>{translate("crm.profile.moneybird.title")}</SectionLabel>
       <div className="rounded-lg border p-4">
         <MoneybirdConnectionContent />
+      </div>
+    </div>
+  );
+};
+
+const GmailSection = () => {
+  const translate = useTranslate();
+
+  return (
+    <div>
+      <SectionLabel>{translate("crm.profile.gmail.title")}</SectionLabel>
+      <div className="rounded-lg border p-4">
+        <GmailConnectionContent />
       </div>
     </div>
   );

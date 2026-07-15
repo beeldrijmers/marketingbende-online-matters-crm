@@ -162,8 +162,8 @@ export type Deal = {
 } & Pick<RaRecord, "id">;
 
 export type IntegrationRun = {
-  integration: "trello";
-  run_kind: "manual" | "backfill";
+  integration: "trello" | "gmail";
+  run_kind: "manual" | "backfill" | "scheduled";
   status: "running" | "success" | "partial" | "failed";
   started_at: string;
   finished_at: string | null;
@@ -180,6 +180,11 @@ export type IntegrationRun = {
       "facturatie-live": number;
       won: number;
     };
+    mode?: "full" | "incremental";
+    found?: number;
+    processed?: number;
+    skipped?: number;
+    failed?: number;
   };
   error: string | null;
 } & Pick<RaRecord, "id">;

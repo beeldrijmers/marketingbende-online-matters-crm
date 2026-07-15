@@ -168,6 +168,16 @@ revoke all on table public.moneybird_connections from anon, authenticated;
 grant select (id, sales_id, administration_id, administration_name, created_at, updated_at)
     on table public.moneybird_connections to authenticated;
 
+-- Gmail refresh tokens and history cursors are server-only. The client sees
+-- only enough metadata to render connection/sync health.
+grant all on table public.gmail_connections to service_role;
+revoke all on table public.gmail_connections from anon, authenticated;
+grant select (id, sales_id, email, sync_status, last_synced_at, last_error, created_at, updated_at)
+    on table public.gmail_connections to authenticated;
+
+grant all on table public.gmail_oauth_states to service_role;
+revoke all on table public.gmail_oauth_states from anon, authenticated;
+
 -- Moneybird company contacts: server-side cache, edge functions only.
 grant all on table public.moneybird_company_contacts to service_role;
 revoke all on table public.moneybird_company_contacts from anon, authenticated;
@@ -239,6 +249,9 @@ revoke all on sequence public.moneybird_connections_id_seq from anon, authentica
 
 grant all on sequence public.moneybird_company_contacts_id_seq to service_role;
 revoke all on sequence public.moneybird_company_contacts_id_seq from anon, authenticated;
+
+grant all on sequence public.gmail_connections_id_seq to service_role;
+revoke all on sequence public.gmail_connections_id_seq from anon, authenticated;
 
 grant all on sequence public.integration_runs_id_seq to service_role;
 revoke all on sequence public.integration_runs_id_seq from anon, authenticated;

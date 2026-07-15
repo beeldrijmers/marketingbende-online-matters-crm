@@ -85,7 +85,10 @@ Deno.serve(async (req) => {
     req.headers.get("x-admin-backfill-secret") === adminBackfillSecret
   ) {
     try {
-      const summary = await runTrelloBackfill({ runKind: "backfill" });
+      const requestedRunKind = req.headers.get("x-run-kind");
+      const runKind =
+        requestedRunKind === "scheduled" ? "scheduled" : "backfill";
+      const summary = await runTrelloBackfill({ runKind });
       return new Response(JSON.stringify(summary), {
         status: 200,
         headers: { "Content-Type": "application/json" },

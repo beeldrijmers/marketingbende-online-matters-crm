@@ -166,6 +166,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/settings/GmailConnectionSection.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/sales/useGetSalesName.ts",
           "type": "registry:component"
         },
@@ -451,6 +455,10 @@
         },
         {
           "path": "src/components/atomic-crm/misc/useImportFromJson.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/misc/useGmailConnection.ts",
           "type": "registry:component"
         },
         {
