@@ -739,6 +739,27 @@ export const englishCrmMessages = {
       label: "CRM navigation",
     },
     profile: {
+      gmail: {
+        title: "Gmail",
+        description:
+          "Connect your Gmail account directly. The CRM automatically files received and sent email with the right contacts and deals; BCC remains available as a fallback.",
+        connect: "Connect Gmail",
+        connecting: "Opening Google…",
+        connect_success:
+          "Gmail is connected. Automatic synchronization is active.",
+        oauth_error:
+          "Gmail connection was not completed. Try again or check the Google consent screen.",
+        connected: "Connected to %{email}.",
+        last_sync: "Last synchronization: %{date}",
+        not_synced: "not run yet",
+        sync: "Synchronize now",
+        syncing: "Synchronizing…",
+        sync_success: "%{count} Gmail messages processed",
+        sync_error: "Synchronization problem: %{error}",
+        disconnect: "Disconnect",
+        disconnect_confirm: "Yes, disconnect Gmail",
+        disconnect_success: "Gmail disconnected",
+      },
       inbound: {
         description:
           "You can start sending emails to your server's inbound email address, e.g. by adding it to the %{field} field. The CRM will process the emails and add notes to the corresponding contacts.",

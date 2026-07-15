@@ -318,6 +318,22 @@ export const createDataProvider = ({
         "De Moneybird-koppeling is niet beschikbaar in de demomodus.",
       );
     },
+    getGmailConnection: async () => null,
+    connectGmail: async () => {
+      throw new Error(
+        "De Gmail-koppeling is niet beschikbaar in de demomodus.",
+      );
+    },
+    syncGmail: async () => {
+      throw new Error(
+        "De Gmail-koppeling is niet beschikbaar in de demomodus.",
+      );
+    },
+    disconnectGmail: async () => {
+      throw new Error(
+        "De Gmail-koppeling is niet beschikbaar in de demomodus.",
+      );
+    },
     // No Trello backend in the demo; ticking a step off simply stays local.
     completeTrelloStep: async () => {},
     // Demo deals are not linked to live Trello cards.

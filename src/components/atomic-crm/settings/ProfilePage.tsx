@@ -29,6 +29,7 @@ import { CopyPaste, GmailComposeButton } from "../misc/CopyPaste";
 import ImageEditorField from "../misc/ImageEditorField";
 import type { CrmDataProvider } from "../providers/types";
 import type { Sale, SalesFormData } from "../types";
+import { GmailConnectionSection } from "./GmailConnectionSection";
 import { MoneybirdConnectionSection } from "./MoneybirdConnectionSection";
 
 export const ProfilePage = () => {
@@ -236,6 +237,7 @@ const ProfileForm = ({
           </div>
         </CardContent>
       </Card>
+      <GmailConnectionSection />
       <MoneybirdConnectionSection />
       {import.meta.env.VITE_INBOUND_EMAIL && (
         <Card>

@@ -44,4 +44,11 @@ describe("getIntegrationHealth", () => {
       ).tone,
     ).toBe("warning");
   });
+
+  it("uses Gmail-specific wording for mailbox runs", () => {
+    expect(
+      getIntegrationHealth(run({ integration: "gmail", items_processed: 12 }))
+        .description,
+    ).toBe("12 berichten verwerkt zonder fouten.");
+  });
 });
