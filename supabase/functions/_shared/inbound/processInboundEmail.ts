@@ -50,15 +50,13 @@ export interface ProcessInboundEmailOptions {
   mailboxEmail?: string;
 }
 
-const claimInboundEmail = async (emailId: string): Promise<boolean> => {
+export const claimInboundEmail = async (emailId: string): Promise<boolean> => {
   const { error } = await supabaseAdmin
     .from("inbound_email_events")
     .insert({ email_id: emailId });
   if (!error) return true;
-  if (error.code !== "23505") {
-    console.error(`Could not claim inbound email ${emailId}:`, error.message);
-  }
-  return false;
+  if (error.code === "23505") return false;
+  throw new Error(`Could not claim inbound email ${emailId}: ${error.message}`);
 };
 
 const releaseInboundEmail = async (emailId: string): Promise<void> => {
