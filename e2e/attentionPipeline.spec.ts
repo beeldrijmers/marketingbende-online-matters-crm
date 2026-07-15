@@ -1,13 +1,18 @@
 import { expect, test } from "./fixtures";
 
 test.describe("attention pipeline", () => {
-  test.beforeEach(async ({ createSales }) => {
-    await createSales({
+  test.beforeEach(async ({ createCompany, createSales }) => {
+    const sales = await createSales({
       email: "pipeline@example.com",
       first_name: "Pipeline",
       last_name: "Tester",
       password: "password",
     });
+
+    // A completely empty CRM intentionally shows the onboarding checklist.
+    // Seed one company so this scenario exercises the real dashboard and its
+    // attention-queue CTA without needing a deal to be present.
+    await createCompany({ name: "Pipeline Test", salesId: sales.id });
   });
 
   test("opens its specialized pipeline from the dashboard", async ({
