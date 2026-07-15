@@ -141,13 +141,17 @@ jobs:
               name: 📡 Push supabase moneybird encryption key secret
               run: npx supabase secrets set MONEYBIRD_ENC_KEY=${{ env.MONEYBIRD_ENC_KEY }}
 
-            - if: ${{ env.IS_SUPABASE_CONFIGURED && env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.GMAIL_ENC_KEY && env.GMAIL_SYNC_SECRET }}
-              name: 📡 Push supabase Gmail OAuth and sync secrets
+            - if: ${{ env.IS_SUPABASE_CONFIGURED && env.GMAIL_ENC_KEY && env.GMAIL_SYNC_SECRET }}
+              name: 📡 Push supabase Gmail encryption and sync secrets
+              run: |
+                  npx supabase secrets set GMAIL_ENC_KEY=${{ env.GMAIL_ENC_KEY }}
+                  npx supabase secrets set GMAIL_SYNC_SECRET=${{ env.GMAIL_SYNC_SECRET }}
+
+            - if: ${{ env.IS_SUPABASE_CONFIGURED && env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET }}
+              name: 📡 Push supabase Google OAuth client secrets
               run: |
                   npx supabase secrets set GOOGLE_CLIENT_ID=${{ env.GOOGLE_CLIENT_ID }}
                   npx supabase secrets set GOOGLE_CLIENT_SECRET=${{ env.GOOGLE_CLIENT_SECRET }}
-                  npx supabase secrets set GMAIL_ENC_KEY=${{ env.GMAIL_ENC_KEY }}
-                  npx supabase secrets set GMAIL_SYNC_SECRET=${{ env.GMAIL_SYNC_SECRET }}
 
             - if: ${{ env.IS_SUPABASE_CONFIGURED && env.RESEND_API_KEY && env.RESEND_WEBHOOK_SECRET }}
               name: 📡 Push supabase resend inbound secrets
