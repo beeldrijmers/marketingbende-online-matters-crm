@@ -1,5 +1,9 @@
-import { processInboundEmail } from "../inbound/processInboundEmail.ts";
+import {
+  claimInboundEmail,
+  processInboundEmail,
+} from "../inbound/processInboundEmail.ts";
 import { supabaseAdmin } from "../supabaseAdmin.ts";
+import { gmailInboundEmailId, selectGmailSyncBatch } from "./batch.ts";
 import {
   getGmailAttachmentData,
   getGmailMessage,
@@ -26,8 +30,12 @@ export interface GmailSyncSummary {
   processed: number;
   skipped: number;
   failed: number;
+  remaining: number;
   durationMs: number;
 }
+
+// Leave enough headroom for status updates before the hosted function timeout.
+const GMAIL_SYNC_TIME_BUDGET_MS = 90_000;
 
 const startRun = async (
   runKind: "manual" | "scheduled",
@@ -61,7 +69,7 @@ const finishRun = async (
     .update({
       status: errorMessage
         ? "failed"
-        : summary.failed > 0
+        : summary.failed > 0 || summary.remaining > 0
           ? "partial"
           : "success",
       finished_at: new Date().toISOString(),
@@ -93,6 +101,7 @@ export const syncGmailConnection = async ({
     processed: 0,
     skipped: 0,
     failed: 0,
+    remaining: 0,
     durationMs: 0,
   };
 
@@ -151,16 +160,41 @@ export const syncGmailConnection = async ({
       ids = await listRecentGmailMessageIds(accessToken);
     }
 
+    const emailIds = ids.map((messageId) =>
+      gmailInboundEmailId(connection.sales_id, messageId),
+    );
+    let claimedRows: { email_id: string }[] = [];
+    if (emailIds.length > 0) {
+      const { data, error } = await supabaseAdmin
+        .from("inbound_email_events")
+        .select("email_id")
+        .in("email_id", emailIds);
+      if (error) throw error;
+      claimedRows = (data ?? []).map((row) => ({
+        email_id: String(row.email_id),
+      }));
+    }
+
+    const batch = selectGmailSyncBatch({
+      messageIds: ids,
+      claimedEmailIds: new Set(claimedRows.map((row) => row.email_id)),
+      salesId: connection.sales_id,
+    });
     const summary: GmailSyncSummary = {
       mode,
       found: ids.length,
       processed: 0,
-      skipped: 0,
+      skipped: batch.alreadyHandled,
       failed: 0,
+      remaining: batch.remaining,
       durationMs: 0,
     };
 
-    for (const messageId of ids) {
+    for (const [index, messageId] of batch.messageIds.entries()) {
+      if (Date.now() - startedAt >= GMAIL_SYNC_TIME_BUDGET_MS) {
+        summary.remaining += batch.messageIds.length - index;
+        break;
+      }
       try {
         const message = await getGmailMessage(accessToken, messageId);
         const labels = new Set(message.labelIds ?? []);
@@ -172,6 +206,9 @@ export const syncGmailConnection = async ({
           labels.has("CATEGORY_SOCIAL") ||
           labels.has("CATEGORY_FORUMS")
         ) {
+          await claimInboundEmail(
+            gmailInboundEmailId(connection.sales_id, messageId),
+          );
           summary.skipped += 1;
           continue;
         }
@@ -180,14 +217,17 @@ export const syncGmailConnection = async ({
           (attachmentId) =>
             getGmailAttachmentData(accessToken, messageId, attachmentId),
         );
-        await processInboundEmail({
-          emailId: `gmail:${connection.sales_id}:${messageId}`,
+        const response = await processInboundEmail({
+          emailId: gmailInboundEmailId(connection.sales_id, messageId),
           email: normalized,
           ownerSalesId: connection.sales_id,
           ownerSalesEmail,
           mailboxEmail: connection.email,
           inboundEmail: Deno.env.get("VITE_INBOUND_EMAIL") ?? "",
         });
+        if (response.status >= 500) {
+          throw new Error(`Inbound processing returned ${response.status}`);
+        }
         summary.processed += 1;
       } catch (error) {
         summary.failed += 1;
@@ -198,18 +238,20 @@ export const syncGmailConnection = async ({
     // Do not advance past failed messages. Successful ones are idempotently
     // claimed, so the next retry safely revisits the same history range.
     if (summary.failed === 0) {
-      await supabaseAdmin
+      const connectionUpdate: Record<string, string | null> = {
+        sync_status: "connected",
+        last_synced_at: new Date().toISOString(),
+        last_error: null,
+        updated_at: new Date().toISOString(),
+      };
+      if (summary.remaining === 0) connectionUpdate.history_id = historyId;
+      const { error: connectionUpdateError } = await supabaseAdmin
         .from("gmail_connections")
-        .update({
-          history_id: historyId,
-          sync_status: "connected",
-          last_synced_at: new Date().toISOString(),
-          last_error: null,
-          updated_at: new Date().toISOString(),
-        })
+        .update(connectionUpdate)
         .eq("id", connection.id);
+      if (connectionUpdateError) throw connectionUpdateError;
     } else {
-      await supabaseAdmin
+      const { error: connectionUpdateError } = await supabaseAdmin
         .from("gmail_connections")
         .update({
           sync_status: "error",
@@ -217,6 +259,7 @@ export const syncGmailConnection = async ({
           updated_at: new Date().toISOString(),
         })
         .eq("id", connection.id);
+      if (connectionUpdateError) throw connectionUpdateError;
     }
 
     summary.durationMs = Date.now() - startedAt;
