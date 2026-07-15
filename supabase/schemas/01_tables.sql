@@ -6,6 +6,8 @@
 -- Extensions
 create extension if not exists "http" with schema "extensions";
 create extension if not exists "citext" with schema "extensions";
+create extension if not exists "pg_net" with schema "extensions";
+create extension if not exists "pg_cron";
 
 -- Private schema (used by sales policies migration)
 create schema if not exists "private";
