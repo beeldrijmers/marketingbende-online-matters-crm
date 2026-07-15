@@ -225,6 +225,8 @@ jobs:
                   npx supabase db query --linked \
                     "select jobname, schedule, active from cron.job where jobname = 'marketingbende-gmail-sync';"
                   npx supabase db query --linked \
+                    "select details.start_time, details.end_time, details.status from cron.job_run_details as details join cron.job as job on job.jobid = details.jobid where job.jobname = 'marketingbende-gmail-sync' order by details.start_time desc limit 1;"
+                  npx supabase db query --linked \
                     "select started_at, status, items_processed, failed_count from public.integration_runs where integration = 'gmail' and run_kind = 'scheduled' order by started_at desc limit 1;"
 
             # Keep a dedicated, non-admin account for the authenticated
