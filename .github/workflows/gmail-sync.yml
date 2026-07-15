@@ -1,10 +1,6 @@
 name: 📬 Gmail synchronisatie
 
 on:
-  # Kept during the first phase of the scheduler migration. It is removed in
-  # a follow-up after the Supabase Cron invocation is verified in production.
-  schedule:
-    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
 
 permissions:
