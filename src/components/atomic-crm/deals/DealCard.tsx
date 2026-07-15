@@ -12,6 +12,7 @@ import { AssigneesField } from "../sales/AssigneesField";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Deal, Task } from "../types";
 import { DealWorkflowIndicator } from "./DealWorkflowIndicator";
+import { getDealWorkflow } from "./dealWorkflow";
 
 // A monthly/recurring price hint anywhere in the card text ("EUR 300 p/m",
 // "per maand", "maandelijks") means we show the amount as a monthly rate.
@@ -32,11 +33,15 @@ const moneybirdLabel = (deal: Deal): string | null =>
       : null;
 
 export const DealCard = ({
+  attentionPipeline = false,
   deal,
+  detailBasePath,
   index,
   openTasks,
 }: {
+  attentionPipeline?: boolean;
   deal: Deal;
+  detailBasePath?: string;
   index: number;
   openTasks: Task[];
 }) => {
@@ -46,9 +51,11 @@ export const DealCard = ({
     <Draggable draggableId={String(deal.id)} index={index}>
       {(provided, snapshot) => (
         <DealCardContent
+          attentionPipeline={attentionPipeline}
           provided={provided}
           snapshot={snapshot}
           deal={deal}
+          detailBasePath={detailBasePath}
           openTasks={openTasks}
         />
       )}
@@ -57,23 +64,33 @@ export const DealCard = ({
 };
 
 export const DealCardContent = ({
+  attentionPipeline = false,
   provided,
   snapshot,
   deal,
+  detailBasePath,
   openTasks = EMPTY_TASKS,
 }: {
+  attentionPipeline?: boolean;
   provided?: any;
   snapshot?: any;
   deal: Deal;
+  detailBasePath?: string;
   openTasks?: Task[];
 }) => {
   const { dealCategories, currency } = useConfigurationContext();
   const translate = useTranslate();
   const redirect = useRedirect();
   const handleClick = () => {
-    redirect(`/deals/${deal.id}/show`, undefined, undefined, undefined, {
-      _scrollToTop: false,
-    });
+    redirect(
+      detailBasePath
+        ? `${detailBasePath}?deal=${deal.id}`
+        : `/deals/${deal.id}/show`,
+      undefined,
+      undefined,
+      undefined,
+      { _scrollToTop: false },
+    );
   };
 
   const formattedAmount = deal.amount
@@ -86,6 +103,15 @@ export const DealCardContent = ({
     : null;
   const recurring = isRecurringDeal(deal);
   const moneybird = moneybirdLabel(deal);
+  const workflow = getDealWorkflow(deal, openTasks);
+  const attentionAccent =
+    workflow.kind === "overdue"
+      ? "border-l-destructive"
+      : workflow.kind === "today"
+        ? "border-l-amber-500"
+        : workflow.kind === "overdue_closing"
+          ? "border-l-orange-500"
+          : "border-l-violet-500";
 
   return (
     <div
@@ -99,6 +125,9 @@ export const DealCardContent = ({
         <Card
           className={cn(
             "py-2.5 transition-all duration-200",
+            attentionPipeline &&
+              "border-l-4 bg-card/95 py-3 shadow-sm hover:-translate-y-0.5",
+            attentionPipeline && attentionAccent,
             snapshot?.isDragging
               ? "opacity-90 transform rotate-1 shadow-lg"
               : "shadow-sm hover:shadow-md",
@@ -123,6 +152,14 @@ export const DealCardContent = ({
                 <CompanyAvatar width={20} height={20} />
               </ReferenceField>
             </div>
+
+            {attentionPipeline ? (
+              <DealWorkflowIndicator
+                deal={deal}
+                openTasks={openTasks}
+                className="my-1.5 py-1.5"
+              />
+            ) : null}
 
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               {formattedAmount ? (
@@ -179,7 +216,9 @@ export const DealCardContent = ({
                 />
               </div>
             </div>
-            <DealWorkflowIndicator deal={deal} openTasks={openTasks} />
+            {!attentionPipeline ? (
+              <DealWorkflowIndicator deal={deal} openTasks={openTasks} />
+            ) : null}
           </CardContent>
         </Card>
       </RecordContextProvider>

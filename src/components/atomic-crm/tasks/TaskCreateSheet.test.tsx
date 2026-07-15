@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { render } from "vitest-browser-react";
 import { Mobile } from "./TaskCreateSheet.stories";
 import { useDataProvider, type DataProvider } from "ra-core";
-import { buildContact } from "@/test/StoryWrapper";
+import { buildContact, StoryWrapper } from "@/test/StoryWrapper";
+import { TaskCreateSheet } from "./TaskCreateSheet";
 
 describe("TaskCreateSheet", () => {
   it("creates a task for a selected contact and updates last_seen", async () => {
@@ -104,5 +105,42 @@ describe("TaskCreateSheet", () => {
     });
     expect(updatedContact.data.last_seen).not.toBe(originalLastSeen);
     expect(updatedContact.data.nb_tasks).toBe(1);
+  });
+
+  it("creates a next task directly for a deal without requiring a contact", async () => {
+    let dataProvider: DataProvider | null = null;
+    const DataProviderListener = () => {
+      dataProvider = useDataProvider();
+      return null;
+    };
+    const screen = await render(
+      <StoryWrapper data={{ tasks: [] }}>
+        <TaskCreateSheet open deal_id={42} onOpenChange={() => undefined} />
+        <DataProviderListener />
+      </StoryWrapper>,
+    );
+
+    await expect
+      .element(screen.getByText("Volgende taak voor deal"))
+      .toBeInTheDocument();
+    expect(screen.getByLabelText(/contact/i).query()).toBeNull();
+
+    await screen.getByLabelText(/description/i).fill("Offerte nabellen");
+    await screen.getByRole("button", { name: /^save$/i }).click();
+
+    await expect.element(screen.getByText("Task added")).toBeInTheDocument();
+    await expect
+      .poll(async () => {
+        const { data } = await dataProvider!.getList("tasks", {
+          filter: {},
+          pagination: { page: 1, perPage: 10 },
+          sort: { field: "id", order: "ASC" },
+        });
+        return data.find((task) => task.text === "Offerte nabellen");
+      })
+      .toMatchObject({
+        deal_id: 42,
+        text: "Offerte nabellen",
+      });
   });
 });

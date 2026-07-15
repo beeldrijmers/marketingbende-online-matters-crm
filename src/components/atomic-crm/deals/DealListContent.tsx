@@ -12,12 +12,20 @@ import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { CrmDataProvider } from "../providers/types";
 import type { Deal, Task } from "../types";
 import { DealColumn } from "./DealColumn";
-import { buildOpenTasksByDeal } from "./dealWorkflow";
+import { buildOpenTasksByDeal, rankDealsForAttention } from "./dealWorkflow";
 import type { DealsByStage } from "./stages";
 import { getDealsByStage } from "./stages";
 import { writeLinkedDealStageToTrello } from "./trelloStageWriteback";
 
-export const DealListContent = () => {
+export const DealListContent = ({
+  attentionPipeline = false,
+  detailBasePath,
+  onDealStageChange,
+}: {
+  attentionPipeline?: boolean;
+  detailBasePath?: string;
+  onDealStageChange?: (deal: Deal, destinationStage: string) => void;
+} = {}) => {
   const { dealStages } = useConfigurationContext();
   const { data: unorderedDeals, isPending, refetch } = useListContext<Deal>();
   const dataProvider = useDataProvider<CrmDataProvider>();
@@ -35,13 +43,23 @@ export const DealListContent = () => {
 
   useEffect(() => {
     if (unorderedDeals) {
-      const newDealsByStage = getDealsByStage(unorderedDeals, dealStages);
-      if (!isEqual(newDealsByStage, dealsByStage)) {
-        setDealsByStage(newDealsByStage);
-      }
+      const orderedDeals = attentionPipeline
+        ? rankDealsForAttention(unorderedDeals, tasksByDeal).map(
+            ({ deal }) => deal,
+          )
+        : unorderedDeals;
+      const newDealsByStage = getDealsByStage(
+        orderedDeals,
+        dealStages,
+        attentionPipeline,
+      );
+      setDealsByStage((currentDealsByStage) =>
+        isEqual(newDealsByStage, currentDealsByStage)
+          ? currentDealsByStage
+          : newDealsByStage,
+      );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unorderedDeals]);
+  }, [attentionPipeline, dealStages, tasksByDeal, unorderedDeals]);
 
   if (isPending) return null;
 
@@ -82,6 +100,9 @@ export const DealListContent = () => {
     // persist the changes
     updateDealStage(sourceDeal, destinationDeal, dataProvider)
       .then(() => {
+        if (sourceStage !== destinationStage) {
+          onDealStageChange?.(sourceDeal, destinationStage);
+        }
         refetch();
       })
       .catch((error) => {
@@ -99,10 +120,18 @@ export const DealListContent = () => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="h-[calc(100dvh-11rem)] min-h-80 overflow-x-auto overscroll-contain pb-2">
+      <div
+        className={
+          attentionPipeline
+            ? "h-[calc(100dvh-19rem)] min-h-96 overflow-x-auto overscroll-contain pb-2"
+            : "h-[calc(100dvh-11rem)] min-h-80 overflow-x-auto overscroll-contain pb-2"
+        }
+      >
         <div className="flex h-full gap-4">
           {dealStages.map((stage) => (
             <DealColumn
+              attentionPipeline={attentionPipeline}
+              detailBasePath={detailBasePath}
               stage={stage.value}
               deals={dealsByStage[stage.value]}
               tasksByDeal={tasksByDeal}

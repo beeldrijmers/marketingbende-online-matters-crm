@@ -12,6 +12,7 @@ import { NumberField } from "@/components/admin/number-field";
 import { ReferenceField } from "@/components/admin/reference-field";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 import { CompanyAvatar } from "../companies/CompanyAvatar";
 import MobileHeader from "../layout/MobileHeader";
@@ -23,9 +24,14 @@ import { DealShow } from "./DealShow";
 import { DealWorkflowIndicator } from "./DealWorkflowIndicator";
 import {
   type DashboardDealSelection,
+  getDashboardDealSelectionPath,
   getDashboardDealSelectionFilter,
 } from "./dashboardDealSelection";
-import { buildOpenTasksByDeal } from "./dealWorkflow";
+import {
+  buildOpenTasksByDeal,
+  getDealWorkflow,
+  rankDealsForAttention,
+} from "./dealWorkflow";
 
 /**
  * Mobile deals view: the kanban board is desktop-only, so on mobile the deals
@@ -34,9 +40,13 @@ import { buildOpenTasksByDeal } from "./dealWorkflow";
  * party. Registered as the `deals` list in the mobile Admin.
  */
 export const MobileDealsList = ({
+  attentionPipeline = false,
   dashboardSelection,
+  hideHeader = false,
 }: {
+  attentionPipeline?: boolean;
   dashboardSelection?: DashboardDealSelection;
+  hideHeader?: boolean;
 } = {}) => {
   const { identity } = useGetIdentity();
   if (!identity) return null;
@@ -54,7 +64,11 @@ export const MobileDealsList = ({
           : undefined
       }
     >
-      <DealsLayoutMobile dashboardSelection={dashboardSelection} />
+      <DealsLayoutMobile
+        attentionPipeline={attentionPipeline}
+        dashboardSelection={dashboardSelection}
+        hideHeader={hideHeader}
+      />
     </InfiniteListBase>
   );
 };
@@ -96,9 +110,13 @@ const groupDealsByStage = (
 };
 
 const DealsLayoutMobile = ({
+  attentionPipeline = false,
   dashboardSelection,
+  hideHeader = false,
 }: {
+  attentionPipeline?: boolean;
   dashboardSelection?: DashboardDealSelection;
+  hideHeader?: boolean;
 }) => {
   const translate = useTranslate();
   const location = useLocation();
@@ -114,25 +132,41 @@ const DealsLayoutMobile = ({
   // The deal detail is a URL-driven dialog (same pattern as the desktop board):
   // tapping a row navigates to /deals/:id/show, which this list matches and
   // opens over itself; closing redirects back to the list.
-  const matchShow = matchPath("/deals/:id/show", location.pathname);
+  const matchShow = dashboardSelection
+    ? null
+    : matchPath("/deals/:id/show", location.pathname);
+  const detailBasePath = dashboardSelection
+    ? getDashboardDealSelectionPath(dashboardSelection.kind)
+    : undefined;
+  const dashboardDealId = dashboardSelection
+    ? new URLSearchParams(location.search).get("deal")
+    : null;
 
   const fallbackLabel = translate("resources.deals.other_stage", {
     _: "Overig",
   });
-  const groups = useMemo(
-    () => groupDealsByStage(data ?? [], dealStages, fallbackLabel),
-    [data, dealStages, fallbackLabel],
-  );
+  const groups = useMemo(() => {
+    const orderedDeals = attentionPipeline
+      ? rankDealsForAttention(data ?? [], tasksByDeal).map(({ deal }) => deal)
+      : (data ?? []);
+    return groupDealsByStage(orderedDeals, dealStages, fallbackLabel);
+  }, [attentionPipeline, data, dealStages, fallbackLabel, tasksByDeal]);
 
   return (
     <div>
-      <DealShow open={!!matchShow} id={matchShow?.params.id} />
-      <MobileHeader>
-        <h1 className="text-lg font-semibold">
-          {dashboardSelection?.label ??
-            translate("resources.deals.name", { smart_count: 2 })}
-        </h1>
-      </MobileHeader>
+      <DealShow
+        closeTo={detailBasePath ?? "/deals"}
+        open={dashboardSelection ? !!dashboardDealId : !!matchShow}
+        id={dashboardDealId ?? matchShow?.params.id}
+      />
+      {!hideHeader ? (
+        <MobileHeader>
+          <h1 className="text-lg font-semibold">
+            {dashboardSelection?.label ??
+              translate("resources.deals.name", { smart_count: 2 })}
+          </h1>
+        </MobileHeader>
+      ) : null}
       <MobileContent>
         {isPending ? (
           <MobileDealsListSkeleton />
@@ -182,7 +216,9 @@ const DealsLayoutMobile = ({
                 {group.deals.map((deal) => (
                   <RecordContextProvider key={deal.id} value={deal}>
                     <MobileDealRow
+                      attentionPipeline={attentionPipeline}
                       deal={deal}
+                      detailBasePath={detailBasePath}
                       openTasks={tasksByDeal.get(deal.id) ?? []}
                     />
                   </RecordContextProvider>
@@ -210,16 +246,42 @@ const MobileDealsListSkeleton = () => (
 );
 
 const MobileDealRow = ({
+  attentionPipeline = false,
   deal,
+  detailBasePath,
   openTasks,
 }: {
+  attentionPipeline?: boolean;
   deal: Deal;
+  detailBasePath?: string;
   openTasks: Task[];
 }) => {
   const { currency } = useConfigurationContext();
+  const workflow = getDealWorkflow(deal, openTasks);
+  const attentionAccent =
+    workflow.kind === "overdue"
+      ? "border-l-destructive"
+      : workflow.kind === "today"
+        ? "border-l-amber-500"
+        : workflow.kind === "overdue_closing"
+          ? "border-l-orange-500"
+          : "border-l-violet-500";
   return (
-    <Link to={`/deals/${deal.id}/show`} className="no-underline">
-      <Card className="p-3 flex flex-col gap-1.5 transition-colors hover:bg-muted/60">
+    <Link
+      to={
+        detailBasePath
+          ? `${detailBasePath}?deal=${deal.id}`
+          : `/deals/${deal.id}/show`
+      }
+      className="no-underline"
+    >
+      <Card
+        className={cn(
+          "p-3 flex flex-col gap-1.5 transition-colors hover:bg-muted/60",
+          attentionPipeline && "border-l-4",
+          attentionPipeline && attentionAccent,
+        )}
+      >
         <div className="flex items-center gap-2">
           <ReferenceField
             source="company_id"

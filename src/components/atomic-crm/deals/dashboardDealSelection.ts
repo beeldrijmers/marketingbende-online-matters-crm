@@ -9,6 +9,10 @@ export type DashboardDealSelection = {
   label: string;
 };
 
+export const getDashboardDealSelectionPath = (
+  kind: DashboardDealSelection["kind"],
+) => (kind === "attention" ? DEAL_ATTENTION_PATH : DEAL_BILLING_PATH);
+
 export const isDealId = (value: unknown): value is Identifier =>
   (typeof value === "number" && Number.isSafeInteger(value) && value > 0) ||
   (typeof value === "string" && /^\d+$/.test(value));

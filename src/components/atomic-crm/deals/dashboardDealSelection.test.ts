@@ -2,6 +2,7 @@ import {
   createDashboardDealSelection,
   DEAL_ATTENTION_PATH,
   DEAL_BILLING_PATH,
+  getDashboardDealSelectionPath,
   getDashboardDealSelectionFilter,
 } from "./dashboardDealSelection";
 
@@ -38,5 +39,9 @@ describe("dashboard deal selection", () => {
   it("uses dedicated, refresh-safe routes for both dashboard boards", () => {
     expect(DEAL_ATTENTION_PATH).toBe("/deals/aandacht");
     expect(DEAL_BILLING_PATH).toBe("/deals/facturatie");
+    expect(getDashboardDealSelectionPath("attention")).toBe(
+      DEAL_ATTENTION_PATH,
+    );
+    expect(getDashboardDealSelectionPath("billing")).toBe(DEAL_BILLING_PATH);
   });
 });

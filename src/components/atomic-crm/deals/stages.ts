@@ -6,6 +6,7 @@ export type DealsByStage = Record<Deal["stage"], Deal[]>;
 export const getDealsByStage = (
   unorderedDeals: Deal[],
   dealStages: ConfigurationContextValue["dealStages"],
+  preserveInputOrder = false,
 ) => {
   if (!dealStages) return {};
   const dealsByStage: Record<Deal["stage"], Deal[]> = unorderedDeals.reduce(
@@ -22,11 +23,14 @@ export const getDealsByStage = (
       {} as Record<Deal["stage"], Deal[]>,
     ),
   );
-  // order each column by index
-  dealStages.forEach((stage) => {
-    dealsByStage[stage.value] = dealsByStage[stage.value].sort(
-      (recordA: Deal, recordB: Deal) => recordA.index - recordB.index,
-    );
-  });
+  if (!preserveInputOrder) {
+    // The regular pipeline follows its manually managed position. Specialized
+    // boards can preserve a pre-ranked input order instead.
+    dealStages.forEach((stage) => {
+      dealsByStage[stage.value] = dealsByStage[stage.value].sort(
+        (recordA: Deal, recordB: Deal) => recordA.index - recordB.index,
+      );
+    });
+  }
   return dealsByStage;
 };

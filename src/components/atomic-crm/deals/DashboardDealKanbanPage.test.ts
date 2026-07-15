@@ -1,8 +1,10 @@
 import type { Deal, Task } from "../types";
 import {
+  filterAttentionDeals,
+  selectAttentionDeals,
   selectAttentionDealIds,
   selectBillingDealIds,
-} from "./DashboardDealKanbanPage";
+} from "./dashboardDealKanbanModel";
 
 const deal = (overrides: Partial<Deal> = {}): Deal => ({
   amount: 1000,
@@ -44,8 +46,34 @@ describe("dedicated dashboard Kanban pages", () => {
     ];
 
     expect(
-      selectAttentionDealIds(deals, tasks, new Date(2026, 6, 15, 12)),
+      selectAttentionDealIds(deals, tasks, "all", new Date(2026, 6, 15, 12)),
     ).toEqual([1]);
+  });
+
+  it("filters the attention pipeline without changing its urgency order", () => {
+    const deals = [deal({ id: 1 }), deal({ id: 2 }), deal({ id: 3 })];
+    const tasks = [
+      task({ deal_id: 1, due_date: "2026-07-14" }),
+      task({ deal_id: 2, due_date: "2026-07-15", id: 11 }),
+    ];
+    const ranked = selectAttentionDeals(
+      deals,
+      tasks,
+      new Date(2026, 6, 15, 12),
+    );
+
+    expect(
+      filterAttentionDeals(ranked, "overdue").map(({ deal }) => deal.id),
+    ).toEqual([1]);
+    expect(
+      filterAttentionDeals(ranked, "today").map(({ deal }) => deal.id),
+    ).toEqual([2]);
+    expect(
+      filterAttentionDeals(ranked, "unplanned").map(({ deal }) => deal.id),
+    ).toEqual([3]);
+    expect(
+      filterAttentionDeals(ranked, "all").map(({ deal }) => deal.id),
+    ).toEqual([1, 2, 3]);
   });
 
   it("selects only unfinished deals in the billing stage", () => {

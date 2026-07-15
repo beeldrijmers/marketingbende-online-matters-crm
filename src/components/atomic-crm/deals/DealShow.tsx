@@ -40,13 +40,21 @@ import {
   isBeforeToday,
 } from "./dealUtils";
 
-export const DealShow = ({ open, id }: { open: boolean; id?: string }) => {
+export const DealShow = ({
+  closeTo = "/deals",
+  open,
+  id,
+}: {
+  closeTo?: string;
+  open: boolean;
+  id?: string;
+}) => {
   const navigate = useNavigate();
   const handleClose = () => {
-    // Replace (not push) the /deals/:id/show entry with the list so the browser
-    // back button lands before the dialog was opened instead of reopening it.
-    // Works for deep links too, unlike navigate(-1).
-    navigate("/deals", { replace: true });
+    // Replace (not push) the detail entry with its originating board so the
+    // browser back button lands before the dialog was opened instead of
+    // reopening it. Works for deep links too, unlike navigate(-1).
+    navigate(closeTo, { replace: true });
   };
 
   return (

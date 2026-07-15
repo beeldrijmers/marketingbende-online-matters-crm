@@ -33,8 +33,28 @@ test("authenticated CRM dashboard and core routes stay operational", async ({
     await expect(page.locator("#main-content")).toBeVisible();
   }
 
+  await page.goto("/#/", { waitUntil: "domcontentloaded" });
+  const attentionHeading = page.getByRole("heading", {
+    name: "Dit heeft je aandacht nodig",
+  });
+  const attentionSection = page
+    .locator("section")
+    .filter({ has: attentionHeading })
+    .first();
+  await expect(attentionHeading).toBeVisible();
+  await attentionSection.getByRole("link", { name: /kanban/i }).click();
+  await expect(page).toHaveURL(/#\/deals\/aandacht$/);
+  await expect(
+    page.getByRole("heading", { name: "Aandacht-pipeline" }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: /te laat/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /vandaag/i })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /niet gepland/i }),
+  ).toBeVisible();
+
   for (const [route, label] of [
-    ["deals/aandacht", "Dit heeft je aandacht nodig"],
+    ["deals/aandacht", "Aandacht-pipeline"],
     ["deals/facturatie", "Facturatie afhandelen"],
   ] as const) {
     await page.goto(`/#/${route}`, { waitUntil: "domcontentloaded" });
