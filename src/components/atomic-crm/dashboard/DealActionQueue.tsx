@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { CompanyAvatar } from "../companies/CompanyAvatar";
 import { DealWorkflowBadge } from "../deals/DealWorkflowIndicator";
-import { createDashboardDealSelectionState } from "../deals/dashboardDealSelection";
+import { DEAL_ATTENTION_PATH } from "../deals/dashboardDealSelection";
 import {
   buildOpenTasksByDeal,
   rankDealsForAttention,
@@ -76,15 +76,7 @@ export const DealActionQueue = () => {
           </p>
         </div>
         <Button asChild variant="ghost" size="sm" className="shrink-0">
-          <Link
-            to="/deals"
-            state={createDashboardDealSelectionState(
-              rankedDeals.map(({ deal }) => deal.id),
-              translate("crm.dashboard.deal_actions.title", {
-                _: "Dit heeft je aandacht nodig",
-              }),
-            )}
-          >
+          <Link to={DEAL_ATTENTION_PATH}>
             {translate("crm.dashboard.deal_actions.open_board", {
               _: "Kanban",
             })}

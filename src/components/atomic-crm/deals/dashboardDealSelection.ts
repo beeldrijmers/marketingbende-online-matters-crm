@@ -1,43 +1,31 @@
 import type { Identifier } from "ra-core";
 
-const STATE_KEY = "dashboardDealSelection";
+export const DEAL_ATTENTION_PATH = "/deals/aandacht";
+export const DEAL_BILLING_PATH = "/deals/facturatie";
 
 export type DashboardDealSelection = {
   ids: Identifier[];
+  kind: "attention" | "billing";
   label: string;
 };
 
-export type DashboardDealSelectionState = {
-  [STATE_KEY]: DashboardDealSelection;
-};
-
-const isDealId = (value: unknown): value is Identifier =>
+export const isDealId = (value: unknown): value is Identifier =>
   (typeof value === "number" && Number.isSafeInteger(value) && value > 0) ||
   (typeof value === "string" && /^\d+$/.test(value));
 
-export const createDashboardDealSelectionState = (
+export const createDashboardDealSelection = (
   ids: Identifier[],
+  kind: DashboardDealSelection["kind"],
   label: string,
-): DashboardDealSelectionState => ({
-  [STATE_KEY]: {
-    ids: [...new Set(ids.filter(isDealId))],
-    label,
-  },
+): DashboardDealSelection => ({
+  ids: [...new Set(ids.filter(isDealId))],
+  kind,
+  label,
 });
-
-export const readDashboardDealSelection = (
-  state: unknown,
-): DashboardDealSelection | null => {
-  if (!state || typeof state !== "object" || !(STATE_KEY in state)) return null;
-  const selection = (state as Record<string, unknown>)[STATE_KEY];
-  if (!selection || typeof selection !== "object") return null;
-  const { ids, label } = selection as Record<string, unknown>;
-  if (!Array.isArray(ids) || typeof label !== "string") return null;
-  const validIds = [...new Set(ids.filter(isDealId))];
-  return validIds.length > 0 ? { ids: validIds, label } : null;
-};
 
 export const getDashboardDealSelectionFilter = (
   selection: DashboardDealSelection | null,
 ): Record<string, string> =>
-  selection ? { "id@in": `(${selection.ids.join(",")})` } : {};
+  selection
+    ? { "id@in": `(${selection.ids.length ? selection.ids.join(",") : 0})` }
+    : {};

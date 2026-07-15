@@ -33,6 +33,16 @@ test("authenticated CRM dashboard and core routes stay operational", async ({
     await expect(page.locator("#main-content")).toBeVisible();
   }
 
+  for (const [route, label] of [
+    ["deals/aandacht", "Dit heeft je aandacht nodig"],
+    ["deals/facturatie", "Facturatie afhandelen"],
+  ] as const) {
+    await page.goto(`/#/${route}`, { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(new RegExp(`#/${route}$`));
+    await expect(page.locator("#main-content")).toBeVisible();
+    await expect(page.getByText(label, { exact: false }).first()).toBeVisible();
+  }
+
   expect(pageErrors, "uncaught browser errors").toEqual([]);
   expect(serverErrors, "HTTP 5xx responses").toEqual([]);
 });
