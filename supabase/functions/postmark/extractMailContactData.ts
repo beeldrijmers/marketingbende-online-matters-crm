@@ -1,6 +1,4 @@
-// This helper is shared by multiple edge functions. Use an explicit npm specifier
-// so it remains resolvable outside postmark/deno.json's local import map.
-import { parse } from "npm:tldts@7.0.26";
+import { parse } from "tldts";
 
 const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 

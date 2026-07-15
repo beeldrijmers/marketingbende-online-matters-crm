@@ -1,6 +1,4 @@
-// This helper is imported by more than one edge function, so it cannot rely on
-// the postmark function's local import map.
-import { decode } from "npm:base64-arraybuffer@1.0.2";
+import { decode } from "base64-arraybuffer";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 
 export type Attachment = {
