@@ -19,7 +19,9 @@ test("authenticated CRM dashboard and core routes stay operational", async ({
 
   await page.goto("/#/login", { waitUntil: "domcontentloaded" });
   await page.getByLabel(/e-?mail/i).fill(email!);
-  await page.getByLabel(/password|wachtwoord/i).fill(password!);
+  // The adjacent show-password button deliberately has an accessible label
+  // containing "Wachtwoord" too, so target the form control unambiguously.
+  await page.locator('input[name="password"]').fill(password!);
   await page.getByRole("button", { name: /sign in|inloggen/i }).click();
 
   await expect(page).not.toHaveURL(/\/login/, { timeout: 15_000 });
