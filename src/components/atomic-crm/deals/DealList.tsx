@@ -25,16 +25,18 @@ import { OnlyMineInput } from "./OnlyMineInput";
 import { InternalExternalInput } from "./InternalExternalInput";
 import { SyncTrelloButton } from "./SyncTrelloButton";
 import {
+  type DashboardDealSelection,
   getDashboardDealSelectionFilter,
-  readDashboardDealSelection,
 } from "./dashboardDealSelection";
 
-const DealList = () => {
+type DealListProps = {
+  dashboardSelection?: DashboardDealSelection;
+};
+
+export const DealList = ({ dashboardSelection }: DealListProps = {}) => {
   const { identity } = useGetIdentity();
   const { dealCategories } = useConfigurationContext();
   const translate = useTranslate();
-  const location = useLocation();
-  const dashboardSelection = readDashboardDealSelection(location.state);
 
   if (!identity) return null;
 
@@ -67,26 +69,38 @@ const DealList = () => {
       perPage={1000}
       filter={{
         "archived_at@is": null,
-        ...getDashboardDealSelectionFilter(dashboardSelection),
+        ...getDashboardDealSelectionFilter(dashboardSelection ?? null),
       }}
-      title={false}
+      title={dashboardSelection?.label ?? false}
       sort={{ field: "index", order: "DESC" }}
       filters={dealFilters}
       actions={<DealActions />}
       pagination={null}
+      storeKey={
+        dashboardSelection ? `deals.${dashboardSelection.kind}` : undefined
+      }
     >
-      <DealLayout />
+      <DealLayout dashboardSelection={dashboardSelection} />
     </List>
   );
 };
 
-const DealLayout = () => {
+const DealLayout = ({
+  dashboardSelection,
+}: {
+  dashboardSelection?: DashboardDealSelection;
+}) => {
   const translate = useTranslate();
   const location = useLocation();
-  const matchCreate = matchPath("/deals/create", location.pathname);
-  const matchShow = matchPath("/deals/:id/show", location.pathname);
-  const matchEdit = matchPath("/deals/:id", location.pathname);
-  const dashboardSelection = readDashboardDealSelection(location.state);
+  const matchCreate = dashboardSelection
+    ? null
+    : matchPath("/deals/create", location.pathname);
+  const matchShow = dashboardSelection
+    ? null
+    : matchPath("/deals/:id/show", location.pathname);
+  const matchEdit = dashboardSelection
+    ? null
+    : matchPath("/deals/:id", location.pathname);
 
   const { data, isPending, filterValues, total } = useListContext();
   const hasFilters = filterValues && Object.keys(filterValues).length > 0;

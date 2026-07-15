@@ -706,6 +706,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/DashboardDealKanbanPage.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/ContactList.tsx",
           "type": "registry:component"
         },

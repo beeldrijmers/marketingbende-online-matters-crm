@@ -57,6 +57,16 @@ import { useIsMobile } from "@/hooks/use-mobile.ts";
 import { MobileTasksList } from "../tasks/MobileTasksList.tsx";
 import { ContactListMobile } from "../contacts/ContactList.tsx";
 import { MobileDealsList } from "../deals/MobileDealsList.tsx";
+import {
+  AttentionDealsKanbanPage,
+  BillingDealsKanbanPage,
+  MobileAttentionDealsKanbanPage,
+  MobileBillingDealsKanbanPage,
+} from "../deals/DashboardDealKanbanPage.tsx";
+import {
+  DEAL_ATTENTION_PATH,
+  DEAL_BILLING_PATH,
+} from "../deals/dashboardDealSelection.ts";
 import { MobileCompaniesList } from "../companies/MobileCompaniesList.tsx";
 import { ContactShow } from "../contacts/ContactShow.tsx";
 import { CompanyShow } from "../companies/CompanyShow.tsx";
@@ -305,6 +315,11 @@ const DesktopAdmin = (
         <Route path={SettingsPage.path} element={<SettingsPage />} />
         <Route path={ImportPage.path} element={<ImportPage />} />
         <Route path={ChangelogPage.path} element={<ChangelogPage />} />
+        <Route
+          path={DEAL_ATTENTION_PATH}
+          element={<AttentionDealsKanbanPage />}
+        />
+        <Route path={DEAL_BILLING_PATH} element={<BillingDealsKanbanPage />} />
       </CustomRoutes>
       <Resource name="deals" {...deals} />
       <Resource name="contacts" {...contacts}>
@@ -394,6 +409,14 @@ const MobileAdmin = (
           />
           <Route path={ImportPage.path} element={<ImportPage />} />
           <Route path={ChangelogPage.path} element={<ChangelogPage />} />
+          <Route
+            path={DEAL_ATTENTION_PATH}
+            element={<MobileAttentionDealsKanbanPage />}
+          />
+          <Route
+            path={DEAL_BILLING_PATH}
+            element={<MobileBillingDealsKanbanPage />}
+          />
         </CustomRoutes>
         <Resource
           name="contacts"

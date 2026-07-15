@@ -15,7 +15,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CompanyAvatar } from "../companies/CompanyAvatar";
 import { MoneybirdDocumentControl } from "../deals/MoneybirdDocumentButtons";
-import { createDashboardDealSelectionState } from "../deals/dashboardDealSelection";
+import { DEAL_BILLING_PATH } from "../deals/dashboardDealSelection";
 import type { Deal } from "../types";
 import { type BillingState, getBillingState } from "./billingQueueModel";
 
@@ -60,13 +60,7 @@ export const BillingQueue = () => {
           </p>
         </div>
         <Button asChild variant="ghost" size="sm" className="shrink-0">
-          <Link
-            to="/deals"
-            state={createDashboardDealSelectionState(
-              queue.map(({ deal }) => deal.id),
-              "Facturatie afhandelen",
-            )}
-          >
+          <Link to={DEAL_BILLING_PATH}>
             Kanban
             <ArrowRight className="size-4" />
           </Link>

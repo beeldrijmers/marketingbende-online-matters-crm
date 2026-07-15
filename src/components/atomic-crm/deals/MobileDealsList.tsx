@@ -21,6 +21,10 @@ import { AssigneesField } from "../sales/AssigneesField";
 import type { Deal, DealStage, Task } from "../types";
 import { DealShow } from "./DealShow";
 import { DealWorkflowIndicator } from "./DealWorkflowIndicator";
+import {
+  type DashboardDealSelection,
+  getDashboardDealSelectionFilter,
+} from "./dashboardDealSelection";
 import { buildOpenTasksByDeal } from "./dealWorkflow";
 
 /**
@@ -29,16 +33,28 @@ import { buildOpenTasksByDeal } from "./dealWorkflow";
  * board become sections). Each row shows company, name, amount and owner +
  * party. Registered as the `deals` list in the mobile Admin.
  */
-export const MobileDealsList = () => {
+export const MobileDealsList = ({
+  dashboardSelection,
+}: {
+  dashboardSelection?: DashboardDealSelection;
+} = {}) => {
   const { identity } = useGetIdentity();
   if (!identity) return null;
   return (
     <InfiniteListBase
       perPage={1000}
-      filter={{ "archived_at@is": null }}
+      filter={{
+        "archived_at@is": null,
+        ...getDashboardDealSelectionFilter(dashboardSelection ?? null),
+      }}
       sort={{ field: "index", order: "ASC" }}
+      storeKey={
+        dashboardSelection
+          ? `deals.mobile.${dashboardSelection.kind}`
+          : undefined
+      }
     >
-      <DealsLayoutMobile />
+      <DealsLayoutMobile dashboardSelection={dashboardSelection} />
     </InfiniteListBase>
   );
 };
@@ -79,7 +95,11 @@ const groupDealsByStage = (
   return groups;
 };
 
-const DealsLayoutMobile = () => {
+const DealsLayoutMobile = ({
+  dashboardSelection,
+}: {
+  dashboardSelection?: DashboardDealSelection;
+}) => {
   const translate = useTranslate();
   const location = useLocation();
   const { dealStages } = useConfigurationContext();
@@ -109,7 +129,8 @@ const DealsLayoutMobile = () => {
       <DealShow open={!!matchShow} id={matchShow?.params.id} />
       <MobileHeader>
         <h1 className="text-lg font-semibold">
-          {translate("resources.deals.name", { smart_count: 2 })}
+          {dashboardSelection?.label ??
+            translate("resources.deals.name", { smart_count: 2 })}
         </h1>
       </MobileHeader>
       <MobileContent>
