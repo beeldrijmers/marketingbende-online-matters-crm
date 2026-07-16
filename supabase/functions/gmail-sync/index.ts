@@ -24,6 +24,7 @@ type ScheduledSyncResult = {
   salesId: number;
   ok: boolean;
   error?: "owner_missing" | "message_processing_failed" | "sync_failed";
+  skipped?: "label_not_configured";
   summary?: GmailSyncSummary;
 };
 
@@ -32,7 +33,9 @@ const selectConnection = async (
 ): Promise<GmailConnectionRow | null> => {
   const { data, error } = await supabaseAdmin
     .from("gmail_connections")
-    .select("id, sales_id, email, refresh_token_encrypted, history_id")
+    .select(
+      "id, sales_id, email, refresh_token_encrypted, history_id, sync_label_id, sync_label_name, sync_status",
+    )
     .eq("sales_id", salesId)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -47,6 +50,12 @@ const handleOwnSync = async (req: Request): Promise<Response> =>
       const connection = await selectConnection(sale.id);
       if (!connection) {
         return createErrorResponse(404, "Koppel eerst een Gmail-account.");
+      }
+      if (!connection.sync_label_id) {
+        return createErrorResponse(
+          409,
+          "Kies eerst een Gmail-label. Alleen gelabelde e-mail wordt in het CRM verwerkt.",
+        );
       }
       try {
         const summary = await syncGmailConnection({
@@ -68,11 +77,24 @@ const handleOwnSync = async (req: Request): Promise<Response> =>
 const handleScheduledSync = async (): Promise<Response> => {
   const { data, error } = await supabaseAdmin
     .from("gmail_connections")
-    .select("id, sales_id, email, refresh_token_encrypted, history_id");
+    .select(
+      "id, sales_id, email, refresh_token_encrypted, history_id, sync_label_id, sync_label_name, sync_status",
+    );
   if (error) return jsonResponse({ error: error.message }, 500);
 
   const results: ScheduledSyncResult[] = [];
   for (const row of (data ?? []) as GmailConnectionRow[]) {
+    if (!row.sync_label_id) {
+      // A connection without an explicit label is intentionally paused rather
+      // than treated as a failing job. The workflow can remain healthy while
+      // the user chooses the label in Settings.
+      results.push({
+        salesId: row.sales_id,
+        ok: true,
+        skipped: "label_not_configured",
+      });
+      continue;
+    }
     const { data: sale } = await supabaseAdmin
       .from("sales")
       .select("email")

@@ -12,7 +12,11 @@ import { corsHeaders, OptionsMiddleware } from "../_shared/cors.ts";
 import { getUserSale } from "../_shared/getUserSale.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { createErrorResponse } from "../_shared/utils.ts";
-import { getGmailProfile } from "../_shared/gmail/client.ts";
+import {
+  getGmailProfile,
+  listGmailLabels,
+  refreshGmailAccessToken,
+} from "../_shared/gmail/client.ts";
 import {
   decryptGmailToken,
   encryptGmailToken,
@@ -123,6 +127,106 @@ const handleAuthorize = async (
   });
 };
 
+const getConnectionAccessToken = async (salesId: number): Promise<string> => {
+  const { data: connection, error } = await supabaseAdmin
+    .from("gmail_connections")
+    .select("refresh_token_encrypted")
+    .eq("sales_id", salesId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!connection?.refresh_token_encrypted) {
+    throw new Error("Gmail connection not found");
+  }
+
+  const encKey = Deno.env.get("GMAIL_ENC_KEY");
+  const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
+  const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
+  if (!encKey || !clientId || !clientSecret) {
+    throw new Error("Gmail synchronization secrets are not configured");
+  }
+
+  const refreshToken = await decryptGmailToken(
+    connection.refresh_token_encrypted,
+    encKey,
+    gmailConnectionAad(salesId),
+  );
+  return refreshGmailAccessToken({ refreshToken, clientId, clientSecret });
+};
+
+const handleListLabels = async (salesId: number): Promise<Response> => {
+  try {
+    const accessToken = await getConnectionAccessToken(salesId);
+    const labels: Array<{ id: string; name: string }> = [];
+    for (const label of await listGmailLabels(accessToken)) {
+      if (label.type === "user") {
+        labels.push({ id: label.id, name: label.name });
+      }
+    }
+    return jsonResponse({ data: { labels } });
+  } catch (error) {
+    console.error("Could not list Gmail labels:", error);
+    return createErrorResponse(
+      502,
+      "Gmail-labels konden niet worden geladen. Probeer het later opnieuw.",
+    );
+  }
+};
+
+const handleSelectLabel = async (
+  req: Request,
+  salesId: number,
+): Promise<Response> => {
+  let labelId: string | undefined;
+  try {
+    const body = (await req.json()) as { labelId?: unknown };
+    if (typeof body.labelId === "string" && body.labelId.trim()) {
+      labelId = body.labelId.trim();
+    }
+  } catch {
+    // The generic validation message below is safer than reflecting a body.
+  }
+  if (!labelId) {
+    return createErrorResponse(400, "Kies een Gmail-label voor CRM-import.");
+  }
+
+  try {
+    const accessToken = await getConnectionAccessToken(salesId);
+    const labels = await listGmailLabels(accessToken);
+    const selectedLabel = labels.find(
+      (label) => label.id === labelId && label.type === "user",
+    );
+    if (!selectedLabel) {
+      return createErrorResponse(400, "Dit Gmail-label is niet beschikbaar.");
+    }
+
+    // Start at a fresh history boundary. Existing mail is never backfilled
+    // merely because a mailbox is connected; applying the label afterwards
+    // creates the labelAdded event that intentionally imports that message.
+    const profile = await getGmailProfile(accessToken);
+    const { error } = await supabaseAdmin
+      .from("gmail_connections")
+      .update({
+        sync_label_id: selectedLabel.id,
+        sync_label_name: selectedLabel.name,
+        history_id: profile.historyId,
+        sync_status: "connected",
+        last_error: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("sales_id", salesId);
+    if (error) throw new Error(error.message);
+    return jsonResponse({
+      data: { labelId: selectedLabel.id, labelName: selectedLabel.name },
+    });
+  } catch (error) {
+    console.error("Could not configure Gmail import label:", error);
+    return createErrorResponse(
+      502,
+      "Gmail-import kon niet veilig worden ingesteld. Probeer het later opnieuw.",
+    );
+  }
+};
+
 const handleCallback = async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
@@ -188,9 +292,13 @@ const handleCallback = async (req: Request): Promise<Response> => {
         sales_id: oauthState.sales_id,
         email: profile.emailAddress.toLowerCase(),
         refresh_token_encrypted: encrypted,
-        // A reconnect starts with a bounded full import and a fresh boundary.
-        history_id: null,
-        sync_status: "connected",
+        // A connection does not import anything until the user deliberately
+        // selects a Gmail label in CRM settings.
+        history_id: profile.historyId,
+        sync_label_id: null,
+        sync_label_name: null,
+        sync_status: "needs_label",
+        last_synced_at: null,
         last_error: null,
         updated_at: new Date().toISOString(),
       },
@@ -257,6 +365,8 @@ Deno.serve(async (req) => {
         if (req.method === "POST") {
           return handleAuthorize(sale.id, sale.email);
         }
+        if (req.method === "GET") return handleListLabels(sale.id);
+        if (req.method === "PATCH") return handleSelectLabel(req, sale.id);
         if (req.method === "DELETE") return handleDisconnect(sale.id);
         return createErrorResponse(405, "Method Not Allowed");
       }),

@@ -362,7 +362,7 @@ const getDataProviderWithCustomMethods = () => {
       const { data, error } = await getSupabaseClient()
         .from("gmail_connections")
         .select(
-          "id, sales_id, email, sync_status, last_synced_at, last_error, created_at, updated_at",
+          "id, sales_id, email, sync_label_id, sync_label_name, sync_status, last_synced_at, last_error, created_at, updated_at",
         )
         .maybeSingle();
       if (error) {
@@ -372,7 +372,13 @@ const getDataProviderWithCustomMethods = () => {
       return data
         ? {
             email: data.email as string,
-            status: data.sync_status as "connected" | "syncing" | "error",
+            status: data.sync_status as
+              | "connected"
+              | "syncing"
+              | "error"
+              | "needs_label",
+            syncLabelId: (data.sync_label_id as string | null) ?? null,
+            syncLabelName: (data.sync_label_name as string | null) ?? null,
             lastSyncedAt: (data.last_synced_at as string | null) ?? null,
             lastError: (data.last_error as string | null) ?? null,
           }
@@ -407,6 +413,40 @@ const getDataProviderWithCustomMethods = () => {
           }
         })();
         throw new Error(details?.message || "Gmail synchroniseren is mislukt");
+      }
+      return data.data;
+    },
+    async getGmailLabels() {
+      const { data, error } = await getSupabaseClient().functions.invoke<{
+        data: { labels: Array<{ id: string; name: string }> };
+      }>("gmail-connection", { method: "GET" });
+      if (!data || error) {
+        const details = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(details?.message || "Gmail-labels laden is mislukt");
+      }
+      return data.data.labels;
+    },
+    async setGmailSyncLabel(labelId: string) {
+      const { data, error } = await getSupabaseClient().functions.invoke<{
+        data: { labelId: string; labelName: string };
+      }>("gmail-connection", { method: "PATCH", body: { labelId } });
+      if (!data || error) {
+        const details = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(
+          details?.message || "Gmail-importlabel instellen is mislukt",
+        );
       }
       return data.data;
     },

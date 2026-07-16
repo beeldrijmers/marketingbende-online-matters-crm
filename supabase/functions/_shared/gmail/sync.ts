@@ -10,7 +10,6 @@ import {
   getGmailProfile,
   GoogleApiError,
   listGmailHistoryMessageIds,
-  listRecentGmailMessageIds,
   refreshGmailAccessToken,
 } from "./client.ts";
 import { normalizeGmailMessage } from "./messageParser.ts";
@@ -27,10 +26,13 @@ export interface GmailConnectionRow {
   email: string;
   refresh_token_encrypted: string;
   history_id: string | null;
+  sync_label_id: string | null;
+  sync_label_name: string | null;
+  sync_status?: "connected" | "syncing" | "error" | "needs_label";
 }
 
 export interface GmailSyncSummary {
-  mode: "full" | "incremental";
+  mode: "boundary_reset" | "incremental";
   found: number;
   processed: number;
   skipped: number;
@@ -104,7 +106,7 @@ export const syncGmailConnection = async ({
   const startedAt = Date.now();
   const runId = await startRun(runKind, startedAt);
   const blankSummary: GmailSyncSummary = {
-    mode: connection.history_id ? "incremental" : "full",
+    mode: connection.history_id ? "incremental" : "boundary_reset",
     found: 0,
     processed: 0,
     skipped: 0,
@@ -121,6 +123,10 @@ export const syncGmailConnection = async ({
     .eq("id", connection.id);
 
   try {
+    const syncLabelId = connection.sync_label_id;
+    if (!syncLabelId) {
+      throw new Error("Kies eerst een Gmail-label voor CRM-import");
+    }
     const encKey = Deno.env.get("GMAIL_ENC_KEY");
     const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
     const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
@@ -139,9 +145,9 @@ export const syncGmailConnection = async ({
       clientSecret,
     });
 
-    let mode: "full" | "incremental" = connection.history_id
+    let mode: GmailSyncSummary["mode"] = connection.history_id
       ? "incremental"
-      : "full";
+      : "boundary_reset";
     let ids: string[];
     let historyId: string;
 
@@ -150,24 +156,28 @@ export const syncGmailConnection = async ({
         const history = await listGmailHistoryMessageIds(
           accessToken,
           connection.history_id,
+          syncLabelId,
         );
         ids = history.ids;
         historyId = history.historyId;
       } catch (error) {
-        // Gmail history ids expire. The official recovery path is a full sync.
+        // Gmail history ids expire. Rather than backfilling older labelled
+        // mail, reset the boundary: the CRM only imports mail deliberately
+        // labelled after activation.
         if (!(error instanceof GoogleApiError) || error.status !== 404)
           throw error;
-        mode = "full";
+        mode = "boundary_reset";
         const profile = await getGmailProfile(accessToken);
         historyId = profile.historyId;
-        ids = await listRecentGmailMessageIds(accessToken);
+        ids = [];
       }
     } else {
-      // Capture the history boundary BEFORE listing. Messages arriving during
-      // the import then remain visible to the next incremental run.
+      // A connection should normally receive a history id when its label is
+      // selected. If it does not, set a fresh boundary instead of importing
+      // earlier labelled mail.
       const profile = await getGmailProfile(accessToken);
       historyId = profile.historyId;
-      ids = await listRecentGmailMessageIds(accessToken);
+      ids = [];
     }
 
     const emailIds = ids.map((messageId) =>
@@ -210,14 +220,14 @@ export const syncGmailConnection = async ({
       try {
         const message = await getGmailMessage(accessToken, messageId);
         const labels = new Set(message.labelIds ?? []);
-        if (
-          labels.has("DRAFT") ||
-          labels.has("SPAM") ||
-          labels.has("TRASH") ||
-          labels.has("CATEGORY_PROMOTIONS") ||
-          labels.has("CATEGORY_SOCIAL") ||
-          labels.has("CATEGORY_FORUMS")
-        ) {
+        // The selected CRM label is the only consent boundary. Do not claim a
+        // mail that was unlabelled before we fetched it: reapplying the label
+        // later should still create a Gmail labelAdded history event.
+        if (!labels.has(syncLabelId)) {
+          summary.skipped += 1;
+          continue;
+        }
+        if (labels.has("DRAFT") || labels.has("SPAM") || labels.has("TRASH")) {
           await claimInboundEmail(
             gmailInboundEmailId(connection.sales_id, messageId),
           );
@@ -236,6 +246,7 @@ export const syncGmailConnection = async ({
           ownerSalesEmail,
           mailboxEmail: connection.email,
           inboundEmail: Deno.env.get("VITE_INBOUND_EMAIL") ?? "",
+          source: "gmail",
         });
         if (response.status >= 500) {
           throw new Error(`Inbound processing returned ${response.status}`);

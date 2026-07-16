@@ -1,10 +1,17 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link2, Link2Off, RefreshCw } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link2, Link2Off, RefreshCw, Tag } from "lucide-react";
 import { useDataProvider, useNotify, useTranslate } from "ra-core";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   GMAIL_CONNECTION_QUERY_KEY,
   useGmailConnection,
@@ -33,7 +40,22 @@ export const GmailConnectionContent = () => {
   const dataProvider = useDataProvider<CrmDataProvider>();
   const queryClient = useQueryClient();
   const [confirmingDisconnect, setConfirmingDisconnect] = useState(false);
+  const [selectedLabelId, setSelectedLabelId] = useState("");
   const { data: connection, isPending } = useGmailConnection();
+  const {
+    data: labels = [],
+    error: labelsError,
+    isPending: labelsPending,
+  } = useQuery({
+    queryKey: ["gmail_connection", "labels"],
+    queryFn: () => dataProvider.getGmailLabels(),
+    enabled: Boolean(connection),
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    setSelectedLabelId(connection?.syncLabelId ?? "");
+  }, [connection?.syncLabelId]);
 
   useEffect(() => {
     const [route, query = ""] = window.location.hash.split("?");
@@ -82,6 +104,19 @@ export const GmailConnectionContent = () => {
       refreshConnection();
       notify(error.message, { type: "error" });
     },
+  });
+
+  const { mutate: setSyncLabel, isPending: settingSyncLabel } = useMutation({
+    mutationKey: ["gmail_connection", "sync_label"],
+    mutationFn: () => dataProvider.setGmailSyncLabel(selectedLabelId),
+    onSuccess: (label) => {
+      refreshConnection();
+      notify("crm.profile.gmail.sync_label_success", {
+        type: "success",
+        messageArgs: { label: label.labelName },
+      });
+    },
+    onError: (error) => notify(error.message, { type: "error" }),
   });
 
   const { mutate: disconnect, isPending: disconnecting } = useMutation({
@@ -138,6 +173,17 @@ export const GmailConnectionContent = () => {
         <p className="text-muted-foreground">
           {translate("crm.profile.gmail.last_sync", { date: lastSync })}
         </p>
+        {connection.syncLabelName ? (
+          <p className="text-muted-foreground">
+            {translate("crm.profile.gmail.sync_label_active", {
+              label: connection.syncLabelName,
+            })}
+          </p>
+        ) : (
+          <p className="text-amber-700 dark:text-amber-400">
+            {translate("crm.profile.gmail.sync_label_required")}
+          </p>
+        )}
         {connection.status === "error" && connection.lastError ? (
           <p className="text-destructive">
             {translate("crm.profile.gmail.sync_error", {
@@ -146,11 +192,77 @@ export const GmailConnectionContent = () => {
           </p>
         ) : null}
       </div>
+      <div className="space-y-2 rounded-md border border-dashed p-3">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Tag className="size-4" />
+          <label htmlFor="gmail-sync-label">
+            {translate("crm.profile.gmail.sync_label")}
+          </label>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {translate("crm.profile.gmail.sync_label_description")}
+        </p>
+        {labelsError ? (
+          <p className="text-sm text-destructive">{labelsError.message}</p>
+        ) : labels.length > 0 ? (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Select
+              value={selectedLabelId || undefined}
+              onValueChange={setSelectedLabelId}
+              disabled={labelsPending || settingSyncLabel}
+            >
+              <SelectTrigger id="gmail-sync-label" className="w-full">
+                <SelectValue
+                  placeholder={translate(
+                    "crm.profile.gmail.sync_label_placeholder",
+                  )}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {labels.map((label) => (
+                  <SelectItem key={label.id} value={label.id}>
+                    {label.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={
+                !selectedLabelId ||
+                selectedLabelId === connection.syncLabelId ||
+                settingSyncLabel
+              }
+              onClick={() => setSyncLabel()}
+            >
+              {settingSyncLabel
+                ? translate("crm.profile.gmail.sync_label_saving")
+                : translate("crm.profile.gmail.sync_label_save")}
+            </Button>
+          </div>
+        ) : labelsPending ? (
+          <p className="text-sm text-muted-foreground">
+            {translate("crm.profile.gmail.sync_label_loading")}
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {translate("crm.profile.gmail.sync_label_empty")}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {translate("crm.profile.gmail.sync_label_hint")}
+        </p>
+      </div>
       <div className="flex flex-wrap justify-end gap-2">
         <Button
           type="button"
           variant="outline"
-          disabled={syncing || connection.status === "syncing"}
+          disabled={
+            syncing ||
+            connection.status === "syncing" ||
+            !connection.syncLabelId
+          }
           onClick={() => sync()}
         >
           <RefreshCw className={syncing ? "animate-spin" : undefined} />
