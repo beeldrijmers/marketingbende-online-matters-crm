@@ -4,8 +4,9 @@ import { Link } from "react-router";
 import { ReferenceField } from "@/components/admin/reference-field";
 import { RelativeDate } from "../misc/RelativeDate";
 import type { ActivityDealCreated } from "../types";
-import { ActivityActorAvatar, useActor } from "./ActivityActor";
+import { ActivityActorAvatar } from "./ActivityActor";
 import { useActivityLogContext } from "./ActivityLogContext";
+import { useActor } from "./useActivityActor";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 type ActivityLogDealCreatedProps = {
@@ -19,11 +20,20 @@ export function ActivityLogDealCreated({
   const isMobile = useIsMobile();
   const translate = useTranslate();
   const { deal } = activity;
-  const { isCurrentUser, name } = useActor(activity.sales_id);
+  const source =
+    deal.activity_source ?? (deal.trello_card_id ? "trello" : null);
+  const { isCurrentUser, name } = useActor(activity.sales_id, {
+    source,
+    sourceAuthor: deal.activity_source_author,
+  });
   return (
     <div className="p-0">
       <div className="flex flex-row gap-2 items-start w-full">
-        <ActivityActorAvatar salesId={activity.sales_id} />
+        <ActivityActorAvatar
+          salesId={activity.sales_id}
+          source={source}
+          sourceAuthor={deal.activity_source_author}
+        />
         <div className="w-[20px] h-[20px] bg-muted rounded-full shrink-0" />
         <span className="text-muted-foreground text-sm flex-grow">
           {translate(

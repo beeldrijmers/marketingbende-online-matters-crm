@@ -168,6 +168,7 @@ export const syncCardAttachments = async ({
           deal_id: dealId,
           text: attachmentNoteText(attachment),
           sales_id: await resolveDefaultSalesId(),
+          activity_source: "trello",
           attachments: [
             {
               title: attachment.name,

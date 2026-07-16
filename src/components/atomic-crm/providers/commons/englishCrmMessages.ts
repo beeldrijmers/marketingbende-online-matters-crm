@@ -586,6 +586,7 @@ export const englishCrmMessages = {
       load_more: "Load more activity",
       open_item: "Open",
       someone: "a team member",
+      trello: "Trello",
       trello_attachment: "Trello attachment",
       today: "Today",
       yesterday: "Yesterday",

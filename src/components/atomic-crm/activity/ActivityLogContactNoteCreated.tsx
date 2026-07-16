@@ -6,9 +6,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Avatar } from "../contacts/Avatar";
 import { RelativeDate } from "../misc/RelativeDate";
 import type { ActivityContactNoteCreated, Contact } from "../types";
-import { ActivityActorAvatar, useActor } from "./ActivityActor";
+import { ActivityActorAvatar } from "./ActivityActor";
 import { useActivityLogContext } from "./ActivityLogContext";
 import { ActivityLogNote } from "./ActivityLogNote";
+import { parseActivityNote } from "./activityNote";
+import { useActor } from "./useActivityActor";
 
 type ActivityLogContactNoteCreatedProps = {
   activity: ActivityContactNoteCreated;
@@ -26,7 +28,14 @@ export function ActivityLogContactNoteCreated({
   const isMobile = useIsMobile();
   const translate = useTranslate();
   const { contactNote } = activity;
-  const { isCurrentUser, name } = useActor(activity.sales_id);
+  const parsedNote = parseActivityNote(contactNote.text);
+  const source = parsedNote.source ?? contactNote.activity_source;
+  const sourceAuthor =
+    parsedNote.sourceAuthor ?? contactNote.activity_source_author;
+  const { isCurrentUser, name } = useActor(activity.sales_id, {
+    source,
+    sourceAuthor,
+  });
   const link = isMobile
     ? `/contacts/${contactNote.contact_id}/notes/${contactNote.id}`
     : `/contacts/${contactNote.contact_id}/show`;
@@ -34,7 +43,11 @@ export function ActivityLogContactNoteCreated({
     <ActivityLogNote
       header={
         <div className="flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <ActivityActorAvatar salesId={activity.sales_id} />
+          <ActivityActorAvatar
+            salesId={activity.sales_id}
+            source={source}
+            sourceAuthor={sourceAuthor}
+          />
           <ReferenceField
             source="contact_id"
             reference="contacts"
@@ -74,6 +87,7 @@ export function ActivityLogContactNoteCreated({
       }
       text={contactNote.text}
       link={link}
+      sourceAuthorInHeader={source === "trello"}
     />
   );
 }

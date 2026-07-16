@@ -15,12 +15,14 @@ export const syncDealContactsFromCard = async ({
   companyName,
   currentContactIds,
   salesId,
+  sourceAuthor,
 }: {
   card: TrelloCardInput;
   companyId: number;
   companyName: string;
   currentContactIds: number[];
   salesId: number;
+  sourceAuthor?: string | null;
 }): Promise<number[]> => {
   const linkedIds = new Set(currentContactIds);
 
@@ -70,6 +72,7 @@ export const syncDealContactsFromCard = async ({
 
     const { firstName, lastName } = contactNameFromEmail(email, companyName);
     const now = new Date().toISOString();
+    const trimmedSourceAuthor = sourceAuthor?.trim();
     const { data: created, error: createError } = await supabaseAdmin
       .from("contacts")
       .insert({
@@ -78,6 +81,10 @@ export const syncDealContactsFromCard = async ({
         email_jsonb: [{ email, type: "Work" }],
         company_id: companyId,
         sales_id: salesId,
+        activity_source: "trello",
+        ...(trimmedSourceAuthor
+          ? { activity_source_author: trimmedSourceAuthor }
+          : {}),
         first_seen: now,
         last_seen: now,
         status: "warm",

@@ -12,11 +12,13 @@ import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 export const findOrCreateCompany = async ({
   name,
   salesId,
+  sourceAuthor,
   website,
   lookupWebsite,
 }: {
   name: string;
   salesId: number;
+  sourceAuthor?: string | null;
   website?: string | null;
   lookupWebsite?: () => Promise<string | null>;
 }): Promise<number> => {
@@ -59,12 +61,28 @@ export const findOrCreateCompany = async ({
   }
 
   const resolved = await resolveWebsite();
+  const trimmedSourceAuthor = sourceAuthor?.trim();
   const { data: created, error: createError } = await supabaseAdmin
     .from("companies")
     .insert(
       resolved
-        ? { name, sales_id: salesId, website: resolved }
-        : { name, sales_id: salesId },
+        ? {
+            name,
+            sales_id: salesId,
+            website: resolved,
+            activity_source: "trello",
+            ...(trimmedSourceAuthor
+              ? { activity_source_author: trimmedSourceAuthor }
+              : {}),
+          }
+        : {
+            name,
+            sales_id: salesId,
+            activity_source: "trello",
+            ...(trimmedSourceAuthor
+              ? { activity_source_author: trimmedSourceAuthor }
+              : {}),
+          },
     )
     .select("id")
     .single();

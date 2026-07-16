@@ -23,6 +23,9 @@ export type SignUpData = {
  */
 export type PartyKey = "online_matters" | "marketingbende" | "groeien_met_ads";
 
+/** The source that created an activity-bearing CRM record. */
+export type ActivitySource = "manual" | "trello";
+
 export type SalesFormData = {
   avatar?: string;
   email: string;
@@ -70,6 +73,8 @@ export type Company = {
   city: string;
   state_abbr: string;
   sales_id?: Identifier;
+  activity_source?: ActivitySource;
+  activity_source_author?: string | null;
   created_at: string;
   description: string;
   revenue: string;
@@ -104,6 +109,8 @@ export type Contact = {
   tags: number[];
   gender: string;
   sales_id?: Identifier;
+  activity_source?: ActivitySource;
+  activity_source_author?: string | null;
   status: string;
   background: string;
   phone_jsonb: PhoneNumberAndType[];
@@ -116,6 +123,8 @@ export type ContactNote = {
   text: string;
   date: string;
   sales_id: Identifier;
+  activity_source?: ActivitySource;
+  activity_source_author?: string | null;
   status: string;
   attachments?: AttachmentNote[];
 } & Pick<RaRecord, "id">;
@@ -135,6 +144,8 @@ export type Deal = {
   start_date?: string | null;
   delivery_date?: string | null;
   trello_card_id?: string | null;
+  activity_source?: ActivitySource;
+  activity_source_author?: string | null;
   sales_id: Identifier;
   // The sales users this deal is assigned to; a deal is only visible to its
   // assignees (enforced by RLS). Defaults to the owner.
@@ -194,6 +205,8 @@ export type DealNote = {
   text: string;
   date: string;
   sales_id: Identifier;
+  activity_source?: ActivitySource;
+  activity_source_author?: string | null;
   attachments?: AttachmentNote[];
   status?: string;
 } & Pick<RaRecord, "id">;

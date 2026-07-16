@@ -123,6 +123,7 @@ describe("syncCardAttachments", () => {
       deal_id: 7,
       text: attachmentNoteText(baseAttachment),
       sales_id: 1,
+      activity_source: "trello",
       attachments: [
         {
           title: "Offerte klant.pdf",

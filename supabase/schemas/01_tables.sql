@@ -26,12 +26,18 @@ create table public.companies (
     city text,
     state_abbr text,
     sales_id bigint,
+    -- Who actually created this record. `sales_id` remains the CRM owner/
+    -- access-control identity; imports must not be rendered as that user.
+    activity_source text not null default 'manual',
+    activity_source_author text,
     context_links json,
     country text,
     description text,
     revenue text,
     tax_identifier text,
-    logo jsonb
+    logo jsonb,
+    constraint companies_activity_source_check
+        check (activity_source in ('manual', 'trello'))
 );
 
 create table public.contacts (
@@ -49,9 +55,13 @@ create table public.contacts (
     tags bigint[],
     company_id bigint,
     sales_id bigint,
+    activity_source text not null default 'manual',
+    activity_source_author text,
     linkedin_url text,
     email_jsonb jsonb,
-    phone_jsonb jsonb
+    phone_jsonb jsonb,
+    constraint contacts_activity_source_check
+        check (activity_source in ('manual', 'trello'))
 );
 
 create table public.contact_notes (
@@ -60,8 +70,12 @@ create table public.contact_notes (
     text text,
     date timestamp with time zone default now(),
     sales_id bigint,
+    activity_source text not null default 'manual',
+    activity_source_author text,
     status text,
-    attachments jsonb[]
+    attachments jsonb[],
+    constraint contact_notes_activity_source_check
+        check (activity_source in ('manual', 'trello'))
 );
 
 create table public.deals (
@@ -80,6 +94,8 @@ create table public.deals (
     start_date date,
     delivery_date date,
     sales_id bigint,
+    activity_source text not null default 'manual',
+    activity_source_author text,
     index smallint,
     trello_card_id text,
     -- The sales users this deal is assigned to. A deal is only visible to its
@@ -121,7 +137,9 @@ create table public.deals (
     revenue_period text,
     constraint deals_moneybird_estimate_status_check check (moneybird_estimate_status in ('pending', 'completed', 'failed')),
     constraint deals_moneybird_invoice_status_check check (moneybird_invoice_status in ('pending', 'completed', 'failed')),
-    constraint deals_revenue_period_check check (revenue_period in ('maandelijks', 'eenmalig'))
+    constraint deals_revenue_period_check check (revenue_period in ('maandelijks', 'eenmalig')),
+    constraint deals_activity_source_check
+        check (activity_source in ('manual', 'trello'))
 );
 
 create table public.deal_notes (
@@ -131,8 +149,12 @@ create table public.deal_notes (
     text text,
     date timestamp with time zone default now(),
     sales_id bigint,
+    activity_source text not null default 'manual',
+    activity_source_author text,
     status text,
-    attachments jsonb[]
+    attachments jsonb[],
+    constraint deal_notes_activity_source_check
+        check (activity_source in ('manual', 'trello'))
 );
 
 create table public.sales (

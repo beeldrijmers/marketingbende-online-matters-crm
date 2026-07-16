@@ -596,6 +596,7 @@ export const frenchCrmMessages = {
       load_more: "Charger plus d'activité",
       open_item: "Ouvrir",
       someone: "un membre de l'équipe",
+      trello: "Trello",
       trello_attachment: "Pièce jointe Trello",
       today: "Aujourd'hui",
       yesterday: "Hier",

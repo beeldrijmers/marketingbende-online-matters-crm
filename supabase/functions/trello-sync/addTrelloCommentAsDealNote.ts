@@ -32,12 +32,17 @@ export const addTrelloCommentAsDealNote = async ({
   if (!deal) return null;
 
   const salesId = await resolveDefaultSalesId();
+  const trimmedAuthorName = authorName.trim();
   const { error: createNoteError } = await supabaseAdmin
     .from("deal_notes")
     .insert({
       deal_id: deal.id,
       text: `[Trello - ${authorName}]\n${commentText}`,
       sales_id: salesId,
+      activity_source: "trello",
+      ...(trimmedAuthorName
+        ? { activity_source_author: trimmedAuthorName }
+        : {}),
       ...(date ? { date } : {}),
     });
   if (createNoteError) {
