@@ -60,7 +60,10 @@ const useAttentionDealSelection = () => {
     [rankedDeals],
   );
   const companyNames = useMemo(
-    () => new Map(companies.map((company) => [company.id, company.name])),
+    () =>
+      new Map(
+        companies.map((company) => [String(company.id), company.name] as const),
+      ),
     [companies],
   );
   const visibleDeals = useMemo(

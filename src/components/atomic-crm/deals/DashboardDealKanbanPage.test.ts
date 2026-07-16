@@ -99,8 +99,8 @@ describe("dedicated dashboard Kanban pages", () => {
       new Date(2026, 6, 15, 12),
     );
     const companies = new Map([
-      [8, "Voodoo Software"],
-      [9, "Stöökmeesters"],
+      ["8", "Voodoo Software"],
+      ["9", "Stöökmeesters"],
     ]);
 
     expect(

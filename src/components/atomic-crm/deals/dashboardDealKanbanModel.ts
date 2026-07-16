@@ -1,6 +1,4 @@
 import { getBillingState } from "../dashboard/billingQueueModel";
-import type { Identifier } from "ra-core";
-
 import type { Deal, Task } from "../types";
 import {
   buildOpenTasksByDeal,
@@ -65,14 +63,14 @@ const normalizeSearchText = (value: string) =>
 export const filterAttentionDealsBySearch = (
   rankedDeals: RankedDealWorkflow[],
   search: string,
-  companyNames: ReadonlyMap<Identifier, string> = new Map(),
+  companyNames: ReadonlyMap<string, string> = new Map(),
 ) => {
   const searchTerms = normalizeSearchText(search).trim().split(/\s+/);
   if (searchTerms.length === 1 && searchTerms[0] === "") return rankedDeals;
 
   return rankedDeals.filter(({ deal }) => {
     const haystack = normalizeSearchText(
-      [deal.name, deal.description, companyNames.get(deal.company_id)]
+      [deal.name, deal.description, companyNames.get(String(deal.company_id))]
         .filter(Boolean)
         .join(" "),
     );
