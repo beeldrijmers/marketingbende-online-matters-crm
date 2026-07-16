@@ -14,6 +14,10 @@ import {
   refreshGmailAccessToken,
 } from "./client.ts";
 import { normalizeGmailMessage } from "./messageParser.ts";
+import {
+  addGmailMessageFailure,
+  type GmailMessageFailureKind,
+} from "./syncFailure.ts";
 import { decryptGmailToken, gmailConnectionAad } from "./tokenCrypto.ts";
 
 export interface GmailConnectionRow {
@@ -30,6 +34,7 @@ export interface GmailSyncSummary {
   processed: number;
   skipped: number;
   failed: number;
+  failureKinds: Partial<Record<GmailMessageFailureKind, number>>;
   remaining: number;
   durationMs: number;
 }
@@ -101,6 +106,7 @@ export const syncGmailConnection = async ({
     processed: 0,
     skipped: 0,
     failed: 0,
+    failureKinds: {},
     remaining: 0,
     durationMs: 0,
   };
@@ -186,6 +192,7 @@ export const syncGmailConnection = async ({
       processed: 0,
       skipped: batch.alreadyHandled,
       failed: 0,
+      failureKinds: {},
       remaining: batch.remaining,
       durationMs: 0,
     };
@@ -231,7 +238,8 @@ export const syncGmailConnection = async ({
         summary.processed += 1;
       } catch (error) {
         summary.failed += 1;
-        console.error(`Gmail message ${messageId} failed:`, error);
+        const failureKind = addGmailMessageFailure(summary.failureKinds, error);
+        console.error(`Gmail message processing failed (${failureKind})`);
       }
     }
 
