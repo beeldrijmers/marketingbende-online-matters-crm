@@ -52,6 +52,9 @@ test("authenticated CRM dashboard and core routes stay operational", async ({
   await expect(
     page.getByRole("button", { name: /niet gepland/i }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("searchbox", { name: "Zoek in aandachtspipeline" }),
+  ).toBeVisible();
 
   for (const [route, label] of [
     ["deals/aandacht", "Aandacht-pipeline"],

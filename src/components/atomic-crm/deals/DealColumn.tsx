@@ -14,12 +14,16 @@ export const DealColumn = ({
   stage,
   deals,
   tasksByDeal,
+  onMoveToStage,
+  onPlanTask,
 }: {
   attentionPipeline?: boolean;
   detailBasePath?: string;
   stage: string;
   deals: Deal[];
   tasksByDeal: Map<Identifier, Task[]>;
+  onMoveToStage?: (deal: Deal, destinationStage: string) => void;
+  onPlanTask?: (deal: Deal) => void;
 }) => {
   const totalAmount = deals.reduce((sum, deal) => sum + (deal.amount ?? 0), 0);
   const { dealStages, currency } = useConfigurationContext();
@@ -78,6 +82,8 @@ export const DealColumn = ({
                 detailBasePath={detailBasePath}
                 index={index}
                 openTasks={tasksByDeal.get(deal.id) ?? []}
+                onMoveToStage={onMoveToStage}
+                onPlanTask={onPlanTask}
               />
             ))}
             {droppableProvided.placeholder}

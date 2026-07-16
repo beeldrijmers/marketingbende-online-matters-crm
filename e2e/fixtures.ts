@@ -140,6 +140,58 @@ async function createCompany({
   return data;
 }
 
+async function createDeal({
+  companyId,
+  name,
+  nextTaskDueDate,
+  salesId,
+  stage = "informatie-pipeline",
+}: {
+  companyId: string | number;
+  name: string;
+  nextTaskDueDate?: string;
+  salesId: string | number;
+  stage?: string;
+}) {
+  const { data, error } = await adminSupabase
+    .from("deals")
+    .insert({
+      amount: 1250,
+      assignee_ids: [salesId],
+      category: "website-development",
+      company_id: companyId,
+      contact_ids: [],
+      index: 0,
+      name,
+      sales_id: salesId,
+      stage,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create deal: ${error.message}`);
+  }
+
+  // The database next-action guard creates an automatic open task for every
+  // active deal. Tests that exercise a specific workflow bucket can pin that
+  // task to a deterministic date instead of depending on the current clock.
+  if (nextTaskDueDate) {
+    const { error: taskError } = await adminSupabase
+      .from("tasks")
+      .update({ due_date: nextTaskDueDate })
+      .eq("deal_id", data.id)
+      .eq("source", "auto")
+      .is("done_date", null);
+
+    if (taskError) {
+      throw new Error(`Failed to date deal task: ${taskError.message}`);
+    }
+  }
+
+  return data;
+}
+
 async function createContact({
   first_name,
   last_name,
@@ -220,6 +272,7 @@ export const test = base.extend<{
   createUser: typeof createUser;
   createSales: typeof createSales;
   createCompany: typeof createCompany;
+  createDeal: typeof createDeal;
   createContact: typeof createContact;
   createNotes: typeof createNotes;
   menu: ReturnType<typeof getMenuMethod>;
@@ -246,6 +299,10 @@ export const test = base.extend<{
   // eslint-disable-next-line no-empty-pattern
   createCompany: async ({}, cb) => {
     await cb(createCompany);
+  },
+  // eslint-disable-next-line no-empty-pattern
+  createDeal: async ({}, cb) => {
+    await cb(createDeal);
   },
   // eslint-disable-next-line no-empty-pattern
   createContact: async ({}, cb) => {

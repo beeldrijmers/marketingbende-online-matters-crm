@@ -1,13 +1,16 @@
 import { ResourceContextProvider, useGetList, useTranslate } from "ra-core";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Deal, Task } from "../types";
+import type { Company, Deal, Task } from "../types";
 import { AttentionPipelineHeader } from "./AttentionPipelineHeader";
 import { DealList } from "./DealList";
 import { MobileDealsList } from "./MobileDealsList";
 import {
   filterAttentionDeals,
+  filterAttentionDealsBySearch,
+  parseAttentionPipelineFilter,
   selectAttentionDeals,
   selectBillingDealIds,
   type AttentionPipelineFilter,
@@ -20,7 +23,9 @@ import { summarizeDealAttention } from "./dealWorkflow";
 
 const useAttentionDealSelection = () => {
   const translate = useTranslate();
-  const [filter, setFilter] = useState<AttentionPipelineFilter>("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filter = parseAttentionPipelineFilter(searchParams.get("filter"));
+  const search = searchParams.get("q") ?? "";
   const { data: deals = [], isPending: dealsPending } = useGetList<Deal>(
     "deals",
     {
@@ -37,6 +42,12 @@ const useAttentionDealSelection = () => {
       filter: {},
     },
   );
+  const { data: companies = [], isPending: companiesPending } =
+    useGetList<Company>("companies", {
+      pagination: { page: 1, perPage: 1000 },
+      sort: { field: "name", order: "ASC" },
+      filter: {},
+    });
   const label = translate("crm.dashboard.deal_actions.title", {
     _: "Dit heeft je aandacht nodig",
   });
@@ -48,21 +59,70 @@ const useAttentionDealSelection = () => {
     () => summarizeDealAttention(rankedDeals),
     [rankedDeals],
   );
+  const companyNames = useMemo(
+    () =>
+      new Map(
+        companies.map((company) => [String(company.id), company.name] as const),
+      ),
+    [companies],
+  );
+  const visibleDeals = useMemo(
+    () =>
+      filterAttentionDealsBySearch(
+        filterAttentionDeals(rankedDeals, filter),
+        search,
+        companyNames,
+      ),
+    [companyNames, filter, rankedDeals, search],
+  );
   const selection = useMemo(
     () =>
       createDashboardDealSelection(
-        filterAttentionDeals(rankedDeals, filter).map(({ deal }) => deal.id),
+        visibleDeals.map(({ deal }) => deal.id),
         "attention",
         label,
       ),
-    [filter, label, rankedDeals],
+    [label, visibleDeals],
+  );
+  const setFilter = useCallback(
+    (nextFilter: AttentionPipelineFilter) => {
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          if (nextFilter === "all") next.delete("filter");
+          else next.set("filter", nextFilter);
+          next.delete("deal");
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+  const setSearch = useCallback(
+    (nextSearch: string) => {
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          if (nextSearch) next.set("q", nextSearch.slice(0, 120));
+          else next.delete("q");
+          next.delete("deal");
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
   );
   return {
     counts,
     filter,
-    isPending: dealsPending || tasksPending,
+    isPending: dealsPending || tasksPending || companiesPending,
+    search,
     selection,
     setFilter,
+    setSearch,
+    visibleCount: visibleDeals.length,
   };
 };
 
@@ -107,8 +167,16 @@ const DashboardDealKanban = ({
 };
 
 const AttentionDealsPage = ({ mobile = false }: { mobile?: boolean }) => {
-  const { counts, filter, isPending, selection, setFilter } =
-    useAttentionDealSelection();
+  const {
+    counts,
+    filter,
+    isPending,
+    search,
+    selection,
+    setFilter,
+    setSearch,
+    visibleCount,
+  } = useAttentionDealSelection();
   if (isPending) return <DashboardDealKanbanSkeleton />;
 
   return (
@@ -118,6 +186,9 @@ const AttentionDealsPage = ({ mobile = false }: { mobile?: boolean }) => {
         filter={filter}
         mobile={mobile}
         onFilterChange={setFilter}
+        onSearchChange={setSearch}
+        search={search}
+        visibleCount={visibleCount}
       />
       {mobile ? (
         <MobileDealsList

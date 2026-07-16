@@ -2,6 +2,8 @@ import {
   createDashboardDealSelection,
   DEAL_ATTENTION_PATH,
   DEAL_BILLING_PATH,
+  getDashboardDealDetailPath,
+  getDashboardDealReturnPath,
   getDashboardDealSelectionPath,
   getDashboardDealSelectionFilter,
 } from "./dashboardDealSelection";
@@ -43,5 +45,17 @@ describe("dashboard deal selection", () => {
       DEAL_ATTENTION_PATH,
     );
     expect(getDashboardDealSelectionPath("billing")).toBe(DEAL_BILLING_PATH);
+  });
+
+  it("keeps attention filters and search while opening and closing a deal", () => {
+    const returnPath = getDashboardDealReturnPath(
+      DEAL_ATTENTION_PATH,
+      "?filter=today&q=voodoo&deal=12",
+    );
+
+    expect(returnPath).toBe("/deals/aandacht?filter=today&q=voodoo");
+    expect(getDashboardDealDetailPath(returnPath, 42)).toBe(
+      "/deals/aandacht?filter=today&q=voodoo&deal=42",
+    );
   });
 });

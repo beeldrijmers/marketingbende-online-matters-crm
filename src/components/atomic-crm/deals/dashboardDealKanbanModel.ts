@@ -13,6 +13,21 @@ export type AttentionPipelineFilter =
   | "planning"
   | "unplanned";
 
+const attentionPipelineFilters: readonly AttentionPipelineFilter[] = [
+  "all",
+  "overdue",
+  "today",
+  "planning",
+  "unplanned",
+];
+
+export const parseAttentionPipelineFilter = (
+  value: string | null,
+): AttentionPipelineFilter =>
+  attentionPipelineFilters.includes(value as AttentionPipelineFilter)
+    ? (value as AttentionPipelineFilter)
+    : "all";
+
 export const selectAttentionDeals = (
   deals: Deal[],
   tasks: Task[],
@@ -38,6 +53,30 @@ export const filterAttentionDeals = (
   rankedDeals: RankedDealWorkflow[],
   filter: AttentionPipelineFilter,
 ) => rankedDeals.filter((deal) => matchesAttentionPipelineFilter(deal, filter));
+
+const normalizeSearchText = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLocaleLowerCase("nl-NL");
+
+export const filterAttentionDealsBySearch = (
+  rankedDeals: RankedDealWorkflow[],
+  search: string,
+  companyNames: ReadonlyMap<string, string> = new Map(),
+) => {
+  const searchTerms = normalizeSearchText(search).trim().split(/\s+/);
+  if (searchTerms.length === 1 && searchTerms[0] === "") return rankedDeals;
+
+  return rankedDeals.filter(({ deal }) => {
+    const haystack = normalizeSearchText(
+      [deal.name, deal.description, companyNames.get(String(deal.company_id))]
+        .filter(Boolean)
+        .join(" "),
+    );
+    return searchTerms.every((term) => haystack.includes(term));
+  });
+};
 
 export const selectAttentionDealIds = (
   deals: Deal[],

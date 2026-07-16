@@ -626,6 +626,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/dealStageMove.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/dashboardDealSelection.ts",
           "type": "registry:component"
         },
@@ -723,6 +727,10 @@
         },
         {
           "path": "src/components/atomic-crm/deals/AttentionMovePrompt.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/AttentionDealActions.tsx",
           "type": "registry:component"
         },
         {

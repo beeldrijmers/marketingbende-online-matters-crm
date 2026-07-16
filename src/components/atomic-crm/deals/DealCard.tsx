@@ -11,7 +11,9 @@ import { CompanyAvatar } from "../companies/CompanyAvatar";
 import { AssigneesField } from "../sales/AssigneesField";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Deal, Task } from "../types";
+import { AttentionDealActions } from "./AttentionDealActions";
 import { DealWorkflowIndicator } from "./DealWorkflowIndicator";
+import { getDashboardDealDetailPath } from "./dashboardDealSelection";
 import { getDealWorkflow } from "./dealWorkflow";
 
 // A monthly/recurring price hint anywhere in the card text ("EUR 300 p/m",
@@ -38,12 +40,16 @@ export const DealCard = ({
   detailBasePath,
   index,
   openTasks,
+  onMoveToStage,
+  onPlanTask,
 }: {
   attentionPipeline?: boolean;
   deal: Deal;
   detailBasePath?: string;
   index: number;
   openTasks: Task[];
+  onMoveToStage?: (deal: Deal, destinationStage: string) => void;
+  onPlanTask?: (deal: Deal) => void;
 }) => {
   if (!deal) return null;
 
@@ -57,6 +63,8 @@ export const DealCard = ({
           deal={deal}
           detailBasePath={detailBasePath}
           openTasks={openTasks}
+          onMoveToStage={onMoveToStage}
+          onPlanTask={onPlanTask}
         />
       )}
     </Draggable>
@@ -70,6 +78,8 @@ export const DealCardContent = ({
   deal,
   detailBasePath,
   openTasks = EMPTY_TASKS,
+  onMoveToStage,
+  onPlanTask,
 }: {
   attentionPipeline?: boolean;
   provided?: any;
@@ -77,6 +87,8 @@ export const DealCardContent = ({
   deal: Deal;
   detailBasePath?: string;
   openTasks?: Task[];
+  onMoveToStage?: (deal: Deal, destinationStage: string) => void;
+  onPlanTask?: (deal: Deal) => void;
 }) => {
   const { dealCategories, currency } = useConfigurationContext();
   const translate = useTranslate();
@@ -84,7 +96,7 @@ export const DealCardContent = ({
   const handleClick = () => {
     redirect(
       detailBasePath
-        ? `${detailBasePath}?deal=${deal.id}`
+        ? getDashboardDealDetailPath(detailBasePath, deal.id)
         : `/deals/${deal.id}/show`,
       undefined,
       undefined,
@@ -218,6 +230,13 @@ export const DealCardContent = ({
             </div>
             {!attentionPipeline ? (
               <DealWorkflowIndicator deal={deal} openTasks={openTasks} />
+            ) : null}
+            {attentionPipeline && onMoveToStage && onPlanTask ? (
+              <AttentionDealActions
+                deal={deal}
+                onMoveToStage={onMoveToStage}
+                onPlanTask={onPlanTask}
+              />
             ) : null}
           </CardContent>
         </Card>

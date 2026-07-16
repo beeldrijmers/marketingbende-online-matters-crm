@@ -6,11 +6,14 @@ import {
   Clock3,
   ListTodo,
   MoveRight,
+  Search,
+  X,
 } from "lucide-react";
 import { Link } from "react-router";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 import type { DealAttentionCounts } from "./dealWorkflow";
@@ -69,11 +72,17 @@ export const AttentionPipelineHeader = ({
   filter,
   mobile = false,
   onFilterChange,
+  onSearchChange,
+  search,
+  visibleCount,
 }: {
   counts: DealAttentionCounts;
   filter: AttentionPipelineFilter;
   mobile?: boolean;
   onFilterChange: (filter: AttentionPipelineFilter) => void;
+  onSearchChange: (search: string) => void;
+  search: string;
+  visibleCount: number;
 }) => (
   <section
     className={cn(
@@ -105,14 +114,20 @@ export const AttentionPipelineHeader = ({
           >
             Aandacht-pipeline
           </h1>
-          <Badge variant="secondary" className="tabular-nums">
-            {counts.total} {counts.total === 1 ? "deal" : "deals"}
+          <Badge
+            variant="secondary"
+            className="tabular-nums"
+            aria-live="polite"
+          >
+            {visibleCount === counts.total
+              ? `${counts.total} ${counts.total === 1 ? "deal" : "deals"}`
+              : `${visibleCount} van ${counts.total}`}
           </Badge>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
           {mobile
-            ? "Open een deal om de fase te wijzigen. De urgentste staan bovenaan."
-            : "Versleep deals naar de juiste volgende fase. De urgentste staan bovenaan."}
+            ? "Wijzig direct de fase of plan een taak. De urgentste staan bovenaan."
+            : "Versleep een deal of gebruik Fase. Plan de volgende taak zonder het bord te verlaten."}
         </p>
       </div>
       {!mobile ? (
@@ -125,8 +140,38 @@ export const AttentionPipelineHeader = ({
       ) : null}
     </div>
 
+    <div className="border-t px-4 py-3">
+      <label htmlFor="attention-pipeline-search" className="sr-only">
+        Zoek in aandachtspipeline
+      </label>
+      <div className="relative max-w-xl">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          id="attention-pipeline-search"
+          type="search"
+          value={search}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="Zoek op deal, omschrijving of bedrijf…"
+          className="pl-9 pr-10"
+        />
+        {search ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Zoekopdracht wissen"
+            className="absolute right-1 top-1/2 size-8 -translate-y-1/2"
+            onClick={() => onSearchChange("")}
+          >
+            <X className="size-4" />
+          </Button>
+        ) : null}
+      </div>
+    </div>
+
     <div
       aria-label="Filter aandachtspipeline"
+      role="group"
       className="flex gap-2 overflow-x-auto border-t bg-muted/25 px-4 py-3"
     >
       {filters.map((item) => {

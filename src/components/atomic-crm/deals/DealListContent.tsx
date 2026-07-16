@@ -11,20 +11,22 @@ import { useEffect, useMemo, useState } from "react";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { CrmDataProvider } from "../providers/types";
 import type { Deal, Task } from "../types";
+import { persistDealStageMove, updateDealStageLocal } from "./dealStageMove";
 import { DealColumn } from "./DealColumn";
 import { buildOpenTasksByDeal, rankDealsForAttention } from "./dealWorkflow";
 import type { DealsByStage } from "./stages";
 import { getDealsByStage } from "./stages";
-import { writeLinkedDealStageToTrello } from "./trelloStageWriteback";
 
 export const DealListContent = ({
   attentionPipeline = false,
   detailBasePath,
   onDealStageChange,
+  onPlanTask,
 }: {
   attentionPipeline?: boolean;
   detailBasePath?: string;
   onDealStageChange?: (deal: Deal, destinationStage: string) => void;
+  onPlanTask?: (deal: Deal) => void;
 } = {}) => {
   const { dealStages } = useConfigurationContext();
   const { data: unorderedDeals, isPending, refetch } = useListContext<Deal>();
@@ -98,7 +100,7 @@ export const DealListContent = ({
     );
 
     // persist the changes
-    updateDealStage(sourceDeal, destinationDeal, dataProvider)
+    persistDealStageMove(sourceDeal, destinationDeal, dataProvider)
       .then(() => {
         if (sourceStage !== destinationStage) {
           onDealStageChange?.(sourceDeal, destinationStage);
@@ -118,12 +120,54 @@ export const DealListContent = ({
       });
   };
 
+  const moveDealToStage = (deal: Deal, destinationStage: string) => {
+    if (deal.stage === destinationStage) return;
+    const sourceIndex = dealsByStage[deal.stage]?.findIndex(
+      (candidate) => candidate.id === deal.id,
+    );
+    if (sourceIndex == null || sourceIndex < 0) return;
+
+    setDealsByStage((current) => {
+      const currentSourceIndex = current[deal.stage]?.findIndex(
+        (candidate) => candidate.id === deal.id,
+      );
+      if (currentSourceIndex == null || currentSourceIndex < 0) return current;
+      return updateDealStageLocal(
+        deal,
+        { stage: deal.stage, index: currentSourceIndex },
+        {
+          stage: destinationStage,
+          index: current[destinationStage]?.length ?? 0,
+        },
+        current,
+      );
+    });
+
+    persistDealStageMove(
+      deal,
+      { stage: destinationStage, index: undefined },
+      dataProvider,
+    )
+      .then(() => {
+        onDealStageChange?.(deal, destinationStage);
+        refetch();
+      })
+      .catch((error) => {
+        console.error("Failed to persist the quick deal move:", error);
+        notify(
+          error instanceof Error ? error.message : "resources.deals.move_error",
+          { type: "error" },
+        );
+        refetch();
+      });
+  };
+
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div
         className={
           attentionPipeline
-            ? "h-[calc(100dvh-19rem)] min-h-96 overflow-x-auto overscroll-contain pb-2"
+            ? "h-[calc(100dvh-23rem)] min-h-96 overflow-x-auto overscroll-contain pb-2"
             : "h-[calc(100dvh-11rem)] min-h-80 overflow-x-auto overscroll-contain pb-2"
         }
       >
@@ -135,6 +179,8 @@ export const DealListContent = ({
               stage={stage.value}
               deals={dealsByStage[stage.value]}
               tasksByDeal={tasksByDeal}
+              onMoveToStage={attentionPipeline ? moveDealToStage : undefined}
+              onPlanTask={attentionPipeline ? onPlanTask : undefined}
               key={stage.value}
             />
           ))}
@@ -142,174 +188,4 @@ export const DealListContent = ({
       </div>
     </DragDropContext>
   );
-};
-
-const updateDealStageLocal = (
-  sourceDeal: Deal,
-  source: { stage: string; index: number },
-  destination: {
-    stage: string;
-    index?: number; // undefined if dropped after the last item
-  },
-  dealsByStage: DealsByStage,
-) => {
-  if (source.stage === destination.stage) {
-    // moving deal inside the same column
-    const column = dealsByStage[source.stage];
-    column.splice(source.index, 1);
-    column.splice(destination.index ?? column.length + 1, 0, sourceDeal);
-    return {
-      ...dealsByStage,
-      [destination.stage]: column,
-    };
-  } else {
-    // moving deal across columns
-    const sourceColumn = dealsByStage[source.stage];
-    const destinationColumn = dealsByStage[destination.stage];
-    sourceColumn.splice(source.index, 1);
-    destinationColumn.splice(
-      destination.index ?? destinationColumn.length + 1,
-      0,
-      sourceDeal,
-    );
-    return {
-      ...dealsByStage,
-      [source.stage]: sourceColumn,
-      [destination.stage]: destinationColumn,
-    };
-  }
-};
-
-type DealBoardDataProvider = Pick<
-  CrmDataProvider,
-  "getList" | "update" | "moveTrelloDealToStage"
->;
-
-const updateDealStage = async (
-  source: Deal,
-  destination: {
-    stage: string;
-    index?: number; // undefined if dropped after the last item
-  },
-  dataProvider: DealBoardDataProvider,
-) => {
-  if (source.stage === destination.stage) {
-    // moving deal inside the same column
-    // Fetch all the deals in this stage (because the list may be filtered, but we need to update even non-filtered deals)
-    const { data: columnDeals } = await dataProvider.getList("deals", {
-      sort: { field: "index", order: "ASC" },
-      // Match the board's perPage so columns beyond 100 deals reindex fully.
-      pagination: { page: 1, perPage: 1000 },
-      filter: { stage: source.stage },
-    });
-    const destinationIndex = destination.index ?? columnDeals.length + 1;
-
-    if (source.index > destinationIndex) {
-      // deal moved up, eg
-      // dest   src
-      //  <------
-      // [4, 7, 23, 5]
-      await Promise.all([
-        // for all deals between destinationIndex and source.index, increase the index
-        ...columnDeals
-          .filter(
-            (deal) =>
-              deal.index >= destinationIndex && deal.index < source.index,
-          )
-          .map((deal) =>
-            dataProvider.update("deals", {
-              id: deal.id,
-              data: { index: deal.index + 1 },
-              previousData: deal,
-            }),
-          ),
-        // for the deal that was moved, update its index
-        dataProvider.update("deals", {
-          id: source.id,
-          data: { index: destinationIndex },
-          previousData: source,
-        }),
-      ]);
-    } else {
-      // deal moved down, e.g
-      // src   dest
-      //  ------>
-      // [4, 7, 23, 5]
-      await Promise.all([
-        // for all deals between source.index and destinationIndex, decrease the index
-        ...columnDeals
-          .filter(
-            (deal) =>
-              deal.index <= destinationIndex && deal.index > source.index,
-          )
-          .map((deal) =>
-            dataProvider.update("deals", {
-              id: deal.id,
-              data: { index: deal.index - 1 },
-              previousData: deal,
-            }),
-          ),
-        // for the deal that was moved, update its index
-        dataProvider.update("deals", {
-          id: source.id,
-          data: { index: destinationIndex },
-          previousData: source,
-        }),
-      ]);
-    }
-  } else {
-    // moving deal across columns
-    // Trello is the upstream source for linked cards. Move it first so a
-    // failed Trello write never leaves the CRM in a stage that the next pull
-    // would immediately overwrite. Unlinked CRM-only deals skip this call.
-    await writeLinkedDealStageToTrello(source, destination.stage, dataProvider);
-
-    // Fetch all the deals in both stages (because the list may be filtered, but we need to update even non-filtered deals)
-    const [{ data: sourceDeals }, { data: destinationDeals }] =
-      await Promise.all([
-        dataProvider.getList("deals", {
-          sort: { field: "index", order: "ASC" },
-          pagination: { page: 1, perPage: 1000 },
-          filter: { stage: source.stage },
-        }),
-        dataProvider.getList("deals", {
-          sort: { field: "index", order: "ASC" },
-          pagination: { page: 1, perPage: 1000 },
-          filter: { stage: destination.stage },
-        }),
-      ]);
-    const destinationIndex = destination.index ?? destinationDeals.length + 1;
-
-    await Promise.all([
-      // decrease index on the deals after the source index in the source columns
-      ...sourceDeals
-        .filter((deal) => deal.index > source.index)
-        .map((deal) =>
-          dataProvider.update("deals", {
-            id: deal.id,
-            data: { index: deal.index - 1 },
-            previousData: deal,
-          }),
-        ),
-      // increase index on the deals after the destination index in the destination columns
-      ...destinationDeals
-        .filter((deal) => deal.index >= destinationIndex)
-        .map((deal) =>
-          dataProvider.update("deals", {
-            id: deal.id,
-            data: { index: deal.index + 1 },
-            previousData: deal,
-          }),
-        ),
-      // change the dragged deal to take the destination index and column
-      dataProvider.update("deals", {
-        id: source.id,
-        data: {
-          index: destinationIndex,
-          stage: destination.stage,
-        },
-        previousData: source,
-      }),
-    ]);
-  }
 };
