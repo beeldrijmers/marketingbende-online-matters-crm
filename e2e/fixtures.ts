@@ -143,11 +143,13 @@ async function createCompany({
 async function createDeal({
   companyId,
   name,
+  nextTaskDueDate,
   salesId,
   stage = "informatie-pipeline",
 }: {
   companyId: string | number;
   name: string;
+  nextTaskDueDate?: string;
   salesId: string | number;
   stage?: string;
 }) {
@@ -169,6 +171,22 @@ async function createDeal({
 
   if (error) {
     throw new Error(`Failed to create deal: ${error.message}`);
+  }
+
+  // The database next-action guard creates an automatic open task for every
+  // active deal. Tests that exercise a specific workflow bucket can pin that
+  // task to a deterministic date instead of depending on the current clock.
+  if (nextTaskDueDate) {
+    const { error: taskError } = await adminSupabase
+      .from("tasks")
+      .update({ due_date: nextTaskDueDate })
+      .eq("deal_id", data.id)
+      .eq("source", "auto")
+      .is("done_date", null);
+
+    if (taskError) {
+      throw new Error(`Failed to date deal task: ${taskError.message}`);
+    }
   }
 
   return data;

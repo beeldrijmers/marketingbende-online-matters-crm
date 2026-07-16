@@ -78,4 +78,78 @@ describe("deal stage moves", () => {
       }),
     );
   });
+
+  it("reindexes intervening deals when moving down within a stage", async () => {
+    const source = deal({ index: 0 });
+    const second = deal({ id: 2, index: 1 });
+    const third = deal({ id: 3, index: 2 });
+    const update = vi.fn(async (_resource, params) => ({ data: params.data }));
+    const dataProvider = {
+      getList: vi.fn(async () => ({
+        data: [source, second, third],
+        total: 3,
+      })),
+      update,
+    } as unknown as DealBoardDataProvider;
+
+    await persistDealStageMove(
+      source,
+      { stage: source.stage, index: 2 },
+      dataProvider,
+    );
+
+    expect(update).toHaveBeenCalledTimes(3);
+    expect(update).toHaveBeenCalledWith(
+      "deals",
+      expect.objectContaining({ id: 2, data: { index: 0 } }),
+    );
+    expect(update).toHaveBeenCalledWith(
+      "deals",
+      expect.objectContaining({ id: 3, data: { index: 1 } }),
+    );
+    expect(update).toHaveBeenCalledWith(
+      "deals",
+      expect.objectContaining({ id: 1, data: { index: 2 } }),
+    );
+  });
+
+  it("reindexes both columns when inserting into a specific position", async () => {
+    const source = deal({ index: 0 });
+    const sourceFollower = deal({ id: 2, index: 1 });
+    const destinationDeal = deal({ id: 3, index: 0, stage: "bezig" });
+    const update = vi.fn(async (_resource, params) => ({ data: params.data }));
+    const dataProvider = {
+      getList: vi.fn(async (_resource, params) => ({
+        data:
+          params.filter.stage === "informatie-pipeline"
+            ? [source, sourceFollower]
+            : [destinationDeal],
+        total: 2,
+      })),
+      update,
+    } as unknown as DealBoardDataProvider;
+
+    await persistDealStageMove(
+      source,
+      { stage: "bezig", index: 0 },
+      dataProvider,
+    );
+
+    expect(update).toHaveBeenCalledTimes(3);
+    expect(update).toHaveBeenCalledWith(
+      "deals",
+      expect.objectContaining({ id: 2, data: { index: 0 } }),
+    );
+    expect(update).toHaveBeenCalledWith(
+      "deals",
+      expect.objectContaining({ id: 3, data: { index: 1 } }),
+    );
+    expect(update).toHaveBeenCalledWith(
+      "deals",
+      expect.objectContaining({
+        id: 1,
+        data: { index: 0, stage: "bezig" },
+      }),
+    );
+  });
 });

@@ -10,7 +10,7 @@ test.describe("attention pipeline", () => {
     });
 
     // A completely empty CRM intentionally shows the onboarding checklist.
-    // Seed one unplanned deal so this scenario exercises the real dashboard,
+    // Seed one overdue deal so this scenario exercises the real dashboard,
     // its attention CTA, URL-stable filters and the quick phase action.
     const company = await createCompany({
       name: "Pipeline Test",
@@ -19,6 +19,7 @@ test.describe("attention pipeline", () => {
     await createDeal({
       companyId: company.id,
       name: "Pipeline verbeterdeal",
+      nextTaskDueDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
       salesId: sales.id,
     });
   });
@@ -46,33 +47,44 @@ test.describe("attention pipeline", () => {
     await expect(
       page.getByRole("heading", { name: "Aandacht-pipeline" }),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: /te laat/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /vandaag/i })).toBeVisible();
+    const filters = page.getByRole("group", {
+      name: "Filter aandachtspipeline",
+    });
     await expect(
-      page.getByRole("button", { name: /niet gepland/i }),
+      filters.getByRole("button", { name: /te laat/i }),
+    ).toBeVisible();
+    await expect(
+      filters.getByRole("button", { name: /vandaag/i }),
+    ).toBeVisible();
+    await expect(
+      filters.getByRole("button", { name: /niet gepland/i }),
     ).toBeVisible();
     const search = page.getByRole("searchbox", {
       name: "Zoek in aandachtspipeline",
     });
     await search.fill("Pipeline Test");
-    await page.getByRole("button", { name: /niet gepland/i }).click();
-    await expect(page).toHaveURL(/filter=unplanned/);
+    await filters.getByRole("button", { name: /te laat/i }).click();
+    await expect(page).toHaveURL(/filter=overdue/);
     await expect(page).toHaveURL(/q=Pipeline(?:\+|%20)Test/);
     await page.reload();
     await expect(search).toHaveValue("Pipeline Test");
     await expect(
-      page.getByRole("button", { name: /niet gepland/i }),
+      filters.getByRole("button", { name: /te laat/i }),
     ).toHaveAttribute("aria-pressed", "true");
 
     await page
       .getByRole("button", {
         name: "Fase wijzigen voor Pipeline verbeterdeal",
+        exact: true,
       })
       .click();
     await page.getByRole("menuitemradio", { name: "Bezig" }).click();
     await expect(page.getByText("Verplaatst naar")).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Volgende taak plannen" }),
+      page.getByRole("button", {
+        name: "Volgende taak plannen voor Pipeline verbeterdeal",
+        exact: true,
+      }),
     ).toBeVisible();
     await expect(
       page.getByText(

@@ -13,6 +13,28 @@ export type DealBoardDataProvider = Pick<
   "getList" | "update" | "moveTrelloDealToStage"
 >;
 
+const buildDealIndexUpdates = (
+  deals: Deal[],
+  shouldUpdate: (deal: Deal) => boolean,
+  offset: number,
+  dataProvider: DealBoardDataProvider,
+) => {
+  const updates: Promise<unknown>[] = [];
+
+  for (const deal of deals) {
+    if (!shouldUpdate(deal)) continue;
+    updates.push(
+      dataProvider.update("deals", {
+        id: deal.id,
+        data: { index: deal.index + offset },
+        previousData: deal,
+      }),
+    );
+  }
+
+  return updates;
+};
+
 export const updateDealStageLocal = (
   sourceDeal: Deal,
   source: { stage: string; index: number },
@@ -60,18 +82,12 @@ export const persistDealStageMove = async (
 
     if (source.index > destinationIndex) {
       await Promise.all([
-        ...columnDeals
-          .filter(
-            (deal) =>
-              deal.index >= destinationIndex && deal.index < source.index,
-          )
-          .map((deal) =>
-            dataProvider.update("deals", {
-              id: deal.id,
-              data: { index: deal.index + 1 },
-              previousData: deal,
-            }),
-          ),
+        ...buildDealIndexUpdates(
+          columnDeals,
+          (deal) => deal.index >= destinationIndex && deal.index < source.index,
+          1,
+          dataProvider,
+        ),
         dataProvider.update("deals", {
           id: source.id,
           data: { index: destinationIndex },
@@ -82,17 +98,12 @@ export const persistDealStageMove = async (
     }
 
     await Promise.all([
-      ...columnDeals
-        .filter(
-          (deal) => deal.index <= destinationIndex && deal.index > source.index,
-        )
-        .map((deal) =>
-          dataProvider.update("deals", {
-            id: deal.id,
-            data: { index: deal.index - 1 },
-            previousData: deal,
-          }),
-        ),
+      ...buildDealIndexUpdates(
+        columnDeals,
+        (deal) => deal.index <= destinationIndex && deal.index > source.index,
+        -1,
+        dataProvider,
+      ),
       dataProvider.update("deals", {
         id: source.id,
         data: { index: destinationIndex },
@@ -123,24 +134,18 @@ export const persistDealStageMove = async (
   const destinationIndex = destination.index ?? destinationDeals.length + 1;
 
   await Promise.all([
-    ...sourceDeals
-      .filter((deal) => deal.index > source.index)
-      .map((deal) =>
-        dataProvider.update("deals", {
-          id: deal.id,
-          data: { index: deal.index - 1 },
-          previousData: deal,
-        }),
-      ),
-    ...destinationDeals
-      .filter((deal) => deal.index >= destinationIndex)
-      .map((deal) =>
-        dataProvider.update("deals", {
-          id: deal.id,
-          data: { index: deal.index + 1 },
-          previousData: deal,
-        }),
-      ),
+    ...buildDealIndexUpdates(
+      sourceDeals,
+      (deal) => deal.index > source.index,
+      -1,
+      dataProvider,
+    ),
+    ...buildDealIndexUpdates(
+      destinationDeals,
+      (deal) => deal.index >= destinationIndex,
+      1,
+      dataProvider,
+    ),
     dataProvider.update("deals", {
       id: source.id,
       data: { index: destinationIndex, stage: destination.stage },
