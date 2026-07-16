@@ -1,60 +1,15 @@
-/* eslint-disable react-refresh/only-export-components */
 import {
   type Identifier,
   type RaRecord,
   useGetIdentity,
   useTranslate,
 } from "ra-core";
+import { Trello } from "lucide-react";
 
 import { ReferenceField } from "@/components/admin/reference-field";
 import { PartyBadge, SaleAvatar } from "../sales/SaleAvatar";
-import { useGetSalesName } from "../sales/useGetSalesName";
 import type { Sale } from "../types";
-
-/**
- * Central actor resolution for the activity feed.
- *
- * Every activity row answers "wie deed dit". The five renderers used to repeat
- * the same identity/name lookup inline; they now share these primitives so the
- * acting person (avatar + party-badge slot, "Jij" for your own actions) looks
- * identical everywhere and the resolved name never collapses to "" or "??".
- */
-
-export interface ActorInfo {
-  /** True when the acting sales person is the logged-in user. */
-  isCurrentUser: boolean;
-  /** Display name, never empty and never the raw "??" error marker. */
-  name: string;
-}
-
-/**
- * Resolves an activity actor to `{ isCurrentUser, name }`.
- *
- * The name falls back to "een teamlid" while the sales record is loading, on
- * error, or when it is missing, so a sentence is always readable. For your own
- * actions it returns the shared "Jij" label.
- */
-export function useActor(salesId?: Identifier): ActorInfo {
-  const translate = useTranslate();
-  const { identity, isPending } = useGetIdentity();
-  const isCurrentUser =
-    !isPending && salesId != null && identity?.id === salesId;
-  const resolved = useGetSalesName(salesId, {
-    enabled: !isCurrentUser && salesId != null,
-  });
-  const trimmed = resolved?.trim();
-  const name = isCurrentUser
-    ? translate("crm.ownership.you", { _: "U" })
-    : trimmed && trimmed !== "??"
-      ? trimmed
-      : translate("crm.activity.someone", { _: "een teamlid" });
-  return { isCurrentUser, name };
-}
-
-/** Name-only helper; never returns "" or "??". */
-export function useActorName(salesId?: Identifier): string {
-  return useActor(salesId).name;
-}
+import { getExternalActivityAttribution } from "./activityAttribution";
 
 const ActorAvatarFallback = ({ size }: { size: number }) => (
   <div
@@ -72,13 +27,42 @@ const ActorAvatarFallback = ({ size }: { size: number }) => (
  */
 export function ActivityActorAvatar({
   salesId,
+  source,
+  sourceAuthor,
   size = 20,
 }: {
   salesId?: Identifier;
+  source?: string | null;
+  sourceAuthor?: string | null;
   size?: number;
 }) {
   const translate = useTranslate();
   const { identity } = useGetIdentity();
+  const externalAttribution = getExternalActivityAttribution({
+    source,
+    sourceAuthor,
+  });
+
+  if (externalAttribution) {
+    const title =
+      externalAttribution.sourceAuthor ??
+      translate("crm.activity.trello", { _: "Trello" });
+    return (
+      <span
+        aria-label={title}
+        className="inline-flex shrink-0 items-center justify-center rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300"
+        style={{ width: size, height: size }}
+        title={title}
+      >
+        <Trello
+          style={{
+            width: Math.max(12, size - 7),
+            height: Math.max(12, size - 7),
+          }}
+        />
+      </span>
+    );
+  }
 
   if (salesId == null) {
     return <ActorAvatarFallback size={size} />;

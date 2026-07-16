@@ -4,9 +4,11 @@ import { ReferenceField } from "@/components/admin/reference-field";
 import { CompanyAvatar } from "../companies/CompanyAvatar";
 import { RelativeDate } from "../misc/RelativeDate";
 import type { ActivityDealNoteCreated } from "../types";
-import { ActivityActorAvatar, useActor } from "./ActivityActor";
+import { ActivityActorAvatar } from "./ActivityActor";
 import { useActivityLogContext } from "./ActivityLogContext";
 import { ActivityLogNote } from "./ActivityLogNote";
+import { parseActivityNote } from "./activityNote";
+import { useActor } from "./useActivityActor";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 type ActivityLogDealNoteCreatedProps = {
@@ -20,12 +22,23 @@ export function ActivityLogDealNoteCreated({
   const isMobile = useIsMobile();
   const translate = useTranslate();
   const { dealNote } = activity;
-  const { isCurrentUser, name } = useActor(activity.sales_id);
+  const parsedNote = parseActivityNote(dealNote.text);
+  const source = parsedNote.source ?? dealNote.activity_source;
+  const sourceAuthor =
+    parsedNote.sourceAuthor ?? dealNote.activity_source_author;
+  const { isCurrentUser, name } = useActor(activity.sales_id, {
+    source,
+    sourceAuthor,
+  });
   return (
     <ActivityLogNote
       header={
         <div className="flex min-w-0 flex-grow flex-wrap items-center gap-x-2 gap-y-1">
-          <ActivityActorAvatar salesId={activity.sales_id} />
+          <ActivityActorAvatar
+            salesId={activity.sales_id}
+            source={source}
+            sourceAuthor={sourceAuthor}
+          />
           <ReferenceField
             source="deal_id"
             reference="deals"
@@ -84,6 +97,7 @@ export function ActivityLogDealNoteCreated({
       }
       text={dealNote.text}
       link={isMobile ? false : `/deals/${dealNote.deal_id}/show`}
+      sourceAuthorInHeader={source === "trello"}
     />
   );
 }

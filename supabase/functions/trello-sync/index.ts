@@ -156,7 +156,14 @@ Deno.serve(async (req) => {
         await unarchiveDealByCardId(cardId);
       }
 
-      const dealId = await upsertDealFromCard(card);
+      const dealId = await upsertDealFromCard(card, {
+        // Only the card-creation webhook tells us who created the card. Other
+        // updates are not authorship events and must not overwrite it.
+        sourceAuthor:
+          action.type === "createCard"
+            ? (action.memberCreator?.fullName ?? null)
+            : null,
+      });
       // Pull any uploaded files on the card into the CRM (idempotent,
       // best-effort: an attachment failure never fails the card sync).
       await syncCardAttachments({

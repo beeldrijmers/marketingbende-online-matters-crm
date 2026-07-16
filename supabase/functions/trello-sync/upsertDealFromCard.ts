@@ -40,7 +40,10 @@ const buildDealDescription = (card: TrelloCardInput): string => {
 // and existing company contacts. The description
 // is enriched from the card, but only when the existing one is still the
 // auto-generated placeholder (or empty), so manual edits survive future syncs.
-export const upsertDealFromCard = async (card: TrelloCardInput) => {
+export const upsertDealFromCard = async (
+  card: TrelloCardInput,
+  { sourceAuthor }: { sourceAuthor?: string | null } = {},
+) => {
   const companyName = resolveCompanyName(card);
   const category = resolveCategory(card.idList, card.labelNames);
   const stage = resolveStage(card.idList, card.labelNames, card.dueComplete);
@@ -57,6 +60,7 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
   // The real project start: decoded from the Trello card id so a long-running
   // deal keeps its true creation date instead of the import/backfill time.
   const createdAt = trelloCardCreatedAt(card.id);
+  const trimmedSourceAuthor = sourceAuthor?.trim();
 
   // A list the team added without updating the sync's vocabulary: log it
   // loudly. New deals still get the fallback stage/category, but the stage of
@@ -84,6 +88,7 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
   const companyId = await findOrCreateCompany({
     name: companyName,
     salesId,
+    sourceAuthor: trimmedSourceAuthor,
     website,
     // When the card carries no website, fall back to a best-effort web lookup so
     // the company can still get a logo. Runs at most once per company (only when
@@ -99,6 +104,7 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
       companyName,
       currentContactIds: contactIds,
       salesId,
+      sourceAuthor: trimmedSourceAuthor,
     });
   } catch (error) {
     // Contact enrichment is valuable but must never block the core card/deal
@@ -197,6 +203,10 @@ export const upsertDealFromCard = async (card: TrelloCardInput) => {
       ...(createdAt ? { created_at: createdAt } : {}),
       trello_card_id: card.id,
       sales_id: salesId,
+      activity_source: "trello",
+      ...(trimmedSourceAuthor
+        ? { activity_source_author: trimmedSourceAuthor }
+        : {}),
     })
     .select("id")
     .single();

@@ -5,8 +5,9 @@ import { ReferenceField } from "@/components/admin/reference-field";
 import { Avatar } from "../contacts/Avatar";
 import { RelativeDate } from "../misc/RelativeDate";
 import type { ActivityContactCreated } from "../types";
-import { ActivityActorAvatar, useActor } from "./ActivityActor";
+import { ActivityActorAvatar } from "./ActivityActor";
 import { useActivityLogContext } from "./ActivityLogContext";
+import { useActor } from "./useActivityActor";
 
 type ActivityLogContactCreatedProps = {
   activity: ActivityContactCreated;
@@ -18,11 +19,18 @@ export function ActivityLogContactCreated({
   const context = useActivityLogContext();
   const translate = useTranslate();
   const { contact } = activity;
-  const { isCurrentUser, name } = useActor(activity.sales_id);
+  const { isCurrentUser, name } = useActor(activity.sales_id, {
+    source: contact.activity_source,
+    sourceAuthor: contact.activity_source_author,
+  });
   return (
     <div className="p-0">
       <div className="flex flex-row gap-2 items-start w-full">
-        <ActivityActorAvatar salesId={activity.sales_id} />
+        <ActivityActorAvatar
+          salesId={activity.sales_id}
+          source={contact.activity_source}
+          sourceAuthor={contact.activity_source_author}
+        />
         <Avatar width={20} height={20} record={contact} />
         <span className="text-muted-foreground text-sm flex-grow">
           {translate(

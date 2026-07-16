@@ -12,9 +12,15 @@ type ActivityLogNoteProps = {
   header: ReactNode;
   text: string;
   link: string | false;
+  sourceAuthorInHeader?: boolean;
 };
 
-export function ActivityLogNote({ header, text, link }: ActivityLogNoteProps) {
+export function ActivityLogNote({
+  header,
+  text,
+  link,
+  sourceAuthorInHeader = false,
+}: ActivityLogNoteProps) {
   const translate = useTranslate();
   const [isExpanded, setExpanded] = useState(false);
   const [isTruncated, setTruncated] = useState(false);
@@ -53,7 +59,7 @@ export function ActivityLogNote({ header, text, link }: ActivityLogNoteProps) {
                     })
                   : "Trello"}
               </Badge>
-              {note.sourceAuthor ? (
+              {note.sourceAuthor && !sourceAuthorInHeader ? (
                 <span className="text-xs font-medium text-foreground/80">
                   {note.sourceAuthor}
                 </span>

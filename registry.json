@@ -966,7 +966,15 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/activity/useActivityActor.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/activity/activityNote.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/activity/activityAttribution.ts",
           "type": "registry:component"
         },
         {

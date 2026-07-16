@@ -591,6 +591,7 @@ export const dutchCrmMessages = {
       load_more: "Meer activiteit laden",
       open_item: "Openen",
       someone: "een teamlid",
+      trello: "Trello",
       trello_attachment: "Trello-bijlage",
       today: "Vandaag",
       yesterday: "Gisteren",
