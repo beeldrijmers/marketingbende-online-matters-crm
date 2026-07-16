@@ -10,11 +10,14 @@ export type GmailMessageFailureKind =
   | "invalid_message_encoding"
   | "processing_error";
 
+export const isUnavailableGmailMessage = (error: unknown): boolean =>
+  error instanceof GoogleApiError && error.status === 404;
+
 export const classifyGmailMessageFailure = (
   error: unknown,
 ): GmailMessageFailureKind => {
   if (error instanceof GoogleApiError) {
-    if (error.status === 404) return "gmail_api_not_found";
+    if (isUnavailableGmailMessage(error)) return "gmail_api_not_found";
     if (error.status >= 500) return "gmail_api_transient";
     return "gmail_api_error";
   }

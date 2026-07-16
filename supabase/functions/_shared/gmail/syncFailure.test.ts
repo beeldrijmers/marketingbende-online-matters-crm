@@ -4,6 +4,7 @@ import { GoogleApiError } from "./client.ts";
 import {
   addGmailMessageFailure,
   classifyGmailMessageFailure,
+  isUnavailableGmailMessage,
 } from "./syncFailure.ts";
 
 describe("Gmail sync failure diagnostics", () => {
@@ -36,5 +37,14 @@ describe("Gmail sync failure diagnostics", () => {
       gmail_api_not_found: 2,
       inbound_server_error: 1,
     });
+  });
+
+  it("recognizes only a missing Gmail resource as safely unavailable", () => {
+    expect(isUnavailableGmailMessage(new GoogleApiError(404, "gone"))).toBe(
+      true,
+    );
+    expect(isUnavailableGmailMessage(new GoogleApiError(503, "retry"))).toBe(
+      false,
+    );
   });
 });

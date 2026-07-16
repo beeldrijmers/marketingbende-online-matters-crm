@@ -17,6 +17,7 @@ import { normalizeGmailMessage } from "./messageParser.ts";
 import {
   addGmailMessageFailure,
   type GmailMessageFailureKind,
+  isUnavailableGmailMessage,
 } from "./syncFailure.ts";
 import { decryptGmailToken, gmailConnectionAad } from "./tokenCrypto.ts";
 
@@ -36,6 +37,8 @@ export interface GmailSyncSummary {
   failed: number;
   failureKinds: Partial<Record<GmailMessageFailureKind, number>>;
   remaining: number;
+  /** Messages Gmail no longer exposes, skipped without retrying forever. */
+  unavailable: number;
   durationMs: number;
 }
 
@@ -108,6 +111,7 @@ export const syncGmailConnection = async ({
     failed: 0,
     failureKinds: {},
     remaining: 0,
+    unavailable: 0,
     durationMs: 0,
   };
 
@@ -194,6 +198,7 @@ export const syncGmailConnection = async ({
       failed: 0,
       failureKinds: {},
       remaining: batch.remaining,
+      unavailable: 0,
       durationMs: 0,
     };
 
@@ -237,6 +242,18 @@ export const syncGmailConnection = async ({
         }
         summary.processed += 1;
       } catch (error) {
+        // Incremental Gmail history can mention a message that was deleted or
+        // moved before we fetched it. It cannot be recovered through the API,
+        // so claim it to prevent a permanent cursor-blocking retry loop.
+        if (isUnavailableGmailMessage(error)) {
+          await claimInboundEmail(
+            gmailInboundEmailId(connection.sales_id, messageId),
+          );
+          summary.skipped += 1;
+          summary.unavailable += 1;
+          console.warn("Gmail message no longer available; skipped safely");
+          continue;
+        }
         summary.failed += 1;
         const failureKind = addGmailMessageFailure(summary.failureKinds, error);
         console.error(`Gmail message processing failed (${failureKind})`);
