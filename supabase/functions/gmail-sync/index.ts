@@ -8,6 +8,7 @@ import { corsHeaders, OptionsMiddleware } from "../_shared/cors.ts";
 import { getUserSale } from "../_shared/getUserSale.ts";
 import {
   type GmailConnectionRow,
+  type GmailSyncSummary,
   syncGmailConnection,
 } from "../_shared/gmail/sync.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
@@ -18,6 +19,13 @@ const jsonResponse = (body: unknown, status = 200): Response =>
     status,
     headers: { "Content-Type": "application/json", ...corsHeaders },
   });
+
+type ScheduledSyncResult = {
+  salesId: number;
+  ok: boolean;
+  error?: "owner_missing" | "message_processing_failed" | "sync_failed";
+  summary?: GmailSyncSummary;
+};
 
 const selectConnection = async (
   salesId: number,
@@ -63,7 +71,7 @@ const handleScheduledSync = async (): Promise<Response> => {
     .select("id, sales_id, email, refresh_token_encrypted, history_id");
   if (error) return jsonResponse({ error: error.message }, 500);
 
-  const results = [];
+  const results: ScheduledSyncResult[] = [];
   for (const row of (data ?? []) as GmailConnectionRow[]) {
     const { data: sale } = await supabaseAdmin
       .from("sales")
@@ -84,14 +92,24 @@ const handleScheduledSync = async (): Promise<Response> => {
         ownerSalesEmail: sale.email,
         runKind: "scheduled",
       });
-      results.push({ salesId: row.sales_id, ok: true, summary });
+      const hasMessageFailures = summary.failed > 0;
+      results.push({
+        salesId: row.sales_id,
+        ok: !hasMessageFailures,
+        ...(hasMessageFailures && { error: "message_processing_failed" }),
+        summary,
+      });
     } catch {
       results.push({ salesId: row.sales_id, ok: false, error: "sync_failed" });
     }
   }
   const failed = results.filter((result) => !result.ok).length;
+  const messageFailures = results.reduce(
+    (total, result) => total + (result.summary?.failed ?? 0),
+    0,
+  );
   return jsonResponse(
-    { data: { connections: results.length, failed, results } },
+    { data: { connections: results.length, failed, messageFailures, results } },
     failed > 0 ? 207 : 200,
   );
 };

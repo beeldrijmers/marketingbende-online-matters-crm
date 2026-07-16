@@ -36,3 +36,11 @@ jobs:
             echo "::error::Gmail synchronization returned HTTP $http_code"
             exit 1
           fi
+          if ! jq -e '
+            (.data.connections >= 1) and
+            (.data.failed == 0) and
+            (.data.messageFailures == 0)
+          ' /tmp/gmail-sync.json >/dev/null; then
+            echo "::error::Gmail synchronization did not complete cleanly"
+            exit 1
+          fi
