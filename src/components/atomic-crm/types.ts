@@ -180,7 +180,7 @@ export type IntegrationRun = {
       "facturatie-live": number;
       won: number;
     };
-    mode?: "full" | "incremental";
+    mode?: "boundary_reset" | "incremental";
     found?: number;
     processed?: number;
     skipped?: number;

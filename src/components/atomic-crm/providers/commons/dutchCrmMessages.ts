@@ -747,11 +747,11 @@ export const dutchCrmMessages = {
       gmail: {
         title: "Gmail",
         description:
-          "Koppel uw Gmail-account rechtstreeks. Het CRM verwerkt ontvangen en verzonden e-mails automatisch bij de juiste contacten en deals; BCC blijft beschikbaar als terugvaloptie.",
+          "Koppel uw Gmail-account rechtstreeks. Alleen e-mails met uw gekozen Gmail-label worden aan bestaande CRM-relaties gekoppeld; BCC blijft beschikbaar als expliciete terugvaloptie.",
         connect: "Gmail koppelen",
         connecting: "Naar Google…",
         connect_success:
-          "Gmail is gekoppeld. De automatische synchronisatie is actief.",
+          "Gmail is gekoppeld. Kies eerst een Gmail-label voordat import actief wordt.",
         oauth_error:
           "Gmail koppelen is niet afgerond. Probeer het opnieuw of controleer de toestemming bij Google.",
         connected: "Gekoppeld met %{email}.",
@@ -761,6 +761,21 @@ export const dutchCrmMessages = {
         syncing: "Synchroniseren…",
         sync_success: "%{count} Gmail-berichten verwerkt",
         sync_error: "Synchronisatieprobleem: %{error}",
+        sync_label: "Gmail-label voor CRM-import",
+        sync_label_description:
+          "Alleen berichten die u expliciet dit label geeft, worden verwerkt. Gmail maakt nooit automatisch contacten, bedrijven of deals aan.",
+        sync_label_placeholder: "Kies bijvoorbeeld CRM",
+        sync_label_loading: "Gmail-labels laden…",
+        sync_label_empty:
+          "Nog geen eigen Gmail-label gevonden. Maak in Gmail bijvoorbeeld het label ‘CRM’ aan en ververs deze pagina.",
+        sync_label_hint:
+          "Nieuwe of bestaande mail importeert u bewust door het label ná activering toe te voegen. Ongekoppelde e-mail wordt niet als project aangemaakt.",
+        sync_label_save: "Import activeren",
+        sync_label_saving: "Instellen…",
+        sync_label_success: "Gmail-import beperkt tot label ‘%{label}’.",
+        sync_label_active: "Importlabel: %{label}.",
+        sync_label_required:
+          "Import staat gepauzeerd totdat u een Gmail-label kiest.",
         disconnect: "Loskoppelen",
         disconnect_confirm: "Ja, Gmail loskoppelen",
         disconnect_success: "Gmail losgekoppeld",

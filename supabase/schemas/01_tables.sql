@@ -215,7 +215,11 @@ create table public.gmail_connections (
     email text not null,
     refresh_token_encrypted text not null,
     history_id text,
-    sync_status text not null default 'connected' check (sync_status in ('connected', 'syncing', 'error')),
+    -- A custom Gmail label is the explicit user-consent boundary for import.
+    -- Null means the connection is safely paused until it is configured.
+    sync_label_id text,
+    sync_label_name text,
+    sync_status text not null default 'needs_label' check (sync_status in ('connected', 'syncing', 'error', 'needs_label')),
     last_synced_at timestamp with time zone,
     last_error text,
     created_at timestamp with time zone not null default now(),

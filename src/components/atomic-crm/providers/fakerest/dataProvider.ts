@@ -329,6 +329,16 @@ export const createDataProvider = ({
         "De Gmail-koppeling is niet beschikbaar in de demomodus.",
       );
     },
+    getGmailLabels: async () => {
+      throw new Error(
+        "De Gmail-koppeling is niet beschikbaar in de demomodus.",
+      );
+    },
+    setGmailSyncLabel: async () => {
+      throw new Error(
+        "De Gmail-koppeling is niet beschikbaar in de demomodus.",
+      );
+    },
     disconnectGmail: async () => {
       throw new Error(
         "De Gmail-koppeling is niet beschikbaar in de demomodus.",

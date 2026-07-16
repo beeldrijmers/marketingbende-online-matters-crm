@@ -245,6 +245,24 @@ describe("addNoteToContact", () => {
       expect(mockFrom).toHaveBeenCalledTimes(3);
     });
 
+    it("does not create a contact or company when automatic creation is disabled", async () => {
+      mockFrom.mockReturnValue({
+        select: () => ({
+          contains: () => ({
+            maybeSingle: () => Promise.resolve({ data: null, error: null }),
+          }),
+        }),
+      });
+
+      await expect(
+        getOrCreateContactFromEmailInfo({
+          ...contactParams,
+          createIfMissing: false,
+        }),
+      ).resolves.toBeNull();
+      expect(mockFrom).toHaveBeenCalledTimes(1);
+    });
+
     it("creates a contact with null company_id when domain is a mail provider", async () => {
       const newContact = {
         id: 12,

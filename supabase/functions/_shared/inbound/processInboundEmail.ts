@@ -28,6 +28,10 @@ import {
 } from "../../resend_inbound/parseEmailAddress.ts";
 import { resolveInvolvedSalesIds } from "../../resend_inbound/resolveInvolvedSalesIds.ts";
 import { upsertDealFromMail } from "../../resend_inbound/upsertDealFromMail.ts";
+import {
+  allowsAutomaticEntityCreation,
+  type InboundMailSource,
+} from "./routing.ts";
 
 export interface NormalizedInboundEmail {
   from?: string;
@@ -48,6 +52,8 @@ export interface ProcessInboundEmailOptions {
   ownerSalesEmail?: string;
   /** Excluded from client matching even when it is not a CRM login address. */
   mailboxEmail?: string;
+  /** Gmail sync is intentionally non-creating; BCC/forwarding stays explicit. */
+  source?: InboundMailSource;
 }
 
 export const claimInboundEmail = async (emailId: string): Promise<boolean> => {
@@ -79,6 +85,7 @@ export const processInboundEmail = async ({
   ownerSalesId,
   ownerSalesEmail,
   mailboxEmail,
+  source = "explicit",
 }: ProcessInboundEmailOptions): Promise<Response> => {
   if (!(await claimInboundEmail(emailId))) {
     return new Response("Already processed");
@@ -159,8 +166,20 @@ export const processInboundEmail = async ({
     salesEmails: [...excludedEmails],
     inboundEmail: normalizedInboundEmail,
   });
+  const canCreateEntities = allowsAutomaticEntityCreation(source);
 
   if (participants.length === 0) {
+    if (!canCreateEntities) {
+      // A Gmail label means the user wants this mail in the CRM, not that a
+      // company named in its body is a new sales opportunity. We only attach
+      // labelled Gmail to known contacts and active deals below. Release the
+      // idempotency claim so reapplying the label after a relationship is
+      // added can intentionally try this message again.
+      await releaseInboundEmail(emailId);
+      return new Response("No existing contact participant to route Gmail to", {
+        status: 200,
+      });
+    }
     if (forwarderSalesId == null) {
       return new Response(
         `No team member involved; not routing mail from ${senderEmail}`,
@@ -216,6 +235,10 @@ export const processInboundEmail = async ({
   const handledCompanyIds = new Set<number>();
 
   let failedParticipants = 0;
+  let matchedGmailParticipants = 0;
+  // Keep mutations serial: the explicit route shares handledCompanyIds and
+  // can create/link the same company or deal for multiple participants.
+  // Parallel writes would reintroduce duplicate-record races.
   for (const {
     firstName,
     lastName,
@@ -225,6 +248,31 @@ export const processInboundEmail = async ({
     website,
   } of participants) {
     try {
+      if (!canCreateEntities) {
+        // Do this lookup before addNoteToContact: that helper deliberately
+        // creates contacts/companies for the explicit BCC/forwarding route.
+        const { data: existingContact, error: contactLookupError } =
+          await supabaseAdmin
+            .from("contacts")
+            .select("id")
+            .contains("email_jsonb", JSON.stringify([{ email: contactEmail }]))
+            .maybeSingle();
+        if (contactLookupError) {
+          failedParticipants += 1;
+          console.error(
+            `Inbound mail ${emailId}: could not look up Gmail contact ${contactEmail}`,
+          );
+          continue;
+        }
+        if (!existingContact) {
+          // Labelled but unrecognised mail is deliberately not turned into a
+          // contact/company/deal. Reapply the label after adding the relation
+          // when the user wants to import it later.
+          continue;
+        }
+        matchedGmailParticipants += 1;
+      }
+
       const errorResponse = await addNoteToContact({
         salesEmail: forwarderSalesEmail,
         email: contactEmail,
@@ -235,6 +283,7 @@ export const processInboundEmail = async ({
         attachments: [],
         companyName,
         website,
+        createIfMissing: canCreateEntities,
       });
       if (errorResponse) {
         failedParticipants += 1;
@@ -252,6 +301,8 @@ export const processInboundEmail = async ({
           attachments: [],
         });
       }
+
+      if (!canCreateEntities) continue;
 
       await upsertDealFromMail({
         contactEmail,
@@ -279,6 +330,16 @@ export const processInboundEmail = async ({
     console.error(
       `Inbound mail ${emailId}: ${failedParticipants}/${participants.length} participant(s) failed; not retried to avoid duplicate notes.`,
     );
+  }
+  if (
+    !canCreateEntities &&
+    matchedGmailParticipants === 0 &&
+    failedParticipants === 0
+  ) {
+    // The history cursor moves on, but a later label remove/reapply produces a
+    // fresh Gmail labelAdded event. Keeping no claim here makes that explicit
+    // retry possible after the user creates or links the contact.
+    await releaseInboundEmail(emailId);
   }
   return new Response("OK");
 };

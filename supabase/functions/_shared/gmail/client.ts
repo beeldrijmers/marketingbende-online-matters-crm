@@ -61,33 +61,26 @@ export const getGmailProfile = (
 ): Promise<{ emailAddress: string; historyId: string }> =>
   googleFetch(`${GMAIL_API}/profile`, accessToken);
 
-export const listRecentGmailMessageIds = async (
+export interface GmailLabel {
+  id: string;
+  name: string;
+  type?: "system" | "user";
+}
+
+export const listGmailLabels = async (
   accessToken: string,
-  maximum = 100,
-): Promise<string[]> => {
-  const ids: string[] = [];
-  let pageToken: string | undefined;
-  do {
-    const params = new URLSearchParams({
-      maxResults: String(Math.min(100, maximum - ids.length)),
-      // A bounded first import prevents years of personal mail from flooding
-      // the CRM; all later changes are consumed through Gmail history.
-      q: "newer_than:30d -in:spam -in:trash",
-    });
-    if (pageToken) params.set("pageToken", pageToken);
-    const page = await googleFetch<{
-      messages?: Array<{ id: string }>;
-      nextPageToken?: string;
-    }>(`${GMAIL_API}/messages?${params}`, accessToken);
-    ids.push(...(page.messages ?? []).map((message) => message.id));
-    pageToken = page.nextPageToken;
-  } while (pageToken && ids.length < maximum);
-  return ids.slice(0, maximum);
+): Promise<GmailLabel[]> => {
+  const page = await googleFetch<{ labels?: GmailLabel[] }>(
+    `${GMAIL_API}/labels`,
+    accessToken,
+  );
+  return page.labels ?? [];
 };
 
 export const listGmailHistoryMessageIds = async (
   accessToken: string,
   startHistoryId: string,
+  labelId: string,
 ): Promise<{ ids: string[]; historyId: string }> => {
   const ids = new Set<string>();
   let pageToken: string | undefined;
@@ -95,20 +88,30 @@ export const listGmailHistoryMessageIds = async (
   do {
     const params = new URLSearchParams({
       startHistoryId,
-      historyTypes: "messageAdded",
       maxResults: "500",
     });
+    params.set("labelId", labelId);
+    // Including labelAdded means a user can apply the CRM label to an older
+    // thread after activating the connection and have it imported safely.
+    params.append("historyTypes", "messageAdded");
+    params.append("historyTypes", "labelAdded");
     if (pageToken) params.set("pageToken", pageToken);
     const page = await googleFetch<{
       history?: Array<{
         messagesAdded?: Array<{ message?: { id?: string } }>;
+        labelsAdded?: Array<{ message?: { id?: string } }>;
       }>;
       historyId?: string;
       nextPageToken?: string;
     }>(`${GMAIL_API}/history?${params}`, accessToken);
     for (const event of page.history ?? []) {
       for (const addition of event.messagesAdded ?? []) {
-        if (addition.message?.id) ids.add(addition.message.id);
+        const messageId = addition.message?.id;
+        if (messageId) ids.add(messageId);
+      }
+      for (const addition of event.labelsAdded ?? []) {
+        const messageId = addition.message?.id;
+        if (messageId) ids.add(messageId);
       }
     }
     if (page.historyId) latestHistoryId = page.historyId;

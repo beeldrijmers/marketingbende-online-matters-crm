@@ -753,11 +753,11 @@ export const frenchCrmMessages = {
       gmail: {
         title: "Gmail",
         description:
-          "Connectez directement votre compte Gmail. Le CRM classe automatiquement les e-mails reçus et envoyés avec les bons contacts et affaires ; le Cci reste disponible en solution de secours.",
+          "Connectez directement votre compte Gmail. Seuls les e-mails portant le libellé Gmail choisi sont liés aux relations CRM existantes ; le Cci reste une solution de secours explicite.",
         connect: "Connecter Gmail",
         connecting: "Ouverture de Google…",
         connect_success:
-          "Gmail est connecté. La synchronisation automatique est active.",
+          "Gmail est connecté. Choisissez d’abord un libellé Gmail avant d’activer l’import.",
         oauth_error:
           "La connexion Gmail n'a pas été terminée. Réessayez ou vérifiez l'autorisation Google.",
         connected: "Connecté à %{email}.",
@@ -767,6 +767,22 @@ export const frenchCrmMessages = {
         syncing: "Synchronisation…",
         sync_success: "%{count} messages Gmail traités",
         sync_error: "Problème de synchronisation : %{error}",
+        sync_label: "Libellé Gmail pour l’import CRM",
+        sync_label_description:
+          "Seuls les messages auxquels vous attribuez explicitement ce libellé sont traités. Gmail ne crée jamais automatiquement de contacts, d’entreprises ou d’affaires.",
+        sync_label_placeholder: "Choisissez par exemple CRM",
+        sync_label_loading: "Chargement des libellés Gmail…",
+        sync_label_empty:
+          "Aucun libellé Gmail personnalisé trouvé. Créez par exemple le libellé « CRM » dans Gmail, puis actualisez cette page.",
+        sync_label_hint:
+          "Importez délibérément un e-mail nouveau ou existant en ajoutant le libellé après l’activation. Un e-mail non associé ne devient jamais une affaire.",
+        sync_label_save: "Activer l’import",
+        sync_label_saving: "Configuration…",
+        sync_label_success:
+          "L’import Gmail est limité au libellé « %{label} ».",
+        sync_label_active: "Libellé d’import : %{label}.",
+        sync_label_required:
+          "L’import est en pause jusqu’à ce que vous choisissiez un libellé Gmail.",
         disconnect: "Déconnecter",
         disconnect_confirm: "Oui, déconnecter Gmail",
         disconnect_success: "Gmail déconnecté",

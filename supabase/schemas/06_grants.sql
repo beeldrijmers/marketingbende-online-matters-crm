@@ -172,7 +172,7 @@ grant select (id, sales_id, administration_id, administration_name, created_at, 
 -- only enough metadata to render connection/sync health.
 grant all on table public.gmail_connections to service_role;
 revoke all on table public.gmail_connections from anon, authenticated;
-grant select (id, sales_id, email, sync_status, last_synced_at, last_error, created_at, updated_at)
+grant select (id, sales_id, email, sync_label_id, sync_label_name, sync_status, last_synced_at, last_error, created_at, updated_at)
     on table public.gmail_connections to authenticated;
 
 grant all on table public.gmail_oauth_states to service_role;

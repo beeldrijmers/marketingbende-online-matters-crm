@@ -742,11 +742,11 @@ export const englishCrmMessages = {
       gmail: {
         title: "Gmail",
         description:
-          "Connect your Gmail account directly. The CRM automatically files received and sent email with the right contacts and deals; BCC remains available as a fallback.",
+          "Connect your Gmail account directly. Only email with your selected Gmail label is linked to existing CRM relations; BCC remains available as an explicit fallback.",
         connect: "Connect Gmail",
         connecting: "Opening Google…",
         connect_success:
-          "Gmail is connected. Automatic synchronization is active.",
+          "Gmail is connected. Choose a Gmail label before import becomes active.",
         oauth_error:
           "Gmail connection was not completed. Try again or check the Google consent screen.",
         connected: "Connected to %{email}.",
@@ -756,6 +756,20 @@ export const englishCrmMessages = {
         syncing: "Synchronizing…",
         sync_success: "%{count} Gmail messages processed",
         sync_error: "Synchronization problem: %{error}",
+        sync_label: "Gmail label for CRM import",
+        sync_label_description:
+          "Only messages you explicitly give this label are processed. Gmail never creates contacts, companies, or deals automatically.",
+        sync_label_placeholder: "Choose, for example, CRM",
+        sync_label_loading: "Loading Gmail labels…",
+        sync_label_empty:
+          "No custom Gmail label found yet. Create a label such as ‘CRM’ in Gmail and refresh this page.",
+        sync_label_hint:
+          "Import new or existing mail deliberately by adding the label after activation. Unmatched mail is never created as a deal.",
+        sync_label_save: "Activate import",
+        sync_label_saving: "Saving…",
+        sync_label_success: "Gmail import is limited to label ‘%{label}’.",
+        sync_label_active: "Import label: %{label}.",
+        sync_label_required: "Import is paused until you choose a Gmail label.",
         disconnect: "Disconnect",
         disconnect_confirm: "Yes, disconnect Gmail",
         disconnect_success: "Gmail disconnected",

@@ -55,6 +55,7 @@ export const getOrCreateContactFromEmailInfo = async ({
   domain,
   companyName,
   website,
+  createIfMissing = true,
 }: {
   email: string;
   firstName: string;
@@ -63,6 +64,8 @@ export const getOrCreateContactFromEmailInfo = async ({
   domain: string;
   companyName: string;
   website: string;
+  /** Explicit BCC/forwarding may create; Gmail sync may only match known CRM contacts. */
+  createIfMissing?: boolean;
 }) => {
   // Check if the contact already exists
   const { data: existingContact, error: fetchContactError } =
@@ -80,6 +83,8 @@ export const getOrCreateContactFromEmailInfo = async ({
   if (existingContact) {
     return existingContact;
   }
+
+  if (!createIfMissing) return null;
 
   const company = await getOrCreateCompanyFromDomain({
     domain,
@@ -120,6 +125,7 @@ export const addNoteToContact = async ({
   attachments,
   companyName,
   website,
+  createIfMissing = true,
 }: {
   salesEmail: string;
   email: string;
@@ -130,6 +136,7 @@ export const addNoteToContact = async ({
   attachments: Attachment[];
   companyName: string;
   website: string;
+  createIfMissing?: boolean;
 }) => {
   const { data: sales, error: fetchSalesError } = await supabaseAdmin
     .from("sales")
@@ -163,6 +170,7 @@ export const addNoteToContact = async ({
       domain,
       companyName,
       website,
+      createIfMissing,
     });
   } catch (error) {
     console.error(
@@ -178,6 +186,7 @@ export const addNoteToContact = async ({
       { status: 500 },
     );
   }
+  if (!contact) return;
 
   // Add note to contact
   const { error: createNoteError } = await supabaseAdmin
