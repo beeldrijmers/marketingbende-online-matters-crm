@@ -1,10 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   InfiniteListBase,
   RecordContextProvider,
+  useDataProvider,
   useGetIdentity,
   useGetList,
   useListContext,
+  useNotify,
   useTranslate,
 } from "ra-core";
 import { Link, matchPath, useLocation } from "react-router";
@@ -18,12 +20,18 @@ import { CompanyAvatar } from "../companies/CompanyAvatar";
 import MobileHeader from "../layout/MobileHeader";
 import { MobileContent } from "../layout/MobileContent";
 import { useConfigurationContext } from "../root/ConfigurationContext";
+import type { CrmDataProvider } from "../providers/types";
 import { AssigneesField } from "../sales/AssigneesField";
+import { TaskCreateSheet } from "../tasks/TaskCreateSheet";
 import type { Deal, DealStage, Task } from "../types";
+import { AttentionDealActions } from "./AttentionDealActions";
+import { AttentionMovePrompt } from "./AttentionMovePrompt";
 import { DealShow } from "./DealShow";
 import { DealWorkflowIndicator } from "./DealWorkflowIndicator";
 import {
   type DashboardDealSelection,
+  getDashboardDealDetailPath,
+  getDashboardDealReturnPath,
   getDashboardDealSelectionPath,
   getDashboardDealSelectionFilter,
 } from "./dashboardDealSelection";
@@ -32,6 +40,8 @@ import {
   getDealWorkflow,
   rankDealsForAttention,
 } from "./dealWorkflow";
+import { findDealLabel } from "./dealUtils";
+import { persistDealStageMove } from "./dealStageMove";
 
 /**
  * Mobile deals view: the kanban board is desktop-only, so on mobile the deals
@@ -121,7 +131,14 @@ const DealsLayoutMobile = ({
   const translate = useTranslate();
   const location = useLocation();
   const { dealStages } = useConfigurationContext();
-  const { data, error, isPending } = useListContext<Deal>();
+  const { data, error, isPending, refetch } = useListContext<Deal>();
+  const dataProvider = useDataProvider<CrmDataProvider>();
+  const notify = useNotify();
+  const [taskDeal, setTaskDeal] = useState<Deal | null>(null);
+  const [recentMove, setRecentMove] = useState<{
+    deal: Deal;
+    destinationStage: string;
+  } | null>(null);
   const { data: tasks = [] } = useGetList<Task>("tasks", {
     pagination: { page: 1, perPage: 1000 },
     sort: { field: "due_date", order: "ASC" },
@@ -138,6 +155,9 @@ const DealsLayoutMobile = ({
   const detailBasePath = dashboardSelection
     ? getDashboardDealSelectionPath(dashboardSelection.kind)
     : undefined;
+  const dashboardReturnPath = detailBasePath
+    ? getDashboardDealReturnPath(detailBasePath, location.search)
+    : undefined;
   const dashboardDealId = dashboardSelection
     ? new URLSearchParams(location.search).get("deal")
     : null;
@@ -152,13 +172,55 @@ const DealsLayoutMobile = ({
     return groupDealsByStage(orderedDeals, dealStages, fallbackLabel);
   }, [attentionPipeline, data, dealStages, fallbackLabel, tasksByDeal]);
 
+  const moveDealToStage = (deal: Deal, destinationStage: string) => {
+    if (deal.stage === destinationStage) return;
+    persistDealStageMove(
+      deal,
+      { stage: destinationStage, index: undefined },
+      dataProvider,
+    )
+      .then(() => {
+        setRecentMove({ deal, destinationStage });
+        refetch();
+      })
+      .catch((moveError) => {
+        console.error("Failed to persist the mobile deal move:", moveError);
+        notify(
+          moveError instanceof Error
+            ? moveError.message
+            : "resources.deals.move_error",
+          { type: "error" },
+        );
+        refetch();
+      });
+  };
+
   return (
     <div>
       <DealShow
-        closeTo={detailBasePath ?? "/deals"}
+        closeTo={dashboardReturnPath ?? "/deals"}
         open={dashboardSelection ? !!dashboardDealId : !!matchShow}
         id={dashboardDealId ?? matchShow?.params.id}
       />
+      {attentionPipeline ? (
+        <TaskCreateSheet
+          open={taskDeal != null}
+          deal_id={taskDeal?.id}
+          onOpenChange={(open) => {
+            if (!open) setTaskDeal(null);
+          }}
+        />
+      ) : null}
+      {recentMove ? (
+        <AttentionMovePrompt
+          deal={recentMove.deal}
+          destinationLabel={
+            findDealLabel(dealStages, recentMove.destinationStage) ??
+            recentMove.destinationStage
+          }
+          onDismiss={() => setRecentMove(null)}
+        />
+      ) : null}
       {!hideHeader ? (
         <MobileHeader>
           <h1 className="text-lg font-semibold">
@@ -218,8 +280,12 @@ const DealsLayoutMobile = ({
                     <MobileDealRow
                       attentionPipeline={attentionPipeline}
                       deal={deal}
-                      detailBasePath={detailBasePath}
+                      detailBasePath={dashboardReturnPath}
                       openTasks={tasksByDeal.get(deal.id) ?? []}
+                      onMoveToStage={
+                        attentionPipeline ? moveDealToStage : undefined
+                      }
+                      onPlanTask={attentionPipeline ? setTaskDeal : undefined}
                     />
                   </RecordContextProvider>
                 ))}
@@ -250,11 +316,15 @@ const MobileDealRow = ({
   deal,
   detailBasePath,
   openTasks,
+  onMoveToStage,
+  onPlanTask,
 }: {
   attentionPipeline?: boolean;
   deal: Deal;
   detailBasePath?: string;
   openTasks: Task[];
+  onMoveToStage?: (deal: Deal, destinationStage: string) => void;
+  onPlanTask?: (deal: Deal) => void;
 }) => {
   const { currency } = useConfigurationContext();
   const workflow = getDealWorkflow(deal, openTasks);
@@ -267,20 +337,20 @@ const MobileDealRow = ({
           ? "border-l-orange-500"
           : "border-l-violet-500";
   return (
-    <Link
-      to={
-        detailBasePath
-          ? `${detailBasePath}?deal=${deal.id}`
-          : `/deals/${deal.id}/show`
-      }
-      className="no-underline"
+    <Card
+      className={cn(
+        "flex flex-col gap-1.5 p-3 transition-colors hover:bg-muted/60",
+        attentionPipeline && "border-l-4",
+        attentionPipeline && attentionAccent,
+      )}
     >
-      <Card
-        className={cn(
-          "p-3 flex flex-col gap-1.5 transition-colors hover:bg-muted/60",
-          attentionPipeline && "border-l-4",
-          attentionPipeline && attentionAccent,
-        )}
+      <Link
+        to={
+          detailBasePath
+            ? getDashboardDealDetailPath(detailBasePath, deal.id)
+            : `/deals/${deal.id}/show`
+        }
+        className="flex flex-col gap-1.5 no-underline"
       >
         <div className="flex items-center gap-2">
           <ReferenceField
@@ -323,7 +393,15 @@ const MobileDealRow = ({
           />
         </div>
         <DealWorkflowIndicator deal={deal} openTasks={openTasks} />
-      </Card>
-    </Link>
+      </Link>
+      {attentionPipeline && onMoveToStage && onPlanTask ? (
+        <AttentionDealActions
+          compact
+          deal={deal}
+          onMoveToStage={onMoveToStage}
+          onPlanTask={onPlanTask}
+        />
+      ) : null}
+    </Card>
   );
 };

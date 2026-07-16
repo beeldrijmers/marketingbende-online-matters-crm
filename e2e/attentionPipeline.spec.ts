@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures";
 
 test.describe("attention pipeline", () => {
-  test.beforeEach(async ({ createCompany, createSales }) => {
+  test.beforeEach(async ({ createCompany, createDeal, createSales }) => {
     const sales = await createSales({
       email: "pipeline@example.com",
       first_name: "Pipeline",
@@ -10,9 +10,17 @@ test.describe("attention pipeline", () => {
     });
 
     // A completely empty CRM intentionally shows the onboarding checklist.
-    // Seed one company so this scenario exercises the real dashboard and its
-    // attention-queue CTA without needing a deal to be present.
-    await createCompany({ name: "Pipeline Test", salesId: sales.id });
+    // Seed one unplanned deal so this scenario exercises the real dashboard,
+    // its attention CTA, URL-stable filters and the quick phase action.
+    const company = await createCompany({
+      name: "Pipeline Test",
+      salesId: sales.id,
+    });
+    await createDeal({
+      companyId: company.id,
+      name: "Pipeline verbeterdeal",
+      salesId: sales.id,
+    });
   });
 
   test("opens its specialized pipeline from the dashboard", async ({
@@ -43,11 +51,34 @@ test.describe("attention pipeline", () => {
     await expect(
       page.getByRole("button", { name: /niet gepland/i }),
     ).toBeVisible();
+    const search = page.getByRole("searchbox", {
+      name: "Zoek in aandachtspipeline",
+    });
+    await search.fill("Pipeline Test");
+    await page.getByRole("button", { name: /niet gepland/i }).click();
+    await expect(page).toHaveURL(/filter=unplanned/);
+    await expect(page).toHaveURL(/q=Pipeline(?:\+|%20)Test/);
+    await page.reload();
+    await expect(search).toHaveValue("Pipeline Test");
+    await expect(
+      page.getByRole("button", { name: /niet gepland/i }),
+    ).toHaveAttribute("aria-pressed", "true");
+
+    await page
+      .getByRole("button", {
+        name: "Fase wijzigen voor Pipeline verbeterdeal",
+      })
+      .click();
+    await page.getByRole("menuitemradio", { name: "Bezig" }).click();
+    await expect(page.getByText("Verplaatst naar")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Volgende taak plannen" }),
+    ).toBeVisible();
     await expect(
       page.getByText(
         isMobile
-          ? /open een deal om de fase te wijzigen/i
-          : /versleep deals naar de juiste volgende fase/i,
+          ? /wijzig direct de fase of plan een taak/i
+          : /versleep een deal of gebruik fase/i,
       ),
     ).toBeVisible();
   });

@@ -1,6 +1,8 @@
 import type { Deal, Task } from "../types";
 import {
   filterAttentionDeals,
+  filterAttentionDealsBySearch,
+  parseAttentionPipelineFilter,
   selectAttentionDeals,
   selectAttentionDealIds,
   selectBillingDealIds,
@@ -74,6 +76,44 @@ describe("dedicated dashboard Kanban pages", () => {
     expect(
       filterAttentionDeals(ranked, "all").map(({ deal }) => deal.id),
     ).toEqual([1, 2, 3]);
+  });
+
+  it("keeps attention filters safe and refreshable through the URL", () => {
+    expect(parseAttentionPipelineFilter("today")).toBe("today");
+    expect(parseAttentionPipelineFilter("not-a-filter")).toBe("all");
+    expect(parseAttentionPipelineFilter(null)).toBe("all");
+  });
+
+  it("searches deal, description and company using all normalized terms", () => {
+    const ranked = selectAttentionDeals(
+      [
+        deal({ id: 1, company_id: 8, name: "SEO-retainer" }),
+        deal({
+          id: 2,
+          company_id: 9,
+          description: "Nieuwe meertalige webshop",
+          name: "Realisatie",
+        }),
+      ],
+      [],
+      new Date(2026, 6, 15, 12),
+    );
+    const companies = new Map([
+      [8, "Voodoo Software"],
+      [9, "Stöökmeesters"],
+    ]);
+
+    expect(
+      filterAttentionDealsBySearch(ranked, "voodoo seo", companies).map(
+        ({ deal }) => deal.id,
+      ),
+    ).toEqual([1]);
+    expect(
+      filterAttentionDealsBySearch(ranked, "stook meertalig", companies).map(
+        ({ deal }) => deal.id,
+      ),
+    ).toEqual([2]);
+    expect(filterAttentionDealsBySearch(ranked, "", companies)).toBe(ranked);
   });
 
   it("selects only unfinished deals in the billing stage", () => {

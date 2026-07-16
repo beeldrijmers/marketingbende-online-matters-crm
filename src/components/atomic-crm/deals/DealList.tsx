@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import { TopToolbar } from "../layout/TopToolbar";
+import { TaskCreateSheet } from "../tasks/TaskCreateSheet";
 import type { Deal } from "../types";
 import { AttentionMovePrompt } from "./AttentionMovePrompt";
 import { DealArchivedList } from "./DealArchivedList";
@@ -28,6 +29,7 @@ import { InternalExternalInput } from "./InternalExternalInput";
 import { SyncTrelloButton } from "./SyncTrelloButton";
 import {
   type DashboardDealSelection,
+  getDashboardDealReturnPath,
   getDashboardDealSelectionPath,
   getDashboardDealSelectionFilter,
 } from "./dashboardDealSelection";
@@ -104,9 +106,13 @@ const DealLayout = ({
     deal: Deal;
     destinationStage: string;
   } | null>(null);
+  const [taskDeal, setTaskDeal] = useState<Deal | null>(null);
   const attentionPipeline = dashboardSelection?.kind === "attention";
   const detailBasePath = dashboardSelection
     ? getDashboardDealSelectionPath(dashboardSelection.kind)
+    : undefined;
+  const dashboardReturnPath = detailBasePath
+    ? getDashboardDealReturnPath(detailBasePath, location.search)
     : undefined;
   const dashboardDealId = dashboardSelection
     ? new URLSearchParams(location.search).get("deal")
@@ -166,18 +172,19 @@ const DealLayout = ({
       ) : null}
       <DealListContent
         attentionPipeline={attentionPipeline}
-        detailBasePath={detailBasePath}
+        detailBasePath={dashboardReturnPath}
         onDealStageChange={
           attentionPipeline
             ? (deal, destinationStage) =>
                 setRecentMove({ deal, destinationStage })
             : undefined
         }
+        onPlanTask={attentionPipeline ? setTaskDeal : undefined}
       />
       <DealCreate open={!!matchCreate} />
       <DealEdit open={!!matchEdit && !matchCreate} id={matchEdit?.params.id} />
       <DealShow
-        closeTo={detailBasePath ?? "/deals"}
+        closeTo={dashboardReturnPath ?? "/deals"}
         open={dashboardSelection ? !!dashboardDealId : !!matchShow}
         id={dashboardDealId ?? matchShow?.params.id}
       />
@@ -189,6 +196,15 @@ const DealLayout = ({
             recentMove.destinationStage
           }
           onDismiss={() => setRecentMove(null)}
+        />
+      ) : null}
+      {attentionPipeline ? (
+        <TaskCreateSheet
+          open={taskDeal != null}
+          deal_id={taskDeal?.id}
+          onOpenChange={(open) => {
+            if (!open) setTaskDeal(null);
+          }}
         />
       ) : null}
     </div>
