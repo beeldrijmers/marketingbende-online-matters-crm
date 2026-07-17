@@ -18,7 +18,7 @@ export function ActivityLog({
   return (
     <ActivityLogContext.Provider value={context}>
       <InfiniteListBase
-        resource="activity_log"
+        resource={context === "all" ? "activity_log_global" : "activity_log"}
         filter={companyId ? { company_id: companyId } : {}}
         sort={{ field: "date", order: "DESC" }}
         perPage={pageSize}

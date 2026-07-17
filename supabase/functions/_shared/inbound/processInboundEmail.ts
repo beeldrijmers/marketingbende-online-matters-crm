@@ -118,6 +118,7 @@ export const processInboundEmail = async ({
       dealId,
       noteContent: dealNoteContent,
       attachments: [],
+      sourceEventId: emailId,
     });
     if (dealResponse.status >= 500) await releaseInboundEmail(emailId);
     return dealResponse;
@@ -217,6 +218,7 @@ export const processInboundEmail = async ({
           salesEmail: forwarderSalesEmail,
           salesId: forwarderSalesId ?? null,
           assigneeIds: involvedSalesIds,
+          sourceEventId: emailId,
         });
         return new Response("OK");
       }
@@ -284,6 +286,7 @@ export const processInboundEmail = async ({
         companyName,
         website,
         createIfMissing: canCreateEntities,
+        sourceEventId: emailId,
       });
       if (errorResponse) {
         failedParticipants += 1;
@@ -299,6 +302,7 @@ export const processInboundEmail = async ({
           salesId: forwarderSalesId,
           noteContent,
           attachments: [],
+          sourceEventId: emailId,
         });
       }
 
@@ -316,6 +320,7 @@ export const processInboundEmail = async ({
         assigneeIds: involvedSalesIds,
         noteContent,
         handledCompanyIds,
+        sourceEventId: emailId,
       });
     } catch (error) {
       failedParticipants += 1;

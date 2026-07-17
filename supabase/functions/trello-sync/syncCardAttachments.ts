@@ -169,6 +169,7 @@ export const syncCardAttachments = async ({
           text: attachmentNoteText(attachment),
           sales_id: await resolveDefaultSalesId(),
           activity_source: "trello",
+          source_event_id: `trello:attachment:${attachment.id}`,
           attachments: [
             {
               title: attachment.name,
@@ -181,6 +182,9 @@ export const syncCardAttachments = async ({
           // (now()) applies for attachments without a date.
           ...(attachment.date ? { date: attachment.date } : {}),
         });
+      // A second concurrent card webhook may have passed the marker lookup
+      // before the first inserted. The source-event unique index picks one.
+      if (noteError?.code === "23505") continue;
       if (noteError) {
         throw new Error(`Note insert failed: ${noteError.message}`);
       }

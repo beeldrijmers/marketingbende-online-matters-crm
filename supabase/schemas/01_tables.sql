@@ -72,6 +72,10 @@ create table public.contact_notes (
     sales_id bigint,
     activity_source text not null default 'manual',
     activity_source_author text,
+    -- Provider event that produced this note (for example gmail:<mailbox>:<id>).
+    -- One event may legitimately be linked to several contacts, but never more
+    -- than once to the same contact. The general activity feed groups on it.
+    source_event_id text,
     status text,
     attachments jsonb[],
     constraint contact_notes_activity_source_check
@@ -151,6 +155,8 @@ create table public.deal_notes (
     sales_id bigint,
     activity_source text not null default 'manual',
     activity_source_author text,
+    -- Same provider-level grouping/idempotency key as contact_notes.
+    source_event_id text,
     status text,
     attachments jsonb[],
     constraint deal_notes_activity_source_check
@@ -417,5 +423,11 @@ create index contact_notes_contact_activity_idx on public.contact_notes using bt
 create index deal_notes_deal_activity_idx on public.deal_notes using btree (deal_id, date desc);
 create unique index uq__tasks__trello_checkitem_id on public.tasks using btree (trello_checkitem_id) where (trello_checkitem_id is not null);
 create unique index uq__deals__trello_card_id on public.deals using btree (trello_card_id) where (trello_card_id is not null);
+-- Parallel Trello webhooks may both observe a missing company before either
+-- inserts it. Only imported companies are constrained; users may still create
+-- two manual companies with the same display name when they genuinely differ.
+create unique index uq__companies__trello_normalized_name on public.companies using btree (lower(btrim(name))) where (activity_source = 'trello');
+create unique index uq__contact_notes__source_event_contact on public.contact_notes using btree (source_event_id, contact_id) where (source_event_id is not null);
+create unique index uq__deal_notes__source_event_deal on public.deal_notes using btree (source_event_id, deal_id) where (source_event_id is not null);
 create unique index uq__deals__moneybird_estimate_id on public.deals using btree (moneybird_estimate_id) where (moneybird_estimate_id is not null);
 create unique index uq__deals__moneybird_invoice_id on public.deals using btree (moneybird_invoice_id) where (moneybird_invoice_id is not null);

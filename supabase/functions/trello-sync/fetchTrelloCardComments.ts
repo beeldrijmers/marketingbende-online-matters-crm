@@ -6,6 +6,7 @@ interface TrelloCommentAction {
 }
 
 export interface TrelloComment {
+  id: string;
   date: string;
   authorName: string;
   text: string;
@@ -61,6 +62,7 @@ export const fetchTrelloCardComments = async ({
 
   return actions
     .map((action) => ({
+      id: action.id,
       date: action.date,
       authorName: action.memberCreator?.fullName ?? "Onbekend",
       text: action.data.text,

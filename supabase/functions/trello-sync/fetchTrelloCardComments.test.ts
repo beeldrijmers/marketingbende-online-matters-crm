@@ -28,6 +28,7 @@ describe("fetchTrelloCardComments", () => {
     });
 
     expect(comments.map((c) => c.text)).toEqual(["comment 1", "comment 2"]);
+    expect(comments.map((c) => c.id)).toEqual(["a1", "a2"]);
     const url = new URL(fetchMock.mock.calls[0][0] as string);
     expect(url.searchParams.get("limit")).toBe("1000");
   });

@@ -102,6 +102,7 @@ const backfillCard = async (
       authorName: comment.authorName,
       commentText: comment.text,
       date: comment.date,
+      sourceEventId: `trello:${comment.id}`,
     });
   }
 
@@ -149,6 +150,7 @@ const backfillArchivedCardWithUploads = async (
       authorName: comment.authorName,
       commentText: comment.text,
       date: comment.date,
+      sourceEventId: `trello:${comment.id}`,
     });
   }
 

@@ -27,6 +27,15 @@ describe("extractCompanyName", () => {
     expect(extractCompanyName("DJ Supply")).toBe("DJ Supply");
   });
 
+  it.each(["–", "—"])(
+    "accepts a spaced %s separator without turning the project title into a company",
+    (separator) => {
+      expect(extractCompanyName(`Bouwiva ${separator} website afgerond`)).toBe(
+        "Bouwiva",
+      );
+    },
+  );
+
   it("does not split on a hyphen without surrounding spaces", () => {
     expect(extractCompanyName("Autobedrijf vd Vegt migreren")).toBe(
       "Autobedrijf vd Vegt migreren",

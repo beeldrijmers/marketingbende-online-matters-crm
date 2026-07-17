@@ -20,11 +20,13 @@ export const linkMailToActiveDeals = async ({
   salesId,
   noteContent,
   attachments,
+  sourceEventId,
 }: {
   contactEmail: string;
   salesId: number;
   noteContent: string;
   attachments: Attachment[];
+  sourceEventId?: string;
 }): Promise<number> => {
   try {
     const { data: contact, error: contactError } = await supabaseAdmin
@@ -53,8 +55,9 @@ export const linkMailToActiveDeals = async ({
           text: noteContent,
           sales_id: salesId,
           attachments,
+          ...(sourceEventId ? { source_event_id: sourceEventId } : {}),
         });
-      if (noteError) {
+      if (noteError && !(sourceEventId && noteError.code === "23505")) {
         console.error(
           `Could not mirror mail note to deal ${deal.id}: ${noteError.message}`,
         );

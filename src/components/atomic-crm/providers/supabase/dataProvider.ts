@@ -60,9 +60,9 @@ const getDataProviderWithCustomMethods = () => {
       if (resource === "contacts") {
         return baseDataProvider.getList("contacts_summary", params);
       }
-      if (resource === "activity_log") {
+      if (resource === "activity_log" || resource === "activity_log_global") {
         const { data, total } = await baseDataProvider.getList(
-          "activity_log",
+          resource,
           params,
         );
         // Rename snake_case view columns to camelCase to match Activity type

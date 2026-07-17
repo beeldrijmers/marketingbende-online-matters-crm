@@ -6,11 +6,14 @@ export const addNoteToDeal = async ({
   dealId,
   noteContent,
   attachments,
+  sourceEventId,
 }: {
   salesEmail: string;
   dealId: number;
   noteContent: string;
   attachments: Attachment[];
+  /** Provider-level idempotency/grouping key. */
+  sourceEventId?: string;
 }) => {
   const { data: sales, error: fetchSalesError } = await supabaseAdmin
     .from("sales")
@@ -60,8 +63,9 @@ export const addNoteToDeal = async ({
       text: noteContent,
       sales_id: sales.id,
       attachments,
+      ...(sourceEventId ? { source_event_id: sourceEventId } : {}),
     });
-  if (createNoteError) {
+  if (createNoteError && !(sourceEventId && createNoteError.code === "23505")) {
     return new Response(`Could not add note to deal ${dealId}`, {
       status: 500,
     });

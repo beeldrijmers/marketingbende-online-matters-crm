@@ -978,6 +978,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/activity/activityDeduplication.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/activity/activityAttribution.ts",
           "type": "registry:component"
         },
