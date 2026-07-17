@@ -19,6 +19,7 @@ import {
   isOverdue,
   isRecentlyDone,
 } from "./tasksPredicate";
+import { isAutomaticTask } from "./taskSource";
 
 export const TasksListByDueDate = ({
   filterByContact,
@@ -59,8 +60,14 @@ export const TasksListByDueDate = ({
   const showContact = filterByContact == null;
 
   const ongoingTasks = useMemo(() => {
+    // Auto rows are a deal-level safety net. They are rendered as the neutral
+    // "Plan volgende stap" state on the deal itself, not as personal overdue
+    // tasks with a made-up date.
     const ongoing =
-      tasks?.filter((task) => !isDone(task) || isRecentlyDone(task)) || [];
+      tasks?.filter(
+        (task) =>
+          (!isDone(task) || isRecentlyDone(task)) && !isAutomaticTask(task),
+      ) || [];
     return limit == null ? ongoing : ongoing.slice(0, limit);
   }, [limit, tasks]);
 
