@@ -72,4 +72,22 @@ describe("extractDealAmount", () => {
   it("does not treat 'european' as a euro amount", () => {
     expect(extractDealAmount("", "500 european customers")).toBeNull();
   });
+
+  it("uses the newest explicitly labelled comment correction", () => {
+    expect(
+      extractDealAmount("SEO pakket € 250 p/m", "", [
+        "Oud bedrag: € 275 per maand",
+        "Definitief bedrag: € 300 per maand",
+      ]),
+    ).toBe(300);
+  });
+
+  it("uses a comment as fallback without letting casual history beat the title", () => {
+    expect(extractDealAmount("Project", "", ["Tarief: € 700 eenmalig"])).toBe(
+      700,
+    );
+    expect(
+      extractDealAmount("Project € 900", "", ["Oude offerte was € 700"]),
+    ).toBe(900);
+  });
 });

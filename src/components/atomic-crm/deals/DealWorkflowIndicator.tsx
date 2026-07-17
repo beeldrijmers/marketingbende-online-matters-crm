@@ -72,10 +72,12 @@ export const DealWorkflowIndicator = ({
   deal,
   openTasks = [],
   className,
+  onPlanTask,
 }: {
   deal: Deal;
   openTasks?: Task[];
   className?: string;
+  onPlanTask?: () => void;
 }) => {
   const translate = useTranslate();
   const workflow = getDealWorkflow(deal, openTasks);
@@ -88,18 +90,12 @@ export const DealWorkflowIndicator = ({
   const remaining = Math.max(0, workflow.openTaskCount - 1);
   const urgent =
     workflow.kind === "overdue" || workflow.kind === "overdue_closing";
-
-  return (
-    <div
-      className={cn(
-        "mt-1 flex min-w-0 items-center gap-1.5 rounded-md bg-muted/60 px-2 py-1 text-[11px] text-muted-foreground",
-        urgent && "bg-destructive/10 text-destructive dark:bg-destructive/15",
-        workflow.kind === "today" &&
-          "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-        workflow.kind === "missing" && "border border-dashed bg-transparent",
-        className,
-      )}
-    >
+  const canPlanTask =
+    onPlanTask != null &&
+    nextTask == null &&
+    (workflow.kind === "missing" || workflow.kind === "overdue_closing");
+  const content = (
+    <>
       <DealWorkflowBadge workflow={workflow} />
       {nextTask ? (
         <span className="min-w-0 flex-1 truncate" title={nextTask.text}>
@@ -115,6 +111,38 @@ export const DealWorkflowIndicator = ({
           })}
         </span>
       ) : null}
-    </div>
+    </>
   );
+  const containerClassName = cn(
+    "mt-1 flex min-w-0 items-center gap-1.5 rounded-md bg-muted/60 px-2 py-1 text-[11px] text-muted-foreground",
+    urgent && "bg-destructive/10 text-destructive dark:bg-destructive/15",
+    workflow.kind === "today" &&
+      "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    workflow.kind === "missing" && "border border-dashed bg-transparent",
+    canPlanTask &&
+      "w-full cursor-pointer text-left transition-colors hover:border-primary/60 hover:bg-primary/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+    className,
+  );
+
+  if (canPlanTask) {
+    return (
+      <button
+        type="button"
+        className={containerClassName}
+        aria-label={translate("resources.deals.workflow.plan_task_for", {
+          name: deal.name,
+          _: `Volgende taak plannen voor ${deal.name}`,
+        })}
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={(event) => {
+          event.stopPropagation();
+          onPlanTask();
+        }}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return <div className={containerClassName}>{content}</div>;
 };

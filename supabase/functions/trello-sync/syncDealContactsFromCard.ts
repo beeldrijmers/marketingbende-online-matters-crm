@@ -16,6 +16,7 @@ export const syncDealContactsFromCard = async ({
   currentContactIds,
   salesId,
   sourceAuthor,
+  sourceText,
 }: {
   card: TrelloCardInput;
   companyId: number;
@@ -23,6 +24,7 @@ export const syncDealContactsFromCard = async ({
   currentContactIds: number[];
   salesId: number;
   sourceAuthor?: string | null;
+  sourceText?: string;
 }): Promise<number[]> => {
   const linkedIds = new Set(currentContactIds);
 
@@ -40,7 +42,9 @@ export const syncDealContactsFromCard = async ({
     linkedIds.add(contact.id as number);
   }
 
-  const emails = extractTrelloContactEmails(`${card.name}\n${card.desc}`);
+  const emails = extractTrelloContactEmails(
+    sourceText ?? `${card.name}\n${card.desc}`,
+  );
   for (const email of emails) {
     const { data: matches, error: lookupError } = await supabaseAdmin
       .from("contacts")

@@ -1,8 +1,11 @@
-import { useMemo } from "react";
+import { CalendarPlus } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useGetList, useRecordContext, useTranslate } from "ra-core";
 
+import { Button } from "@/components/ui/button";
 import type { Deal, Task as TaskRecord } from "../types";
 import { Task } from "../tasks/Task";
+import { TaskCreateSheet } from "../tasks/TaskCreateSheet";
 import { isAutomaticTask } from "../tasks/taskSource";
 
 // Default next-step hints per deal stage, used when a deal has no Trello
@@ -22,6 +25,7 @@ const NEXT_ACTION_FALLBACK: Record<string, string> = {
 export const DealSteps = () => {
   const record = useRecordContext<Deal>();
   const translate = useTranslate();
+  const [taskOpen, setTaskOpen] = useState(false);
 
   const { data: steps, isPending } = useGetList<TaskRecord>(
     "tasks",
@@ -51,6 +55,28 @@ export const DealSteps = () => {
   }
 
   const title = translate("resources.deals.steps.title", { _: "Stappen" });
+  const canPlanTask = !["won", "lost", "on-hold"].includes(record.stage);
+  const planTaskButton = canPlanTask ? (
+    <Button
+      type="button"
+      size="sm"
+      variant="outline"
+      className="h-8 w-fit gap-1.5"
+      onClick={() => setTaskOpen(true)}
+    >
+      <CalendarPlus className="size-3.5" />
+      {translate("resources.deals.workflow.plan_task", {
+        _: "Taak plannen",
+      })}
+    </Button>
+  ) : null;
+  const taskSheet = (
+    <TaskCreateSheet
+      open={taskOpen}
+      deal_id={record.id}
+      onOpenChange={setTaskOpen}
+    />
+  );
 
   if (total === 0) {
     const hint = translate(`resources.deals.next_action.${record.stage}`, {
@@ -58,41 +84,51 @@ export const DealSteps = () => {
     });
     if (!hint) return null;
     return (
-      <div className="flex flex-col gap-1">
-        <span className="text-xs text-muted-foreground tracking-wide">
-          {translate("resources.deals.steps.next_action", {
-            _: "Volgende stap",
-          })}
-        </span>
-        <p className="text-sm leading-6">{hint}</p>
-      </div>
+      <>
+        <div className="flex flex-col gap-2">
+          <span className="text-xs text-muted-foreground tracking-wide">
+            {translate("resources.deals.steps.next_action", {
+              _: "Volgende stap",
+            })}
+          </span>
+          <p className="text-sm leading-6">{hint}</p>
+          {planTaskButton}
+        </div>
+        {taskSheet}
+      </>
     );
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <span className="text-xs text-muted-foreground tracking-wide">
-        {title}
-        {" - "}
-        {translate("resources.deals.steps.progress", {
-          done: doneCount,
-          total,
-          _: `${doneCount}/${total} af`,
-        })}
-      </span>
-      {open.length > 0 ? (
-        <div className="flex flex-col gap-3">
-          {open.map((step) => (
-            <Task key={step.id} task={step} showContact={false} />
-          ))}
+    <>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-xs text-muted-foreground tracking-wide">
+            {title}
+            {" - "}
+            {translate("resources.deals.steps.progress", {
+              done: doneCount,
+              total,
+              _: `${doneCount}/${total} af`,
+            })}
+          </span>
+          {planTaskButton}
         </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          {translate("resources.deals.steps.all_done", {
-            _: "Alle stappen zijn afgerond.",
-          })}
-        </p>
-      )}
-    </div>
+        {open.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            {open.map((step) => (
+              <Task key={step.id} task={step} showContact={false} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {translate("resources.deals.steps.all_done", {
+              _: "Alle stappen zijn afgerond.",
+            })}
+          </p>
+        )}
+      </div>
+      {taskSheet}
+    </>
   );
 };

@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { resolveCompanyName } from "./companyNameOverrides.ts";
 import {
-  resolveCategory,
+  resolveCategoryWithSource,
   resolveStage,
   resolveDealName,
   resolveIsInternal,
@@ -11,12 +11,17 @@ import { DEFAULT_CATEGORY, isKnownTrelloList } from "./trelloListMaps.ts";
 import { findOrCreateCompany } from "./findOrCreateCompany.ts";
 import { resolveDefaultSalesId } from "./resolveDefaultSalesId.ts";
 import { extractCompanyWebsite } from "./extractCompanyWebsite.ts";
-import { extractDealAmount } from "./extractDealAmount.ts";
+import {
+  extractDealAmount,
+  hasExplicitPriceCorrection,
+} from "./extractDealAmount.ts";
 import { lookupCompanyWebsite } from "./lookupCompanyWebsite.ts";
 import { trelloCardCreatedAt } from "./trelloCardDate.ts";
 import { syncCardChecklistItems } from "./syncCardChecklistItems.ts";
 import { syncDealContactsFromCard } from "./syncDealContactsFromCard.ts";
 import type { TrelloCardInput } from "./trelloCardTypes.ts";
+import { trelloCommentTexts, trelloSourceText } from "./trelloSourceContext.ts";
+import { withDerivedTrelloSteps } from "./extractTrelloNextSteps.ts";
 
 // The prefix of the auto-generated placeholder description used before a card
 // carried a real description. A deal whose description is still this placeholder
@@ -35,28 +40,45 @@ const buildDealDescription = (card: TrelloCardInput): string => {
 };
 
 // Creates or updates the deal linked to a Trello card (matched via
-// trello_card_id). Fields that Trello doesn't own (amount, sales_id) are only
-// enriched when empty. Contact ids are unioned with contacts found on the card
-// and existing company contacts. The description
-// is enriched from the card, but only when the existing one is still the
-// auto-generated placeholder (or empty), so manual edits survive future syncs.
+// trello_card_id). The Trello title, known workflow list and previously synced
+// description stay current. Enrichment fields never get cleared when a source
+// has no value; only explicit Trello corrections may replace a synced amount
+// or category. Contact ids are unioned, so manual CRM relationships survive.
 export const upsertDealFromCard = async (
   card: TrelloCardInput,
-  { sourceAuthor }: { sourceAuthor?: string | null } = {},
+  {
+    sourceAuthor,
+    syncSteps = true,
+  }: { sourceAuthor?: string | null; syncSteps?: boolean } = {},
 ) => {
+  const commentTexts = trelloCommentTexts(card.comments);
+  const sourceText = trelloSourceText(card);
   const companyName = resolveCompanyName(card);
-  const category = resolveCategory(card.idList, card.labelNames);
-  const stage = resolveStage(card.idList, card.labelNames, card.dueComplete);
+  const categoryResolution = resolveCategoryWithSource(
+    card.idList,
+    card.labelNames,
+    sourceText,
+  );
+  const category = categoryResolution.category;
   const name = resolveDealName(card.name);
   const startDate = card.start ? card.start.slice(0, 10) : null;
   const deliveryDate = card.due ? card.due.slice(0, 10) : null;
-  const website = extractCompanyWebsite(card.desc, card.attachmentUrls);
+  const website = extractCompanyWebsite(card.desc, card.attachmentUrls, [
+    card.name,
+    ...commentTexts,
+  ]);
   const description = buildDealDescription(card);
   // Happr is Marketingbende's own product: its cards are internal work, never
   // client revenue, so no amount is ever attached to them.
   const amount =
-    category === "happr" ? null : extractDealAmount(card.name, card.desc);
-  const revenuePeriod = resolveRevenuePeriod(category);
+    category === "happr"
+      ? null
+      : extractDealAmount(card.name, card.desc, commentTexts);
+  const revenuePeriod = resolveRevenuePeriod(category, [
+    ...[...commentTexts].reverse(),
+    card.name,
+    card.desc,
+  ]);
   // The real project start: decoded from the Trello card id so a long-running
   // deal keeps its true creation date instead of the import/backfill time.
   const createdAt = trelloCardCreatedAt(card.id);
@@ -75,7 +97,9 @@ export const upsertDealFromCard = async (
 
   const { data: existingDeal, error: fetchError } = await supabaseAdmin
     .from("deals")
-    .select("id, description, amount, revenue_period, category, contact_ids")
+    .select(
+      "id, description, amount, revenue_period, category, contact_ids, activity_source",
+    )
     .eq("trello_card_id", card.id)
     .maybeSingle();
   if (fetchError) {
@@ -83,6 +107,18 @@ export const upsertDealFromCard = async (
       `Could not look up deal for Trello card ${card.id}: ${fetchError.message}`,
     );
   }
+
+  // An explicit Trello category is authoritative. Otherwise retain a manual
+  // CRM classification when deciding whether a running monthly service belongs
+  // in Bezig instead of the one-off Facturatie + live phase.
+  const effectiveRevenuePeriod =
+    revenuePeriod ?? (existingDeal?.revenue_period as string | null) ?? null;
+  const stage = resolveStage(
+    card.idList,
+    card.labelNames,
+    card.dueComplete,
+    effectiveRevenuePeriod,
+  );
 
   const salesId = await resolveDefaultSalesId();
   const companyId = await findOrCreateCompany({
@@ -105,6 +141,7 @@ export const upsertDealFromCard = async (
       currentContactIds: contactIds,
       salesId,
       sourceAuthor: trimmedSourceAuthor,
+      sourceText,
     });
   } catch (error) {
     // Contact enrichment is valuable but must never block the core card/deal
@@ -117,29 +154,53 @@ export const upsertDealFromCard = async (
 
   if (existingDeal) {
     const currentDescription = existingDeal.description as string | null;
-    const canEnrichDescription =
-      card.desc.trim().length > 0 &&
-      (!currentDescription ||
-        currentDescription.startsWith(LEGACY_DESCRIPTION_PREFIX));
+    const descriptionIsTrelloManaged =
+      !currentDescription ||
+      currentDescription.startsWith(LEGACY_DESCRIPTION_PREFIX) ||
+      currentDescription.includes(`Bron (Trello): ${card.url}`);
+    const canSyncDescription =
+      descriptionIsTrelloManaged && currentDescription !== description;
 
     // Back-fill the amount only when the deal has none yet; never overwrite a
     // value someone entered/adjusted manually in the CRM.
     const currentAmount = existingDeal.amount as number | null;
     const canEnrichAmount = amount != null && !currentAmount;
+    const canApplyExplicitAmountCorrection =
+      amount != null &&
+      currentAmount !== amount &&
+      existingDeal.activity_source === "trello" &&
+      commentTexts.some(hasExplicitPriceCorrection);
 
-    // Same rule for the revenue period: only classify a deal that has none yet,
-    // and only when the category maps cleanly, so a manual correction stands.
+    // Same rule for the revenue period: normally only classify a deal that has
+    // none yet. When an old default category is being corrected from an
+    // explicit Trello label, correct its period too; this repairs historical
+    // imports such as a one-off website task that was accidentally monthly.
     const currentRevenuePeriod = existingDeal.revenue_period as string | null;
     const canEnrichRevenuePeriod =
       revenuePeriod != null && !currentRevenuePeriod;
 
-    // The category is only corrected while the deal still carries the default
-    // ('overig') AND Trello has an explicit signal (category list or label).
-    // Anything else is treated as a value someone chose — in the CRM or via an
-    // earlier explicit Trello signal — and a re-sync must not revert it.
+    // An explicit Trello list/label stays authoritative when it changes. Text
+    // inference is weaker: it may fill only an unclassified/default deal and
+    // never overwrite a person's deliberate CRM classification.
+    const currentCategory = existingDeal.category as string | null;
     const canUpdateCategory =
       category !== DEFAULT_CATEGORY &&
-      (existingDeal.category as string | null) === DEFAULT_CATEGORY;
+      currentCategory !== category &&
+      (categoryResolution.source === "list" ||
+        categoryResolution.source === "label" ||
+        !currentCategory ||
+        currentCategory === DEFAULT_CATEGORY);
+    const canCorrectRevenuePeriod =
+      (categoryResolution.source === "list" ||
+        categoryResolution.source === "label" ||
+        categoryResolution.source === "text") &&
+      revenuePeriod != null &&
+      currentRevenuePeriod !== revenuePeriod;
+    const canCorrectTextRevenuePeriod =
+      existingDeal.activity_source === "trello" &&
+      categoryResolution.source === "default" &&
+      revenuePeriod != null &&
+      currentRevenuePeriod !== revenuePeriod;
 
     const { error: updateError } = await supabaseAdmin
       .from("deals")
@@ -164,9 +225,15 @@ export const upsertDealFromCard = async (
         // Correct the historical import date to the real Trello creation date.
         // Deterministic per card, so re-syncs are idempotent.
         ...(createdAt ? { created_at: createdAt } : {}),
-        ...(canEnrichDescription ? { description } : {}),
-        ...(canEnrichAmount ? { amount } : {}),
-        ...(canEnrichRevenuePeriod ? { revenue_period: revenuePeriod } : {}),
+        ...(canSyncDescription ? { description } : {}),
+        ...(canEnrichAmount || canApplyExplicitAmountCorrection
+          ? { amount }
+          : {}),
+        ...(canEnrichRevenuePeriod ||
+        canCorrectRevenuePeriod ||
+        canCorrectTextRevenuePeriod
+          ? { revenue_period: revenuePeriod }
+          : {}),
       })
       .eq("id", existingDeal.id);
     if (updateError) {
@@ -175,7 +242,12 @@ export const upsertDealFromCard = async (
       );
     }
     // Mirror the card's checklist items onto the deal's steps.
-    await syncCardChecklistItems(card, existingDeal.id);
+    if (syncSteps) {
+      await syncCardChecklistItems(
+        withDerivedTrelloSteps(card),
+        existingDeal.id,
+      );
+    }
     return existingDeal.id;
   }
 
@@ -186,7 +258,10 @@ export const upsertDealFromCard = async (
       company_id: companyId,
       ...(contactIds.length > 0 ? { contact_ids: contactIds } : {}),
       category,
-      stage,
+      // A historical monthly card first discovered in Klaar has no previous
+      // row for the update trigger to cycle. Import it directly as active.
+      stage:
+        stage === "won" && revenuePeriod === "maandelijks" ? "bezig" : stage,
       // Internal/external classification, applied on creation only so the
       // manual toggle in the CRM always wins afterwards.
       is_internal: resolveIsInternal({ category, dealName: name, companyName }),
@@ -216,6 +291,8 @@ export const upsertDealFromCard = async (
     );
   }
   // Mirror the card's checklist items onto the newly-created deal's steps.
-  await syncCardChecklistItems(card, createdDeal.id);
+  if (syncSteps) {
+    await syncCardChecklistItems(withDerivedTrelloSteps(card), createdDeal.id);
+  }
   return createdDeal.id;
 };

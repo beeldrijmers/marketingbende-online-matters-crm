@@ -3,6 +3,7 @@ import {
   parseTrelloApiCard,
   type TrelloApiCard,
 } from "./parseTrelloApiCard.ts";
+import { fetchTrelloCardComments } from "./fetchTrelloCardComments.ts";
 
 const apiKey = Deno.env.get("TRELLO_API_KEY");
 const token = Deno.env.get("TRELLO_TOKEN");
@@ -45,4 +46,18 @@ export const fetchTrelloCard = async (
   const card = (await response.json()) as TrelloApiCard;
 
   return parseTrelloApiCard(card);
+};
+
+// The card REST response and its comment actions are separate Trello
+// resources. Fetch them together for every authoritative sync so field
+// extraction, derived next steps and visible notes all use the same complete
+// source context. Comments are oldest-first.
+export const fetchTrelloCardWithComments = async (
+  cardId: string,
+): Promise<TrelloCardInput> => {
+  const [card, comments] = await Promise.all([
+    fetchTrelloCard(cardId),
+    fetchTrelloCardComments({ cardId, apiKey, token }),
+  ]);
+  return { ...card, comments };
 };

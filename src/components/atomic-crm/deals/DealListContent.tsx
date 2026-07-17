@@ -29,7 +29,12 @@ export const DealListContent = ({
   onPlanTask?: (deal: Deal) => void;
 } = {}) => {
   const { dealStages } = useConfigurationContext();
-  const { data: unorderedDeals, isPending, refetch } = useListContext<Deal>();
+  const {
+    data: unorderedDeals,
+    filterValues,
+    isPending,
+    refetch,
+  } = useListContext<Deal>();
   const dataProvider = useDataProvider<CrmDataProvider>();
   const notify = useNotify();
   const { data: tasks = [] } = useGetList<Task>("tasks", {
@@ -38,9 +43,16 @@ export const DealListContent = ({
     filter: {},
   });
   const tasksByDeal = useMemo(() => buildOpenTasksByDeal(tasks), [tasks]);
+  const visibleDealStages = useMemo(
+    () =>
+      filterValues?.["stage@neq"] === "won"
+        ? dealStages.filter((stage) => stage.value !== "won")
+        : dealStages,
+    [dealStages, filterValues],
+  );
 
-  const [dealsByStage, setDealsByStage] = useState<DealsByStage>(
-    getDealsByStage([], dealStages),
+  const [dealsByStage, setDealsByStage] = useState<DealsByStage>(() =>
+    getDealsByStage([], visibleDealStages),
   );
 
   useEffect(() => {
@@ -52,7 +64,7 @@ export const DealListContent = ({
         : unorderedDeals;
       const newDealsByStage = getDealsByStage(
         orderedDeals,
-        dealStages,
+        visibleDealStages,
         attentionPipeline,
       );
       setDealsByStage((currentDealsByStage) =>
@@ -61,7 +73,7 @@ export const DealListContent = ({
           : newDealsByStage,
       );
     }
-  }, [attentionPipeline, dealStages, tasksByDeal, unorderedDeals]);
+  }, [attentionPipeline, tasksByDeal, unorderedDeals, visibleDealStages]);
 
   if (isPending) return null;
 
@@ -172,15 +184,18 @@ export const DealListContent = ({
         }
       >
         <div className="flex h-full gap-4">
-          {dealStages.map((stage) => (
+          {visibleDealStages.map((stage) => (
             <DealColumn
               attentionPipeline={attentionPipeline}
               detailBasePath={detailBasePath}
               stage={stage.value}
-              deals={dealsByStage[stage.value]}
+              // A filter toggle can reveal a column one render before the
+              // grouped state effect has populated its key. Render it empty
+              // during that transition instead of crashing DealColumn.
+              deals={dealsByStage[stage.value] ?? []}
               tasksByDeal={tasksByDeal}
               onMoveToStage={attentionPipeline ? moveDealToStage : undefined}
-              onPlanTask={attentionPipeline ? onPlanTask : undefined}
+              onPlanTask={onPlanTask}
               key={stage.value}
             />
           ))}

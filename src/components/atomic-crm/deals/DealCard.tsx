@@ -170,6 +170,7 @@ export const DealCardContent = ({
                 deal={deal}
                 openTasks={openTasks}
                 className="my-1.5 py-1.5"
+                onPlanTask={onPlanTask ? () => onPlanTask(deal) : undefined}
               />
             ) : null}
 
@@ -229,7 +230,11 @@ export const DealCardContent = ({
               </div>
             </div>
             {!attentionPipeline ? (
-              <DealWorkflowIndicator deal={deal} openTasks={openTasks} />
+              <DealWorkflowIndicator
+                deal={deal}
+                openTasks={openTasks}
+                onPlanTask={onPlanTask ? () => onPlanTask(deal) : undefined}
+              />
             ) : null}
             {attentionPipeline && onMoveToStage && onPlanTask ? (
               <AttentionDealActions

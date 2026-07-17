@@ -692,13 +692,13 @@ CREATE OR REPLACE FUNCTION "public"."cycle_monthly_deal"() RETURNS "trigger"
 BEGIN
   -- A monthly recurring deal that reaches "Klaar" is not finished - the work
   -- recurs next month. Instead of letting it rest in the won stage, send it
-  -- back to the start of the loopband, un-tick its Trello-synced steps and
-  -- record the restart. Fires only on the actual transition into "won", so it
-  -- runs once per completion (not on every save while already there).
+  -- back to Bezig, un-tick its Trello-synced steps and record the restart.
+  -- Fires only on the actual transition into "won", so it runs once per
+  -- completion (not on every save while already there).
   IF NEW.revenue_period = 'maandelijks'
      AND NEW.stage = 'won'
      AND OLD.stage IS DISTINCT FROM 'won' THEN
-    NEW.stage := 'informatie-pipeline';
+    NEW.stage := 'bezig';
     -- Reset the once-per-cycle notification claim so the next completion of
     -- this recurring deal notifies the team lead again.
     NEW.won_notified_at := NULL;

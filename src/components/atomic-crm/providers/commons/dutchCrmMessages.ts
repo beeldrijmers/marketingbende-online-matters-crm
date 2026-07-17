@@ -223,6 +223,10 @@ export const dutchCrmMessages = {
     deals: {
       name: "Deal |||| Deals",
       forcedCaseName: "Deal",
+      completion_scope: {
+        active: "Actief",
+        all: "Inclusief klaar",
+      },
       steps: {
         title: "Stappen",
         progress: "%{done}/%{total} af",
@@ -243,6 +247,8 @@ export const dutchCrmMessages = {
         next: "Volgende",
         plan_overdue: "Planning verlopen",
         plan_next: "Plan volgende stap",
+        plan_task: "Taak plannen",
+        plan_task_for: "Volgende taak plannen voor %{name}",
         complete: "Klaar",
         more: "+%{count}",
       },

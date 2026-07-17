@@ -224,6 +224,10 @@ export const frenchCrmMessages = {
     deals: {
       name: "Affaire |||| Affaires",
       forcedCaseName: "Affaire",
+      completion_scope: {
+        active: "Actives",
+        all: "Avec les terminées",
+      },
       steps: {
         title: "Étapes",
         progress: "%{done}/%{total} faites",
@@ -244,6 +248,8 @@ export const frenchCrmMessages = {
         next: "Suivante",
         plan_overdue: "Planification dépassée",
         plan_next: "Planifier la prochaine étape",
+        plan_task: "Planifier une tâche",
+        plan_task_for: "Planifier la prochaine tâche pour %{name}",
         complete: "Terminé",
         more: "+%{count}",
       },

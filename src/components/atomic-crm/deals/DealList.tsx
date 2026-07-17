@@ -18,6 +18,7 @@ import { TopToolbar } from "../layout/TopToolbar";
 import { TaskCreateSheet } from "../tasks/TaskCreateSheet";
 import type { Deal } from "../types";
 import { AttentionMovePrompt } from "./AttentionMovePrompt";
+import { CompletionScopeInput } from "./CompletionScopeInput";
 import { DealArchivedList } from "./DealArchivedList";
 import { DealCreate } from "./DealCreate";
 import { DealEdit } from "./DealEdit";
@@ -66,6 +67,7 @@ export const DealList = ({ dashboardSelection }: DealListProps = {}) => {
       />
     </WrapperField>,
     <InternalExternalInput source="is_internal" alwaysOn />,
+    <CompletionScopeInput source="stage@neq" alwaysOn />,
     <OnlyMineInput source="sales_id" alwaysOn />,
   ];
 
@@ -78,6 +80,9 @@ export const DealList = ({ dashboardSelection }: DealListProps = {}) => {
         "archived_at@is": null,
         ...getDashboardDealSelectionFilter(dashboardSelection ?? null),
       }}
+      filterDefaultValues={
+        dashboardSelection ? undefined : { "stage@neq": "won" }
+      }
       disableBreadcrumb={attentionPipeline}
       disableHeader={attentionPipeline}
       title={attentionPipeline ? false : (dashboardSelection?.label ?? false)}
@@ -179,7 +184,7 @@ const DealLayout = ({
                 setRecentMove({ deal, destinationStage })
             : undefined
         }
-        onPlanTask={attentionPipeline ? setTaskDeal : undefined}
+        onPlanTask={setTaskDeal}
       />
       <DealCreate open={!!matchCreate} />
       <DealEdit open={!!matchEdit && !matchCreate} id={matchEdit?.params.id} />
@@ -198,15 +203,13 @@ const DealLayout = ({
           onDismiss={() => setRecentMove(null)}
         />
       ) : null}
-      {attentionPipeline ? (
-        <TaskCreateSheet
-          open={taskDeal != null}
-          deal_id={taskDeal?.id}
-          onOpenChange={(open) => {
-            if (!open) setTaskDeal(null);
-          }}
-        />
-      ) : null}
+      <TaskCreateSheet
+        open={taskDeal != null}
+        deal_id={taskDeal?.id}
+        onOpenChange={(open) => {
+          if (!open) setTaskDeal(null);
+        }}
+      />
     </div>
   );
 };

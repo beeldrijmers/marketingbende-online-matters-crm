@@ -26,6 +26,7 @@ import { TaskCreateSheet } from "../tasks/TaskCreateSheet";
 import type { Deal, DealStage, Task } from "../types";
 import { AttentionDealActions } from "./AttentionDealActions";
 import { AttentionMovePrompt } from "./AttentionMovePrompt";
+import { CompletionScopeInput } from "./CompletionScopeInput";
 import { DealShow } from "./DealShow";
 import { DealWorkflowIndicator } from "./DealWorkflowIndicator";
 import {
@@ -67,6 +68,9 @@ export const MobileDealsList = ({
         "archived_at@is": null,
         ...getDashboardDealSelectionFilter(dashboardSelection ?? null),
       }}
+      filterDefaultValues={
+        dashboardSelection ? undefined : { "stage@neq": "won" }
+      }
       sort={{ field: "index", order: "ASC" }}
       storeKey={
         dashboardSelection
@@ -202,15 +206,13 @@ const DealsLayoutMobile = ({
         open={dashboardSelection ? !!dashboardDealId : !!matchShow}
         id={dashboardDealId ?? matchShow?.params.id}
       />
-      {attentionPipeline ? (
-        <TaskCreateSheet
-          open={taskDeal != null}
-          deal_id={taskDeal?.id}
-          onOpenChange={(open) => {
-            if (!open) setTaskDeal(null);
-          }}
-        />
-      ) : null}
+      <TaskCreateSheet
+        open={taskDeal != null}
+        deal_id={taskDeal?.id}
+        onOpenChange={(open) => {
+          if (!open) setTaskDeal(null);
+        }}
+      />
       {recentMove ? (
         <AttentionMovePrompt
           deal={recentMove.deal}
@@ -244,6 +246,9 @@ const DealsLayoutMobile = ({
           </p>
         ) : (
           <div className="flex flex-col gap-6">
+            {!dashboardSelection && !attentionPipeline ? (
+              <CompletionScopeInput className="self-start" />
+            ) : null}
             <nav
               aria-label="Spring naar dealfase"
               className="sticky top-14 z-10 -mx-4 flex gap-2 overflow-x-auto border-y bg-background/95 px-4 py-2 backdrop-blur"
@@ -285,7 +290,7 @@ const DealsLayoutMobile = ({
                       onMoveToStage={
                         attentionPipeline ? moveDealToStage : undefined
                       }
-                      onPlanTask={attentionPipeline ? setTaskDeal : undefined}
+                      onPlanTask={setTaskDeal}
                     />
                   </RecordContextProvider>
                 ))}
@@ -392,8 +397,12 @@ const MobileDealRow = ({
             className="text-xs text-muted-foreground"
           />
         </div>
-        <DealWorkflowIndicator deal={deal} openTasks={openTasks} />
       </Link>
+      <DealWorkflowIndicator
+        deal={deal}
+        openTasks={openTasks}
+        onPlanTask={onPlanTask ? () => onPlanTask(deal) : undefined}
+      />
       {attentionPipeline && onMoveToStage && onPlanTask ? (
         <AttentionDealActions
           compact

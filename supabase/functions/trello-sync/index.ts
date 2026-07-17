@@ -5,13 +5,13 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { verifyTrelloWebhookRequest } from "./verifyTrelloWebhookRequest.ts";
-import { fetchTrelloCard } from "./fetchTrelloCard.ts";
+import { fetchTrelloCardWithComments } from "./fetchTrelloCard.ts";
 import { upsertDealFromCard } from "./upsertDealFromCard.ts";
 import {
   archiveDealByCardId,
   unarchiveDealByCardId,
 } from "./archiveDealByCardId.ts";
-import { addTrelloCommentAsDealNote } from "./addTrelloCommentAsDealNote.ts";
+import { syncTrelloCardComments } from "./syncTrelloCardComments.ts";
 import { run as runTrelloBackfill } from "./backfill.ts";
 import { WON_LIST_ID } from "./trelloListMaps.ts";
 import {
@@ -62,6 +62,12 @@ const CARD_SYNC_ACTIONS = new Set([
   // A newly uploaded file: the re-fetched card carries it and the attachment
   // import below pulls it into the CRM.
   "addAttachmentToCard",
+  // Comments are part of the deterministic card context. Refetching the full
+  // history also makes edits/deletions converge instead of leaving stale CRM
+  // notes or derived fields behind.
+  "commentCard",
+  "updateComment",
+  "deleteComment",
 ]);
 
 Deno.serve(async (req) => {
@@ -143,7 +149,31 @@ Deno.serve(async (req) => {
       const cardId = action.data?.card?.id;
       if (!cardId)
         return new Response("Missing action.data.card.id", { status: 403 });
-      const card = await fetchTrelloCard(cardId);
+      let card = await fetchTrelloCardWithComments(cardId);
+
+      // Trello normally exposes a new comment through the actions endpoint
+      // before delivering its webhook. In the rare eventual-consistency gap,
+      // include the signed webhook comment once so the CRM never misses it;
+      // its stable action id keeps the next full fetch idempotent.
+      if (
+        action.type === "commentCard" &&
+        action.id &&
+        action.data?.text &&
+        !(card.comments ?? []).some((comment) => comment.id === action.id)
+      ) {
+        card = {
+          ...card,
+          comments: [
+            ...(card.comments ?? []),
+            {
+              id: action.id,
+              date: action.date,
+              authorName: action.memberCreator?.fullName ?? "Onbekend",
+              text: action.data.text,
+            },
+          ],
+        };
+      }
 
       // A card archived in Trello leaves the board in the CRM too, instead of
       // being (re)confirmed as an active deal. Re-opening it (old.closed was
@@ -163,6 +193,10 @@ Deno.serve(async (req) => {
           action.type === "createCard"
             ? (action.memberCreator?.fullName ?? null)
             : null,
+      });
+      await syncTrelloCardComments({
+        trelloCardId: cardId,
+        comments: card.comments ?? [],
       });
       // Pull any uploaded files on the card into the CRM (idempotent,
       // best-effort: an attachment failure never fails the card sync).
@@ -190,29 +224,6 @@ Deno.serve(async (req) => {
         });
         if (!sent) await releaseWonNotification(dealId);
       }
-      return new Response("OK");
-    }
-
-    if (action.type === "commentCard") {
-      const cardId = action.data?.card?.id;
-      const commentText = action.data?.text;
-      const authorName = action.memberCreator?.fullName ?? "Onbekend";
-      if (!cardId || !commentText) {
-        return new Response("Missing action.data.card.id or action.data.text", {
-          status: 403,
-        });
-      }
-      await addTrelloCommentAsDealNote({
-        trelloCardId: cardId,
-        authorName,
-        commentText,
-        // The Trello action timestamp, not the DB default: the backfill
-        // deduplicates comments on (deal, date, text), so a comment imported
-        // live must carry the same date the actions API will later report —
-        // otherwise every "Synchroniseer Trello" run duplicates it.
-        date: action.date,
-        sourceEventId: action.id ? `trello:${action.id}` : undefined,
-      });
       return new Response("OK");
     }
 
