@@ -62,7 +62,9 @@ export const upsertDealFromMail = async ({
     // Newest non-archived deal for this company, if any.
     const { data: existingDeal, error: dealError } = await supabaseAdmin
       .from("deals")
-      .select("id, amount, start_date, delivery_date, assignee_ids")
+      .select(
+        "id, amount, start_date, delivery_date, expected_closing_date, assignee_ids",
+      )
       .eq("company_id", companyId)
       .is("archived_at", null)
       .order("created_at", { ascending: false })
@@ -91,6 +93,7 @@ export const upsertDealFromMail = async ({
         amount?: number;
         start_date?: string;
         delivery_date?: string;
+        expected_closing_date?: string;
         assignee_ids?: number[];
       } = {
         ...(existingDeal.amount == null && amount != null ? { amount } : {}),
@@ -99,6 +102,12 @@ export const upsertDealFromMail = async ({
           : {}),
         ...(existingDeal.delivery_date == null && deliveryDate
           ? { delivery_date: deliveryDate }
+          : {}),
+        // The parser only accepts dates next to explicit wording such as
+        // "deadline" or "opleverdatum". Preserve a CRM-entered plan, but use
+        // that reliable mail signal when the existing deal has no deadline yet.
+        ...(existingDeal.expected_closing_date == null && deliveryDate
+          ? { expected_closing_date: deliveryDate }
           : {}),
         ...(assigneesGrew ? { assignee_ids: mergedAssignees } : {}),
       };

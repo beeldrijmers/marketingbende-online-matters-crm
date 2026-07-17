@@ -61,6 +61,47 @@ describe("dealWorkflow", () => {
     });
   });
 
+  it("turns an outdated automatic reminder into neutral missing planning", () => {
+    expect(
+      getDealWorkflow(
+        deal(),
+        [task({ due_date: "2026-07-13", source: "auto" })],
+        now,
+      ),
+    ).toMatchObject({
+      kind: "missing",
+      nextTask: null,
+      openTaskCount: 0,
+    });
+  });
+
+  it("keeps an explicit Trello deadline authoritative over an auto reminder", () => {
+    expect(
+      getDealWorkflow(
+        deal(),
+        [
+          task({ id: 9, due_date: "2026-07-13", source: "auto" }),
+          task({ id: 10, due_date: "2026-07-15", source: "trello" }),
+        ],
+        now,
+      ),
+    ).toMatchObject({
+      kind: "scheduled",
+      nextTask: { id: 10 },
+      openTaskCount: 1,
+    });
+  });
+
+  it("still flags a real expired closing date when only an auto reminder exists", () => {
+    expect(
+      getDealWorkflow(
+        deal({ expected_closing_date: "2026-07-13" }),
+        [task({ due_date: "2026-07-13", source: "auto" })],
+        now,
+      ).kind,
+    ).toBe("overdue_closing");
+  });
+
   it("flags an expired deal plan when there is no open task", () => {
     expect(
       getDealWorkflow(deal({ expected_closing_date: "2026-07-13" }), [], now)

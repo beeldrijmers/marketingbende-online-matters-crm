@@ -174,18 +174,21 @@ async function createDeal({
   }
 
   // The database next-action guard creates an automatic open task for every
-  // active deal. Tests that exercise a specific workflow bucket can pin that
-  // task to a deterministic date instead of depending on the current clock.
+  // active deal. Tests that exercise a specific workflow bucket seed a real
+  // manual task instead: automatic guardrail reminders are deliberately not
+  // treated as hard deadlines by the attention pipeline.
   if (nextTaskDueDate) {
-    const { error: taskError } = await adminSupabase
-      .from("tasks")
-      .update({ due_date: nextTaskDueDate })
-      .eq("deal_id", data.id)
-      .eq("source", "auto")
-      .is("done_date", null);
+    const { error: taskError } = await adminSupabase.from("tasks").insert({
+      deal_id: data.id,
+      due_date: nextTaskDueDate,
+      sales_id: salesId,
+      source: "manual",
+      text: "E2E volgende stap",
+      type: "none",
+    });
 
     if (taskError) {
-      throw new Error(`Failed to date deal task: ${taskError.message}`);
+      throw new Error(`Failed to create deal task: ${taskError.message}`);
     }
   }
 

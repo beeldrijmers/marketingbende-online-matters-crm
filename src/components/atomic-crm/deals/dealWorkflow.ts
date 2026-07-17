@@ -1,6 +1,7 @@
 import type { Identifier } from "ra-core";
 
 import type { Deal, Task } from "../types";
+import { isAutomaticTask } from "../tasks/taskSource";
 
 export type DealWorkflowKind =
   | "overdue"
@@ -75,7 +76,14 @@ export const getDealWorkflow = (
     return { kind: "on_hold", nextTask: null, openTaskCount: 0 };
   }
 
-  const sortedTasks = [...openTasks].filter((task) => !task.done_date);
+  // The DB maintains an `auto` row as a fallback while a deal has no concrete
+  // next action. Its due date is deliberately operational rather than agreed
+  // with a customer, so treat it as missing planning instead of overdue work.
+  // Manual tasks and Trello checklist items remain the only task deadlines
+  // that can make a deal "Te laat".
+  const sortedTasks = [...openTasks].filter(
+    (task) => !task.done_date && !isAutomaticTask(task),
+  );
   sortedTasks.sort(compareTasks);
   const nextTask = sortedTasks[0] ?? null;
   const today = localTodayKey(now);

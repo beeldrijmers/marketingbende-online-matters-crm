@@ -3,6 +3,7 @@ import { useGetList, useRecordContext, useTranslate } from "ra-core";
 
 import type { Deal, Task as TaskRecord } from "../types";
 import { Task } from "../tasks/Task";
+import { isAutomaticTask } from "../tasks/taskSource";
 
 // Default next-step hints per deal stage, used when a deal has no Trello
 // checklist of its own. This is what turns a passive mirror of Trello into a
@@ -33,7 +34,10 @@ export const DealSteps = () => {
   );
 
   const { open, doneCount, total } = useMemo(() => {
-    const all = steps ?? [];
+    // `auto` rows are internal fallback reminders, not actual project steps.
+    // When they are the only rows, show the helpful stage-based next-action
+    // text below rather than a stale synthetic task with a fake deadline.
+    const all = (steps ?? []).filter((step) => !isAutomaticTask(step));
     const openSteps = all.filter((step) => !step.done_date);
     return {
       open: openSteps,
