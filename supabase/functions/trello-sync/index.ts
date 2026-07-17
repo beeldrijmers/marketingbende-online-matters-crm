@@ -211,6 +211,7 @@ Deno.serve(async (req) => {
         // live must carry the same date the actions API will later report —
         // otherwise every "Synchroniseer Trello" run duplicates it.
         date: action.date,
+        sourceEventId: action.id ? `trello:${action.id}` : undefined,
       });
       return new Response("OK");
     }

@@ -87,6 +87,7 @@ const ContactMergeDialog = ({ open, onClose }: ContactMergeDialogProps) => {
           "tasks",
           "deals",
           "activity_log",
+          "activity_log_global",
         ].map((resource) =>
           queryClient.invalidateQueries({ queryKey: [resource] }),
         ),

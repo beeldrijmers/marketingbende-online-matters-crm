@@ -29,6 +29,8 @@ import { ActivityLogDealCreated } from "./ActivityLogDealCreated";
 import { ActivityLogDealNoteCreated } from "./ActivityLogDealNoteCreated";
 import { InfinitePagination } from "../misc/InfinitePagination";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useActivityLogContext } from "./ActivityLogContext";
+import { dedupeActivitiesBySourceEvent } from "./activityDeduplication";
 
 type ActivityDayGroup = {
   key: string;
@@ -92,6 +94,7 @@ export function ActivityLogIterator() {
     useInfinitePaginationContext();
   const translate = useTranslate();
   const [locale = "en"] = useLocaleState();
+  const context = useActivityLogContext();
 
   if (isPending) {
     return (
@@ -128,7 +131,14 @@ export function ActivityLogIterator() {
     );
   }
 
-  const groups = groupActivitiesByDay(data ?? [], translate, locale);
+  // A provider message can be attached to several contacts/deals. Keep all of
+  // those underlying notes, but render the source event once on the general
+  // dashboard. Company-specific timelines still receive their own relation.
+  const visibleActivities =
+    context === "all"
+      ? dedupeActivitiesBySourceEvent(data ?? [])
+      : (data ?? []);
+  const groups = groupActivitiesByDay(visibleActivities, translate, locale);
 
   return (
     <div className="space-y-4">

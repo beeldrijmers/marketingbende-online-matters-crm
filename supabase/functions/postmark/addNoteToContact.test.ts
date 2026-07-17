@@ -357,6 +357,7 @@ describe("addNoteToContact", () => {
 
     it("creates a note and returns undefined on success", async () => {
       const salesRecord = { id: 1, email: "sales@company.com" };
+      const insert = vi.fn(() => Promise.resolve({ error: null }));
       const existingContact = {
         id: 10,
         first_name: "Alice",
@@ -386,7 +387,7 @@ describe("addNoteToContact", () => {
         })
         .mockReturnValueOnce({
           // 3rd call: insert note into contact_notes → success
-          insert: () => Promise.resolve({ error: null }),
+          insert,
         })
         .mockReturnValueOnce({
           // 4th call: update contacts.last_seen
@@ -395,12 +396,18 @@ describe("addNoteToContact", () => {
           }),
         });
 
-      const result = await addNoteToContact(baseParams);
+      const result = await addNoteToContact({
+        ...baseParams,
+        sourceEventId: "gmail:1:message-1",
+      });
 
       expect(result).toBeUndefined();
       expect(mockFrom).toHaveBeenCalledTimes(4);
       expect(mockFrom).toHaveBeenNthCalledWith(3, "contact_notes");
       expect(mockFrom).toHaveBeenNthCalledWith(4, "contacts");
+      expect(insert).toHaveBeenCalledWith(
+        expect.objectContaining({ source_event_id: "gmail:1:message-1" }),
+      );
     });
 
     it("returns 500 when inserting the note into contact_notes fails", async () => {

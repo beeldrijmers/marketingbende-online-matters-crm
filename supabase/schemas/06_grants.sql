@@ -92,6 +92,16 @@ grant all on table public.contact_notes to anon;
 grant all on table public.contact_notes to authenticated;
 grant all on table public.contact_notes to service_role;
 
+-- Integration attribution and source_event_id are server-owned idempotency
+-- fields. CRM users may edit the note itself, but cannot forge a provider event
+-- id to hide an activity by grouping it with another one.
+revoke insert on table public.contact_notes from anon, authenticated;
+grant insert (id, contact_id, text, date, sales_id, status, attachments)
+    on table public.contact_notes to anon, authenticated;
+revoke update on table public.contact_notes from anon, authenticated;
+grant update (id, contact_id, text, date, sales_id, status, attachments)
+    on table public.contact_notes to anon, authenticated;
+
 grant all on table public.deals to anon;
 grant all on table public.deals to authenticated;
 grant all on table public.deals to service_role;
@@ -124,6 +134,13 @@ grant insert (id, name, company_id, contact_ids, category, stage, description, a
 grant all on table public.deal_notes to anon;
 grant all on table public.deal_notes to authenticated;
 grant all on table public.deal_notes to service_role;
+
+revoke insert on table public.deal_notes from anon, authenticated;
+grant insert (id, deal_id, type, text, date, sales_id, status, attachments)
+    on table public.deal_notes to anon, authenticated;
+revoke update on table public.deal_notes from anon, authenticated;
+grant update (id, deal_id, type, text, date, sales_id, status, attachments)
+    on table public.deal_notes to anon, authenticated;
 
 grant all on table public.sales to anon;
 grant all on table public.sales to authenticated;
@@ -192,6 +209,10 @@ grant select on table public.integration_runs to authenticated;
 grant all on table public.activity_log to anon;
 grant all on table public.activity_log to authenticated;
 grant all on table public.activity_log to service_role;
+
+grant all on table public.activity_log_global to anon;
+grant all on table public.activity_log_global to authenticated;
+grant all on table public.activity_log_global to service_role;
 
 grant all on table public.companies_summary to anon;
 grant all on table public.companies_summary to authenticated;

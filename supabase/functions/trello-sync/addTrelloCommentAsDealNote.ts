@@ -10,6 +10,7 @@ export const addTrelloCommentAsDealNote = async ({
   authorName,
   commentText,
   date,
+  sourceEventId,
 }: {
   trelloCardId: string;
   authorName: string;
@@ -17,6 +18,8 @@ export const addTrelloCommentAsDealNote = async ({
   // Historical Trello comment date, for the one-time backfill. Omitted for
   // live webhook events, where the DB default (now()) is the correct value.
   date?: string;
+  /** Stable Trello action id, namespaced by the caller. */
+  sourceEventId?: string;
 }) => {
   const { data: deal, error: fetchError } = await supabaseAdmin
     .from("deals")
@@ -44,8 +47,9 @@ export const addTrelloCommentAsDealNote = async ({
         ? { activity_source_author: trimmedAuthorName }
         : {}),
       ...(date ? { date } : {}),
+      ...(sourceEventId ? { source_event_id: sourceEventId } : {}),
     });
-  if (createNoteError) {
+  if (createNoteError && !(sourceEventId && createNoteError.code === "23505")) {
     throw new Error(
       `Could not add Trello comment as note to deal ${deal.id}: ${createNoteError.message}`,
     );

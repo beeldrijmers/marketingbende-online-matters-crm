@@ -1,5 +1,8 @@
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 
+const normalizedCompanyName = (name: string): string =>
+  name.trim().toLowerCase();
+
 // Looks up a company by exact name match, creating it when it doesn't exist
 // yet. Returns the company id.
 //
@@ -86,6 +89,31 @@ export const findOrCreateCompany = async ({
     )
     .select("id")
     .single();
+  // Two Trello actions for one card can arrive concurrently. Both may have
+  // observed "not found" above; the partial unique index lets one insert win.
+  // Treat the loser's 23505 as a successful idempotent lookup instead of
+  // failing the webhook (which would only cause another retry).
+  if (createError?.code === "23505") {
+    // The index also normalizes case/outer whitespace. Fetch imported names on
+    // this rare conflict path and apply the same normalization client-side, so
+    // "Bouwiva" and " bouwiva " resolve to the same winner.
+    const { data: importedCompanies, error: refetchError } = await supabaseAdmin
+      .from("companies")
+      .select("id, name")
+      .eq("activity_source", "trello")
+      .order("id", { ascending: true });
+    const concurrentlyCreated = importedCompanies?.find(
+      (company) =>
+        normalizedCompanyName(company.name as string) ===
+        normalizedCompanyName(name),
+    );
+    if (refetchError || !concurrentlyCreated) {
+      throw new Error(
+        `Company "${name}" was created concurrently but could not be re-fetched: ${refetchError?.message ?? "not found"}`,
+      );
+    }
+    return concurrentlyCreated.id;
+  }
   if (createError || !created) {
     throw new Error(
       `Could not create company "${name}": ${createError?.message}`,

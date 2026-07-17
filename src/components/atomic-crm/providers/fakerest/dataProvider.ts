@@ -32,6 +32,7 @@ import {
 import generateData from "./dataGenerator";
 import type { Db } from "./dataGenerator/types";
 import { withSupabaseFilterAdapter } from "./internal/supabaseAdapter";
+import { dedupeActivitiesBySourceEvent } from "../../activity/activityDeduplication";
 
 const TASK_MARKED_AS_DONE = "TASK_MARKED_AS_DONE";
 const TASK_MARKED_AS_UNDONE = "TASK_MARKED_AS_UNDONE";
@@ -170,16 +171,23 @@ export const createDataProvider = ({
   const dataProviderWithCustomMethod: CrmDataProvider = {
     ...baseDataProvider,
     async getList(resource: string, params: any) {
-      if (resource === "activity_log") {
+      if (resource === "activity_log" || resource === "activity_log_global") {
         const { filter = {}, pagination } = params;
         const all = await getActivityLog(
           withSupabaseFilterAdapter(baseDataProvider),
           filter.company_id,
           filter.sales_id,
         );
+        const visible =
+          resource === "activity_log_global"
+            ? dedupeActivitiesBySourceEvent(all)
+            : all;
         const { page, perPage } = pagination;
         const start = (page - 1) * perPage;
-        return { data: all.slice(start, start + perPage), total: all.length };
+        return {
+          data: visible.slice(start, start + perPage),
+          total: visible.length,
+        };
       }
       return baseDataProvider.getList(resource, params);
     },

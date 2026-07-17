@@ -1,8 +1,9 @@
 import { INTERNAL_COMPANY_NAME } from "./trelloListMaps.ts";
 
 // Strips a leading "GO - " noise prefix (case-insensitive), then takes the
-// substring before the first remaining " - " as the company name. Falls
-// back to the whole (prefix-stripped) title when no " - " separator exists.
+// substring before the first remaining spaced dash as the company name. Trello
+// titles in the wild use a hyphen, en dash and em dash interchangeably. Falls
+// back to the whole (prefix-stripped) title when no separator exists.
 //
 // Examples:
 //   "GO - Auto Siero - WhatsApp automation" -> "Auto Siero"
@@ -10,10 +11,10 @@ import { INTERNAL_COMPANY_NAME } from "./trelloListMaps.ts";
 //   "DJ Supply"                             -> "DJ Supply"
 export const extractCompanyName = (cardName: string): string => {
   const withoutGoPrefix = cardName.replace(/^go\s*-\s*/i, "");
-  const separatorIndex = withoutGoPrefix.indexOf(" - ");
-  return separatorIndex === -1
+  const separator = /\s[-–—]\s/.exec(withoutGoPrefix);
+  return !separator
     ? withoutGoPrefix.trim()
-    : withoutGoPrefix.slice(0, separatorIndex).trim();
+    : withoutGoPrefix.slice(0, separator.index).trim();
 };
 
 // Hand-curated overrides for existing cards whose title doesn't follow the

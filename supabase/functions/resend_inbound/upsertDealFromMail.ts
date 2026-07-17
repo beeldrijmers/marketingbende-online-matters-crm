@@ -28,6 +28,7 @@ export const upsertDealFromMail = async ({
   assigneeIds,
   noteContent,
   handledCompanyIds,
+  sourceEventId,
 }: {
   contactEmail: string;
   subject: string;
@@ -43,6 +44,7 @@ export const upsertDealFromMail = async ({
   assigneeIds: number[];
   noteContent: string;
   handledCompanyIds: Set<number>;
+  sourceEventId?: string;
 }): Promise<number | null> => {
   try {
     // Resolve the just-created/matched contact and its company.
@@ -159,6 +161,7 @@ export const upsertDealFromMail = async ({
       dealId: createdDeal.id as number,
       noteContent,
       attachments: [],
+      sourceEventId,
     });
     if (!noteResponse.ok) {
       console.error(

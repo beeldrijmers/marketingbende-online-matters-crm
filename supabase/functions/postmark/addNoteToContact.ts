@@ -126,6 +126,7 @@ export const addNoteToContact = async ({
   companyName,
   website,
   createIfMissing = true,
+  sourceEventId,
 }: {
   salesEmail: string;
   email: string;
@@ -137,6 +138,8 @@ export const addNoteToContact = async ({
   companyName: string;
   website: string;
   createIfMissing?: boolean;
+  /** Provider-level idempotency/grouping key, e.g. gmail:<mailbox>:<message>. */
+  sourceEventId?: string;
 }) => {
   const { data: sales, error: fetchSalesError } = await supabaseAdmin
     .from("sales")
@@ -196,7 +199,9 @@ export const addNoteToContact = async ({
       text: noteContent,
       sales_id: sales.id,
       attachments,
+      ...(sourceEventId ? { source_event_id: sourceEventId } : {}),
     });
+  if (sourceEventId && createNoteError?.code === "23505") return;
   if (createNoteError) {
     return new Response(
       `Could not add note to contact ${email}, sales ${salesEmail}`,

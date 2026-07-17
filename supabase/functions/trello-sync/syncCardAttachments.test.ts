@@ -124,6 +124,7 @@ describe("syncCardAttachments", () => {
       text: attachmentNoteText(baseAttachment),
       sales_id: 1,
       activity_source: "trello",
+      source_event_id: "trello:attachment:att123",
       attachments: [
         {
           title: "Offerte klant.pdf",

@@ -71,6 +71,36 @@ select
 from public.deal_notes dn
     left join public.deals d on d.id = dn.deal_id;
 
+-- Dashboard/global feed: one provider message/comment is one activity even
+-- when the underlying note is linked to several contacts or deals. The base
+-- activity_log remains ungrouped for a company-specific timeline.
+create or replace view public.activity_log_global with (security_invoker = on) as
+select
+    id,
+    type,
+    date,
+    company_id,
+    sales_id,
+    company,
+    contact,
+    deal,
+    contact_note,
+    deal_note
+from (
+    select
+        activity.*,
+        row_number() over (
+            partition by coalesce(
+                nullif(activity.contact_note ->> 'source_event_id', ''),
+                nullif(activity.deal_note ->> 'source_event_id', ''),
+                activity.id
+            )
+            order by activity.date desc nulls last, activity.id desc
+        ) as source_event_rank
+    from public.activity_log as activity
+) as ranked_activity
+where source_event_rank = 1;
+
 create or replace view public.companies_summary with (security_invoker = on) as
 select
     c.id,

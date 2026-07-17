@@ -17,6 +17,7 @@ export const attachMailToCompanyDeal = async ({
   salesEmail,
   salesId,
   assigneeIds,
+  sourceEventId,
 }: {
   companyId: number;
   subject: string;
@@ -24,6 +25,7 @@ export const attachMailToCompanyDeal = async ({
   salesEmail: string;
   salesId: number | null;
   assigneeIds: number[];
+  sourceEventId?: string;
 }): Promise<number | null> => {
   try {
     const { data: existingDeal, error: dealError } = await supabaseAdmin
@@ -87,6 +89,7 @@ export const attachMailToCompanyDeal = async ({
       dealId,
       noteContent,
       attachments: [],
+      sourceEventId,
     });
     if (!noteResponse.ok) {
       console.error(

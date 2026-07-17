@@ -125,6 +125,7 @@ export type ContactNote = {
   sales_id: Identifier;
   activity_source?: ActivitySource;
   activity_source_author?: string | null;
+  source_event_id?: string | null;
   status: string;
   attachments?: AttachmentNote[];
 } & Pick<RaRecord, "id">;
@@ -207,6 +208,7 @@ export type DealNote = {
   sales_id: Identifier;
   activity_source?: ActivitySource;
   activity_source_author?: string | null;
+  source_event_id?: string | null;
   attachments?: AttachmentNote[];
   status?: string;
 } & Pick<RaRecord, "id">;
