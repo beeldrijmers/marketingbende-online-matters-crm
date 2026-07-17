@@ -1,8 +1,8 @@
 // One-time backfill: populates the CRM with a Deal (and Company) for every
 // existing card on the "SEO - Online Matters" Trello board, plus a deal note
 // per existing card comment. Safe to re-run: deals are matched/updated by
-// trello_card_id, companies are matched by name, and comments already
-// present as notes (same deal, date and text) are skipped.
+// trello_card_id, companies are matched by name, and comments converge via
+// their stable Trello action id (including edits and deletions).
 //
 // Usage (from the repo root, with the local Supabase stack running):
 //   TRELLO_API_KEY=... TRELLO_TOKEN=... \
@@ -13,11 +13,10 @@
 
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { fetchTrelloBoardCards } from "./fetchTrelloBoardCards.ts";
-import { fetchTrelloCard } from "./fetchTrelloCard.ts";
-import { fetchTrelloCardComments } from "./fetchTrelloCardComments.ts";
+import { fetchTrelloCardWithComments } from "./fetchTrelloCard.ts";
 import { upsertDealFromCard } from "./upsertDealFromCard.ts";
 import { syncCardAttachments } from "./syncCardAttachments.ts";
-import { addTrelloCommentAsDealNote } from "./addTrelloCommentAsDealNote.ts";
+import { syncTrelloCardComments } from "./syncTrelloCardComments.ts";
 import { archiveDealByCardId } from "./archiveDealByCardId.ts";
 import { resolveCompanyName } from "./companyNameOverrides.ts";
 import { findOrCreateCompany } from "./findOrCreateCompany.ts";
@@ -42,32 +41,6 @@ if (!apiKey || !token) {
   throw new Error("Missing TRELLO_API_KEY or TRELLO_TOKEN env variable");
 }
 
-const commentAlreadyBackfilled = async ({
-  dealId,
-  date,
-  text,
-}: {
-  dealId: number;
-  date: string;
-  text: string;
-}): Promise<boolean> => {
-  // .limit(1): should duplicates ever exist (e.g. two syncs raced before this
-  // check), the check must keep working instead of failing on "multiple rows"
-  // forever after.
-  const { data, error } = await supabaseAdmin
-    .from("deal_notes")
-    .select("id")
-    .eq("deal_id", dealId)
-    .eq("date", date)
-    .eq("text", text)
-    .limit(1)
-    .maybeSingle();
-  if (error) {
-    throw new Error(`Could not check for existing note: ${error.message}`);
-  }
-  return !!data;
-};
-
 const backfillCard = async (
   card: Awaited<ReturnType<typeof fetchTrelloBoardCards>>[number],
 ) => {
@@ -75,41 +48,28 @@ const backfillCard = async (
   // checklist items + members (which the bulk board endpoint may omit), so the
   // deal's steps are synced during backfill exactly as they are on the webhook
   // path. One extra call per card is fine for a one-time backfill.
-  const fullCard = await fetchTrelloCard(card.id);
+  const fullCard = await fetchTrelloCardWithComments(card.id);
   const dealId = await upsertDealFromCard(fullCard);
 
   // Import the card's uploaded files (idempotent: already-imported attachments
   // are skipped by their marker, so re-running the backfill is safe).
-  const attachmentCount = await syncCardAttachments({
-    dealId,
-    attachments: fullCard.uploadedAttachments,
-    apiKey,
-    token,
-  });
-
-  const comments = await fetchTrelloCardComments({
-    cardId: card.id,
-    apiKey,
-    token,
-  });
-  for (const comment of comments) {
-    const text = `[Trello - ${comment.authorName}]\n${comment.text}`;
-    if (await commentAlreadyBackfilled({ dealId, date: comment.date, text })) {
-      continue;
-    }
-    await addTrelloCommentAsDealNote({
+  const [attachmentCount, commentCount] = await Promise.all([
+    syncCardAttachments({
+      dealId,
+      attachments: fullCard.uploadedAttachments,
+      apiKey,
+      token,
+    }),
+    syncTrelloCardComments({
       trelloCardId: card.id,
-      authorName: comment.authorName,
-      commentText: comment.text,
-      date: comment.date,
-      sourceEventId: `trello:${comment.id}`,
-    });
-  }
+      comments: fullCard.comments ?? [],
+    }),
+  ]);
 
   return {
     cardId: card.id,
     dealId,
-    commentCount: comments.length,
+    commentCount,
     attachmentCount,
   };
 };
@@ -122,44 +82,27 @@ const backfillCard = async (
 const backfillArchivedCardWithUploads = async (
   card: Awaited<ReturnType<typeof fetchTrelloBoardCards>>[number],
 ): Promise<{ attachmentCount: number }> => {
-  const fullCard = await fetchTrelloCard(card.id);
+  const fullCard = await fetchTrelloCardWithComments(card.id);
   if (!fullCard.uploadedAttachments.length) return { attachmentCount: 0 };
 
   // Strip the checklist items so no tasks are created for archived projects.
-  const dealId = await upsertDealFromCard({
-    ...fullCard,
-    checkItems: [],
-    checklistsPresent: false,
-  });
+  const dealId = await upsertDealFromCard(fullCard, { syncSteps: false });
 
   // Comments first, while the deal is still active on first import
   // (addTrelloCommentAsDealNote only touches non-archived deals). On re-runs
   // the deal is already archived and the comments already imported.
-  const comments = await fetchTrelloCardComments({
-    cardId: card.id,
-    apiKey,
-    token,
-  });
-  for (const comment of comments) {
-    const text = `[Trello - ${comment.authorName}]\n${comment.text}`;
-    if (await commentAlreadyBackfilled({ dealId, date: comment.date, text })) {
-      continue;
-    }
-    await addTrelloCommentAsDealNote({
+  const [, attachmentCount] = await Promise.all([
+    syncTrelloCardComments({
       trelloCardId: card.id,
-      authorName: comment.authorName,
-      commentText: comment.text,
-      date: comment.date,
-      sourceEventId: `trello:${comment.id}`,
-    });
-  }
-
-  const attachmentCount = await syncCardAttachments({
-    dealId,
-    attachments: fullCard.uploadedAttachments,
-    apiKey,
-    token,
-  });
+      comments: fullCard.comments ?? [],
+    }),
+    syncCardAttachments({
+      dealId,
+      attachments: fullCard.uploadedAttachments,
+      apiKey,
+      token,
+    }),
+  ]);
 
   // No-op when the deal is already archived (re-runs).
   await archiveDealByCardId(card.id);

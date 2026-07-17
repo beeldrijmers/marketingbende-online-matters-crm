@@ -5,21 +5,69 @@ import {
   DEFAULT_CATEGORY,
 } from "./trelloListMaps.ts";
 
-// Deal category is derived purely from Trello signals (list or label), never
-// from card-title text, so it stays reproducible for future cards where the
-// sync can't rely on hindsight/domain knowledge the way the historical
-// backfill can for company names.
-export const resolveCategory = (listId: string, labels: string[]): string => {
+export type CategoryResolutionSource = "list" | "label" | "text" | "default";
+
+export interface CategoryResolution {
+  category: string;
+  source: CategoryResolutionSource;
+}
+
+// Lists and labels are authoritative. When both are absent, only explicit,
+// fixed wording may classify free text; broad semantic guessing is forbidden.
+// This lets title/description/comments enrich a card without any AI or
+// hindsight-based one-off rules.
+export const resolveCategoryWithSource = (
+  listId: string,
+  labels: string[],
+  text = "",
+): CategoryResolution => {
   const categoryFromList = CATEGORY_LIST_TO_CATEGORY[listId];
-  if (categoryFromList) return categoryFromList;
+  if (categoryFromList) {
+    return { category: categoryFromList, source: "list" };
+  }
 
   for (const label of labels) {
     const categoryFromLabel = LABEL_TO_CATEGORY[label];
-    if (categoryFromLabel) return categoryFromLabel;
+    if (categoryFromLabel) {
+      return { category: categoryFromLabel, source: "label" };
+    }
   }
 
-  return DEFAULT_CATEGORY;
+  if (
+    /\b(?:pakket|dienst|opdracht|categorie|type)\s*[:=-]\s*seo\b/i.test(text) ||
+    /\bseo[- ]?(?:pakket|abonnement|retainer)\b/i.test(text)
+  ) {
+    return { category: "seo", source: "text" };
+  }
+  if (
+    /\b(?:website|webshop)\s+(?:ontwikkelen|ontwikkeling|bouwen)\b/i.test(text)
+  ) {
+    return { category: "website-development", source: "text" };
+  }
+  if (
+    /\bwebsite\s+(?:optimalisatie|optimaliseren|aanpassingen)\b/i.test(text)
+  ) {
+    return { category: "website-optimalisatie", source: "text" };
+  }
+  if (/\beenmalig(?:e)?\s+(?:project|pagina|klus|opdracht)\b/i.test(text)) {
+    return { category: "eenmalig", source: "text" };
+  }
+  if (
+    /\bhappr(?:\.nl)?\b[^\n]{0,80}\b(?:onboarding|koppeling|inrichten)\b/i.test(
+      text,
+    )
+  ) {
+    return { category: "happr", source: "text" };
+  }
+
+  return { category: DEFAULT_CATEGORY, source: "default" };
 };
+
+export const resolveCategory = (
+  listId: string,
+  labels: string[],
+  text = "",
+): string => resolveCategoryWithSource(listId, labels, text).category;
 
 // The 5 genuine stage lists map directly to a stage. The 4 project/category
 // lists represent active production work, so they belong in "Bezig" unless
@@ -31,9 +79,23 @@ export const resolveStage = (
   listId: string,
   labels: string[],
   dueComplete: boolean,
+  revenuePeriod: string | null = null,
 ): string => {
   const stageFromList = LIST_TO_STAGE[listId];
-  if (stageFromList) return stageFromList;
+  if (stageFromList) {
+    // A monthly service in "Facturatie + live" is already running. Showing it
+    // as a one-way delivery phase makes recurring work look finished instead
+    // of active, so keep it in Bezig. A move to Klaar still resolves to won;
+    // the database cycle trigger records the completed month and returns the
+    // deal to Bezig in one atomic update.
+    if (
+      stageFromList === "facturatie-live" &&
+      revenuePeriod === "maandelijks"
+    ) {
+      return "bezig";
+    }
+    return stageFromList;
+  }
 
   if (labels.includes("Afgerond") || dueComplete) return "won";
   if (listId in CATEGORY_LIST_TO_CATEGORY) return "bezig";
@@ -64,14 +126,29 @@ export const resolveIsInternal = ({
   /lightspeed/i.test(dealName) ||
   /^(marketingbende|online matters)/i.test(companyName.trim());
 
-// Whether a deal's fee recurs monthly or is a one-off, derived from its
-// category: SEO is a monthly subscription, project categories are one-off.
-// Anything else (Happr, overig) is left unclassified (null) so it doesn't
-// count as either kind of revenue. Only set on creation and when a category
-// maps cleanly; a manual edit in the CRM always wins.
+export type RevenuePeriod = "maandelijks" | "eenmalig";
+
+const periodFromText = (text: string): RevenuePeriod | null => {
+  const monthly =
+    /per\s*maand|p\s*\/\s*m|\/\s*mnd|\bmnd\b|maandelijks|terugkerend|abonnement|retainer/i.test(
+      text,
+    );
+  const oneOff = /\beenmalig(?:e)?\b|one[- ]?off/i.test(text);
+
+  // Conflicting prose is not a license to guess. A list or label can still
+  // decide below, but otherwise the CRM leaves the field unclassified.
+  if (monthly === oneOff) return null;
+  return monthly ? "maandelijks" : "eenmalig";
+};
+
+// Whether a deal's fee recurs monthly or is a one-off. Explicit categories
+// are authoritative. Otherwise fixed wording is checked source-by-source in
+// the order supplied by the caller (normally newest comments, title, then
+// description) so old contradictory prose never wins by accident.
 export const resolveRevenuePeriod = (
   category: string,
-): "maandelijks" | "eenmalig" | null => {
+  text: string | string[] = "",
+): RevenuePeriod | null => {
   if (category === "seo") return "maandelijks";
   if (
     category === "eenmalig" ||
@@ -79,6 +156,12 @@ export const resolveRevenuePeriod = (
     category === "website-optimalisatie"
   ) {
     return "eenmalig";
+  }
+  if (category !== DEFAULT_CATEGORY) return null;
+
+  for (const sourceText of Array.isArray(text) ? text : [text]) {
+    const period = periodFromText(sourceText);
+    if (period) return period;
   }
   return null;
 };

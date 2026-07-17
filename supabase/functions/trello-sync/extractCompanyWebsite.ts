@@ -49,10 +49,18 @@ const isIgnored = (host: string): boolean =>
 export const extractCompanyWebsite = (
   desc: string,
   attachmentUrls: string[],
+  additionalTexts: string[] = [],
 ): string | null => {
   const urlRegex = /https?:\/\/[^\s)<>"']+/gi;
   const fromDescription = (desc ?? "").match(urlRegex) ?? [];
-  const candidates = [...(attachmentUrls ?? []), ...fromDescription];
+  const fromAdditionalText = additionalTexts.flatMap(
+    (text) => text.match(urlRegex) ?? [],
+  );
+  const candidates = [
+    ...(attachmentUrls ?? []),
+    ...fromDescription,
+    ...fromAdditionalText,
+  ];
 
   for (const candidate of candidates) {
     let host: string;

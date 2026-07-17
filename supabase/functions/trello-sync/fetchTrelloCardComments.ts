@@ -1,15 +1,10 @@
+import type { TrelloCommentInput } from "./trelloCardTypes.ts";
+
 interface TrelloCommentAction {
   id: string;
   date: string;
   memberCreator: { fullName: string };
   data: { text: string };
-}
-
-export interface TrelloComment {
-  id: string;
-  date: string;
-  authorName: string;
-  text: string;
 }
 
 // Trello's maximum page size for the actions endpoint. Without an explicit
@@ -29,7 +24,7 @@ export const fetchTrelloCardComments = async ({
   cardId: string;
   apiKey: string;
   token: string;
-}): Promise<TrelloComment[]> => {
+}): Promise<TrelloCommentInput[]> => {
   const actions: TrelloCommentAction[] = [];
   let before: string | undefined;
 

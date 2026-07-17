@@ -219,6 +219,10 @@ export const englishCrmMessages = {
     deals: {
       name: "Deal |||| Deals",
       forcedCaseName: "Deal",
+      completion_scope: {
+        active: "Active",
+        all: "Including done",
+      },
       steps: {
         title: "Steps",
         progress: "%{done}/%{total} done",
@@ -238,6 +242,8 @@ export const englishCrmMessages = {
         next: "Next",
         plan_overdue: "Plan overdue",
         plan_next: "Plan next step",
+        plan_task: "Plan task",
+        plan_task_for: "Plan next task for %{name}",
         complete: "Done",
         more: "+%{count}",
       },

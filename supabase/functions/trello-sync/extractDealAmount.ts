@@ -45,11 +45,38 @@ const findFirstAmount = (text: string): number | null => {
   return null;
 };
 
+export const hasExplicitPriceCorrection = (text: string): boolean =>
+  /\b(?:(?:aangepast|afgesproken|definitief|nieuw)(?:e)?\s+(?:prijs|bedrag|tarief)|(?:prijs|bedrag|tarief)\s*(?::|=|is\b|wordt\b))/i.test(
+    text,
+  ) && !/\b(?:oud|oude|voorheen|was)\s+(?:prijs|bedrag|tarief)\b/i.test(text);
+
 export const extractDealAmount = (
   name: string,
   desc: string,
+  commentTexts: string[] = [],
 ): number | null => {
+  // A clearly labelled price correction in the newest comment is the only
+  // comment signal allowed to supersede the maintained title. This keeps a
+  // historical remark such as "oude offerte € 500" from changing the deal,
+  // while "Definitief bedrag: € 750" does update it predictably.
+  const explicitCorrection = [...commentTexts]
+    .reverse()
+    .find(hasExplicitPriceCorrection);
+  const correctedAmount = explicitCorrection
+    ? findFirstAmount(explicitCorrection)
+    : null;
+  if (correctedAmount != null) return correctedAmount;
+
   // The card name usually carries the agreed price (e.g. "(eenmalig 750 excl.
   // btw)"), so it takes precedence over the (often multi-price) description.
-  return findFirstAmount(name ?? "") ?? findFirstAmount(desc ?? "");
+  // Comments are a final fallback when the maintained fields carry no price.
+  return (
+    findFirstAmount(name ?? "") ??
+    findFirstAmount(desc ?? "") ??
+    [...commentTexts]
+      .reverse()
+      .map(findFirstAmount)
+      .find((amount) => amount != null) ??
+    null
+  );
 };

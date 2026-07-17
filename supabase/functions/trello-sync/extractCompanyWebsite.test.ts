@@ -43,4 +43,14 @@ describe("extractCompanyWebsite", () => {
   it("ignores strings that are not valid urls", () => {
     expect(extractCompanyWebsite("mail naar info@klant.nl", [])).toBeNull();
   });
+
+  it("uses a website mentioned in a comment when maintained fields have none", () => {
+    expect(
+      extractCompanyWebsite(
+        "",
+        [],
+        ["Nieuwe website staat op https://www.voorbeeldklant.nl/live"],
+      ),
+    ).toBe("https://voorbeeldklant.nl");
+  });
 });

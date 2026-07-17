@@ -34,6 +34,17 @@ export interface TrelloUploadedAttachment {
   fileName: string | null;
 }
 
+// A Trello comment is both visible CRM history and deterministic source input
+// for enrichment (amounts, recurring wording, contact details and explicitly
+// labelled next steps). The action id stays stable when a comment is edited,
+// so it doubles as the idempotency key for notes and derived tasks.
+export interface TrelloCommentInput {
+  id: string;
+  date: string;
+  authorName: string;
+  text: string;
+}
+
 export interface TrelloCardInput {
   id: string;
   name: string;
@@ -51,6 +62,12 @@ export interface TrelloCardInput {
   // The card's markdown description — used to enrich the deal description and
   // to look for a client website (for the company logo).
   desc: string;
+  // Oldest first. Optional because the raw card endpoints do not embed the
+  // complete action history; fetchTrelloCardWithComments enriches the card
+  // before it reaches the sync. Keeping it optional also makes a partial
+  // Trello response safe: missing comments never masquerade as an empty,
+  // authoritative history.
+  comments?: TrelloCommentInput[];
   // URLs of the card's attachments — often the client's website, used as a
   // source for the company website/logo.
   attachmentUrls: string[];

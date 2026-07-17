@@ -726,6 +726,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/CompletionScopeInput.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/AttentionPipelineHeader.tsx",
           "type": "registry:component"
         },
