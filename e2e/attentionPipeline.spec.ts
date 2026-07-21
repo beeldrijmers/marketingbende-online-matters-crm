@@ -42,7 +42,9 @@ test.describe("attention pipeline", () => {
       .filter({ has: attentionHeading })
       .first();
     await expect(attentionHeading).toBeVisible();
-    await attentionSection.getByRole("link", { name: /kanban/i }).click();
+    await attentionSection
+      .getByRole("link", { name: "Werkbord", exact: true })
+      .click();
 
     await expect(page).toHaveURL(/#\/deals\/aandacht$/);
     await expect(

@@ -88,16 +88,21 @@ test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
 
   await page.waitForLoadState("networkidle");
 
-  await expect(page.getByText("Laatste activiteit")).toBeVisible();
-  await expect(
-    page.getByText("Laatste activiteit").locator("xpath=../.."),
-  ).toHaveText(/U heeft een bedrijf toegevoegd Smith Corp vandaag om/);
+  await page.getByRole("tab", { name: "Updates", exact: true }).click();
+  const activitySection = page.getByRole("tabpanel", {
+    name: "Updates",
+    exact: true,
+  });
+  await expect(activitySection).toBeVisible();
+  await expect(activitySection).toContainText(
+    /U heeft een bedrijf toegevoegd Smith Corp vandaag om/,
+  );
 
-  await expect(
-    page.getByText("Laatste activiteit").locator("xpath=../.."),
-  ).toHaveText(/U heeft toegevoegd Jane Smith aan Smith Corp vandaag om/);
+  await expect(activitySection).toContainText(
+    /U heeft toegevoegd Jane Smith aan Smith Corp vandaag om/,
+  );
 
-  await expect(
-    page.getByText("Laatste activiteit").locator("xpath=../.."),
-  ).toHaveText(/U heeft een notitie toegevoegd over Jane Smith vandaag om/);
+  await expect(activitySection).toContainText(
+    /U heeft een notitie toegevoegd over Jane Smith vandaag om/,
+  );
 });

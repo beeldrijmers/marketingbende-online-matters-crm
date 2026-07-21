@@ -46,7 +46,10 @@ test.describe("user adding a task", () => {
     await page.getByRole("button", { name: "Inloggen" }).click();
 
     await expect(page).toHaveTitle(/BANKAI CRM/);
-    await expect(page.getByText("Laatste activiteit")).toBeVisible();
+    await page.getByRole("tab", { name: "Updates", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "Recente updates", exact: true }),
+    ).toBeVisible();
 
     await menu.goToContacts();
     await page.waitForLoadState("networkidle");
@@ -87,6 +90,7 @@ test.describe("user adding a task", () => {
         /Follow up with Jane/,
       );
       await menu.goToDashboard();
+      await page.getByRole("tab", { name: "Vandaag", exact: true }).click();
 
       await expect(page.getByText("Aankomende taken")).toBeVisible();
       await expect(

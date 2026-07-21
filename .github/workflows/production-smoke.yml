@@ -43,7 +43,7 @@ jobs:
         run: npm ci
 
       - name: 🎭 Install Chromium
-        run: npx playwright install --with-deps chromium-headless-shell 1>/dev/null
+        run: npx playwright install chromium-headless-shell 1>/dev/null
 
       - name: 🩺 Check production
         run: npx playwright test --config playwright.production.config.ts
