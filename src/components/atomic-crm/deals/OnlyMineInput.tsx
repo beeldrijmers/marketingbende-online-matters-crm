@@ -26,7 +26,7 @@ export const OnlyMineInput = (_: { alwaysOn: boolean; source: string }) => {
         />
         <Label htmlFor="only-mine">
           {translate("resources.deals.filters.only_mine", {
-            _: "Alleen mijn deals",
+            _: "Alleen mijn opdrachten",
           })}
         </Label>
       </div>

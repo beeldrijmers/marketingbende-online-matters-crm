@@ -5,11 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Company, Contact, ContactNote, Deal } from "../types";
 import { ContactCreateSheet } from "../contacts/ContactCreateSheet";
 import { NoteCreateSheet } from "../notes/NoteCreateSheet";
-import { DashboardActivityLog } from "./DashboardActivityLog";
-import { DealActionQueue } from "./DealActionQueue";
 import { DashboardStepper } from "./DashboardStepper";
-import { HotContacts } from "./HotContacts";
-import { Welcome } from "./Welcome";
+import { DashboardWorkspace } from "./DashboardWorkspace";
 import MobileHeader from "../layout/MobileHeader";
 import { MobileContent } from "../layout/MobileContent";
 import { useConfigurationContext } from "../root/ConfigurationContext";
@@ -119,11 +116,8 @@ export const MobileDashboard = () => {
           onNewNote={() => setNoteCreateOpen(true)}
         />
       ) : (
-        <div className="flex flex-col gap-6 mt-1">
-          {import.meta.env.VITE_IS_DEMO === "true" ? <Welcome /> : null}
-          <DealActionQueue />
-          <HotContacts />
-          <DashboardActivityLog />
+        <div className="mt-1 min-w-0">
+          <DashboardWorkspace hasDeals={Boolean(totalDeal)} mobile />
         </div>
       )}
     </Wrapper>

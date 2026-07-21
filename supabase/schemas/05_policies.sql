@@ -47,8 +47,9 @@ create policy "Enable insert for authenticated users only" on public.contact_not
 create policy "Contact Notes Update policy" on public.contact_notes for update to authenticated using (public.is_active_crm_user());
 create policy "Contact Notes Delete Policy" on public.contact_notes for delete to authenticated using (public.is_active_crm_user());
 
--- Deals: a deal is only visible to (and editable/deletable by) the sales users
--- it is assigned to. assignee_ids is the card's access-control list; the
+-- Deals: administrators can oversee and manage the complete shared Trello
+-- board. Other users only see and manage deals assigned to them. assignee_ids
+-- remains the card's ownership/access-control list for non-admin users; the
 -- default-assignee trigger (set_sales_id_default) makes every new deal
 -- assigned to at least its owner, so nothing is created invisible. The
 -- moneybird/trello/inbound edge functions run as service_role and bypass RLS,
@@ -56,13 +57,13 @@ create policy "Contact Notes Delete Policy" on public.contact_notes for delete t
 -- assigns themselves via the trigger/form); the read policy then governs
 -- whether they see it back.
 create policy "Enable read access for deal assignees" on public.deals for select to authenticated
-  using ((select id from public.sales where user_id = (select auth.uid()) and disabled = false) = any (assignee_ids));
+  using (public.is_admin() or (select id from public.sales where user_id = (select auth.uid()) and disabled = false) = any (assignee_ids));
 create policy "Enable insert for authenticated users only" on public.deals for insert to authenticated with check (public.is_active_crm_user());
 create policy "Enable update for deal assignees" on public.deals for update to authenticated
-  using ((select id from public.sales where user_id = (select auth.uid()) and disabled = false) = any (assignee_ids))
+  using (public.is_admin() or (select id from public.sales where user_id = (select auth.uid()) and disabled = false) = any (assignee_ids))
   with check (public.is_active_crm_user());
 create policy "Deals Delete Policy" on public.deals for delete to authenticated
-  using ((select id from public.sales where user_id = (select auth.uid()) and disabled = false) = any (assignee_ids));
+  using (public.is_admin() or (select id from public.sales where user_id = (select auth.uid()) and disabled = false) = any (assignee_ids));
 
 -- Deal Notes: a note follows its deal's visibility. The subquery on deals is
 -- itself under the deals RLS, so "deal_id in (select id from public.deals)"

@@ -746,6 +746,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/dashboard/trelloBoardModel.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/dashboard/revenueModel.ts",
           "type": "registry:component"
         },
@@ -763,6 +767,10 @@
         },
         {
           "path": "src/components/atomic-crm/dashboard/Welcome.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/dashboard/TrelloWorkflowOverview.tsx",
           "type": "registry:component"
         },
         {
@@ -799,6 +807,10 @@
         },
         {
           "path": "src/components/atomic-crm/dashboard/DealActionQueue.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/dashboard/DashboardWorkspace.tsx",
           "type": "registry:component"
         },
         {

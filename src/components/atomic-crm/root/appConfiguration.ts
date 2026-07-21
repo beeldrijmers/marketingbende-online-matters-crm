@@ -28,8 +28,8 @@ export const dealPipelineStatuses = ["won"];
 export const dealCategories = [
   { value: "seo", label: "SEO" },
   { value: "eenmalig", label: "Eenmalig project" },
-  { value: "website-development", label: "Website development" },
-  { value: "website-optimalisatie", label: "Website optimalisatie" },
+  { value: "website-development", label: "Websiteontwikkeling" },
+  { value: "website-optimalisatie", label: "Websiteoptimalisatie" },
   { value: "happr", label: "Happr.nl" },
   { value: "overig", label: "Overig" },
 ];

@@ -12,8 +12,12 @@ const RevenueDashboard = lazy(() =>
   })),
 );
 
-export const RevenueDisclosure = () => {
-  const [open, setOpen] = useState(false);
+export const RevenueDisclosure = ({
+  defaultOpen = false,
+}: {
+  defaultOpen?: boolean;
+}) => {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <section className="flex min-w-0 flex-col gap-3">
       <Card className="p-0">

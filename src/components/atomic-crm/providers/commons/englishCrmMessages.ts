@@ -220,8 +220,8 @@ export const englishCrmMessages = {
       name: "Deal |||| Deals",
       forcedCaseName: "Deal",
       completion_scope: {
-        active: "Active",
-        all: "Including done",
+        active: "Open work only",
+        all: "All stages",
       },
       steps: {
         title: "Steps",

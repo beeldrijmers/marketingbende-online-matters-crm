@@ -22,6 +22,7 @@ export default (config: GenerateDataConfig = {}): Db => {
   db.contact_notes = generateContactNotes(db);
   db.deals = generateDeals(db, config);
   db.deal_notes = generateDealNotes(db);
+  db.integration_runs = [];
   db.tasks = generateTasks(db);
   db.configuration = [
     {

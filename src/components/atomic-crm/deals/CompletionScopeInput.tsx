@@ -4,8 +4,25 @@ import { cn } from "@/lib/utils";
 
 type CompletionScope = "active" | "all";
 
-// Completed work stays available without taking over the operational board.
-// The default view is active-only; one click restores the Klaar column.
+const completionScopeOptions: Array<{
+  value: CompletionScope;
+  label: string;
+  fallback: string;
+}> = [
+  {
+    value: "active",
+    label: "resources.deals.completion_scope.active",
+    fallback: "Alleen open werk",
+  },
+  {
+    value: "all",
+    label: "resources.deals.completion_scope.all",
+    fallback: "Alle fasen",
+  },
+];
+
+// The default shows the complete workflow, including the Klaar column.
+// Users who only need current work can still collapse the historical column.
 export const CompletionScopeInput = ({
   className,
 }: {
@@ -25,27 +42,10 @@ export const CompletionScopeInput = ({
     setFilters(next, displayedFilters);
   };
 
-  const options: Array<{
-    value: CompletionScope;
-    label: string;
-    fallback: string;
-  }> = [
-    {
-      value: "active",
-      label: "resources.deals.completion_scope.active",
-      fallback: "Actief",
-    },
-    {
-      value: "all",
-      label: "resources.deals.completion_scope.all",
-      fallback: "Inclusief klaar",
-    },
-  ];
-
   return (
     <div className={cn("mt-auto flex h-9 items-center", className)}>
       <div className="inline-flex rounded-lg border bg-muted/40 p-0.5">
-        {options.map((option) => (
+        {completionScopeOptions.map((option) => (
           <button
             key={option.value}
             type="button"

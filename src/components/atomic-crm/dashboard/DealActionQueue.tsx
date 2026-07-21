@@ -78,7 +78,7 @@ export const DealActionQueue = () => {
         <Button asChild variant="ghost" size="sm" className="shrink-0">
           <Link to={DEAL_ATTENTION_PATH}>
             {translate("crm.dashboard.deal_actions.open_board", {
-              _: "Kanban",
+              _: "Werkbord",
             })}
             <ArrowRight className="size-4" />
           </Link>
@@ -107,7 +107,7 @@ export const DealActionQueue = () => {
               </p>
               <p className="text-sm text-muted-foreground">
                 {translate("crm.dashboard.deal_actions.empty", {
-                  _: "Er zijn geen achterstallige of ongeplande deals.",
+                  _: "Er zijn geen achterstallige of ongeplande opdrachten.",
                 })}
               </p>
             </div>

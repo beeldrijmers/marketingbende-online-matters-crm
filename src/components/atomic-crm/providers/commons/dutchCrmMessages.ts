@@ -46,7 +46,7 @@ export const dutchCrmMessages = {
       followed_by_you: "Gevolgd door u",
       no_contacts: "Geen contact",
       nb_contacts: "%{smart_count} contact |||| %{smart_count} contacten",
-      nb_deals: "%{smart_count} deal |||| %{smart_count} deals",
+      nb_deals: "%{smart_count} opdracht |||| %{smart_count} opdrachten",
       sizes: {
         one_employee: "1 medewerker",
         two_to_nine_employees: "2-9 medewerkers",
@@ -190,42 +190,43 @@ export const dutchCrmMessages = {
       },
       hot: {
         active_deals:
-          "%{smart_count} actieve deal |||| %{smart_count} actieve deals",
+          "%{smart_count} actieve opdracht |||| %{smart_count} actieve opdrachten",
         empty_hint:
-          "Zodra er een actieve klantdeal is, verschijnt de relatie hier automatisch.",
-        empty_title: "Nog geen actieve leads",
-        hot_label: "Hot",
+          "Zodra er een actieve klantopdracht is, verschijnt de relatie hier automatisch.",
+        empty_title: "Nog geen actieve kansen",
+        hot_label: "Heet",
         missing_contact: "Contact nog koppelen",
-        more: "Nog %{count} actieve relaties op het kanbanbord",
-        open_board: "Alle leads",
-        pipeline: "%{amount} pipeline",
+        more: "Nog %{count} actieve relaties op het werkbord",
+        open_board: "Alle kansen",
+        pipeline: "%{amount} in werkstroom",
         reasons: {
           active_delivery: "Actief project",
           active_opportunity: "Open kans",
           closing_overdue: "Verwachte sluitdatum verlopen",
-          high_value: "Hoge dealwaarde",
-          hot_contact: "Contact staat op hot",
-          multiple_deals: "Meerdere actieve deals",
+          high_value: "Hoge opdrachtwaarde",
+          hot_contact: "Contact heeft status Heet",
+          multiple_deals: "Meerdere actieve opdrachten",
           recent_activity: "Recent contact",
           ready_to_invoice: "Klaar voor facturatie",
           urgent_follow_up: "Opvolging vandaag of te laat",
         },
-        subtitle: "Automatisch bepaald uit deals, opvolging en activiteit.",
+        subtitle:
+          "Automatisch bepaald uit opdrachten, opvolging en activiteit.",
         tiers: {
-          hot: "Hot",
+          hot: "Heet",
           warm: "Warm",
           watch: "Volgen",
         },
-        title: "Hot contacten & leads",
+        title: "Warme contacten en kansen",
         unnamed_contact: "Naamloos contact",
       },
     },
     deals: {
-      name: "Deal |||| Deals",
-      forcedCaseName: "Deal",
+      name: "Opdracht |||| Opdrachten",
+      forcedCaseName: "Opdracht",
       completion_scope: {
-        active: "Actief",
-        all: "Inclusief klaar",
+        active: "Alleen open werk",
+        all: "Alle fasen",
       },
       steps: {
         title: "Stappen",
@@ -275,20 +276,20 @@ export const dutchCrmMessages = {
         stage: "Fase",
       },
       action: {
-        back_to_deal: "Terug naar deal",
-        create: "Deal aanmaken",
-        new: "Nieuwe deal",
+        back_to_deal: "Terug naar opdracht",
+        create: "Opdracht aanmaken",
+        new: "Nieuwe opdracht",
       },
       field_categories: {
         misc: "Overig",
       },
       archived: {
         action: "Archiveren",
-        error: "Fout: deal niet gearchiveerd",
-        list_title: "Gearchiveerde deals",
-        success: "Deal gearchiveerd",
-        title: "Gearchiveerde deal",
-        view: "Gearchiveerde deals bekijken",
+        error: "Fout: opdracht niet gearchiveerd",
+        list_title: "Gearchiveerde opdrachten",
+        success: "Opdracht gearchiveerd",
+        title: "Gearchiveerde opdracht",
+        view: "Gearchiveerde opdrachten bekijken",
       },
       moneybird: {
         estimate: {
@@ -297,7 +298,7 @@ export const dutchCrmMessages = {
           pending: "Offerte wordt aangemaakt...",
           dialog_title: "Moneybird-offerte aanmaken",
           dialog_description:
-            "Controleer de gegevens en maak een concept-offerte aan in Moneybird voor deze deal.",
+            "Controleer de gegevens en maak een concept-offerte aan in Moneybird voor deze opdracht.",
           confirm: "Offerte aanmaken",
           warning:
             "Dit maakt een echte concept-offerte aan in uw eigen Moneybird-administratie. De offerte wordt niet automatisch naar de klant gemaild.",
@@ -310,7 +311,7 @@ export const dutchCrmMessages = {
           pending: "Factuur wordt aangemaakt...",
           dialog_title: "Moneybird-factuur aanmaken",
           dialog_description:
-            "Controleer de gegevens en maak een concept-factuur aan in Moneybird voor deze deal.",
+            "Controleer de gegevens en maak een concept-factuur aan in Moneybird voor deze opdracht.",
           confirm: "Factuur aanmaken",
           warning:
             "Dit maakt een echte concept-factuur aan in uw eigen Moneybird-administratie. De factuur wordt NIET automatisch verzonden; verstuur hem zelf vanuit Moneybird.",
@@ -333,8 +334,8 @@ export const dutchCrmMessages = {
           "Er zijn meerdere contactpersonen gekoppeld; het document gaat naar het bedrijf, niet naar een specifiek contact.",
         warning_title: "Let op: echt document",
         no_company:
-          "Deze deal heeft geen gekoppeld bedrijf; koppel eerst een bedrijf.",
-        no_amount: "Deze deal heeft geen bedrag; stel eerst een bedrag in.",
+          "Deze opdracht heeft geen gekoppeld bedrijf; koppel eerst een bedrijf.",
+        no_amount: "Deze opdracht heeft geen bedrag; stel eerst een bedrag in.",
         wrong_currency:
           "De Moneybird-koppeling werkt alleen met de valuta EUR.",
         creating: "Bezig met aanmaken...",
@@ -344,38 +345,38 @@ export const dutchCrmMessages = {
       inbound: {
         title: "Inkomende e-mail",
         description:
-          "Stuur e-mails door naar dit adres of zet het in de Cc om ze automatisch als notitie aan deze deal toe te voegen.",
+          "Stuur e-mails door naar dit adres of zet het in de Cc om ze automatisch als notitie aan deze opdracht toe te voegen.",
       },
       inputs: {
         linked_to: "Gekoppeld aan",
       },
       unarchived: {
         action: "Terugzetten op het bord",
-        error: "Fout: deal niet teruggezet",
-        success: "Deal teruggezet",
+        error: "Fout: opdracht niet teruggezet",
+        success: "Opdracht teruggezet",
       },
-      updated: "Deal bijgewerkt",
+      updated: "Opdracht bijgewerkt",
       scope: {
         all: "Alles",
         internal: "Intern",
         external: "Extern",
       },
       trello_sync: {
-        action: "Synchroniseer Trello",
+        action: "Kaarten synchroniseren",
         pending: "Synchroniseren...",
         stage_summary:
           "Niet bevestigd %{new_count} · Bevestigd %{confirmed_count} · Wacht %{hold_count} · Bezig %{active_count} · Controle %{review_count} · Factureren %{live_count} · Afgerond %{won_count} · Maandelijks %{monthly_count}",
         success:
-          "Trello gesynchroniseerd: %{smart_count} kaart in %{duration}. %{stage_summary} |||| Trello gesynchroniseerd: %{smart_count} kaarten in %{duration}. %{stage_summary}",
+          "Kaarten gesynchroniseerd: %{smart_count} kaart in %{duration}. %{stage_summary} |||| Kaarten gesynchroniseerd: %{smart_count} kaarten in %{duration}. %{stage_summary}",
         partial:
-          "Trello deels gesynchroniseerd in %{duration}: %{synced} actieve kaarten verwerkt. %{failed_count} mislukt (%{failed_names}). %{stage_summary}",
-        error: "Synchroniseren met Trello is mislukt",
+          "Kaarten deels gesynchroniseerd in %{duration}: %{synced} actieve kaarten verwerkt. %{failed_count} mislukt (%{failed_names}). %{stage_summary}",
+        error: "Kaarten synchroniseren is mislukt",
       },
 
       empty: {
-        before_create: "voordat u een deal aanmaakt.",
-        description: "Het lijkt erop dat uw deallijst leeg is.",
-        title: "Geen deals gevonden",
+        before_create: "voordat u een opdracht aanmaakt.",
+        description: "Het lijkt erop dat uw opdrachtenlijst leeg is.",
+        title: "Geen opdrachten gevonden",
       },
       invalid_date: "Ongeldige datum",
       no_date: "Nog niet gepland",
@@ -383,14 +384,14 @@ export const dutchCrmMessages = {
       no_amount: "Nog geen bedrag",
       per_month_suffix: "/mnd",
       move_error:
-        "De deal kon niet worden verplaatst. Het bord is teruggezet naar de opgeslagen situatie.",
-      partial_load: "Er worden %{loaded} van %{total} deals getoond.",
+        "De opdracht kon niet worden verplaatst. Het bord is teruggezet naar de opgeslagen situatie.",
+      partial_load: "Er worden %{loaded} van %{total} opdrachten getoond.",
       revenue_period_options: {
         maandelijks: "Maandelijks terugkerend",
         eenmalig: "Eenmalig",
       },
       filters: {
-        only_mine: "Alleen mijn deals",
+        only_mine: "Alleen mijn opdrachten",
       },
     },
     notes: {
@@ -401,7 +402,7 @@ export const dutchCrmMessages = {
         date: "Datum",
         attachments: "Bijlagen",
         contact_id: "Contact",
-        deal_id: "Deal",
+        deal_id: "Opdracht",
       },
       action: {
         add: "Notitie toevoegen",
@@ -592,10 +593,11 @@ export const dutchCrmMessages = {
       you_added_contact: "U heeft toegevoegd",
       added_note: "%{name} heeft een notitie toegevoegd over",
       you_added_note: "U heeft een notitie toegevoegd over",
-      added_note_about_deal: "%{name} heeft een notitie toegevoegd over deal",
-      you_added_note_about_deal: "U heeft een notitie toegevoegd over deal",
-      added_deal: "%{name} heeft een deal toegevoegd",
-      you_added_deal: "U heeft een deal toegevoegd",
+      added_note_about_deal:
+        "%{name} heeft een notitie toegevoegd over opdracht",
+      you_added_note_about_deal: "U heeft een notitie toegevoegd over opdracht",
+      added_deal: "%{name} heeft een opdracht toegevoegd",
+      you_added_deal: "U heeft een opdracht toegevoegd",
       at_company: "bij",
       to: "aan",
       load_more: "Meer activiteit laden",
@@ -621,14 +623,14 @@ export const dutchCrmMessages = {
       },
     },
     dashboard: {
-      deals_pipeline: "Deals pipeline",
+      deals_pipeline: "Opdrachtenbord",
       deal_actions: {
         title: "Dit heeft je aandacht nodig",
         subtitle:
           "Alleen afwijkingen: te laat, vandaag, verlopen of nog niet gepland.",
-        open_board: "Kanban",
+        open_board: "Werkbord",
         empty_title: "Alles onder controle",
-        empty: "Er zijn geen achterstallige of ongeplande deals.",
+        empty: "Er zijn geen achterstallige of ongeplande opdrachten.",
         next_task: "Volgende taak",
         recommended_action: "Aanbevolen volgende stap",
         summary: "Samenvatting aandachtspunten",
@@ -650,11 +652,11 @@ export const dutchCrmMessages = {
         oneoff_sub: "eenmalige projecten dit jaar",
         forecast: "Prognose (verwacht)",
         forecast_label: "Verwachte omzet",
-        forecast_sub: "open deals, gewogen naar fase",
+        forecast_sub: "open opdrachten, gewogen naar fase",
         empty:
-          "Nog geen omzetgegevens. Zet een bedrag en type (maandelijks/eenmalig) op uw deals.",
+          "Nog geen omzetgegevens. Zet een bedrag en type (maandelijks/eenmalig) op uw opdrachten.",
       },
-      latest_activity: "Laatste activiteit",
+      latest_activity: "Recente updates",
       latest_activity_error: "Fout bij het laden van de laatste activiteit",
       latest_notes: "Mijn laatste notities",
       latest_notes_added_ago: "toegevoegd %{timeAgo}",
@@ -712,7 +714,7 @@ export const dutchCrmMessages = {
         categories: "Categorieën",
         currency: "Valuta",
         pipeline_help:
-          "Selecteer welke dealfasen meetellen als pipeline-deals.",
+          "Selecteer welke opdrachtfasen meetellen in de werkstroom.",
         pipeline_statuses: "Pipelinestatussen",
         stages: "Fasen",
       },
@@ -736,7 +738,7 @@ export const dutchCrmMessages = {
       validation: {
         duplicate: "Dubbele %{display_name}: %{items}",
         in_use:
-          "Kan %{display_name} die nog worden gebruikt door deals niet verwijderen: %{items}",
+          "Kan %{display_name} die nog worden gebruikt door opdrachten niet verwijderen: %{items}",
         validating: "Bezig met valideren…",
         entities: {
           categories: "categorieën",
@@ -774,7 +776,7 @@ export const dutchCrmMessages = {
         sync_error: "Synchronisatieprobleem: %{error}",
         sync_label: "Gmail-label voor CRM-import",
         sync_label_description:
-          "Alleen berichten die u expliciet dit label geeft, worden verwerkt. Gmail maakt nooit automatisch contacten, bedrijven of deals aan.",
+          "Alleen berichten die u expliciet dit label geeft, worden verwerkt. Gmail maakt nooit automatisch contacten, bedrijven of opdrachten aan.",
         sync_label_placeholder: "Kies bijvoorbeeld CRM",
         sync_label_loading: "Gmail-labels laden…",
         sync_label_empty:
@@ -804,7 +806,7 @@ export const dutchCrmMessages = {
       moneybird: {
         title: "Moneybird",
         description:
-          "Koppel uw eigen Moneybird-administratie om offertes en facturen vanuit deals aan te maken. Maak in Moneybird een persoonlijk API-token aan (profielicoon, Instellingen, Ontwikkelaars, Token aanmaken) en plak het hier.",
+          "Koppel uw eigen Moneybird-administratie om offertes en facturen vanuit opdrachten aan te maken. Maak in Moneybird een persoonlijk API-token aan (profielicoon, Instellingen, Ontwikkelaars, Token aanmaken) en plak het hier.",
         token_label: "Persoonlijk API-token",
         token_help:
           "Het token wordt gecontroleerd bij Moneybird en versleuteld opgeslagen. Het wordt daarna nooit meer getoond.",

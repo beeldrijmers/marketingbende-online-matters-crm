@@ -225,8 +225,8 @@ export const frenchCrmMessages = {
       name: "Affaire |||| Affaires",
       forcedCaseName: "Affaire",
       completion_scope: {
-        active: "Actives",
-        all: "Avec les terminées",
+        active: "Travail ouvert",
+        all: "Toutes les étapes",
       },
       steps: {
         title: "Étapes",

@@ -62,7 +62,7 @@ export const SyncTrelloButton = () => {
         error instanceof Error
           ? error.message
           : translate("resources.deals.trello_sync.error", {
-              _: "Synchroniseren met Trello is mislukt",
+              _: "Kaarten synchroniseren is mislukt",
             }),
         { type: "error" },
       );
@@ -95,7 +95,7 @@ export const SyncTrelloButton = () => {
             _: "Synchroniseren...",
           })} ${elapsedSeconds}s`
         : translate("resources.deals.trello_sync.action", {
-            _: "Synchroniseer Trello",
+            _: "Kaarten synchroniseren",
           })}
     </Button>
   );

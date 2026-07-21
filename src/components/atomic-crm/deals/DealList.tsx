@@ -80,9 +80,6 @@ export const DealList = ({ dashboardSelection }: DealListProps = {}) => {
         "archived_at@is": null,
         ...getDashboardDealSelectionFilter(dashboardSelection ?? null),
       }}
-      filterDefaultValues={
-        dashboardSelection ? undefined : { "stage@neq": "won" }
-      }
       disableBreadcrumb={attentionPipeline}
       disableHeader={attentionPipeline}
       title={attentionPipeline ? false : (dashboardSelection?.label ?? false)}
@@ -91,7 +88,9 @@ export const DealList = ({ dashboardSelection }: DealListProps = {}) => {
       actions={attentionPipeline ? false : <DealActions />}
       pagination={null}
       storeKey={
-        dashboardSelection ? `deals.${dashboardSelection.kind}` : undefined
+        dashboardSelection
+          ? `deals.${dashboardSelection.kind}`
+          : "deals.full-workboard.v1"
       }
     >
       <DealLayout dashboardSelection={dashboardSelection} />
@@ -160,7 +159,9 @@ const DealLayout = ({
           </p>
           <Button asChild variant="ghost" size="sm">
             <Link to="/deals" replace>
-              {translate("resources.deals.all_deals", { _: "Alle deals" })}
+              {translate("resources.deals.all_deals", {
+                _: "Alle opdrachten",
+              })}
             </Link>
           </Button>
         </div>

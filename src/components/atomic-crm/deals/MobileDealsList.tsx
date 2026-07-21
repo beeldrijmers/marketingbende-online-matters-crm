@@ -68,14 +68,11 @@ export const MobileDealsList = ({
         "archived_at@is": null,
         ...getDashboardDealSelectionFilter(dashboardSelection ?? null),
       }}
-      filterDefaultValues={
-        dashboardSelection ? undefined : { "stage@neq": "won" }
-      }
       sort={{ field: "index", order: "ASC" }}
       storeKey={
         dashboardSelection
           ? `deals.mobile.${dashboardSelection.kind}`
-          : undefined
+          : "deals.mobile.full-workboard.v1"
       }
     >
       <DealsLayoutMobile
@@ -237,12 +234,14 @@ const DealsLayoutMobile = ({
         ) : error ? (
           <p className="text-sm text-destructive">
             {translate("ra.notification.http_error", {
-              _: "Er ging iets mis bij het laden van de deals.",
+              _: "Er ging iets mis bij het laden van de opdrachten.",
             })}
           </p>
         ) : data?.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            {translate("resources.deals.empty", { _: "Nog geen deals" })}
+            {translate("resources.deals.empty", {
+              _: "Nog geen opdrachten",
+            })}
           </p>
         ) : (
           <div className="flex flex-col gap-6">

@@ -2,15 +2,8 @@ import { useGetList } from "ra-core";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Company, Contact, ContactNote, Deal } from "../types";
-import { BillingQueue } from "./BillingQueue";
-import { DealActionQueue } from "./DealActionQueue";
-import { DashboardActivityLog } from "./DashboardActivityLog";
 import { DashboardStepper } from "./DashboardStepper";
-import { HotContacts } from "./HotContacts";
-import { IntegrationStatus } from "./IntegrationStatus";
-import { RevenueDisclosure } from "./RevenueDisclosure";
-import { TasksList } from "./TasksList";
-import { Welcome } from "./Welcome";
+import { DashboardWorkspace } from "./DashboardWorkspace";
 
 export const Dashboard = () => {
   const {
@@ -78,21 +71,8 @@ export const Dashboard = () => {
   }
 
   return (
-    <div className="mt-1 grid grid-cols-1 items-start gap-5 xl:grid-cols-12">
-      {/* Independent desktop columns prevent a tall card from creating an empty
-          grid cell underneath the shorter card next to it. */}
-      <div className="flex min-w-0 flex-col gap-5 xl:col-span-8">
-        <DealActionQueue />
-        <BillingQueue />
-        {totalDeal ? <RevenueDisclosure /> : null}
-        <DashboardActivityLog />
-      </div>
-      <div className="flex min-w-0 flex-col gap-5 xl:col-span-4">
-        {import.meta.env.VITE_IS_DEMO === "true" ? <Welcome /> : null}
-        {import.meta.env.VITE_IS_DEMO !== "true" ? <IntegrationStatus /> : null}
-        <HotContacts />
-        <TasksList />
-      </div>
+    <div className="mt-1 min-w-0">
+      <DashboardWorkspace hasDeals={Boolean(totalDeal)} />
     </div>
   );
 };

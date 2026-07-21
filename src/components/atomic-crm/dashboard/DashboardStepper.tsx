@@ -46,7 +46,7 @@ export const DashboardStepper = ({
                 checklist icons below already show what is done. */}
             <h3 className="text-lg font-bold mb-8">
               {translate("crm.dashboard.stepper.whats_next", {
-                _: "What's next?",
+                _: "Wat nu?",
               })}
             </h3>
             <div className="flex flex-col gap-12">
@@ -54,7 +54,7 @@ export const DashboardStepper = ({
                 <CheckCircle className="text-green-600 dark:text-green-500 w-5 h-5 shrink-0" />
                 <h4 className="font-bold">
                   {translate("crm.dashboard.stepper.install", {
-                    _: "Install %{title}",
+                    _: "%{title} installeren",
                     title,
                   })}
                 </h4>
@@ -69,7 +69,7 @@ export const DashboardStepper = ({
                 <div className="flex flex-col gap-4">
                   <h4 className="font-bold">
                     {translate("resources.contacts.action.add_first", {
-                      _: "Add your first contact",
+                      _: "Voeg uw eerste contact toe",
                     })}
                   </h4>
 
@@ -82,7 +82,7 @@ export const DashboardStepper = ({
                       >
                         <Plus className="h-4 w-4" />
                         {translate("resources.contacts.action.new", {
-                          _: "New Contact",
+                          _: "Nieuw contact",
                         })}
                       </Button>
                     ) : (
@@ -102,12 +102,12 @@ export const DashboardStepper = ({
                 <div className="flex flex-col gap-4">
                   <h4 className="font-bold">
                     {translate("resources.notes.action.add_first", {
-                      _: "Add your first note",
+                      _: "Voeg uw eerste notitie toe",
                     })}
                   </h4>
                   <p>
                     {translate("resources.notes.stepper.hint", {
-                      _: "Go to a contact page and add a note",
+                      _: "Ga naar een contact en voeg een notitie toe",
                     })}
                   </p>
                   {isMobile ? (
@@ -118,7 +118,7 @@ export const DashboardStepper = ({
                     >
                       <Plus className="h-4 w-4" />
                       {translate("resources.notes.action.add", {
-                        _: "Add note",
+                        _: "Notitie toevoegen",
                       })}
                     </Button>
                   ) : step >= 2 && contactId != null ? (
@@ -128,14 +128,14 @@ export const DashboardStepper = ({
                     <Button asChild className="w-fit">
                       <Link to={`/contacts/${contactId}/show`}>
                         {translate("resources.notes.action.add", {
-                          _: "Add note",
+                          _: "Notitie toevoegen",
                         })}
                       </Link>
                     </Button>
                   ) : (
                     <Button disabled className="w-fit">
                       {translate("resources.notes.action.add", {
-                        _: "Add note",
+                        _: "Notitie toevoegen",
                       })}
                     </Button>
                   )}

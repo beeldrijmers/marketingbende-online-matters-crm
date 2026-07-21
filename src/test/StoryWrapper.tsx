@@ -46,6 +46,7 @@ export const createCrmDb = (overrides: Partial<Db> = {}): Db =>
     contacts: [],
     deal_notes: [],
     deals: [],
+    integration_runs: [],
     sales: [baseSale],
     tags: [],
     tasks: [],
@@ -79,12 +80,14 @@ export const StoryWrapper = ({
   children,
   data,
   dataProvider: dataProviderOverrides,
+  i18nProvider = testI18nProvider,
   initialEntries,
   silent = import.meta.env.MODE === "test",
 }: {
   children: ReactNode;
   data?: Partial<Db>;
   dataProvider?: Partial<ReturnType<typeof createDataProvider>>;
+  i18nProvider?: typeof testI18nProvider;
   initialEntries?: string[];
   silent?: boolean;
 }) => {
@@ -109,7 +112,7 @@ export const StoryWrapper = ({
       <CRM
         authProvider={authProvider}
         dataProvider={dataProvider}
-        i18nProvider={testI18nProvider}
+        i18nProvider={i18nProvider}
         dashboard={() => <>{children}</>}
         store={store}
         disableTelemetry
