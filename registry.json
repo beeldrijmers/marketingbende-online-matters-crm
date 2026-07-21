@@ -614,6 +614,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/trelloDeadlineWriteback.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/stages.ts",
           "type": "registry:component"
         },

@@ -8,20 +8,19 @@ export const title = "BANKAI CRM";
 
 export const currency = "EUR";
 
-// The kanban is a left-to-right "loopband" from start to finished, with a
-// parking column ("In de wacht") for work that is paused. Dropping a card into
-// that column is what puts it on hold: a trigger keeps deals.on_hold in sync
-// with the stage, so the card shows the "In de wacht" badge automatically (no
-// manual toggle). Stage values are kept stable (the final stage keeps the
-// internal value "won" - RevenueDashboard keys off "won"/"lost" - and
-// "informatie-pipeline" stays the first-stage value the monthly cycle resets
-// to), only the labels changed.
+// The kanban mirrors Trello's numbered left-to-right production line. Existing
+// internal values stay in place where billing/reporting relies on them; three
+// additional values represent the newly explicit planning, review and monthly
+// columns.
 export const dealStages = [
-  { value: "informatie-pipeline", label: "Nieuw" },
-  { value: "bezig", label: "Bezig" },
-  { value: "on-hold", label: "In de wacht" },
-  { value: "facturatie-live", label: "Facturatie / live" },
-  { value: "won", label: "Klaar" },
+  { value: "informatie-pipeline", label: "00 · Nog niet bevestigd" },
+  { value: "bevestigd-inplannen", label: "10 · Bevestigd / inplannen" },
+  { value: "on-hold", label: "20 · Wacht op input / geblokkeerd" },
+  { value: "bezig", label: "30 · Bezig" },
+  { value: "controle-livegang", label: "40 · Controle / akkoord / livegang" },
+  { value: "facturatie-live", label: "50 · Klaar / te factureren" },
+  { value: "won", label: "60 · Gefactureerd / afgerond" },
+  { value: "maandelijks", label: "70 · Maandelijks / vaste klanten" },
 ];
 
 export const dealPipelineStatuses = ["won"];

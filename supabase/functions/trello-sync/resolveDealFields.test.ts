@@ -9,8 +9,21 @@ import {
 } from "./resolveDealFields";
 
 describe("resolveCategory", () => {
-  it("uses the category-list mapping when the list encodes a category", () => {
-    expect(resolveCategory("6982ffae219bd60c27be88b5", [])).toBe("eenmalig");
+  it("uses a standardized title prefix now that lists encode workflow", () => {
+    expect(
+      resolveCategoryWithSource(
+        "69b56f4098ee1bc8c55e21ec",
+        [],
+        "[SEO/GEO] Mosana — maandwerk",
+      ),
+    ).toEqual({ category: "seo", source: "title" });
+    expect(
+      resolveCategoryWithSource(
+        "6979f9b306e4dba9dc5182fa",
+        ["Pipeline"],
+        "[LEAD][SEO] Frisian Motors — scope bepalen",
+      ),
+    ).toEqual({ category: "seo", source: "title" });
   });
 
   it("falls back to a label mapping for genuine stage lists", () => {
@@ -51,6 +64,23 @@ describe("resolveCategory", () => {
       ),
     ).toEqual({ category: "eenmalig", source: "label" });
   });
+
+  it("lets a standardized title outrank a generic one-off label", () => {
+    expect(
+      resolveCategoryWithSource(
+        "69c0f7bd1a66e8c764d484ee",
+        ["Eenmalig"],
+        "[WEBSHOP] Nieuwe productcatalogus",
+      ),
+    ).toEqual({ category: "website-development", source: "title" });
+    expect(
+      resolveCategoryWithSource(
+        "69c0f7bd1a66e8c764d484ee",
+        ["Eenmalig"],
+        "[WEBSITE/SEO] Online Matters — klaar voor akkoord",
+      ),
+    ).toEqual({ category: "website-development", source: "title" });
+  });
 });
 
 describe("resolveStage", () => {
@@ -58,40 +88,38 @@ describe("resolveStage", () => {
     expect(resolveStage("6a40ed3ab091e5e140319312", [], false)).toBe("on-hold");
   });
 
-  it("places active category-list cards in Bezig", () => {
-    expect(resolveStage("6982ffae219bd60c27be88b5", ["Eenmalig"], false)).toBe(
-      "bezig",
+  it("maps the confirmed and review lists to their explicit stages", () => {
+    expect(resolveStage("69b56f4098ee1bc8c55e21ec", [], false)).toBe(
+      "bevestigd-inplannen",
+    );
+    expect(resolveStage("69c0f7bd1a66e8c764d484ee", [], false)).toBe(
+      "controle-livegang",
     );
   });
 
-  it("keeps one-off work in the real facturatie-live workflow list", () => {
-    expect(resolveStage("6979f9dd197030f0766dfaa5", ["SEO"], false)).toBe(
+  it("maps ready work to the billing stage regardless of revenue type", () => {
+    expect(resolveStage("6979f9a8a825b6ff46306ecf", ["SEO"], false)).toBe(
       "facturatie-live",
     );
   });
 
-  it("keeps a running monthly service in Bezig", () => {
-    expect(
-      resolveStage("6979f9dd197030f0766dfaa5", ["SEO"], false, "maandelijks"),
-    ).toBe("bezig");
+  it("keeps running subscriptions in the monthly workflow stage", () => {
+    expect(resolveStage("6979f9dd197030f0766dfaa5", ["SEO"], false)).toBe(
+      "maandelijks",
+    );
   });
 
   it("still sends a completed monthly cycle through won", () => {
-    expect(
-      resolveStage("6979f9a8a825b6ff46306ecf", ["SEO"], false, "maandelijks"),
-    ).toBe("won");
-  });
-
-  it("resolves category-list cards with the Afgerond label to won", () => {
-    expect(
-      resolveStage("6982ffae219bd60c27be88b5", ["Eenmalig", "Afgerond"], false),
-    ).toBe("won");
-  });
-
-  it("resolves category-list cards marked dueComplete to won", () => {
-    expect(resolveStage("6982ffae219bd60c27be88b5", ["Eenmalig"], true)).toBe(
+    expect(resolveStage("6982ffae219bd60c27be88b5", ["SEO"], false)).toBe(
       "won",
     );
+  });
+
+  it("uses completion metadata only as a fallback for an unknown list", () => {
+    expect(resolveStage("future-list", ["Eenmalig", "Afgerond"], false)).toBe(
+      "won",
+    );
+    expect(resolveStage("future-list", ["Eenmalig"], true)).toBe("won");
   });
 
   it("puts a new unknown list in Nieuw instead of a late workflow phase", () => {

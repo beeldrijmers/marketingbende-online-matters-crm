@@ -46,6 +46,20 @@ export type StepMutation =
 export const normalizeMemberName = (name: string): string =>
   name.trim().toLowerCase().replace(/\s+/g, " ");
 
+// Maps the people assigned to a Trello card to active CRM sales users. Unknown
+// Trello members are ignored and duplicate CRM ids are removed while retaining
+// Trello's member order (the first id can safely act as the primary owner).
+export const mapCardMembersToSalesIds = (
+  card: Pick<TrelloCardInput, "members">,
+  salesByName: Map<string, number>,
+): number[] => [
+  ...new Set(
+    card.members
+      .map((member) => salesByName.get(normalizeMemberName(member.fullName)))
+      .filter((salesId): salesId is number => salesId != null),
+  ),
+];
+
 // Resolves each checklist item to the CRM user responsible for it: the item's
 // own assignee when set, otherwise the card's sole member (when there is exactly
 // one), otherwise nobody — those land in the shared "op te pakken" bucket.

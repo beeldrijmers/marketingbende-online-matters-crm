@@ -19,6 +19,17 @@ describe("extractCompanyName", () => {
     );
   });
 
+  it("strips all standardized workflow/category title tags", () => {
+    expect(
+      extractCompanyName(
+        "[LEAD][SEO] Frisian Motors — scope, prijs en akkoord bepalen",
+      ),
+    ).toBe("Frisian Motors");
+    expect(
+      extractCompanyName("[WEBSITE/SEO] Online Matters — klaar voor akkoord"),
+    ).toBe("Online Matters");
+  });
+
   it("takes the substring before the first ' - '", () => {
     expect(extractCompanyName("MB Roofing - SEO")).toBe("MB Roofing");
   });

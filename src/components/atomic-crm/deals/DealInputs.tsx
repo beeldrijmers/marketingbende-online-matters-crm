@@ -1,3 +1,4 @@
+import { endOfMonth, format } from "date-fns";
 import { required, useTranslate } from "ra-core";
 import { AutocompleteArrayInput } from "@/components/admin/autocomplete-array-input";
 import { ReferenceArrayInput } from "@/components/admin/reference-array-input";
@@ -27,6 +28,9 @@ const REVENUE_PERIOD_CHOICES = [
     label: "resources.deals.revenue_period_options.eenmalig",
   },
 ];
+
+const defaultDeadline = (): string =>
+  format(endOfMonth(new Date()), "yyyy-MM-dd");
 
 export const DealInputs = () => {
   const isMobile = useIsMobile();
@@ -129,7 +133,7 @@ const DealMiscInputs = () => {
         validate={required()}
         source="expected_closing_date"
         helperText={false}
-        defaultValue={new Date().toISOString().split("T")[0]}
+        defaultValue={defaultDeadline()}
       />
       <SelectInput
         source="stage"

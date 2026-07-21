@@ -25,11 +25,14 @@ export const SyncTrelloButton = () => {
       const localizedStageSummary = stageCounts
         ? translate("resources.deals.trello_sync.stage_summary", {
             new_count: stageCounts["informatie-pipeline"],
-            active_count: stageCounts.bezig,
+            confirmed_count: stageCounts["bevestigd-inplannen"],
             hold_count: stageCounts["on-hold"],
+            active_count: stageCounts.bezig,
+            review_count: stageCounts["controle-livegang"],
             live_count: stageCounts["facturatie-live"],
             won_count: stageCounts.won,
-            _: `Nieuw ${stageCounts["informatie-pipeline"]} · Bezig ${stageCounts.bezig} · In de wacht ${stageCounts["on-hold"]} · Facturatie & live ${stageCounts["facturatie-live"]} · Klaar ${stageCounts.won}`,
+            monthly_count: stageCounts.maandelijks,
+            _: `Niet bevestigd ${stageCounts["informatie-pipeline"]} · Bevestigd ${stageCounts["bevestigd-inplannen"]} · Wacht ${stageCounts["on-hold"]} · Bezig ${stageCounts.bezig} · Controle ${stageCounts["controle-livegang"]} · Factureren ${stageCounts["facturatie-live"]} · Afgerond ${stageCounts.won} · Maandelijks ${stageCounts.maandelijks}`,
           })
         : undefined;
       const notification = getTrelloSyncNotification(

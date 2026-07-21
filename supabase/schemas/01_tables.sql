@@ -94,7 +94,13 @@ create table public.deals (
     created_at timestamp with time zone not null default now(),
     updated_at timestamp with time zone not null default now(),
     archived_at timestamp with time zone,
-    expected_closing_date date,
+    -- Every assignment needs a deadline. Explicit dates win; records created
+    -- outside the CRM form default to the final day of the Amsterdam work
+    -- month as the operational fallback.
+    expected_closing_date date default (
+        date_trunc('month', now() at time zone 'Europe/Amsterdam')
+        + interval '1 month - 1 day'
+    )::date,
     start_date date,
     delivery_date date,
     sales_id bigint,
@@ -316,10 +322,11 @@ alter table public.deals
 alter table public.deals
     add constraint deals_moneybird_invoice_created_by_fkey foreign key (moneybird_invoice_created_by) references public.sales(id);
 
--- stage must be a known pipeline value (five kanban stages + 'lost'); NOT VALID
+-- stage must be a known pipeline value (the eight Trello workflow stages plus
+-- 'lost'); NOT VALID
 -- so it only guards future writes, never rejects a pre-existing row.
 alter table public.deals
-    add constraint deals_stage_check check (stage in ('informatie-pipeline', 'bezig', 'on-hold', 'facturatie-live', 'won', 'lost')) not valid;
+    add constraint deals_stage_check check (stage in ('informatie-pipeline', 'bevestigd-inplannen', 'on-hold', 'bezig', 'controle-livegang', 'facturatie-live', 'won', 'maandelijks', 'lost')) not valid;
 
 alter table public.deal_notes
     add constraint "dealNotes_deal_id_fkey" foreign key (deal_id) references public.deals(id) on update cascade on delete cascade;

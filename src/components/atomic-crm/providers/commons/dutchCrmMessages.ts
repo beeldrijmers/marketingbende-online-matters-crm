@@ -234,12 +234,16 @@ export const dutchCrmMessages = {
         all_done: "Alle stappen zijn afgerond.",
       },
       next_action: {
-        "informatie-pipeline":
-          "Informatie verzamelen en een offerte opstellen.",
+        "informatie-pipeline": "Contact opnemen en de opdracht bevestigen.",
+        "bevestigd-inplannen":
+          "Werk inplannen en de eerstvolgende actie vastleggen.",
         bezig: "Het werk uitvoeren.",
-        "on-hold": "In de wacht - opvolgen wanneer het weer kan.",
-        "facturatie-live": "Factureren en het project live zetten.",
-        won: "Afgerond.",
+        "on-hold": "Ontbrekende input ophalen en een opvolgdatum bewaken.",
+        "controle-livegang":
+          "Controleren, akkoord ophalen en zo nodig live zetten.",
+        "facturatie-live": "Factuur voorbereiden en verzenden.",
+        won: "Gefactureerd en afgerond.",
+        maandelijks: "Volgende maandactie plannen en uitvoeren.",
       },
       workflow: {
         overdue: "Te laat",
@@ -264,7 +268,7 @@ export const dutchCrmMessages = {
         on_hold: "In de wacht",
         is_internal: "Intern project",
         assignee_ids_helper: "Alleen toegewezen personen zien deze kaart",
-        expected_closing_date: "Verwachte afsluitdatum",
+        expected_closing_date: "Deadline",
         start_date: "Startdatum",
         delivery_date: "Opleverdatum",
         duration: "Looptijd",
@@ -360,7 +364,7 @@ export const dutchCrmMessages = {
         action: "Synchroniseer Trello",
         pending: "Synchroniseren...",
         stage_summary:
-          "Nieuw %{new_count} · Bezig %{active_count} · In de wacht %{hold_count} · Facturatie & live %{live_count} · Klaar %{won_count}",
+          "Niet bevestigd %{new_count} · Bevestigd %{confirmed_count} · Wacht %{hold_count} · Bezig %{active_count} · Controle %{review_count} · Factureren %{live_count} · Afgerond %{won_count} · Maandelijks %{monthly_count}",
         success:
           "Trello gesynchroniseerd: %{smart_count} kaart in %{duration}. %{stage_summary} |||| Trello gesynchroniseerd: %{smart_count} kaarten in %{duration}. %{stage_summary}",
         partial:

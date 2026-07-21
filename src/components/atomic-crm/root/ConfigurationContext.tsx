@@ -4,10 +4,9 @@ import { useStore } from "ra-core";
 import type { DealStage, LabeledValue, NoteStatus } from "../types";
 import { defaultConfiguration } from "./defaultConfiguration";
 
-// v3: key bumped so browsers pick up the current deal stages (the "In de
-// wacht" parking column) instead of a stale cached column set. Bump this key
-// whenever the seeded defaults (stages, categories, branding) change.
-export const CONFIGURATION_STORE_KEY = "app.configuration.v3";
+// v4: force browsers to pick up the numbered Trello-aligned production line.
+// Bump this key whenever seeded stages, categories or branding change.
+export const CONFIGURATION_STORE_KEY = "app.configuration.v4";
 
 export interface ConfigurationContextValue {
   companySectors: LabeledValue[];

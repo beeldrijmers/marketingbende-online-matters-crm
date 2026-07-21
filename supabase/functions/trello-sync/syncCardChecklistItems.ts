@@ -3,16 +3,10 @@ import type { TrelloCardInput } from "./trelloCardTypes.ts";
 import {
   mapCheckItemsToTasks,
   resolveStepMutation,
-  normalizeMemberName,
   type ExistingStep,
   type StepInsert,
 } from "./stepSyncLogic.ts";
-
-interface SalesRow {
-  id: number;
-  first_name: string;
-  last_name: string;
-}
+import { loadActiveSalesByName } from "./salesNameLookup.ts";
 
 interface ExistingTaskRow extends ExistingStep {
   trello_checkitem_id: string;
@@ -32,7 +26,7 @@ export const syncCardChecklistItems = async (
   dealId: number,
 ): Promise<void> => {
   try {
-    const salesByName = await loadSalesByName();
+    const salesByName = await loadActiveSalesByName();
     const desired = mapCheckItemsToTasks(card, salesByName);
     const desiredIds = new Set(desired.map((step) => step.trelloCheckItemId));
 
@@ -98,22 +92,6 @@ export const syncCardChecklistItems = async (
       (error as Error).message,
     );
   }
-};
-
-const loadSalesByName = async (): Promise<Map<string, number>> => {
-  const { data, error } = await supabaseAdmin
-    .from("sales")
-    .select("id, first_name, last_name")
-    .neq("disabled", true);
-  if (error) {
-    throw new Error(`could not load sales users: ${error.message}`);
-  }
-  const map = new Map<string, number>();
-  for (const sale of (data ?? []) as SalesRow[]) {
-    const fullName = `${sale.first_name} ${sale.last_name}`;
-    map.set(normalizeMemberName(fullName), sale.id);
-  }
-  return map;
 };
 
 const loadExistingSteps = async (

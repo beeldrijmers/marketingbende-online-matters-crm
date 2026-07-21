@@ -7,32 +7,29 @@
 // (internal reference/roadmap cards, orphaned attachments, etc.).
 export const INTERNAL_COMPANY_NAME = "Marketingbende (intern)";
 
-// The "Klaar" list — a card moving here counts as the project being finished
-// and triggers the team-lead notification.
-export const WON_LIST_ID = "6979f9a8a825b6ff46306ecf";
+// The "60 GEFACTUREERD / AFGEROND" list — a card moving here counts as the
+// project being finished and triggers the team-lead notification.
+export const WON_LIST_ID = "6982ffae219bd60c27be88b5";
 
-// Lists whose name directly maps to a deal stage. The "On Hold" list maps to
-// the "on-hold" stage ("In de wacht" column); a trigger then sets deals.on_hold
-// from that stage.
+// Trello is the source of truth for the operational workflow. Every real work
+// list has a one-to-one CRM stage, so dragging a card in either system keeps
+// the same left-to-right production line everywhere.
 export const LIST_TO_STAGE: Record<string, string> = {
-  "6979f9b306e4dba9dc5182fa": "informatie-pipeline", // informatie + pipeline
-  "6979f9a8a825b6ff46306ece": "bezig", // Bezig
-  "6a40ed3ab091e5e140319312": "on-hold", // On Hold
-  "6979f9dd197030f0766dfaa5": "facturatie-live", // Facturatie + live project
-  "6979f9a8a825b6ff46306ecf": "won", // Klaar
+  "6979f9b306e4dba9dc5182fa": "informatie-pipeline", // 00 Nog niet bevestigd
+  "69b56f4098ee1bc8c55e21ec": "bevestigd-inplannen", // 10 Bevestigd / inplannen
+  "6a40ed3ab091e5e140319312": "on-hold", // 20 Wacht op input / geblokkeerd
+  "6979f9a8a825b6ff46306ece": "bezig", // 30 Bezig
+  "69c0f7bd1a66e8c764d484ee": "controle-livegang", // 40 Controle / akkoord / livegang
+  "6979f9a8a825b6ff46306ecf": "facturatie-live", // 50 Klaar / te factureren
+  "6982ffae219bd60c27be88b5": "won", // 60 Gefactureerd / afgerond
+  "6979f9dd197030f0766dfaa5": "maandelijks", // 70 Maandelijks / vaste klanten
 };
 
-// Lists whose name actually encodes a deal category rather than a stage.
-// Their stage is resolved separately (see resolveDealFields.ts).
-export const CATEGORY_LIST_TO_CATEGORY: Record<string, string> = {
-  "6982ffae219bd60c27be88b5": "eenmalig", // Eenmalige projecten
-  "69c0f7bd1a66e8c764d484ee": "website-development", // WEBSITE DEVELOPMENT
-  "69b56f4098ee1bc8c55e21ec": "website-optimalisatie", // Website optimalisaties
-  "6979f9a8a825b6ff46306ecd": "happr", // Happr.nl - restaurant tool
-};
+// "90 NASLAG / TEMPLATES" is useful board documentation, not client work.
+// Existing linked deals are archived and new reference cards are skipped.
+export const IGNORED_LIST_IDS = new Set(["6979f9a8a825b6ff46306ecd"]);
 
-// Card labels that encode a deal category, for cards living in one of the
-// five genuine stage lists above.
+// Card labels encode the work category now that all lists encode workflow.
 export const LABEL_TO_CATEGORY: Record<string, string> = {
   SEO: "seo",
   Eenmalig: "eenmalig",
@@ -42,39 +39,30 @@ export const LABEL_TO_CATEGORY: Record<string, string> = {
 export const DEFAULT_CATEGORY = "overig";
 
 // Reverse mapping used when a CRM kanban move is written back to Trello.
-// "Bezig" is special: project categories retain their dedicated Trello list,
-// while SEO/overig use the generic Bezig list.
 export const STAGE_TO_LIST: Record<string, string> = {
   "informatie-pipeline": "6979f9b306e4dba9dc5182fa",
-  bezig: "6979f9a8a825b6ff46306ece",
+  "bevestigd-inplannen": "69b56f4098ee1bc8c55e21ec",
   "on-hold": "6a40ed3ab091e5e140319312",
-  "facturatie-live": "6979f9dd197030f0766dfaa5",
+  bezig: "6979f9a8a825b6ff46306ece",
+  "controle-livegang": "69c0f7bd1a66e8c764d484ee",
+  "facturatie-live": "6979f9a8a825b6ff46306ecf",
   won: WON_LIST_ID,
-};
-
-export const CATEGORY_TO_ACTIVE_LIST: Record<string, string> = {
-  eenmalig: "6982ffae219bd60c27be88b5",
-  "website-development": "69c0f7bd1a66e8c764d484ee",
-  "website-optimalisatie": "69b56f4098ee1bc8c55e21ec",
-  happr: "6979f9a8a825b6ff46306ecd",
+  maandelijks: "6979f9dd197030f0766dfaa5",
 };
 
 export const resolveTrelloListForDealStage = ({
   stage,
-  category,
 }: {
   stage: string;
   category: string | null;
-}): string | null => {
-  if (stage === "bezig" && category) {
-    return CATEGORY_TO_ACTIVE_LIST[category] ?? STAGE_TO_LIST.bezig;
-  }
-  return STAGE_TO_LIST[stage] ?? null;
-};
+}): string | null => STAGE_TO_LIST[stage] ?? null;
+
+export const isIgnoredTrelloList = (listId: string): boolean =>
+  IGNORED_LIST_IDS.has(listId);
 
 // Whether a Trello list id is part of the known board vocabulary above. A
 // list the team adds later is unknown here until the maps are updated; the
 // sync then keeps its hands off the stage of existing deals instead of
 // silently misclassifying every card in that list.
 export const isKnownTrelloList = (listId: string): boolean =>
-  listId in LIST_TO_STAGE || listId in CATEGORY_LIST_TO_CATEGORY;
+  listId in LIST_TO_STAGE || isIgnoredTrelloList(listId);

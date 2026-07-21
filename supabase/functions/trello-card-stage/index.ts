@@ -5,6 +5,7 @@ import { corsHeaders, OptionsMiddleware } from "../_shared/cors.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { createErrorResponse } from "../_shared/utils.ts";
 import { resolveTrelloListForDealStage } from "../trello-sync/trelloListMaps.ts";
+import { writeTrelloCardDueDate } from "../trello-sync/writeTrelloCardDueDate.ts";
 import { writeTrelloCardList } from "./writeTrelloCardList.ts";
 
 const apiKey = Deno.env.get("TRELLO_API_KEY");
@@ -21,8 +22,14 @@ const handler = async (req: Request, userId?: string): Promise<Response> => {
   const body = await req.json().catch(() => null);
   const dealId = body?.dealId;
   const stage = body?.stage;
-  if (dealId == null || typeof stage !== "string") {
-    return createErrorResponse(400, "Missing dealId or stage");
+  const deadline = body?.deadline;
+  const hasStage = typeof stage === "string";
+  const hasDeadline = typeof deadline === "string";
+  if (dealId == null || (!hasStage && !hasDeadline)) {
+    return createErrorResponse(400, "Missing dealId, stage or deadline");
+  }
+  if (hasDeadline && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) {
+    return createErrorResponse(400, "Deadline must use YYYY-MM-DD");
   }
   if (!userId) return createErrorResponse(401, "Unauthorized");
 
@@ -49,26 +56,38 @@ const handler = async (req: Request, userId?: string): Promise<Response> => {
     return createErrorResponse(422, "Deal has no linked Trello card");
   }
 
-  const listId = resolveTrelloListForDealStage({
-    stage,
-    category: deal.category,
-  });
-  if (!listId) {
+  const listId = hasStage
+    ? resolveTrelloListForDealStage({
+        stage,
+        category: deal.category,
+      })
+    : null;
+  if (hasStage && !listId) {
     return createErrorResponse(422, `Stage ${stage} has no Trello list`);
   }
 
   try {
-    await writeTrelloCardList({
-      cardId: deal.trello_card_id,
-      listId,
-      apiKey,
-      token,
-    });
+    if (listId) {
+      await writeTrelloCardList({
+        cardId: deal.trello_card_id,
+        listId,
+        apiKey,
+        token,
+      });
+    }
+    if (hasDeadline) {
+      await writeTrelloCardDueDate({
+        cardId: deal.trello_card_id,
+        deadline,
+        apiKey,
+        token,
+      });
+    }
   } catch (error) {
     return createErrorResponse(502, (error as Error).message);
   }
 
-  return new Response(JSON.stringify({ ok: true, listId }), {
+  return new Response(JSON.stringify({ ok: true, listId, deadline }), {
     headers: { "Content-Type": "application/json", ...corsHeaders },
   });
 };

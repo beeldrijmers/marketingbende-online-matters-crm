@@ -16,11 +16,14 @@ export const formatTrelloStageCounts = (
   stageCounts: TrelloSyncSummary["stageCounts"],
 ): string =>
   [
-    ["Nieuw", stageCounts["informatie-pipeline"]],
+    ["Niet bevestigd", stageCounts["informatie-pipeline"]],
+    ["Bevestigd", stageCounts["bevestigd-inplannen"]],
+    ["Wacht", stageCounts["on-hold"]],
     ["Bezig", stageCounts.bezig],
-    ["In de wacht", stageCounts["on-hold"]],
-    ["Facturatie & live", stageCounts["facturatie-live"]],
-    ["Klaar", stageCounts.won],
+    ["Controle", stageCounts["controle-livegang"]],
+    ["Factureren", stageCounts["facturatie-live"]],
+    ["Afgerond", stageCounts.won],
+    ["Maandelijks", stageCounts.maandelijks],
   ]
     .map(([label, count]) => `${label} ${count}`)
     .join(" · ");
@@ -33,10 +36,13 @@ export const getTrelloSyncNotification = (
   const duration = formatTrelloSyncDuration(summary.durationMs);
   const stageCounts = summary.stageCounts ?? {
     "informatie-pipeline": 0,
-    bezig: 0,
+    "bevestigd-inplannen": 0,
     "on-hold": 0,
+    bezig: 0,
+    "controle-livegang": 0,
     "facturatie-live": 0,
     won: 0,
+    maandelijks: 0,
   };
   const stageSummary =
     localizedStageSummary ?? formatTrelloStageCounts(stageCounts);

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   mapCheckItemsToTasks,
+  mapCardMembersToSalesIds,
   resolveStepMutation,
   normalizeMemberName,
   type DesiredStep,
@@ -105,6 +106,33 @@ describe("mapCheckItemsToTasks", () => {
 
   it("normalizes names case- and whitespace-insensitively", () => {
     expect(normalizeMemberName("  John   Plantenga ")).toBe("john plantenga");
+  });
+});
+
+describe("mapCardMembersToSalesIds", () => {
+  it("maps all known Trello owners once and keeps their order", () => {
+    expect(
+      mapCardMembersToSalesIds(
+        {
+          members: [
+            { id: "m1", fullName: " Rick   Maarssen " },
+            { id: "m2", fullName: "John Plantenga" },
+            { id: "m3", fullName: "Rick Maarssen" },
+          ],
+        },
+        salesByName,
+      ),
+    ).toEqual([2, 1]);
+  });
+
+  it("does not invent an owner for unmatched or empty members", () => {
+    expect(
+      mapCardMembersToSalesIds(
+        { members: [{ id: "m1", fullName: "Iemand Anders" }] },
+        salesByName,
+      ),
+    ).toEqual([]);
+    expect(mapCardMembersToSalesIds({ members: [] }, salesByName)).toEqual([]);
   });
 });
 

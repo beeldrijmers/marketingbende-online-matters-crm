@@ -1,29 +1,42 @@
 import {
   LIST_TO_STAGE,
-  CATEGORY_LIST_TO_CATEGORY,
   LABEL_TO_CATEGORY,
   DEFAULT_CATEGORY,
 } from "./trelloListMaps.ts";
 
-export type CategoryResolutionSource = "list" | "label" | "text" | "default";
+export type CategoryResolutionSource = "title" | "label" | "text" | "default";
 
 export interface CategoryResolution {
   category: string;
   source: CategoryResolutionSource;
 }
 
-// Lists and labels are authoritative. When both are absent, only explicit,
-// fixed wording may classify free text; broad semantic guessing is forbidden.
-// This lets title/description/comments enrich a card without any AI or
-// hindsight-based one-off rules.
+// Workflow lists no longer encode a category. A standardized bracket prefix
+// in the card title is the strongest signal, followed by Trello labels. When
+// both are absent, only explicit fixed wording may classify free text; broad
+// semantic guessing is deliberately avoided.
 export const resolveCategoryWithSource = (
-  listId: string,
+  _listId: string,
   labels: string[],
   text = "",
 ): CategoryResolution => {
-  const categoryFromList = CATEGORY_LIST_TO_CATEGORY[listId];
-  if (categoryFromList) {
-    return { category: categoryFromList, source: "list" };
+  const title = text.split(/\r?\n/, 1)[0] ?? "";
+  const titleTags = [...title.matchAll(/\[([^\]]+)\]/g)].map((match) =>
+    match[1].trim(),
+  );
+  if (titleTags.some((tag) => /\bHAPPR(?:\.NL)?\b/i.test(tag))) {
+    return { category: "happr", source: "title" };
+  }
+  if (titleTags.some((tag) => /WEBSITE[- ]?OPTIMALISATIE/i.test(tag))) {
+    return { category: "website-optimalisatie", source: "title" };
+  }
+  if (
+    titleTags.some((tag) => /\b(?:WEBSITE|WEBSHOP|LANDINGSPAGINA)\b/i.test(tag))
+  ) {
+    return { category: "website-development", source: "title" };
+  }
+  if (titleTags.some((tag) => /\bSEO\b/i.test(tag))) {
+    return { category: "seo", source: "title" };
   }
 
   for (const label of labels) {
@@ -69,36 +82,18 @@ export const resolveCategory = (
   text = "",
 ): string => resolveCategoryWithSource(listId, labels, text).category;
 
-// The 5 genuine stage lists map directly to a stage. The 4 project/category
-// lists represent active production work, so they belong in "Bezig" unless
-// marked done. Only the actual "Facturatie + live project" list maps to the
-// later facturatie-live phase. An entirely unknown list starts conservatively
-// in "Nieuw"; existing deals in unknown lists keep their CRM stage in the
-// upsert layer until the list map is updated.
+// Every operational list maps directly to a stage. An entirely unknown list
+// starts conservatively in "Nog niet bevestigd"; existing deals in unknown
+// lists keep their CRM stage in the upsert layer until the map is updated.
 export const resolveStage = (
   listId: string,
   labels: string[],
   dueComplete: boolean,
-  revenuePeriod: string | null = null,
 ): string => {
   const stageFromList = LIST_TO_STAGE[listId];
-  if (stageFromList) {
-    // A monthly service in "Facturatie + live" is already running. Showing it
-    // as a one-way delivery phase makes recurring work look finished instead
-    // of active, so keep it in Bezig. A move to Klaar still resolves to won;
-    // the database cycle trigger records the completed month and returns the
-    // deal to Bezig in one atomic update.
-    if (
-      stageFromList === "facturatie-live" &&
-      revenuePeriod === "maandelijks"
-    ) {
-      return "bezig";
-    }
-    return stageFromList;
-  }
+  if (stageFromList) return stageFromList;
 
   if (labels.includes("Afgerond") || dueComplete) return "won";
-  if (listId in CATEGORY_LIST_TO_CATEGORY) return "bezig";
   return "informatie-pipeline";
 };
 

@@ -12,11 +12,14 @@ import { isAutomaticTask } from "../tasks/taskSource";
 // checklist of its own. This is what turns a passive mirror of Trello into a
 // "what do we still need to do here?" helping hand.
 const NEXT_ACTION_FALLBACK: Record<string, string> = {
-  "informatie-pipeline": "Informatie verzamelen en een offerte opstellen.",
+  "informatie-pipeline": "Contact opnemen en de opdracht bevestigen.",
+  "bevestigd-inplannen": "Werk inplannen en de eerstvolgende actie vastleggen.",
   bezig: "Het werk uitvoeren.",
-  "on-hold": "In de wacht - opvolgen wanneer het weer kan.",
-  "facturatie-live": "Factureren en het project live zetten.",
-  won: "Afgerond.",
+  "on-hold": "Ontbrekende input ophalen en een opvolgdatum bewaken.",
+  "controle-livegang": "Controleren, akkoord ophalen en zo nodig live zetten.",
+  "facturatie-live": "Factuur voorbereiden en verzenden.",
+  won: "Gefactureerd en afgerond.",
+  maandelijks: "Volgende maandactie plannen en uitvoeren.",
 };
 
 // Shows a deal's steps ("wat moet er nog gebeuren"): the open Trello checklist

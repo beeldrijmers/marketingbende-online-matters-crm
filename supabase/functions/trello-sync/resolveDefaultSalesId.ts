@@ -7,10 +7,9 @@ if (!defaultSalesEmail) {
 
 let cachedSalesId: number | null = null;
 
-// Trello card members aren't reliably mappable to CRM sales users (e.g. Rick
-// Maarssen has no CRM account yet), so newly-synced deals/companies are
-// attributed to a single configured default sales user instead. Existing
-// records are never overwritten, so this only matters at creation time.
+// Use the configured fallback owner only when no Trello member can be matched
+// to an active CRM sales user. Existing ownership is never overwritten by the
+// fallback, so this only matters when new records are created.
 export const resolveDefaultSalesId = async (): Promise<number> => {
   if (cachedSalesId !== null) return cachedSalesId;
 

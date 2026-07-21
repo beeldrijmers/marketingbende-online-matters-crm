@@ -22,11 +22,14 @@ import {
 } from "./integrationStatusModel";
 
 const stageLabels = [
-  ["informatie-pipeline", "Nieuw"],
-  ["bezig", "Bezig"],
+  ["informatie-pipeline", "Open"],
+  ["bevestigd-inplannen", "Bevestigd"],
   ["on-hold", "Wacht"],
-  ["facturatie-live", "Fact./live"],
-  ["won", "Klaar"],
+  ["bezig", "Bezig"],
+  ["controle-livegang", "Controle"],
+  ["facturatie-live", "Factureren"],
+  ["won", "Afgerond"],
+  ["maandelijks", "Maand"],
 ] as const;
 
 export const IntegrationStatus = () => {
@@ -132,7 +135,7 @@ const RunDetails = ({ run, label }: { run: IntegrationRun; label: string }) => {
       </div>
 
       {counts ? (
-        <div className="mt-3 grid grid-cols-5 gap-1.5">
+        <div className="mt-3 grid grid-cols-4 gap-1.5 sm:grid-cols-8">
           {stageLabels.map(([key, label]) => (
             <div
               key={key}

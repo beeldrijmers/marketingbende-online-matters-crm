@@ -13,7 +13,7 @@ import {
 } from "./archiveDealByCardId.ts";
 import { syncTrelloCardComments } from "./syncTrelloCardComments.ts";
 import { run as runTrelloBackfill } from "./backfill.ts";
-import { WON_LIST_ID } from "./trelloListMaps.ts";
+import { isIgnoredTrelloList, WON_LIST_ID } from "./trelloListMaps.ts";
 import {
   isCardDoneNotificationConfigured,
   isMoveToWonList,
@@ -27,6 +27,7 @@ import { syncCardAttachments } from "./syncCardAttachments.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { AuthMiddleware } from "../_shared/authentication.ts";
 import { createErrorResponse } from "../_shared/utils.ts";
+import { ensureTrelloCardDeadline } from "./deadline.ts";
 
 const TRELLO_API_KEY = Deno.env.get("TRELLO_API_KEY") ?? "";
 const TRELLO_TOKEN = Deno.env.get("TRELLO_TOKEN") ?? "";
@@ -182,9 +183,20 @@ Deno.serve(async (req) => {
         await archiveDealByCardId(cardId);
         return new Response("OK");
       }
-      if (action.data?.old?.closed === true) {
-        await unarchiveDealByCardId(cardId);
+      if (isIgnoredTrelloList(card.idList)) {
+        await archiveDealByCardId(cardId);
+        return new Response("OK");
       }
+
+      // A reopened card, or a reference card moved back into an operational
+      // list, becomes active again before the normal upsert.
+      await unarchiveDealByCardId(cardId);
+
+      card = await ensureTrelloCardDeadline({
+        card,
+        apiKey: TRELLO_API_KEY,
+        token: TRELLO_TOKEN,
+      });
 
       const dealId = await upsertDealFromCard(card, {
         // Only the card-creation webhook tells us who created the card. Other

@@ -32,6 +32,8 @@ import {
   startTrelloIntegrationRun,
   type TrelloRunKind,
 } from "./integrationRun.ts";
+import { isIgnoredTrelloList } from "./trelloListMaps.ts";
+import { ensureTrelloCardDeadline } from "./deadline.ts";
 
 const BOARD_ID = "6979f9a8a825b6ff46306e8a"; // SEO - Online Matters
 
@@ -48,7 +50,11 @@ const backfillCard = async (
   // checklist items + members (which the bulk board endpoint may omit), so the
   // deal's steps are synced during backfill exactly as they are on the webhook
   // path. One extra call per card is fine for a one-time backfill.
-  const fullCard = await fetchTrelloCardWithComments(card.id);
+  const fullCard = await ensureTrelloCardDeadline({
+    card: await fetchTrelloCardWithComments(card.id),
+    apiKey,
+    token,
+  });
   const dealId = await upsertDealFromCard(fullCard);
 
   // Import the card's uploaded files (idempotent: already-imported attachments
@@ -158,6 +164,7 @@ const getActiveTrelloStageCounts = async (): Promise<TrelloSyncStageCounts> => {
 export interface TrelloSyncSummary {
   cardCount: number;
   synced: number;
+  ignored: number;
   totalComments: number;
   totalAttachments: number;
   archivedCardsWithUploads: number;
@@ -178,13 +185,32 @@ const executeTrelloSync = async (
   // eslint-disable-next-line no-console
   console.log(`Fetched ${cards.length} cards from Trello board ${BOARD_ID}`);
 
+  const ignoredCards = cards.filter((card) => isIgnoredTrelloList(card.idList));
+  const activeCards = cards.filter((card) => !isIgnoredTrelloList(card.idList));
+  const failed: BackfillFailure[] = [];
+
+  // Reference/template cards are board documentation rather than client work.
+  // Archive a historical linked deal when one exists; never create a new one.
+  await runWithConcurrency(
+    ignoredCards,
+    async (card) => {
+      try {
+        await archiveDealByCardId(card.id);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        failed.push({ cardId: card.id, cardName: card.name, error: message });
+      }
+    },
+    CARD_CONCURRENCY,
+  );
+
   // Pre-create every distinct company sequentially, before the concurrent
   // card loop below. Otherwise two cards for the same not-yet-existing
   // company could both pass findOrCreateCompany's "not found" check at the
   // same time and each insert a duplicate row.
   const salesId = await resolveDefaultSalesId();
   const uniqueCompanyNames = [
-    ...new Set(cards.map((card) => resolveCompanyName(card))),
+    ...new Set(activeCards.map((card) => resolveCompanyName(card))),
   ];
   for (const name of uniqueCompanyNames) {
     await findOrCreateCompany({ name, salesId });
@@ -197,9 +223,8 @@ const executeTrelloSync = async (
   // mid-run, one bad record) must not abort the whole run and leave every
   // remaining card unsynced. Failures are collected and reported in the
   // summary instead.
-  const failed: BackfillFailure[] = [];
   await runWithConcurrency(
-    cards,
+    activeCards,
     async (card) => {
       try {
         const result = await backfillCard(card);
@@ -208,7 +233,7 @@ const executeTrelloSync = async (
         totalAttachments += result.attachmentCount;
         // eslint-disable-next-line no-console
         console.log(
-          `[${synced}/${cards.length}] "${card.name}" -> deal ${result.dealId} (${result.commentCount} comments)`,
+          `[${synced}/${activeCards.length}] "${card.name}" -> deal ${result.dealId} (${result.commentCount} comments)`,
         );
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -220,9 +245,9 @@ const executeTrelloSync = async (
   );
   // Every single card failing points at something systemic (credentials, DB
   // down) — that should surface as a hard error, not a "successful" summary.
-  if (cards.length > 0 && failed.length === cards.length) {
+  if (activeCards.length > 0 && synced === 0) {
     throw new Error(
-      `Backfill failed for all ${cards.length} cards; first error: ${failed[0].error}`,
+      `Backfill failed for all ${activeCards.length} active cards; first error: ${failed[0].error}`,
     );
   }
 
@@ -267,11 +292,12 @@ const executeTrelloSync = async (
 
   // eslint-disable-next-line no-console
   console.log(
-    `Done in ${durationMs}ms. Synced ${synced} deals, ${totalComments} comments, ${totalAttachments} new attachments, ${archivedAttachments} attachments from ${archivedWithUploads.length} archived cards, ${failed.length} failures.`,
+    `Done in ${durationMs}ms. Synced ${synced} deals, ignored ${ignoredCards.length} reference cards, ${totalComments} comments, ${totalAttachments} new attachments, ${archivedAttachments} attachments from ${archivedWithUploads.length} archived cards, ${failed.length} failures.`,
   );
   return {
     cardCount: cards.length,
     synced,
+    ignored: ignoredCards.length,
     totalComments,
     totalAttachments,
     archivedCardsWithUploads: archivedWithUploads.length,

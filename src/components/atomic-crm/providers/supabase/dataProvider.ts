@@ -23,6 +23,7 @@ import {
   markInitializedCache,
 } from "./authProvider";
 import { getSupabaseClient } from "./supabase";
+import { getChangedTrelloDeadline } from "../../deals/trelloDeadlineWriteback";
 
 const getBaseDataProvider = () =>
   supabaseDataProvider({
@@ -31,6 +32,28 @@ const getBaseDataProvider = () =>
     supabaseClient: getSupabaseClient(),
     sortOrder: "asc,desc.nullslast" as any,
   });
+
+const writeTrelloDealDeadline = async (
+  dealId: Identifier,
+  deadline: string,
+): Promise<void> => {
+  const { error } = await getSupabaseClient().functions.invoke(
+    "trello-card-stage",
+    { method: "POST", body: { dealId, deadline } },
+  );
+  if (error) {
+    const errorDetails = await (async () => {
+      try {
+        return (await error?.context?.json()) ?? {};
+      } catch {
+        return {};
+      }
+    })();
+    throw new Error(
+      errorDetails?.message || "Kon de deadline niet naar Trello bijwerken",
+    );
+  }
+};
 
 const processCompanyLogo = async (params: any) => {
   const logo = params.data.logo;
@@ -53,6 +76,17 @@ const getDataProviderWithCustomMethods = () => {
 
   return {
     ...baseDataProvider,
+    async update(resource: string, params: any) {
+      if (resource === "deals") {
+        const deadline = getChangedTrelloDeadline(params);
+        if (deadline) {
+          // Trello remains upstream for linked work. Write there first; its
+          // webhook and the normal DB update then converge on the same date.
+          await writeTrelloDealDeadline(params.id, deadline);
+        }
+      }
+      return baseDataProvider.update(resource, params);
+    },
     async getList(resource: string, params: GetListParams) {
       if (resource === "companies") {
         return baseDataProvider.getList("companies_summary", params);
@@ -552,6 +586,7 @@ const getDataProviderWithCustomMethods = () => {
         data: {
           cardCount: number;
           synced: number;
+          ignored: number;
           totalComments: number;
           totalAttachments: number;
           archivedCardsWithUploads: number;
@@ -559,10 +594,13 @@ const getDataProviderWithCustomMethods = () => {
           durationMs: number;
           stageCounts: {
             "informatie-pipeline": number;
-            bezig: number;
+            "bevestigd-inplannen": number;
             "on-hold": number;
+            bezig: number;
+            "controle-livegang": number;
             "facturatie-live": number;
             won: number;
+            maandelijks: number;
           };
           failed: Array<{
             cardId: string;

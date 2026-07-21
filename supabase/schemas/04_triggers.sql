@@ -29,15 +29,7 @@ create or replace trigger set_deal_assignee_default_trigger
     before insert or update on public.deals
     for each row execute function public.set_deal_assignee_default();
 
--- Sends a monthly recurring deal back to Bezig when it is marked "Klaar",
--- resetting its Trello-synced steps (see cycle_monthly_deal).
-create or replace trigger cycle_monthly_deal_trigger
-    before update on public.deals
-    for each row execute function public.cycle_monthly_deal();
-
--- Keeps deals.on_hold in sync with the "In de wacht" stage. Fires on insert and
--- update; named to sort after cycle_monthly_deal_trigger so it sees the final
--- stage.
+-- Keeps deals.on_hold in sync with the "In de wacht" stage.
 create or replace trigger sync_deal_on_hold_trigger
     before insert or update on public.deals
     for each row execute function public.sync_deal_on_hold();

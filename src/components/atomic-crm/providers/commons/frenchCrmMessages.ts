@@ -235,12 +235,17 @@ export const frenchCrmMessages = {
         all_done: "Toutes les étapes sont faites.",
       },
       next_action: {
-        "informatie-pipeline":
-          "Rassembler les informations et rédiger un devis.",
+        "informatie-pipeline": "Contacter le client et confirmer la mission.",
+        "bevestigd-inplannen":
+          "Planifier le travail et enregistrer la prochaine action.",
         bezig: "Réaliser le travail.",
-        "on-hold": "En attente - relancer dès que possible.",
-        "facturatie-live": "Facturer et mettre le projet en ligne.",
-        won: "Terminé.",
+        "on-hold":
+          "Obtenir les informations manquantes et suivre la date de relance.",
+        "controle-livegang":
+          "Contrôler, obtenir l'accord et publier si nécessaire.",
+        "facturatie-live": "Préparer et envoyer la facture.",
+        won: "Facturé et terminé.",
+        maandelijks: "Planifier et réaliser la prochaine action mensuelle.",
       },
       workflow: {
         overdue: "En retard",
@@ -266,7 +271,7 @@ export const frenchCrmMessages = {
         is_internal: "Projet interne",
         assignee_ids_helper:
           "Seules les personnes assignées voient cette carte",
-        expected_closing_date: "Date de clôture prévue",
+        expected_closing_date: "Échéance",
         start_date: "Date de début",
         delivery_date: "Date de livraison",
         duration: "Durée",
@@ -363,7 +368,7 @@ export const frenchCrmMessages = {
         action: "Synchroniser Trello",
         pending: "Synchronisation...",
         stage_summary:
-          "Nouveau %{new_count} · En cours %{active_count} · En attente %{hold_count} · Facturation & actif %{live_count} · Terminé %{won_count}",
+          "Non confirmé %{new_count} · Confirmé %{confirmed_count} · En attente %{hold_count} · En cours %{active_count} · Contrôle %{review_count} · À facturer %{live_count} · Terminé %{won_count} · Mensuel %{monthly_count}",
         success:
           "Trello synchronisé : %{smart_count} carte en %{duration}. %{stage_summary} |||| Trello synchronisé : %{smart_count} cartes en %{duration}. %{stage_summary}",
         partial:

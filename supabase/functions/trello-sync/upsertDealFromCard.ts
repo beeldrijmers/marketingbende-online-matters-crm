@@ -22,6 +22,8 @@ import { syncDealContactsFromCard } from "./syncDealContactsFromCard.ts";
 import type { TrelloCardInput } from "./trelloCardTypes.ts";
 import { trelloCommentTexts, trelloSourceText } from "./trelloSourceContext.ts";
 import { withDerivedTrelloSteps } from "./extractTrelloNextSteps.ts";
+import { loadActiveSalesByName } from "./salesNameLookup.ts";
+import { mapCardMembersToSalesIds } from "./stepSyncLogic.ts";
 
 // The prefix of the auto-generated placeholder description used before a card
 // carried a real description. A deal whose description is still this placeholder
@@ -108,19 +110,26 @@ export const upsertDealFromCard = async (
     );
   }
 
-  // An explicit Trello category is authoritative. Otherwise retain a manual
-  // CRM classification when deciding whether a running monthly service belongs
-  // in Bezig instead of the one-off Facturatie + live phase.
-  const effectiveRevenuePeriod =
-    revenuePeriod ?? (existingDeal?.revenue_period as string | null) ?? null;
-  const stage = resolveStage(
-    card.idList,
-    card.labelNames,
-    card.dueComplete,
-    effectiveRevenuePeriod,
-  );
+  const stage = resolveStage(card.idList, card.labelNames, card.dueComplete);
 
-  const salesId = await resolveDefaultSalesId();
+  // Card ownership is operationally authoritative. Only names that match an
+  // active CRM user are applied; an empty/unmatched Trello member list never
+  // clears an existing CRM assignment or makes a deal invisible through RLS.
+  let trelloAssigneeIds: number[] = [];
+  try {
+    trelloAssigneeIds = mapCardMembersToSalesIds(
+      card,
+      await loadActiveSalesByName(),
+    );
+  } catch (error) {
+    console.error(
+      `Could not resolve Trello members for card ${card.id}:`,
+      (error as Error).message,
+    );
+  }
+
+  const defaultSalesId = await resolveDefaultSalesId();
+  const salesId = trelloAssigneeIds[0] ?? defaultSalesId;
   const companyId = await findOrCreateCompany({
     name: companyName,
     salesId,
@@ -186,12 +195,12 @@ export const upsertDealFromCard = async (
     const canUpdateCategory =
       category !== DEFAULT_CATEGORY &&
       currentCategory !== category &&
-      (categoryResolution.source === "list" ||
+      (categoryResolution.source === "title" ||
         categoryResolution.source === "label" ||
         !currentCategory ||
         currentCategory === DEFAULT_CATEGORY);
     const canCorrectRevenuePeriod =
-      (categoryResolution.source === "list" ||
+      (categoryResolution.source === "title" ||
         categoryResolution.source === "label" ||
         categoryResolution.source === "text") &&
       revenuePeriod != null &&
@@ -208,10 +217,11 @@ export const upsertDealFromCard = async (
         name,
         company_id: companyId,
         ...(contactIds.length > 0 ? { contact_ids: contactIds } : {}),
+        ...(trelloAssigneeIds.length > 0
+          ? { sales_id: salesId, assignee_ids: trelloAssigneeIds }
+          : {}),
         ...(canUpdateCategory ? { category } : {}),
-        // Trello is authoritative for a card's known workflow list. Monthly
-        // deals may still be cycled back by the DB trigger after reaching won,
-        // but moves between active Trello lists are no longer ignored.
+        // Trello is authoritative for a card's known workflow list.
         ...(knownList ? { stage } : {}),
         // Trello dates enrich planning when present. Their absence never wipes
         // dates someone entered manually in the CRM.
@@ -258,10 +268,7 @@ export const upsertDealFromCard = async (
       company_id: companyId,
       ...(contactIds.length > 0 ? { contact_ids: contactIds } : {}),
       category,
-      // A historical monthly card first discovered in Klaar has no previous
-      // row for the update trigger to cycle. Import it directly as active.
-      stage:
-        stage === "won" && revenuePeriod === "maandelijks" ? "bezig" : stage,
+      stage,
       // Internal/external classification, applied on creation only so the
       // manual toggle in the CRM always wins afterwards.
       is_internal: resolveIsInternal({ category, dealName: name, companyName }),
@@ -278,6 +285,9 @@ export const upsertDealFromCard = async (
       ...(createdAt ? { created_at: createdAt } : {}),
       trello_card_id: card.id,
       sales_id: salesId,
+      ...(trelloAssigneeIds.length > 0
+        ? { assignee_ids: trelloAssigneeIds }
+        : {}),
       activity_source: "trello",
       ...(trimmedSourceAuthor
         ? { activity_source_author: trimmedSourceAuthor }

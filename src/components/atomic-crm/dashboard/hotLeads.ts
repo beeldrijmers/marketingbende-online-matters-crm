@@ -49,9 +49,12 @@ export const HOT_LEAD_CALIBRATION = {
 } as const;
 
 const stageScore: Record<string, number> = {
-  bezig: 45,
   "informatie-pipeline": 30,
+  "bevestigd-inplannen": 40,
+  bezig: 45,
+  "controle-livegang": 35,
   "facturatie-live": 25,
+  maandelijks: 15,
 };
 
 const workflowScore: Record<DealWorkflow["kind"], number> = {
@@ -106,8 +109,12 @@ const getDealReasons = (
     reasons.push("closing_overdue");
   }
 
-  if (deal.stage === "bezig") reasons.push("active_delivery");
-  if (deal.stage === "informatie-pipeline") reasons.push("active_opportunity");
+  if (["bezig", "controle-livegang", "maandelijks"].includes(deal.stage)) {
+    reasons.push("active_delivery");
+  }
+  if (["informatie-pipeline", "bevestigd-inplannen"].includes(deal.stage)) {
+    reasons.push("active_opportunity");
+  }
   if (deal.stage === "facturatie-live") reasons.push("ready_to_invoice");
   if ((deal.amount ?? 0) >= 5_000) reasons.push("high_value");
   if (recentActivityScore(deal.updated_at, now) === 15) {

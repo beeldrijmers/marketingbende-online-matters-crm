@@ -28,7 +28,7 @@ const currentMonthBucket = (model: ReturnType<typeof buildRevenueModel>) =>
 
 describe("buildRevenueModel", () => {
   describe("MRR (realized recurring)", () => {
-    it("only counts recurring deals in a live/won stage", () => {
+    it("counts only permanent monthly-client cards as MRR", () => {
       const deals = [
         makeDeal({
           revenue_period: "maandelijks",
@@ -38,6 +38,11 @@ describe("buildRevenueModel", () => {
           moneybird_invoice_status: "completed",
         }),
         makeDeal({ revenue_period: "maandelijks", stage: "won", amount: 200 }),
+        makeDeal({
+          revenue_period: "maandelijks",
+          stage: "maandelijks",
+          amount: 150,
+        }),
         // Open recurring deals (not yet won/live) must NOT count as MRR.
         makeDeal({
           revenue_period: "maandelijks",
@@ -55,17 +60,15 @@ describe("buildRevenueModel", () => {
           amount: 999,
         }),
       ];
-      expect(buildRevenueModel(deals, NOW).mrr).toBe(500);
+      expect(buildRevenueModel(deals, NOW).mrr).toBe(150);
     });
 
     it("excludes open recurring deals from the realized bars", () => {
       const deals = [
         makeDeal({
           revenue_period: "maandelijks",
-          stage: "facturatie-live",
+          stage: "maandelijks",
           amount: 300,
-          moneybird_invoice_id: "invoice-1",
-          moneybird_invoice_status: "completed",
         }),
         makeDeal({
           revenue_period: "maandelijks",
@@ -113,9 +116,9 @@ describe("buildRevenueModel", () => {
   describe("forecast (tile + bars consistency)", () => {
     it("weights the whole open pipeline: one-off, recurring and typeless deals", () => {
       const deals = [
-        // 1000 * 0.5 (bezig)
+        // 1000 * 0.6 (bezig)
         makeDeal({ revenue_period: "eenmalig", stage: "bezig", amount: 1000 }),
-        // Open recurring belongs to the forecast: 400 * 0.2
+        // Open recurring belongs to the forecast: 400 * 0.15
         makeDeal({
           revenue_period: "maandelijks",
           stage: "informatie-pipeline",
@@ -134,7 +137,7 @@ describe("buildRevenueModel", () => {
       ];
       const model = buildRevenueModel(deals, NOW);
       expect(model.openPipeline).toBe(
-        Math.round(1000 * 0.5 + 400 * 0.2 + 999 * 0.9),
+        Math.round(1000 * 0.6 + 400 * 0.15 + 999 * 0.95),
       );
     });
 
@@ -142,10 +145,8 @@ describe("buildRevenueModel", () => {
       const deals = [
         makeDeal({
           revenue_period: "maandelijks",
-          stage: "facturatie-live",
+          stage: "maandelijks",
           amount: 250,
-          moneybird_invoice_id: "invoice-1",
-          moneybird_invoice_status: "completed",
         }),
         makeDeal({
           revenue_period: "eenmalig",
@@ -206,7 +207,7 @@ describe("buildRevenueModel", () => {
       );
 
       expect(model.openPipeline).toBe(0);
-      expect(model.unplannedPipeline).toBe(1000);
+      expect(model.unplannedPipeline).toBe(1200);
       expect(model.unplannedDealCount).toBe(1);
       expect(model.months.every((month) => month.prognose === 0)).toBe(true);
     });

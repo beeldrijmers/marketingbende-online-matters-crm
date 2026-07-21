@@ -26,10 +26,12 @@ const WON_STAGE = "won";
 // Probability weight per pipeline stage for the forecast of open (not-yet-won)
 // deals - the same philosophy as the "Verwachte deal-omzet" chart.
 const STAGE_WEIGHT: Record<string, number> = {
-  "informatie-pipeline": 0.2,
-  bezig: 0.5,
+  "informatie-pipeline": 0.15,
+  "bevestigd-inplannen": 0.4,
   "on-hold": 0.3,
-  "facturatie-live": 0.9,
+  bezig: 0.6,
+  "controle-livegang": 0.8,
+  "facturatie-live": 0.95,
 };
 const weightForStage = (stage: string): number => STAGE_WEIGHT[stage] ?? 0.5;
 
@@ -81,7 +83,13 @@ const hasCompletedInvoice = (deal: Deal): boolean =>
   Boolean(deal.moneybird_invoice_id) &&
   deal.moneybird_invoice_status === "completed";
 
-const isRealizedRecurring = (deal: Deal): boolean =>
+// Only the explicit permanent-client stage contributes to current MRR. A
+// separate monthly work card may pass through billing and won; counting that
+// as another subscription would duplicate the permanent client card.
+const isRunningRecurring = (deal: Deal): boolean =>
+  deal.stage === "maandelijks";
+
+const isFinishedRecurringCycle = (deal: Deal): boolean =>
   deal.stage === WON_STAGE ||
   (deal.stage === "facturatie-live" && hasCompletedInvoice(deal));
 
@@ -101,9 +109,9 @@ export const buildRevenueModel = (deals: Deal[], now: Date): RevenueModel => {
   const oneoff = active.filter((deal) => !isRecurringDeal(deal));
 
   // Realized revenue only counts deals that are actually invoiced: running
-  // (live/won) subscriptions and won one-off projects. Deals still in the
-  // Nieuw/Bezig/In de wacht stages are forecast, not realized.
-  const liveRecurring = recurring.filter(isRealizedRecurring);
+  // running monthly subscriptions and won one-off projects. Deals in earlier
+  // workflow stages are forecast, not realized.
+  const liveRecurring = recurring.filter(isRunningRecurring);
   const wonOneoff = oneoff.filter((deal) => deal.stage === WON_STAGE);
 
   // Open pipeline: every active deal that is not realized yet. This single
@@ -111,7 +119,7 @@ export const buildRevenueModel = (deals: Deal[], now: Date): RevenueModel => {
   // bars, so the tile and the chart always tell the same story.
   const openDeals = active.filter((deal) =>
     isRecurringDeal(deal)
-      ? !isRealizedRecurring(deal)
+      ? !isRunningRecurring(deal) && !isFinishedRecurringCycle(deal)
       : deal.stage !== WON_STAGE,
   );
   const plannedOpenDeals = openDeals.filter((deal) => forecastMonth(deal));

@@ -346,20 +346,13 @@ begin
     return;
   end if;
 
-  if exists (
-    select 1
-    from public.tasks
-    where deal_id = target_deal_id
-      and done_date is null
-      and source = 'auto'
-  ) then
-    return;
-  end if;
-
   action_text := case deal_record.stage
-    when 'informatie-pipeline' then 'Kwalificeer de deal en plan het vervolggesprek'
+    when 'informatie-pipeline' then 'Neem contact op en bevestig de opdracht'
+    when 'bevestigd-inplannen' then 'Plan het werk en leg de eerstvolgende actie vast'
     when 'bezig' then 'Werk de volgende dealstap af'
-    when 'facturatie-live' then 'Controleer de gegevens en maak de Moneybird-factuur'
+    when 'controle-livegang' then 'Controleer het werk en vraag akkoord voor livegang'
+    when 'facturatie-live' then 'Controleer de gegevens en verstuur de Moneybird-factuur'
+    when 'maandelijks' then 'Plan en voer de volgende maandactie uit'
     else 'Plan de volgende stap voor deze deal'
   end;
 
@@ -367,12 +360,24 @@ begin
     when deal_record.expected_closing_date is not null
          and deal_record.expected_closing_date >= current_date
       then deal_record.expected_closing_date::timestamptz + interval '9 hours'
-    when deal_record.stage = 'facturatie-live'
-      then now() + interval '1 day'
-    when deal_record.stage = 'informatie-pipeline'
+    when deal_record.stage in ('informatie-pipeline', 'bevestigd-inplannen', 'controle-livegang', 'facturatie-live')
       then now() + interval '1 day'
     else now() + interval '3 days'
   end;
+
+  -- Keep the automatic fallback aligned when the deal deadline, stage or owner
+  -- changes. Concrete manual/Trello tasks were handled above and still win.
+  update public.tasks
+  set text = action_text,
+      due_date = action_due,
+      sales_id = deal_record.sales_id
+  where deal_id = target_deal_id
+    and source = 'auto'
+    and done_date is null;
+
+  if found then
+    return;
+  end if;
 
   insert into public.tasks (
     deal_id,
@@ -423,7 +428,7 @@ begin
       when deal_record.expected_closing_date is not null
            and deal_record.expected_closing_date >= current_date
         then deal_record.expected_closing_date::timestamptz + interval '9 hours'
-      when deal_record.stage in ('facturatie-live', 'informatie-pipeline')
+      when deal_record.stage in ('informatie-pipeline', 'bevestigd-inplannen', 'controle-livegang', 'facturatie-live')
         then now() + interval '1 day'
       else now() + interval '3 days'
     end;
@@ -678,43 +683,8 @@ BEGIN
   -- "In de wacht" is a kanban column (stage 'on-hold'). Keep the on_hold flag
   -- in lock-step with it, so dragging a card into that column automatically
   -- shows the "In de wacht" badge and dragging it out clears it - no manual
-  -- toggle. Runs after cycle_monthly_deal (which may rewrite the stage), so it
-  -- always reflects the final stage.
+  -- toggle, so the operational status stays unambiguous.
   NEW.on_hold := (NEW.stage = 'on-hold');
-  RETURN NEW;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION "public"."cycle_monthly_deal"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    SET "search_path" TO 'public'
-    AS $$
-BEGIN
-  -- A monthly recurring deal that reaches "Klaar" is not finished - the work
-  -- recurs next month. Instead of letting it rest in the won stage, send it
-  -- back to Bezig, un-tick its Trello-synced steps and record the restart.
-  -- Fires only on the actual transition into "won", so it runs once per
-  -- completion (not on every save while already there).
-  IF NEW.revenue_period = 'maandelijks'
-     AND NEW.stage = 'won'
-     AND OLD.stage IS DISTINCT FROM 'won' THEN
-    NEW.stage := 'bezig';
-    -- Reset the once-per-cycle notification claim so the next completion of
-    -- this recurring deal notifies the team lead again.
-    NEW.won_notified_at := NULL;
-
-    UPDATE public.tasks
-      SET done_date = NULL
-      WHERE deal_id = NEW.id AND source = 'trello' AND done_date IS NOT NULL;
-
-    INSERT INTO public.deal_notes (deal_id, text, sales_id, date)
-      VALUES (
-        NEW.id,
-        'Maandelijkse cyclus opnieuw gestart op ' || to_char(now(), 'DD-MM-YYYY') || '.',
-        NEW.sales_id,
-        now()
-      );
-  END IF;
   RETURN NEW;
 END;
 $$;

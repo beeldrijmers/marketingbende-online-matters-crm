@@ -7,7 +7,8 @@ import {
 
 const summary = {
   cardCount: 46,
-  synced: 46,
+  synced: 42,
+  ignored: 4,
   totalComments: 12,
   totalAttachments: 2,
   archivedCardsWithUploads: 3,
@@ -15,10 +16,13 @@ const summary = {
   durationMs: 18_400,
   stageCounts: {
     "informatie-pipeline": 5,
-    bezig: 21,
+    "bevestigd-inplannen": 4,
     "on-hold": 2,
-    "facturatie-live": 7,
-    won: 11,
+    bezig: 9,
+    "controle-livegang": 3,
+    "facturatie-live": 6,
+    won: 8,
+    maandelijks: 5,
   },
   failed: [],
 };
@@ -29,13 +33,13 @@ describe("getTrelloSyncNotification", () => {
       message: "resources.deals.trello_sync.success",
       type: "success",
       messageArgs: {
-        smart_count: 46,
+        smart_count: 42,
         duration: "18 sec",
         stage_summary:
-          "Nieuw 5 · Bezig 21 · In de wacht 2 · Facturatie & live 7 · Klaar 11",
+          "Niet bevestigd 5 · Bevestigd 4 · Wacht 2 · Bezig 9 · Controle 3 · Factureren 6 · Afgerond 8 · Maandelijks 5",
         _:
-          "Trello gesynchroniseerd: 46 kaarten in 18 sec. " +
-          "Nieuw 5 · Bezig 21 · In de wacht 2 · Facturatie & live 7 · Klaar 11",
+          "Trello gesynchroniseerd: 42 kaarten in 18 sec. " +
+          "Niet bevestigd 5 · Bevestigd 4 · Wacht 2 · Bezig 9 · Controle 3 · Factureren 6 · Afgerond 8 · Maandelijks 5",
       },
     });
   });
@@ -44,7 +48,7 @@ describe("getTrelloSyncNotification", () => {
     expect(
       getTrelloSyncNotification({
         ...summary,
-        synced: 44,
+        synced: 40,
         failed: [
           { cardId: "1", cardName: "Klant A", error: "timeout" },
           { cardId: "2", cardName: "Klant B", error: "rate limited" },
@@ -54,16 +58,16 @@ describe("getTrelloSyncNotification", () => {
       message: "resources.deals.trello_sync.partial",
       type: "warning",
       messageArgs: {
-        synced: 44,
+        synced: 40,
         failed_count: 2,
         failed_names: "Klant A, Klant B",
         duration: "18 sec",
         stage_summary:
-          "Nieuw 5 · Bezig 21 · In de wacht 2 · Facturatie & live 7 · Klaar 11",
+          "Niet bevestigd 5 · Bevestigd 4 · Wacht 2 · Bezig 9 · Controle 3 · Factureren 6 · Afgerond 8 · Maandelijks 5",
         _:
-          "Trello deels gesynchroniseerd in 18 sec: 44 actieve kaarten verwerkt. " +
-          "2 mislukt (Klant A, Klant B). Nieuw 5 · Bezig 21 · In de wacht 2 · " +
-          "Facturatie & live 7 · Klaar 11",
+          "Trello deels gesynchroniseerd in 18 sec: 40 actieve kaarten verwerkt. " +
+          "2 mislukt (Klant A, Klant B). Niet bevestigd 5 · Bevestigd 4 · " +
+          "Wacht 2 · Bezig 9 · Controle 3 · Factureren 6 · Afgerond 8 · Maandelijks 5",
       },
     });
   });
@@ -76,7 +80,7 @@ describe("getTrelloSyncNotification", () => {
     }));
 
     expect(
-      getTrelloSyncNotification({ ...summary, synced: 41, failed }).messageArgs
+      getTrelloSyncNotification({ ...summary, synced: 37, failed }).messageArgs
         .failed_names,
     ).toBe("A, B, C +2");
   });

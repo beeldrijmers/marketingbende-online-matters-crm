@@ -185,12 +185,16 @@ export type IntegrationRun = {
   summary: {
     cardCount?: number;
     synced?: number;
+    ignored?: number;
     stageCounts?: {
       "informatie-pipeline": number;
-      bezig: number;
+      "bevestigd-inplannen": number;
       "on-hold": number;
+      bezig: number;
+      "controle-livegang": number;
       "facturatie-live": number;
       won: number;
+      maandelijks: number;
     };
     mode?: "boundary_reset" | "incremental";
     found?: number;

@@ -230,11 +230,14 @@ export const englishCrmMessages = {
         all_done: "All steps are done.",
       },
       next_action: {
-        "informatie-pipeline": "Gather information and draft a quote.",
+        "informatie-pipeline": "Contact the client and confirm the assignment.",
+        "bevestigd-inplannen": "Schedule the work and record the next action.",
         bezig: "Carry out the work.",
-        "on-hold": "On hold - follow up when possible.",
-        "facturatie-live": "Invoice and take the project live.",
-        won: "Completed.",
+        "on-hold": "Collect the missing input and monitor the follow-up date.",
+        "controle-livegang": "Review, obtain approval and publish if needed.",
+        "facturatie-live": "Prepare and send the invoice.",
+        won: "Invoiced and completed.",
+        maandelijks: "Plan and carry out the next monthly action.",
       },
       workflow: {
         overdue: "Overdue",
@@ -259,7 +262,7 @@ export const englishCrmMessages = {
         on_hold: "On hold",
         is_internal: "Internal project",
         assignee_ids_helper: "Only assignees can see this card",
-        expected_closing_date: "Expected closing date",
+        expected_closing_date: "Deadline",
         start_date: "Start date",
         delivery_date: "Delivery date",
         duration: "Duration",
@@ -354,7 +357,7 @@ export const englishCrmMessages = {
         action: "Sync Trello",
         pending: "Syncing...",
         stage_summary:
-          "New %{new_count} · Active %{active_count} · On hold %{hold_count} · Billing & live %{live_count} · Done %{won_count}",
+          "Unconfirmed %{new_count} · Confirmed %{confirmed_count} · Waiting %{hold_count} · Active %{active_count} · Review %{review_count} · To invoice %{live_count} · Completed %{won_count} · Monthly %{monthly_count}",
         success:
           "Trello synced: %{smart_count} card in %{duration}. %{stage_summary} |||| Trello synced: %{smart_count} cards in %{duration}. %{stage_summary}",
         partial:
