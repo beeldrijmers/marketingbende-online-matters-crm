@@ -34,6 +34,10 @@ test("authenticated CRM dashboard and core routes stay operational", async ({
   }
 
   await page.goto("/#/", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("heading", { name: "Opdrachtenbord · van begin tot eind" }),
+  ).toBeVisible();
+  await page.getByRole("tab", { name: "Vandaag", exact: true }).click();
   const attentionHeading = page.getByRole("heading", {
     name: "Dit heeft je aandacht nodig",
   });

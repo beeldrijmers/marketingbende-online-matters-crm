@@ -33,6 +33,7 @@ test.describe("attention pipeline", () => {
     await page.getByRole("textbox", { name: "Wachtwoord" }).fill("password");
     await page.getByRole("button", { name: "Inloggen" }).click();
 
+    await page.getByRole("tab", { name: "Vandaag", exact: true }).click();
     const attentionHeading = page.getByRole("heading", {
       name: "Dit heeft je aandacht nodig",
     });
