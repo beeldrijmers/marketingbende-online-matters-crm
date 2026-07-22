@@ -15,7 +15,6 @@ import { AttentionDealActions } from "./AttentionDealActions";
 import { DealWorkflowIndicator } from "./DealWorkflowIndicator";
 import { getDashboardDealDetailPath } from "./dashboardDealSelection";
 import { getDealWorkflow } from "./dealWorkflow";
-import { MoneybirdCardActions } from "./MoneybirdDocumentButtons";
 
 // A monthly/recurring price hint anywhere in the card text ("EUR 300 p/m",
 // "per maand", "maandelijks") means we show the amount as a monthly rate.
@@ -168,7 +167,7 @@ export const DealCardContent = ({
         >
           <CardContent className="px-3 flex flex-col gap-1">
             <div className="flex items-start gap-2">
-              <p className="flex-1 text-sm font-medium leading-snug line-clamp-2">
+              <p className="flex-1 text-sm font-medium leading-snug line-clamp-3">
                 <ReferenceField
                   source="company_id"
                   reference="companies"
@@ -257,7 +256,6 @@ export const DealCardContent = ({
                 onPlanTask={onPlanTask ? () => onPlanTask(deal) : undefined}
               />
             ) : null}
-            <MoneybirdCardActions record={deal} />
             {attentionPipeline && onMoveToStage && onPlanTask ? (
               <AttentionDealActions
                 deal={deal}

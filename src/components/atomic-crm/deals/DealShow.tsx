@@ -32,8 +32,8 @@ import { ContactList } from "./ContactList";
 import { DealEditSheet } from "./DealEditSheet";
 import { DealInboundEmail } from "./DealInboundEmail";
 import { DealSteps } from "./DealSteps";
-import { MoneybirdDocumentControl } from "./MoneybirdDocumentButtons";
 import { InzyteDealSection } from "./inzyte/InzyteDealSection";
+import { MoneybirdDealSection } from "./MoneybirdDealSection";
 import {
   findDealLabel,
   formatISODateString,
@@ -145,8 +145,6 @@ const DealShowContent = ({
                 </>
               ) : (
                 <>
-                  <MoneybirdDocumentControl record={record} kind="estimate" />
-                  <MoneybirdDocumentControl record={record} kind="invoice" />
                   <ArchiveButton record={record} redirectTo={closeTo} />
                   {/* The desktop EditButton navigates to /deals/:id, a route
                       that only exists in the desktop Admin. On mobile we edit
@@ -297,7 +295,8 @@ const DealShowContent = ({
           )}
 
           {!record.archived_at ? (
-            <div className="m-4">
+            <div className="m-4 space-y-3">
+              <MoneybirdDealSection record={record} />
               <InzyteDealSection record={record} />
             </div>
           ) : null}

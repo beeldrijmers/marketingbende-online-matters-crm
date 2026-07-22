@@ -81,7 +81,13 @@ export const DealWorkflowIndicator = ({
 }) => {
   const translate = useTranslate();
   const workflow = getDealWorkflow(deal, openTasks);
-  if (workflow.kind === "complete" || workflow.kind === "on_hold") return null;
+  if (
+    workflow.kind === "complete" ||
+    workflow.kind === "on_hold" ||
+    workflow.kind === "missing"
+  ) {
+    return null;
+  }
 
   const nextTask = workflow.nextTask;
   const dueLabel = nextTask?.due_date
@@ -93,7 +99,7 @@ export const DealWorkflowIndicator = ({
   const canPlanTask =
     onPlanTask != null &&
     nextTask == null &&
-    (workflow.kind === "missing" || workflow.kind === "overdue_closing");
+    workflow.kind === "overdue_closing";
   const content = (
     <>
       <DealWorkflowBadge workflow={workflow} />
@@ -118,7 +124,6 @@ export const DealWorkflowIndicator = ({
     urgent && "bg-destructive/10 text-destructive dark:bg-destructive/15",
     workflow.kind === "today" &&
       "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-    workflow.kind === "missing" && "border border-dashed bg-transparent",
     canPlanTask &&
       "w-full cursor-pointer text-left transition-colors hover:border-primary/60 hover:bg-primary/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
     className,

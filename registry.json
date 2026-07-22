@@ -662,6 +662,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/MoneybirdDealSection.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/MobileDealsList.tsx",
           "type": "registry:component"
         },
