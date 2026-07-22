@@ -182,11 +182,31 @@ const DealLayout = ({
   const { data, isPending, filterValues, total } = useListContext<Deal>();
   const hasFilters = filterValues && Object.keys(filterValues).length > 0;
   const dashboardSelectionCount = total ?? dashboardSelection?.ids.length ?? 0;
+  const dashboardSelectionBanner =
+    dashboardSelection && !attentionPipeline ? (
+      <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2">
+        <p className="text-sm text-muted-foreground">
+          {translate("resources.deals.dashboard_selection", {
+            count: dashboardSelectionCount,
+            label: dashboardSelection.label,
+            _: `${dashboardSelection.label}: ${dashboardSelectionCount} deals`,
+          })}
+        </p>
+        <Button asChild variant="ghost" size="sm">
+          <Link to={DASHBOARD_WORKBOARD_PATH} replace>
+            {translate("resources.deals.all_deals", {
+              _: "Alle opdrachten",
+            })}
+          </Link>
+        </Button>
+      </div>
+    ) : null;
 
   if (isPending) return <DealListSkeleton />;
   if (!data?.length && !hasFilters)
     return (
       <>
+        {dashboardSelectionBanner}
         <DealEmpty
           createCloseTo={dashboardReturnPath}
           createOpen={createOpen}
@@ -209,24 +229,7 @@ const DealLayout = ({
 
   return (
     <div className="w-full">
-      {dashboardSelection && !attentionPipeline ? (
-        <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2">
-          <p className="text-sm text-muted-foreground">
-            {translate("resources.deals.dashboard_selection", {
-              count: dashboardSelectionCount,
-              label: dashboardSelection.label,
-              _: `${dashboardSelection.label}: ${dashboardSelectionCount} deals`,
-            })}
-          </p>
-          <Button asChild variant="ghost" size="sm">
-            <Link to={DASHBOARD_WORKBOARD_PATH} replace>
-              {translate("resources.deals.all_deals", {
-                _: "Alle opdrachten",
-              })}
-            </Link>
-          </Button>
-        </div>
-      ) : null}
+      {dashboardSelectionBanner}
       {/* Safety net: should there ever be more deals than one page holds,
           say so instead of silently hiding them from the board. */}
       {data && total != null && total > data.length ? (
