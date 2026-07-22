@@ -1,6 +1,14 @@
-import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  ChevronDown,
+  ChevronRight,
+  Database,
+  FileText,
+} from "lucide-react";
 
+import { Markdown } from "@/components/atomic-crm/misc/Markdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,268 +19,107 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { unwrapInzyteData } from "./inzyteData";
 import {
-  isInzyteRecord,
-  type InzyteJsonRecord,
-  unwrapInzyteData,
-} from "./inzyteData";
+  buildInzytePresentation,
+  formatInzyteScalar,
+  humanizeInzyteField,
+  type InzytePresentationTable,
+} from "./inzytePresentation";
 
-type JsonRecord = InzyteJsonRecord;
-const isRecord = isInzyteRecord;
-
-const FIELD_LABELS: Record<string, string> = {
-  account: "Account",
-  actions: "Acties",
-  activeusers: "Actieve gebruikers",
-  ads: "Advertenties",
-  averagesessionduration: "Gemiddelde sessieduur",
-  averageengagementtime: "Gemiddelde betrokkenheidstijd",
-  averageordervalue: "Gemiddelde bestelwaarde",
-  bouncerate: "Bouncepercentage",
-  browser: "Browser",
-  campaign: "Campagne",
-  campaigns: "Campagnes",
-  channel: "Kanaal",
-  channels: "Kanalen",
-  city: "Plaats",
-  clicks: "Klikken",
-  connected: "Verbonden",
-  content: "Inhoud",
-  conversionrate: "Conversiepercentage",
-  conversions: "Conversies",
-  cost: "Kosten",
-  count: "Aantal",
-  country: "Land",
-  cpa: "Kosten per acquisitie",
-  cpc: "Kosten per klik",
-  ctr: "Klikratio",
-  current: "Huidige periode",
-  customerid: "Klantnummer",
-  date: "Datum",
-  daterange: "Periode",
-  device: "Apparaat",
-  devicecategory: "Apparaattype",
-  dimensions: "Dimensies",
-  duration: "Duur",
-  enabled: "Ingeschakeld",
-  engagementrate: "Betrokkenheidspercentage",
-  engagementtime: "Betrokkenheidstijd",
-  eventcount: "Aantal gebeurtenissen",
-  eventname: "Gebeurtenis",
-  events: "Gebeurtenissen",
-  impressions: "Vertoningen",
-  insights: "Inzichten",
-  itemcategory: "Productcategorie",
-  itemname: "Product",
-  items: "Onderdelen",
-  language: "Taal",
-  landingpage: "Landingspagina",
-  location: "Locatie",
-  medium: "Medium",
-  name: "Naam",
-  newusers: "Nieuwe gebruikers",
-  operatingystem: "Besturingssysteem",
-  operatingsystem: "Besturingssysteem",
-  organicusers: "Organische gebruikers",
-  pages: "Pagina’s",
-  pagetitle: "Paginatitel",
-  pageviews: "Paginaweergaven",
-  path: "Pad",
-  position: "Gemiddelde positie",
-  previous: "Vorige periode",
-  productrevenue: "Productomzet",
-  propertyname: "Propertynaam",
-  purchases: "Aankopen",
-  queries: "Zoekopdrachten",
-  query: "Zoekopdracht",
-  recommendations: "Aanbevelingen",
-  results: "Resultaten",
-  revenue: "Omzet",
-  roas: "Rendement op advertentiekosten",
-  rows: "Resultaten",
-  screenpageviews: "Paginaweergaven",
-  sessions: "Sessies",
-  source: "Bron",
-  status: "Status",
-  success: "Geslaagd",
-  summary: "Samenvatting",
-  total: "Totaal",
-  totalrevenue: "Totale omzet",
-  totalusers: "Totaal gebruikers",
-  trend: "Ontwikkeling",
-  users: "Gebruikers",
-  value: "Waarde",
-  views: "Weergaven",
-  visitors: "Bezoekers",
-};
-
-const formatNumber = (value: number): string => {
-  if (Number.isInteger(value)) return value.toLocaleString("nl-NL");
-  return value.toLocaleString("nl-NL", { maximumFractionDigits: 2 });
-};
-
-const formatScalar = (value: unknown): string => {
-  if (value === null || value === undefined || value === "") return "—";
-  if (typeof value === "boolean") return value ? "Ja" : "Nee";
-  if (typeof value === "number") return formatNumber(value);
-  if (typeof value === "string") {
-    const parsed = Date.parse(value);
-    if (/^\d{4}-\d{2}-\d{2}T/.test(value) && Number.isFinite(parsed)) {
-      return new Intl.DateTimeFormat("nl-NL", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }).format(new Date(parsed));
-    }
-    return value;
-  }
-  return JSON.stringify(value);
-};
-
-const humanize = (value: string): string => {
-  const spaced = value.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ");
-  const translation = FIELD_LABELS[spaced.replaceAll(" ", "").toLowerCase()];
-  return (
-    translation || spaced.replace(/^./, (character) => character.toUpperCase())
-  );
-};
-
-const findKpis = (value: unknown, depth = 0): JsonRecord | null => {
-  if (depth > 5 || !isRecord(value)) return null;
-  if (isRecord(value.kpis)) return value.kpis;
-  for (const child of Object.values(value)) {
-    const found = findKpis(child, depth + 1);
-    if (found) return found;
-  }
-  return null;
-};
-
-type NamedRows = { name: string; rows: JsonRecord[] };
-
-const collectRowSets = (
-  value: unknown,
-  name = "Resultaten",
-  depth = 0,
-  output: NamedRows[] = [],
-): NamedRows[] => {
-  if (depth > 6 || output.length >= 8) return output;
-  if (Array.isArray(value)) {
-    const rows = value.filter(isRecord).slice(0, 100);
-    if (rows.length > 0) output.push({ name: humanize(name), rows });
-    return output;
-  }
-  if (!isRecord(value)) return output;
-  for (const [key, child] of Object.entries(value)) {
-    collectRowSets(child, key, depth + 1, output);
-    if (output.length >= 8) break;
-  }
-  return output;
-};
-
-const KpiGrid = ({ kpis }: { kpis: JsonRecord }) => (
-  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-6">
-    {Object.entries(kpis)
-      .slice(0, 12)
-      .map(([key, raw]) => {
-        const value = isRecord(raw) ? raw.current : raw;
-        const delta = isRecord(raw) ? raw.deltaPct : null;
-        const numericDelta = typeof delta === "number" ? delta : null;
-        return (
-          <div key={key} className="rounded-xl border bg-card p-4 shadow-sm">
-            <div className="text-xs font-medium text-muted-foreground">
-              {humanize(key)}
-            </div>
-            <div className="mt-1 text-2xl font-semibold tracking-tight">
-              {formatScalar(value)}
-            </div>
-            {numericDelta !== null ? (
-              <Badge
-                variant="outline"
-                className={
-                  numericDelta >= 0
-                    ? "mt-2 border-emerald-500/40 text-emerald-600"
-                    : "mt-2 border-rose-500/40 text-rose-600"
-                }
-              >
-                {numericDelta > 0 ? "+" : ""}
-                {numericDelta.toLocaleString("nl-NL")}% t.o.v. vorige periode
-              </Badge>
-            ) : null}
+const KpiGrid = ({
+  metrics,
+}: {
+  metrics: ReturnType<typeof buildInzytePresentation>["metrics"];
+}) => (
+  <section>
+    <div className="mb-3 flex items-center gap-2">
+      <h3 className="text-base font-semibold">Kerncijfers</h3>
+      <span className="text-xs text-muted-foreground">
+        vergeleken met de vorige periode
+      </span>
+    </div>
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-6">
+      {metrics.map((metric) => (
+        <div
+          key={metric.key}
+          className="rounded-xl border bg-card p-4 shadow-sm"
+        >
+          <div className="text-xs font-medium text-muted-foreground">
+            {metric.label}
           </div>
-        );
-      })}
-  </div>
-);
-
-const RowTable = ({ name, rows }: NamedRows) => {
-  const columns = useMemo(() => {
-    const keys = new Set<string>();
-    rows.slice(0, 20).forEach((row) =>
-      Object.entries(row).forEach(([key, value]) => {
-        if (!isRecord(value) && !Array.isArray(value)) keys.add(key);
-      }),
-    );
-    return Array.from(keys).slice(0, 10);
-  }, [rows]);
-
-  if (columns.length === 0) return null;
-  return (
-    <section className="overflow-hidden rounded-xl border bg-card">
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <h3 className="font-semibold">{name}</h3>
-        <Badge variant="secondary">{rows.length} rijen</Badge>
-      </div>
-      <div className="max-h-[420px] overflow-auto">
-        <Table>
-          <TableHeader className="sticky top-0 z-10 bg-card">
-            <TableRow>
-              {columns.map((column) => (
-                <TableHead key={column}>{humanize(column)}</TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.slice(0, 100).map((row, index) => (
-              <TableRow key={`${name}-${index}`}>
-                {columns.map((column) => (
-                  <TableCell key={column} className="max-w-80 align-top">
-                    <span className="line-clamp-3 break-words">
-                      {formatScalar(row[column])}
-                    </span>
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </section>
-  );
-};
-
-const ScalarCards = ({ value }: { value: JsonRecord }) => {
-  const rows = Object.entries(value).filter(
-    ([, item]) => !isRecord(item) && !Array.isArray(item),
-  );
-  if (rows.length === 0) return null;
-  return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {rows.slice(0, 16).map(([key, item]) => (
-        <div key={key} className="rounded-xl border bg-card p-3">
-          <div className="text-xs text-muted-foreground">{humanize(key)}</div>
-          <div className="mt-1 break-words font-medium">
-            {formatScalar(item)}
+          <div className="mt-1 text-2xl font-semibold tracking-tight">
+            {formatInzyteScalar(metric.value, metric.key)}
           </div>
+          {metric.delta !== null ? (
+            <div
+              className={
+                metric.delta >= 0
+                  ? "mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600"
+                  : "mt-2 flex items-center gap-1 text-xs font-medium text-rose-600"
+              }
+            >
+              {metric.delta >= 0 ? (
+                <ArrowUpRight className="size-3.5" />
+              ) : (
+                <ArrowDownRight className="size-3.5" />
+              )}
+              {metric.delta > 0 ? "+" : ""}
+              {metric.delta.toLocaleString("nl-NL")}%
+            </div>
+          ) : null}
         </div>
       ))}
     </div>
-  );
-};
+  </section>
+);
+
+const ResultTable = ({ table }: { table: InzytePresentationTable }) => (
+  <section className="overflow-hidden rounded-xl border bg-card shadow-sm">
+    <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+      <h3 className="font-semibold">{table.title}</h3>
+      <Badge variant="secondary">
+        {table.rows.length}{" "}
+        {table.rows.length === 1 ? "resultaat" : "resultaten"}
+      </Badge>
+    </div>
+    <div className="max-h-[440px] overflow-auto">
+      <Table>
+        <TableHeader className="sticky top-0 z-10 bg-card">
+          <TableRow>
+            {table.columns.map((column) => (
+              <TableHead key={column}>{humanizeInzyteField(column)}</TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {table.rows.slice(0, 100).map((row, index) => (
+            <TableRow key={`${table.key}-${index}`}>
+              {table.columns.map((column) => (
+                <TableCell key={column} className="max-w-96 align-top">
+                  <span className="line-clamp-3 break-words">
+                    {formatInzyteScalar(row[column], column)}
+                  </span>
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  </section>
+);
 
 export const InzyteDataView = ({ data }: { data: unknown }) => {
   const [showRaw, setShowRaw] = useState(false);
   const unwrapped = unwrapInzyteData(data);
-  const kpis = findKpis(unwrapped);
-  const rowSets = collectRowSets(unwrapped);
+  const presentation = buildInzytePresentation(data);
+  const hasPresentation = Boolean(
+    presentation.metrics.length ||
+      presentation.narratives.length ||
+      presentation.scalars.length ||
+      presentation.tables.length,
+  );
 
   if (unwrapped === null || unwrapped === undefined) {
     return (
@@ -283,22 +130,57 @@ export const InzyteDataView = ({ data }: { data: unknown }) => {
   }
 
   return (
-    <div className="space-y-4">
-      {kpis ? <KpiGrid kpis={kpis} /> : null}
-      {isRecord(unwrapped) ? <ScalarCards value={unwrapped} /> : null}
-      {rowSets.map((rowSet) => (
-        <RowTable key={`${rowSet.name}-${rowSet.rows.length}`} {...rowSet} />
+    <div className="space-y-5">
+      {presentation.metrics.length > 0 ? (
+        <KpiGrid metrics={presentation.metrics} />
+      ) : null}
+
+      {presentation.narratives.map((narrative) => (
+        <section
+          key={`${narrative.title}-${narrative.text.slice(0, 80)}`}
+          className="overflow-hidden rounded-xl border border-sky-500/20 bg-linear-to-br from-sky-500/[0.08] to-card shadow-sm"
+        >
+          <div className="flex items-center gap-2 border-b border-sky-500/15 px-5 py-3">
+            <FileText className="size-4 text-sky-500" />
+            <h3 className="font-semibold">{narrative.title}</h3>
+          </div>
+          <Markdown className="px-5 py-4 text-sm leading-6">
+            {narrative.text}
+          </Markdown>
+        </section>
       ))}
-      {typeof unwrapped === "string" ? (
-        <div className="whitespace-pre-wrap rounded-xl border bg-card p-5 leading-7">
-          {unwrapped}
+
+      {presentation.scalars.length > 0 ? (
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {presentation.scalars.map((item) => (
+            <div key={item.key} className="rounded-xl border bg-card p-4">
+              <div className="text-xs font-medium text-muted-foreground">
+                {item.label}
+              </div>
+              <div className="mt-1 break-words font-semibold">
+                {formatInzyteScalar(item.value, item.key)}
+              </div>
+            </div>
+          ))}
+        </section>
+      ) : null}
+
+      {presentation.tables.map((table) => (
+        <ResultTable key={table.key} table={table} />
+      ))}
+
+      {!hasPresentation ? (
+        <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+          Inzyte heeft gegevens teruggegeven, maar geen klantgerichte resultaten
+          die hier betrouwbaar kunnen worden samengevat.
         </div>
       ) : null}
+
       <div className="rounded-xl border bg-muted/20">
         <Button
           type="button"
           variant="ghost"
-          className="w-full justify-start"
+          className="w-full justify-start text-muted-foreground"
           onClick={() => setShowRaw((value) => !value)}
         >
           {showRaw ? (
@@ -306,7 +188,7 @@ export const InzyteDataView = ({ data }: { data: unknown }) => {
           ) : (
             <ChevronRight className="size-4" />
           )}
-          Volledige brondata bekijken
+          <Database className="size-4" /> Technische brondata
         </Button>
         {showRaw ? (
           <pre className="max-h-[480px] overflow-auto border-t p-4 text-xs leading-5">

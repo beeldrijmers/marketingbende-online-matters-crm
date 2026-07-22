@@ -136,6 +136,20 @@ const callInzyte = async (
       signal: controller.signal,
     });
 
+    if (!response.ok) {
+      const responseText = await response.text();
+      let errorPayload: unknown = {};
+      try {
+        errorPayload = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        errorPayload = {};
+      }
+      const remoteMessage = isRecord(errorPayload)
+        ? optionalText(errorPayload.message || errorPayload.error, 240)
+        : null;
+      throw new Error(remoteMessage || `INZYTE_HTTP_${response.status}`);
+    }
+
     const responseText = await response.text();
     let payload: unknown = {};
     try {
@@ -144,12 +158,6 @@ const callInzyte = async (
       payload = {};
     }
 
-    if (!response.ok) {
-      const remoteMessage = isRecord(payload)
-        ? optionalText(payload.message || payload.error, 240)
-        : null;
-      throw new Error(remoteMessage || `INZYTE_HTTP_${response.status}`);
-    }
     return payload;
   } finally {
     clearTimeout(timeout);
@@ -485,7 +493,12 @@ const runRemoteAction = async (
   }
 };
 
-const saveRunAsNote = async (dealId: number, saleId: number, runId: number) => {
+const saveRunAsNote = async (
+  dealId: number,
+  saleId: number,
+  runId: number,
+  noteText: string | null,
+) => {
   const { data: run, error } = await supabaseAdmin
     .from("inzyte_runs")
     .select("id, action, status, date_start, date_end, started_at, summary")
@@ -502,7 +515,17 @@ const saveRunAsNote = async (dealId: number, saleId: number, runId: number) => {
     .eq("deal_id", dealId)
     .eq("source_event_id", sourceEventId)
     .maybeSingle();
-  if (existing) return { noteId: existing.id, alreadyExisted: true };
+  if (existing) {
+    if (noteText) {
+      const { error: updateError } = await supabaseAdmin
+        .from("deal_notes")
+        .update({ text: noteText, date: new Date().toISOString() })
+        .eq("id", existing.id);
+      if (updateError) throw updateError;
+      return { noteId: existing.id, alreadyExisted: true, updated: true };
+    }
+    return { noteId: existing.id, alreadyExisted: true, updated: false };
+  }
 
   const labels: Record<string, string> = {
     overview: "overzichtsanalyse",
@@ -530,14 +553,16 @@ const saveRunAsNote = async (dealId: number, saleId: number, runId: number) => {
     run.date_start && run.date_end
       ? `\nPeriode: ${run.date_start} t/m ${run.date_end}`
       : "";
-  const text = [
-    `Inzyte ${labels[run.action] || run.action} uitgevoerd.`,
-    period.trim(),
-    `Status: ${run.status === "success" ? "afgerond" : run.status}.`,
-    `Samenvatting: ${JSON.stringify(run.summary || {})}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const text =
+    noteText ||
+    [
+      `Inzyte ${labels[run.action] || run.action} uitgevoerd.`,
+      period.trim(),
+      `Status: ${run.status === "success" ? "afgerond" : run.status}.`,
+      `Samenvatting: ${JSON.stringify(run.summary || {})}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
 
   const { data: note, error: noteError } = await supabaseAdmin
     .from("deal_notes")
@@ -639,7 +664,12 @@ const handleRequest = async (
         const runId = requiredPositiveInteger(body.runId);
         if (!runId) throw userError("Kies eerst een opgeslagen resultaat.");
         return jsonResponse({
-          data: await saveRunAsNote(dealId, Number(sale.id), runId),
+          data: await saveRunAsNote(
+            dealId,
+            Number(sale.id),
+            runId,
+            optionalText(body.noteText, 20_000),
+          ),
         });
       }
       default: {
