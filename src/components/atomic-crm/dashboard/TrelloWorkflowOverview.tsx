@@ -202,7 +202,7 @@ export const TrelloWorkflowOverview = ({
             </div>
           </div>
         ) : (
-          <div className="min-w-0 bg-muted/10 p-3">
+          <div className="min-w-0 bg-muted/10 px-3 pb-3 pt-1">
             {focus === "attention" ? (
               <AttentionDealsDashboard mobile={mobile} />
             ) : focus === "billing" ? (
