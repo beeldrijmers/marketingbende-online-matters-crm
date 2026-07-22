@@ -121,6 +121,27 @@ export const createDocument = (
     },
   );
 
+export const getDocument = (
+  credentials: MoneybirdCredentials,
+  kind: DocumentKind,
+  documentId: string,
+): Promise<MoneybirdDocument> =>
+  administrationFetch<MoneybirdDocument>(
+    credentials,
+    `${collectionPath(kind)}/${encodeURIComponent(documentId)}.json`,
+  );
+
+export const listDocuments = (
+  credentials: MoneybirdCredentials,
+  kind: DocumentKind,
+  page = 1,
+  perPage = 100,
+): Promise<MoneybirdDocument[]> =>
+  administrationFetch<MoneybirdDocument[]>(
+    credentials,
+    `${collectionPath(kind)}.json?per_page=${Math.min(Math.max(perPage, 1), 100)}&page=${Math.max(page, 1)}`,
+  );
+
 // Reconciliation guard for the "our create landed at Moneybird but the response
 // never reached us" case: find a document we previously created for this deal by
 // its deterministic reference. There is no server-side reference filter, so we
@@ -145,10 +166,7 @@ export const findDocumentByReference = async (
   const maxPages = 3;
   try {
     for (let page = 1; page <= maxPages; page++) {
-      const documents = await administrationFetch<MoneybirdDocument[]>(
-        credentials,
-        `${collectionPath(kind)}.json?per_page=${perPage}&page=${page}`,
-      );
+      const documents = await listDocuments(credentials, kind, page, perPage);
       const match = documents.find(
         (document) => document.reference === reference,
       );

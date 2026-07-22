@@ -167,15 +167,20 @@ export type Deal = {
   moneybird_estimate_created_by?: Identifier;
   moneybird_estimate_error?: string;
   moneybird_estimate_administration_id?: string;
+  moneybird_estimate_live_state?: string | null;
+  moneybird_estimate_checked_at?: string | null;
   moneybird_invoice_id?: string;
   moneybird_invoice_status?: "pending" | "completed" | "failed";
   moneybird_invoice_claimed_at?: string;
   moneybird_invoice_created_by?: Identifier;
   moneybird_invoice_error?: string;
   moneybird_invoice_administration_id?: string;
+  moneybird_invoice_live_state?: string | null;
+  moneybird_invoice_checked_at?: string | null;
   // Read-only, batched enrichment used by the Kanban to show which Inzyte
   // sources are already assigned without opening every card.
   inzyte_link?: InzyteLink | null;
+  latest_seo_report?: SeoMonthlyReportSummary | null;
 } & Pick<RaRecord, "id">;
 
 export type IntegrationRun = {
@@ -295,6 +300,118 @@ export type InzyteBootstrap = {
   suggestedLink: InzyteLink | null;
   workspaces: InzyteWorkspace[];
   recentRuns: InzyteRun[];
+  monthlyReports: SeoMonthlyReport[];
+};
+
+export type SeoMonthlyHeadlineMetric = {
+  key: string;
+  label: string;
+  source: "GA4" | "Search Console";
+  group: "seo" | "website_context";
+  definition: string;
+  format: "number" | "percent" | "decimal";
+  current: number;
+  previous: number;
+  change: number;
+  changePercent: number | null;
+  favourable: boolean | null;
+};
+
+export type SeoWorkCompletion = {
+  id: number;
+  task_id: number | null;
+  completion_month: string;
+  completed_at: string;
+  task_text: string;
+  task_type: string | null;
+  task_source: string | null;
+  completed_by: number | null;
+};
+
+export type SeoMonthlyReportData = {
+  version: number;
+  generatedAt: string;
+  period: {
+    reportingMonth: string;
+    currentStart: string;
+    currentEnd: string;
+    previousStart: string;
+    previousEnd: string;
+  };
+  assignment: {
+    id: number;
+    name: string;
+    description: string | null;
+    category: string | null;
+    createdAt: string;
+    recurring: boolean;
+  };
+  sources: Record<string, unknown>;
+  work: {
+    current: SeoWorkCompletion[];
+    allTime: SeoWorkCompletion[];
+    allTimeCount: number;
+    allTimeNoteCount: number;
+    currentInternalActivity: Array<Record<string, unknown>>;
+    allTimeInternalActivity: Array<Record<string, unknown>>;
+  };
+  financialSnapshot?: Record<string, unknown>;
+};
+
+export type SeoMonthlyReportSummary = {
+  id: number;
+  deal_id: number;
+  reporting_month: string;
+  status: "draft" | "final";
+  title: string;
+  headline_metrics: SeoMonthlyHeadlineMetric[];
+  current_work_count: number;
+  all_time_work_count: number;
+  generated_at: string;
+  finalized_at: string | null;
+};
+
+export type SeoMonthlyReport = SeoMonthlyReportSummary & {
+  company_id: number | null;
+  current_start: string;
+  current_end: string;
+  previous_start: string;
+  previous_end: string;
+  data_through: string | null;
+  client_summary: string | null;
+  work_summary: string | null;
+  next_steps: string | null;
+  report_data: SeoMonthlyReportData;
+  updated_at: string;
+};
+
+export type MoneybirdDocumentCandidate = {
+  id: string;
+  state: string;
+  reference?: string | null;
+  amountExcludingTax?: string | null;
+  amountIncludingTax?: string | null;
+  description?: string | null;
+  date?: string | null;
+  dueDate?: string | null;
+  confidence?: "exact_reference" | "strong" | "possible";
+  reasons?: string[];
+};
+
+export type MoneybirdDocumentCheck = {
+  linked: boolean;
+  document?: MoneybirdDocumentCandidate;
+  administrationId?: string;
+  checked: boolean;
+  checkedAt?: string;
+  reconciled?: boolean;
+  warning?: string;
+  candidates: MoneybirdDocumentCandidate[];
+};
+
+export type MoneybirdDealStatus = {
+  estimate: MoneybirdDocumentCheck;
+  invoice: MoneybirdDocumentCheck;
 };
 
 export type InzyteRequest = {

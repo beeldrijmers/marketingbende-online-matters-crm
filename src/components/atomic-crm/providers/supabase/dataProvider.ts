@@ -11,8 +11,10 @@ import type {
   Deal,
   DealNote,
   InzyteRequest,
+  MoneybirdDealStatus,
   RAFile,
   Sale,
+  SeoMonthlyReportSummary,
   SalesFormData,
   SignUpData,
 } from "../../types";
@@ -34,7 +36,7 @@ const getBaseDataProvider = () =>
     sortOrder: "asc,desc.nullslast" as any,
   });
 
-const enrichDealsWithInzyteLinks = async <T extends Deal>(
+const enrichDealsWithIntegrations = async <T extends Deal>(
   deals: T[],
 ): Promise<T[]> => {
   const dealIds: number[] = [];
@@ -44,18 +46,31 @@ const enrichDealsWithInzyteLinks = async <T extends Deal>(
   }
   if (dealIds.length === 0) return deals;
 
-  const { data: links, error } = await getSupabaseClient()
-    .from("inzyte_links")
-    .select("*")
-    .in("deal_id", dealIds);
-  if (error || !links) return deals;
+  const [linksResult, reportsResult] = await Promise.all([
+    getSupabaseClient().from("inzyte_links").select("*").in("deal_id", dealIds),
+    getSupabaseClient()
+      .from("seo_monthly_reports")
+      .select(
+        "id, deal_id, reporting_month, status, title, headline_metrics, current_work_count, all_time_work_count, generated_at, finalized_at",
+      )
+      .in("deal_id", dealIds)
+      .order("reporting_month", { ascending: false }),
+  ]);
 
   const linkByDealId = new Map(
-    links.map((link) => [Number(link.deal_id), link]),
+    (linksResult.data || []).map((link) => [Number(link.deal_id), link]),
   );
+  const reportByDealId = new Map<number, SeoMonthlyReportSummary>();
+  for (const report of reportsResult.data || []) {
+    const dealId = Number(report.deal_id);
+    if (!reportByDealId.has(dealId)) {
+      reportByDealId.set(dealId, report as SeoMonthlyReportSummary);
+    }
+  }
   return deals.map((deal) => ({
     ...deal,
     inzyte_link: linkByDealId.get(Number(deal.id)) ?? null,
+    latest_seo_report: reportByDealId.get(Number(deal.id)) ?? null,
   }));
 };
 
@@ -107,6 +122,16 @@ const getDataProviderWithCustomMethods = () => {
     if (resource === "contacts") {
       return baseDataProvider.getList("contacts_summary", params);
     }
+    if (resource === "deals") {
+      const response = await baseDataProvider.getList(resource, params);
+      const enriched = await enrichDealsWithIntegrations(
+        response.data as Deal[],
+      );
+      return {
+        ...response,
+        data: enriched as typeof response.data,
+      };
+    }
     if (resource === "activity_log" || resource === "activity_log_global") {
       const { data, total } = await baseDataProvider.getList(resource, params);
       // Rename snake_case view columns to camelCase to match Activity type
@@ -128,7 +153,7 @@ const getDataProviderWithCustomMethods = () => {
   const getOne: DataProvider["getOne"] = async (resource, params) => {
     if (resource === "deals") {
       const response = await baseDataProvider.getOne(resource, params);
-      const [deal] = await enrichDealsWithInzyteLinks([response.data as Deal]);
+      const [deal] = await enrichDealsWithIntegrations([response.data as Deal]);
       return { ...response, data: deal as typeof response.data };
     }
     if (resource === "companies") {
@@ -339,6 +364,54 @@ const getDataProviderWithCustomMethods = () => {
         throw new Error("Failed to load Moneybird tax rates");
       }
 
+      return data.data;
+    },
+    async getMoneybirdDealStatus(
+      dealId: Identifier,
+    ): Promise<MoneybirdDealStatus> {
+      const { data, error } = await getSupabaseClient().functions.invoke<{
+        data: MoneybirdDealStatus;
+      }>("moneybird_status", {
+        method: "POST",
+        body: { action: "check", dealId },
+      });
+      if (!data || error) {
+        const errorDetails = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(
+          errorDetails?.message || "Moneybird-status controleren is mislukt",
+        );
+      }
+      return data.data;
+    },
+    async linkMoneybirdCandidate(params: {
+      dealId: Identifier;
+      kind: "estimate" | "invoice";
+      documentId: string;
+    }): Promise<Partial<MoneybirdDealStatus>> {
+      const { data, error } = await getSupabaseClient().functions.invoke<{
+        data: Partial<MoneybirdDealStatus>;
+      }>("moneybird_status", {
+        method: "POST",
+        body: { action: "link_candidate", ...params },
+      });
+      if (!data || error) {
+        const errorDetails = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(
+          errorDetails?.message || "Moneybird-document koppelen is mislukt",
+        );
+      }
       return data.data;
     },
     // The caller's own Moneybird connection status. Reads the table directly:

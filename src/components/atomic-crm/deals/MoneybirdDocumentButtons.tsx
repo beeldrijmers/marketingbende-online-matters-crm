@@ -207,7 +207,13 @@ const MoneybirdDocumentDialog = ({
         taxRateId,
         description,
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["deals"] }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["deals"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["moneybird", "deal-status", record.id],
+        }),
+      ]),
   });
 
   const handleCreate = async () => {

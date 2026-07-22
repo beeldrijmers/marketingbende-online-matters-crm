@@ -12,6 +12,12 @@ import {
   normalizeDateRange,
   TRACKED_ACTIONS,
 } from "./actions.ts";
+import {
+  buildMonthlyHeadlineMetrics,
+  monthlyReportPeriod,
+  type MonthlyHeadlineMetric,
+  type MonthlyReportPeriod,
+} from "./monthlyReport.ts";
 
 type JsonObject = Record<string, unknown>;
 
@@ -43,6 +49,11 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_RESULT_SNAPSHOT_BYTES = 600_000;
 const INZYTE_TIMEOUT_MS = 175_000;
+const DUTCH_MONTH_YEAR_FORMATTER = new Intl.DateTimeFormat("nl-NL", {
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
 
 class InzyteUserError extends Error {
   constructor(
@@ -168,7 +179,7 @@ const getDealContext = async (dealId: number, sale: JsonObject) => {
   const { data: deal, error } = await supabaseAdmin
     .from("deals")
     .select(
-      "id, name, company_id, assignee_ids, sales_id, companies(id, name, website)",
+      "id, name, company_id, assignee_ids, sales_id, description, category, created_at, revenue_period, moneybird_estimate_id, moneybird_estimate_live_state, moneybird_estimate_checked_at, moneybird_invoice_id, moneybird_invoice_live_state, moneybird_invoice_checked_at, companies(id, name, website)",
     )
     .eq("id", dealId)
     .maybeSingle();
@@ -257,29 +268,39 @@ const settledSource = async (
 };
 
 const loadBootstrap = async (deal: JsonObject, link: InzyteLink | null) => {
-  const [catalog, recentRunsResult, suggestedLinkResult] = await Promise.all([
-    callInzyte("catalog"),
-    supabaseAdmin
-      .from("inzyte_runs")
-      .select(
-        "id, deal_id, inzyte_link_id, action, status, date_start, date_end, started_at, finished_at, result, summary, error",
-      )
-      .eq("deal_id", deal.id)
-      .order("started_at", { ascending: false })
-      .limit(20),
-    !link && deal.company_id
-      ? supabaseAdmin
-          .from("inzyte_links")
-          .select("*")
-          .eq("company_id", deal.company_id)
-          .neq("deal_id", deal.id)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle()
-      : Promise.resolve({ data: null, error: null }),
-  ]);
+  const [catalog, recentRunsResult, recentReportsResult, suggestedLinkResult] =
+    await Promise.all([
+      callInzyte("catalog"),
+      supabaseAdmin
+        .from("inzyte_runs")
+        .select(
+          "id, deal_id, inzyte_link_id, action, status, date_start, date_end, started_at, finished_at, result, summary, error",
+        )
+        .eq("deal_id", deal.id)
+        .order("started_at", { ascending: false })
+        .limit(20),
+      supabaseAdmin
+        .from("seo_monthly_reports")
+        .select(
+          "id, deal_id, company_id, reporting_month, current_start, current_end, previous_start, previous_end, data_through, status, title, client_summary, work_summary, next_steps, report_data, headline_metrics, current_work_count, all_time_work_count, generated_at, finalized_at, updated_at",
+        )
+        .eq("deal_id", deal.id)
+        .order("reporting_month", { ascending: false })
+        .limit(24),
+      !link && deal.company_id
+        ? supabaseAdmin
+            .from("inzyte_links")
+            .select("*")
+            .eq("company_id", deal.company_id)
+            .neq("deal_id", deal.id)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
 
   if (recentRunsResult.error) throw recentRunsResult.error;
+  if (recentReportsResult.error) throw recentReportsResult.error;
   const catalogWorkspaces =
     isRecord(catalog) && Array.isArray(catalog.workspaces)
       ? catalog.workspaces
@@ -296,6 +317,7 @@ const loadBootstrap = async (deal: JsonObject, link: InzyteLink | null) => {
     suggestedLink: suggestedLinkResult.data || null,
     workspaces: catalogWorkspaces,
     recentRuns: recentRunsResult.data || [],
+    monthlyReports: recentReportsResult.data || [],
   };
 };
 
@@ -493,6 +515,462 @@ const runRemoteAction = async (
   }
 };
 
+type MonthlySourceResult =
+  | { status: "success"; data: unknown; runId: number | null }
+  | { status: "unavailable" | "failed"; error: string };
+
+type WorkCompletion = {
+  id: number;
+  task_id: number | null;
+  completion_month: string;
+  completed_at: string;
+  task_text: string;
+  task_type: string | null;
+  task_source: string | null;
+  completed_by: number | null;
+};
+
+const monthLabel = (isoMonth: string): string =>
+  DUTCH_MONTH_YEAR_FORMATTER.format(
+    new Date(`${isoMonth.slice(0, 7)}-01T00:00:00Z`),
+  );
+
+const nextIsoDay = (date: string): string => {
+  const parsed = new Date(`${date}T00:00:00Z`);
+  parsed.setUTCDate(parsed.getUTCDate() + 1);
+  return parsed.toISOString().slice(0, 10);
+};
+
+const loadMonthlyWorkContext = async (
+  dealId: number,
+  period: MonthlyReportPeriod,
+) => {
+  const [allCompletions, currentCompletions, allNotes, currentNotes] =
+    await Promise.all([
+      supabaseAdmin
+        .from("deal_task_completions")
+        .select(
+          "id, task_id, completion_month, completed_at, task_text, task_type, task_source, completed_by",
+          { count: "exact" },
+        )
+        .eq("deal_id", dealId)
+        .order("completed_at", { ascending: false })
+        .limit(500),
+      supabaseAdmin
+        .from("deal_task_completions")
+        .select(
+          "id, task_id, completion_month, completed_at, task_text, task_type, task_source, completed_by",
+          { count: "exact" },
+        )
+        .eq("deal_id", dealId)
+        .eq("completion_month", period.reportingMonth)
+        .order("completed_at", { ascending: true })
+        .limit(250),
+      supabaseAdmin
+        .from("deal_notes")
+        .select(
+          "id, text, date, type, activity_source, activity_source_author, source_event_id",
+          { count: "exact" },
+        )
+        .eq("deal_id", dealId)
+        .order("date", { ascending: false })
+        .limit(200),
+      supabaseAdmin
+        .from("deal_notes")
+        .select(
+          "id, text, date, type, activity_source, activity_source_author, source_event_id",
+        )
+        .eq("deal_id", dealId)
+        .gte("date", `${period.currentStart}T00:00:00.000Z`)
+        .lt("date", `${nextIsoDay(period.currentEnd)}T00:00:00.000Z`)
+        .order("date", { ascending: true })
+        .limit(100),
+    ]);
+
+  const error =
+    allCompletions.error ||
+    currentCompletions.error ||
+    allNotes.error ||
+    currentNotes.error;
+  if (error) throw error;
+
+  const compactActivity = (rows: JsonObject[]) =>
+    rows.map((note) => ({
+      ...note,
+      text: optionalText(note.text, 1_500) || "Notitie zonder tekst",
+    }));
+
+  return {
+    allTime: (allCompletions.data || []) as WorkCompletion[],
+    allTimeCount: allCompletions.count || 0,
+    current: (currentCompletions.data || []) as WorkCompletion[],
+    currentCount: currentCompletions.count || 0,
+    allTimeNoteCount: allNotes.count || 0,
+    allTimeInternalActivity: compactActivity(allNotes.data || []),
+    currentInternalActivity: compactActivity(currentNotes.data || []),
+  };
+};
+
+const settleMonthlyAction = async ({
+  enabled,
+  action,
+  dealId,
+  saleId,
+  link,
+  startDate,
+  endDate,
+}: {
+  enabled: boolean;
+  action: "overview" | "search_console";
+  dealId: number;
+  saleId: number;
+  link: InzyteLink;
+  startDate: string;
+  endDate: string;
+}): Promise<MonthlySourceResult> => {
+  if (!enabled) {
+    return {
+      status: "unavailable",
+      error:
+        action === "overview"
+          ? "GA4 is nog niet aan deze opdracht gekoppeld."
+          : "Search Console is nog niet aan deze opdracht gekoppeld.",
+    };
+  }
+  try {
+    const { result, runId } = await runRemoteAction(
+      action,
+      dealId,
+      saleId,
+      link,
+      { startDate, endDate, forceRefresh: true },
+    );
+    return { status: "success", data: boundedSnapshot(result), runId };
+  } catch (error) {
+    return { status: "failed", error: safeRunError(error) };
+  }
+};
+
+const formatMetric = (metric: MonthlyHeadlineMetric): string => {
+  if (metric.format === "percent") {
+    return `${metric.current.toLocaleString("nl-NL", {
+      maximumFractionDigits: 1,
+    })}%`;
+  }
+  return metric.current.toLocaleString("nl-NL", {
+    maximumFractionDigits: metric.format === "decimal" ? 1 : 0,
+  });
+};
+
+const defaultClientSummary = ({
+  companyName,
+  period,
+  metrics,
+  workCount,
+}: {
+  companyName: string;
+  period: MonthlyReportPeriod;
+  metrics: MonthlyHeadlineMetric[];
+  workCount: number;
+}): string => {
+  const comparable = metrics.filter(
+    (metric) => metric.group === "seo" && metric.changePercent !== null,
+  );
+  const favourable = comparable
+    .filter((metric) => metric.favourable === true)
+    .sort(
+      (left, right) =>
+        Math.abs(right.changePercent || 0) - Math.abs(left.changePercent || 0),
+    )[0];
+  const attention = comparable
+    .filter((metric) => metric.favourable === false)
+    .sort(
+      (left, right) =>
+        Math.abs(right.changePercent || 0) - Math.abs(left.changePercent || 0),
+    )[0];
+  const lines = [
+    `Deze SEO-update voor ${companyName} vergelijkt ${monthLabel(
+      period.reportingMonth,
+    )} met ${monthLabel(period.previousStart)}.`,
+    workCount > 0
+      ? `In de meetmaand zijn ${workCount} werkzaamheden als afgerond vastgelegd.`
+      : "In de meetmaand zijn nog geen afgeronde werkzaamheden in het CRM-logboek vastgelegd.",
+  ];
+  if (favourable) {
+    lines.push(
+      `${favourable.label} kwam uit op ${formatMetric(favourable)} (${favourable.changePercent! >= 0 ? "+" : ""}${favourable.changePercent!.toLocaleString("nl-NL", { maximumFractionDigits: 1 })}% maand-op-maand).`,
+    );
+  }
+  if (attention) {
+    lines.push(
+      `${attention.label} vraagt aandacht (${attention.changePercent! >= 0 ? "+" : ""}${attention.changePercent!.toLocaleString("nl-NL", { maximumFractionDigits: 1 })}% maand-op-maand).`,
+    );
+  }
+  if (comparable.length === 0 && metrics.length > 0) {
+    lines.push(
+      "Er zijn wel algemene websitecijfers beschikbaar, maar die gebruiken we niet als zelfstandig bewijs voor SEO-resultaat.",
+    );
+  }
+  lines.push(
+    "De cijfers laten een ontwikkeling zien; ze bewijzen op zichzelf geen direct oorzakelijk verband met één afzonderlijke wijziging.",
+  );
+  return lines.join(" ");
+};
+
+const defaultWorkSummary = (work: WorkCompletion[]): string =>
+  work.length > 0
+    ? work.map((item) => `• ${item.task_text}`).join("\n")
+    : "Er zijn voor deze meetmaand nog geen afgeronde werkzaamheden geregistreerd.";
+
+const generateMonthlyReport = async (
+  deal: JsonObject,
+  link: InzyteLink | null,
+  saleId: number,
+  requestedMonth: unknown,
+) => {
+  if (!link) {
+    throw userError("Koppel deze opdracht eerst aan een Inzyte-account.", 409);
+  }
+  const hasGa4 = Boolean(link.ga4_connection_id && link.ga4_property_id);
+  const hasGsc = Boolean(link.gsc_site_url);
+  if (!hasGa4 && !hasGsc) {
+    throw userError(
+      "Koppel minimaal GA4 of Search Console om een maandrapport te maken.",
+      409,
+    );
+  }
+
+  const period = monthlyReportPeriod(requestedMonth);
+  const dealId = Number(deal.id);
+  const [work, ga4Current, ga4Previous, gscCurrent, gscPrevious] =
+    await Promise.all([
+      loadMonthlyWorkContext(dealId, period),
+      settleMonthlyAction({
+        enabled: hasGa4,
+        action: "overview",
+        dealId,
+        saleId,
+        link,
+        startDate: period.currentStart,
+        endDate: period.currentEnd,
+      }),
+      settleMonthlyAction({
+        enabled: hasGa4,
+        action: "overview",
+        dealId,
+        saleId,
+        link,
+        startDate: period.previousStart,
+        endDate: period.previousEnd,
+      }),
+      settleMonthlyAction({
+        enabled: hasGsc,
+        action: "search_console",
+        dealId,
+        saleId,
+        link,
+        startDate: period.currentStart,
+        endDate: period.currentEnd,
+      }),
+      settleMonthlyAction({
+        enabled: hasGsc,
+        action: "search_console",
+        dealId,
+        saleId,
+        link,
+        startDate: period.previousStart,
+        endDate: period.previousEnd,
+      }),
+    ]);
+  const successfulSources = [
+    ga4Current,
+    ga4Previous,
+    gscCurrent,
+    gscPrevious,
+  ].filter((source) => source.status === "success").length;
+  if (successfulSources === 0) {
+    throw userError(
+      "GA4 en Search Console konden geen meetgegevens leveren. Controleer de koppelingen en probeer opnieuw.",
+      409,
+    );
+  }
+
+  const sourceData = (source: MonthlySourceResult): unknown =>
+    source.status === "success" ? source.data : undefined;
+  const metrics = buildMonthlyHeadlineMetrics({
+    ga4Current: sourceData(ga4Current),
+    ga4Previous: sourceData(ga4Previous),
+    gscCurrent: sourceData(gscCurrent),
+    gscPrevious: sourceData(gscPrevious),
+  });
+  const companyName =
+    (isRecord(deal.companies) && optionalText(deal.companies.name)) ||
+    optionalText(deal.name) ||
+    "de klant";
+  const title = `SEO-maandupdate ${monthLabel(period.reportingMonth)}`;
+  const clientSummary = defaultClientSummary({
+    companyName,
+    period,
+    metrics,
+    workCount: work.currentCount,
+  });
+  const reportData = {
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    period,
+    assignment: {
+      id: deal.id,
+      name: deal.name,
+      description: deal.description,
+      category: deal.category,
+      createdAt: deal.created_at,
+      recurring: deal.revenue_period === "maandelijks",
+    },
+    sources: {
+      ga4: { current: ga4Current, previous: ga4Previous },
+      searchConsole: { current: gscCurrent, previous: gscPrevious },
+    },
+    work: {
+      current: work.current,
+      allTime: work.allTime,
+      allTimeCount: work.allTimeCount,
+      allTimeNoteCount: work.allTimeNoteCount,
+      allTimeInternalActivity: work.allTimeInternalActivity,
+      currentInternalActivity: work.currentInternalActivity,
+    },
+    financialSnapshot: {
+      estimateId: deal.moneybird_estimate_id,
+      estimateState: deal.moneybird_estimate_live_state,
+      estimateCheckedAt: deal.moneybird_estimate_checked_at,
+      invoiceId: deal.moneybird_invoice_id,
+      invoiceState: deal.moneybird_invoice_live_state,
+      invoiceCheckedAt: deal.moneybird_invoice_checked_at,
+    },
+  };
+  const hasCurrentPeriodData =
+    ga4Current.status === "success" || gscCurrent.status === "success";
+
+  const { data: report, error } = await supabaseAdmin
+    .from("seo_monthly_reports")
+    .upsert(
+      {
+        deal_id: dealId,
+        company_id: deal.company_id ? Number(deal.company_id) : null,
+        reporting_month: period.reportingMonth,
+        current_start: period.currentStart,
+        current_end: period.currentEnd,
+        previous_start: period.previousStart,
+        previous_end: period.previousEnd,
+        data_through: hasCurrentPeriodData
+          ? period.currentEnd
+          : period.previousEnd,
+        status: "draft",
+        title,
+        client_summary: clientSummary,
+        work_summary: defaultWorkSummary(work.current),
+        next_steps:
+          "Bespreek de belangrijkste ontwikkeling, leg de prioriteiten voor de komende maand vast en registreer elke afgeronde SEO-stap in de opdracht.",
+        report_data: reportData,
+        headline_metrics: metrics,
+        current_work_count: work.currentCount,
+        all_time_work_count: work.allTimeCount,
+        generated_by: saleId,
+        generated_at: new Date().toISOString(),
+        finalized_at: null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "deal_id,reporting_month" },
+    )
+    .select("*")
+    .single();
+  if (error || !report) {
+    throw error || new Error("SEO-maandrapport opslaan is mislukt.");
+  }
+  return report;
+};
+
+const finalizeMonthlyReport = async (
+  dealId: number,
+  saleId: number,
+  body: JsonObject,
+) => {
+  const reportId = requiredPositiveInteger(body.reportId);
+  if (!reportId) throw userError("Kies eerst een maandrapport.");
+  const { data: existing, error: loadError } = await supabaseAdmin
+    .from("seo_monthly_reports")
+    .select("*")
+    .eq("id", reportId)
+    .eq("deal_id", dealId)
+    .maybeSingle();
+  if (loadError) throw loadError;
+  if (!existing) throw userError("Dit maandrapport is niet gevonden.", 404);
+
+  const clientSummary =
+    optionalText(body.clientSummary, 20_000) || existing.client_summary;
+  const workSummary =
+    optionalText(body.workSummary, 20_000) || existing.work_summary;
+  const nextSteps = optionalText(body.nextSteps, 20_000) || existing.next_steps;
+  const finalizedAt = new Date().toISOString();
+  const { data: report, error: updateError } = await supabaseAdmin
+    .from("seo_monthly_reports")
+    .update({
+      status: "final",
+      client_summary: clientSummary,
+      work_summary: workSummary,
+      next_steps: nextSteps,
+      finalized_at: finalizedAt,
+      updated_at: finalizedAt,
+    })
+    .eq("id", reportId)
+    .eq("deal_id", dealId)
+    .select("*")
+    .single();
+  if (updateError || !report) {
+    throw updateError || new Error("SEO-maandrapport afronden is mislukt.");
+  }
+
+  const noteText =
+    optionalText(body.noteText, 30_000) ||
+    [
+      report.title,
+      `Meetperiode: ${report.current_start} t/m ${report.current_end} vergeleken met ${report.previous_start} t/m ${report.previous_end}.`,
+      clientSummary,
+      "Werkzaamheden:",
+      workSummary,
+      "Volgende stappen:",
+      nextSteps,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+  const sourceEventId = `seo-monthly-report:${report.id}`;
+  const { data: note } = await supabaseAdmin
+    .from("deal_notes")
+    .select("id")
+    .eq("deal_id", dealId)
+    .eq("source_event_id", sourceEventId)
+    .maybeSingle();
+  if (note) {
+    const { error } = await supabaseAdmin
+      .from("deal_notes")
+      .update({ text: noteText, date: finalizedAt, sales_id: saleId })
+      .eq("id", note.id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabaseAdmin.from("deal_notes").insert({
+      deal_id: dealId,
+      type: "SEO-maandrapport",
+      text: noteText,
+      date: finalizedAt,
+      sales_id: saleId,
+      activity_source: "manual",
+      activity_source_author: "CRM + Inzyte",
+      source_event_id: sourceEventId,
+    });
+    if (error) throw error;
+  }
+  return report;
+};
+
 const saveRunAsNote = async (
   dealId: number,
   saleId: number,
@@ -672,6 +1150,19 @@ const handleRequest = async (
           ),
         });
       }
+      case "monthly_report":
+        return jsonResponse({
+          data: await generateMonthlyReport(
+            deal,
+            link,
+            Number(sale.id),
+            body.reportingMonth,
+          ),
+        });
+      case "finalize_monthly_report":
+        return jsonResponse({
+          data: await finalizeMonthlyReport(dealId, Number(sale.id), body),
+        });
       default: {
         if (!INZYTE_ACTIONS.has(action as InzyteAction)) {
           return createErrorResponse(400, "Onbekende Inzyte-actie.");

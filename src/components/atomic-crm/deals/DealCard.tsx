@@ -1,5 +1,5 @@
 import { Draggable } from "@hello-pangea/dnd";
-import { PauseCircle, Receipt } from "lucide-react";
+import { FileBarChart, PauseCircle, Receipt } from "lucide-react";
 import { useRedirect, useTranslate, RecordContextProvider } from "ra-core";
 import { ReferenceField } from "@/components/admin/reference-field";
 import { SelectField } from "@/components/admin/select-field";
@@ -49,6 +49,20 @@ const moneybirdLabel = (deal: Deal): string | null =>
     : deal.moneybird_estimate_id
       ? "Offerte"
       : null;
+
+const SEO_REPORT_MONTH_FORMATTER = new Intl.DateTimeFormat("nl-NL", {
+  month: "short",
+  timeZone: "UTC",
+});
+
+const seoReportLabel = (deal: Deal): string | null => {
+  const report = deal.latest_seo_report;
+  if (!report) return null;
+  const month = SEO_REPORT_MONTH_FORMATTER.format(
+    new Date(`${report.reporting_month.slice(0, 7)}-01T00:00:00Z`),
+  );
+  return `SEO ${month} · ${report.status === "final" ? "klaar" : "concept"}`;
+};
 
 export const DealCard = ({
   attentionPipeline = false,
@@ -126,6 +140,7 @@ export const DealCardContent = ({
     : null;
   const recurring = isRecurringDeal(deal);
   const moneybird = moneybirdLabel(deal);
+  const seoReport = seoReportLabel(deal);
   const workflow = getDealWorkflow(deal, openTasks);
   const attentionAccent =
     workflow.kind === "overdue"
@@ -233,6 +248,20 @@ export const DealCardContent = ({
                 </Badge>
               )}
               <div className="ml-auto flex items-center gap-1.5">
+                {seoReport && (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "shrink-0 gap-1 px-1.5 py-0 text-[11px] font-normal",
+                      deal.latest_seo_report?.status === "final"
+                        ? "border-emerald-500/40 text-emerald-600"
+                        : "border-amber-500/40 text-amber-600",
+                    )}
+                  >
+                    <FileBarChart className="size-3 shrink-0" />
+                    {seoReport}
+                  </Badge>
+                )}
                 {moneybird && (
                   <Badge
                     variant="outline"

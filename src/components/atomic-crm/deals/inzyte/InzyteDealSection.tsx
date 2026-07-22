@@ -28,6 +28,15 @@ const INZYTE_SOURCES = [
   },
 ];
 
+const REPORT_MONTH_FORMATTER = new Intl.DateTimeFormat("nl-NL", {
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+const monthLabel = (value: string): string =>
+  REPORT_MONTH_FORMATTER.format(new Date(`${value.slice(0, 7)}-01T00:00:00Z`));
+
 export const InzyteDealSection = ({ record }: { record: Deal }) => {
   const connectionLabel = record.inzyte_link?.last_error
     ? "Koppeling vraagt aandacht"
@@ -46,7 +55,9 @@ export const InzyteDealSection = ({ record }: { record: Deal }) => {
         </div>
         <div className="min-w-56 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-semibold">Inzyte-klantverdieping</h3>
+            <h3 className="text-sm font-semibold">
+              Klantinzichten & SEO-maandrapportage
+            </h3>
             <Badge
               variant="outline"
               className={cn(
@@ -61,8 +72,8 @@ export const InzyteDealSection = ({ record }: { record: Deal }) => {
             </Badge>
           </div>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Open de verdiepende klantanalyse, rapportages, AI-inzichten en
-            Google-koppelingen voor deze opdracht.
+            Vergelijk SEO-resultaten maand-op-maand, combineer ze met de
+            uitgevoerde werkzaamheden en maak een klantklare PDF.
           </p>
           {record.inzyte_link ? (
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -83,6 +94,22 @@ export const InzyteDealSection = ({ record }: { record: Deal }) => {
                   </Badge>
                 );
               })}
+              {record.latest_seo_report ? (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-[10px]",
+                    record.latest_seo_report.status === "final"
+                      ? "border-emerald-500/40 text-emerald-600"
+                      : "border-amber-500/40 text-amber-600",
+                  )}
+                >
+                  SEO {monthLabel(record.latest_seo_report.reporting_month)} ·{" "}
+                  {record.latest_seo_report.status === "final"
+                    ? "definitief"
+                    : "concept"}
+                </Badge>
+              ) : null}
             </div>
           ) : null}
         </div>

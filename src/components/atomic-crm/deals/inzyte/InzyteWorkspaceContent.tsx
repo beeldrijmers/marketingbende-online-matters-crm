@@ -7,7 +7,6 @@ import {
   Clipboard,
   Database,
   Download,
-  FileBarChart,
   Gauge,
   Globe2,
   History,
@@ -40,6 +39,7 @@ import { cn } from "@/lib/utils";
 import type { Deal, InzyteRun } from "../../types";
 import { InzyteConnections } from "./InzyteConnections";
 import { InzyteDataView } from "./InzyteDataView";
+import { SeoMonthlyReportWorkspace } from "./SeoMonthlyReport";
 import { unwrapInzyteData } from "./inzyteData";
 import {
   buildClientUpdateText,
@@ -63,6 +63,45 @@ const SECTION_ITEMS: Array<[SectionType, string]> = [
   ["realtime_comprehensive", "Realtime"],
   ["trends_comprehensive", "Trends"],
 ];
+
+const ANALYSES = [
+  [
+    "overview",
+    "Klantoverzicht",
+    "Kerncijfers, ontwikkeling, kanalen en toppagina’s.",
+    Gauge,
+  ],
+  [
+    "traffic",
+    "Verkeer",
+    "Herkomst, apparaten, landen en bezoekersgedrag.",
+    BarChart3,
+  ],
+  [
+    "pages",
+    "Pagina’s",
+    "Best presterende pagina’s, landingen en kansen.",
+    Globe2,
+  ],
+  [
+    "conversions",
+    "Conversies",
+    "Doelen, gebeurtenissen en resultaat per sessie.",
+    Target,
+  ],
+  [
+    "search_console",
+    "SEO en Search Console",
+    "Klikken, vertoningen, zoektermen en posities.",
+    Search,
+  ],
+  [
+    "campaigns",
+    "Campagnes",
+    "UTM-verkeer, campagneprestaties en rendement.",
+    Megaphone,
+  ],
+] as const;
 
 const ACTION_LABELS: Record<string, string> = {
   overview: "Klantoverzicht",
@@ -366,171 +405,64 @@ const DateBar = ({ controller }: { controller: InzyteWorkspaceController }) => {
   );
 };
 
-const PrimaryOutput = ({
-  controller,
-}: {
-  controller: InzyteWorkspaceController;
-}) => (
-  <section className="overflow-hidden rounded-2xl border border-sky-500/25 bg-linear-to-br from-sky-500/[0.12] via-card to-card shadow-sm">
-    <div className="flex flex-wrap items-center gap-5 p-6 md:p-7">
-      <div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-sky-500 text-white shadow-lg shadow-sky-500/20">
-        <FileBarChart className="size-7" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <Badge
-          variant="outline"
-          className="mb-2 border-sky-500/30 text-sky-600"
-        >
-          Belangrijkste werkroute
-        </Badge>
-        <h2 className="text-2xl font-semibold tracking-tight">
-          Klantupdate en PDF-rapport
-        </h2>
-        <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
-          Vertaal actuele klantdata naar een begrijpelijke update voor de klant,
-          of bouw een verzorgd rapport met kerncijfers en onderbouwing.
-        </p>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          size="lg"
-          disabled={!controller.hasGa4 || controller.busy !== null}
-          onClick={() => controller.runContextualAi("executive_summary")}
-        >
-          {controller.busy === "executive_summary" ||
-          controller.busy === "overview" ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <MessageSquareText className="size-4" />
-          )}
-          Klantupdate maken
-        </Button>
-        <Button
-          type="button"
-          size="lg"
-          variant="outline"
-          disabled={!controller.hasGa4 || controller.busy !== null}
-          onClick={() =>
-            void controller.runAction("report").catch(() => undefined)
-          }
-        >
-          {controller.busy === "report" ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Printer className="size-4" />
-          )}
-          PDF-rapport voorbereiden
-        </Button>
-      </div>
-    </div>
-    {!controller.hasGa4 ? (
-      <div className="border-t border-amber-500/20 bg-amber-500/[0.08] px-6 py-3 text-sm text-amber-700 dark:text-amber-400">
-        Stel eerst de GA4-koppeling in bij “Koppelingen en instellingen”
-        onderaan deze pagina.
-      </div>
-    ) : null}
-  </section>
-);
-
 const AnalysisGrid = ({
   controller,
 }: {
   controller: InzyteWorkspaceController;
-}) => {
-  const analyses = [
-    [
-      "overview",
-      "Klantoverzicht",
-      "Kerncijfers, ontwikkeling, kanalen en toppagina’s.",
-      Gauge,
-    ],
-    [
-      "traffic",
-      "Verkeer",
-      "Herkomst, apparaten, landen en bezoekersgedrag.",
-      BarChart3,
-    ],
-    [
-      "pages",
-      "Pagina’s",
-      "Best presterende pagina’s, landingen en kansen.",
-      Globe2,
-    ],
-    [
-      "conversions",
-      "Conversies",
-      "Doelen, gebeurtenissen en resultaat per sessie.",
-      Target,
-    ],
-    [
-      "search_console",
-      "SEO en Search Console",
-      "Klikken, vertoningen, zoektermen en posities.",
-      Search,
-    ],
-    [
-      "campaigns",
-      "Campagnes",
-      "UTM-verkeer, campagneprestaties en rendement.",
-      Megaphone,
-    ],
-  ] as const;
-  return (
-    <section>
-      <div className="mb-3">
-        <h2 className="text-lg font-semibold">Kies een verdiepende analyse</h2>
-        <p className="text-sm text-muted-foreground">
-          Het laatst gekozen resultaat verschijnt direct onder deze knoppen.
-        </p>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {analyses.map(([action, title, description, Icon]) => (
-          <AnalysisCard
-            key={action}
-            title={title}
-            description={description}
-            icon={<Icon className="size-5" />}
-            selected={controller.selectedAction === action}
-            loading={controller.busy === action}
-            disabled={
-              controller.busy !== null ||
-              !controller.hasGa4 ||
-              (action === "search_console" &&
-                !controller.bootstrap?.link?.gsc_site_url)
-            }
-            onClick={() =>
-              void controller
-                .runAction(
-                  action,
-                  action === "search_console" ? { forceRefresh: true } : {},
-                )
-                .catch(() => undefined)
-            }
-          />
-        ))}
+}) => (
+  <section>
+    <div className="mb-3">
+      <h2 className="text-lg font-semibold">Kies een verdiepende analyse</h2>
+      <p className="text-sm text-muted-foreground">
+        Het laatst gekozen resultaat verschijnt direct onder deze knoppen.
+      </p>
+    </div>
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {ANALYSES.map(([action, title, description, Icon]) => (
         <AnalysisCard
-          title="Doelgroep"
-          description="Segmenten, persona’s, kanalen en contentaanpak."
-          icon={<Users className="size-5" />}
-          selected={controller.selectedAction === "audience"}
-          loading={controller.busy === "audience"}
-          disabled={!controller.hasGa4 || controller.busy !== null}
-          onClick={() => controller.runAudience("audience")}
+          key={action}
+          title={title}
+          description={description}
+          icon={<Icon className="size-5" />}
+          selected={controller.selectedAction === action}
+          loading={controller.busy === action}
+          disabled={
+            controller.busy !== null ||
+            !controller.hasGa4 ||
+            (action === "search_console" &&
+              !controller.bootstrap?.link?.gsc_site_url)
+          }
+          onClick={() =>
+            void controller
+              .runAction(
+                action,
+                action === "search_console" ? { forceRefresh: true } : {},
+              )
+              .catch(() => undefined)
+          }
         />
-        <AnalysisCard
-          title="AI-advies"
-          description="Kansen, waarschuwingen en concrete vervolgstappen."
-          icon={<Sparkles className="size-5" />}
-          selected={controller.selectedAction === "ai_insights"}
-          loading={controller.busy === "ai_insights"}
-          disabled={!controller.hasGa4 || controller.busy !== null}
-          onClick={controller.runAiInsights}
-        />
-      </div>
-    </section>
-  );
-};
+      ))}
+      <AnalysisCard
+        title="Doelgroep"
+        description="Segmenten, persona’s, kanalen en contentaanpak."
+        icon={<Users className="size-5" />}
+        selected={controller.selectedAction === "audience"}
+        loading={controller.busy === "audience"}
+        disabled={!controller.hasGa4 || controller.busy !== null}
+        onClick={() => controller.runAudience("audience")}
+      />
+      <AnalysisCard
+        title="AI-advies"
+        description="Kansen, waarschuwingen en concrete vervolgstappen."
+        icon={<Sparkles className="size-5" />}
+        selected={controller.selectedAction === "ai_insights"}
+        loading={controller.busy === "ai_insights"}
+        disabled={!controller.hasGa4 || controller.busy !== null}
+        onClick={controller.runAiInsights}
+      />
+    </div>
+  </section>
+);
 
 const ResultSection = ({
   record,
@@ -983,8 +915,8 @@ export const InzyteWorkspaceContent = ({
     <div className="mx-auto w-full max-w-[1800px] space-y-5 p-4 pb-12 md:p-6">
       {controller.linked ? (
         <>
+          <SeoMonthlyReportWorkspace record={record} controller={controller} />
           <DateBar controller={controller} />
-          <PrimaryOutput controller={controller} />
           <AnalysisGrid controller={controller} />
           <ResultSection record={record} controller={controller} />
           <WorkspaceAccordion controller={controller} />

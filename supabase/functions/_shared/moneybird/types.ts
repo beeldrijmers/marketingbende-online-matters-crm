@@ -59,6 +59,10 @@ export interface MoneybirdDocument {
   total_price_incl_tax: string | null;
   total_price_excl_tax: string | null;
   details: MoneybirdDocumentDetail[];
+  created_at?: string | null;
+  updated_at?: string | null;
+  date?: string | null;
+  due_date?: string | null;
 }
 
 // ---- request payload shapes (what we POST) ----

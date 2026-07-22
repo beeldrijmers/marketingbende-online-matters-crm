@@ -8,6 +8,7 @@ import type {
   InzyteBootstrap,
   InzyteRequest,
   InzyteRun,
+  SeoMonthlyReport,
 } from "../../types";
 import type { InzyteLinkDraft } from "./InzyteConnections";
 import { findNamedArray, unwrapInzyteData } from "./inzyteData";
@@ -46,6 +47,12 @@ const defaultDates = () => {
   return { startDate: dateInputValue(start), endDate: dateInputValue(end) };
 };
 
+const defaultReportingMonth = () => {
+  const date = new Date();
+  date.setMonth(date.getMonth() - 1, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+};
+
 const getRemoteAuthorizationUrl = (value: unknown): string | null => {
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;
@@ -69,6 +76,9 @@ export const useInzyteWorkspaceController = (record: Deal) => {
   const [sources, setSources] = useState<unknown>({});
   const [results, setResults] = useState<Record<string, ActionResult>>({});
   const [selectedAction, setSelectedAction] = useState("overview");
+  const [reportingMonth, setReportingMonth] = useState(defaultReportingMonth);
+  const [selectedMonthlyReport, setSelectedMonthlyReport] =
+    useState<SeoMonthlyReport | null>(null);
   const [question, setQuestion] = useState(
     "Wat zijn voor deze klant de drie belangrijkste kansen en welke concrete acties moeten we als eerste uitvoeren?",
   );
@@ -84,6 +94,21 @@ export const useInzyteWorkspaceController = (record: Deal) => {
         dealId: record.id,
       });
       setBootstrap(response);
+      setSelectedMonthlyReport((current) => {
+        if (current) {
+          return (
+            response.monthlyReports.find(
+              (report) => report.id === current.id,
+            ) || null
+          );
+        }
+        const defaultMonth = defaultReportingMonth();
+        return (
+          response.monthlyReports.find(
+            (report) => report.reporting_month.slice(0, 7) === defaultMonth,
+          ) || null
+        );
+      });
     } catch (error) {
       notify(
         error instanceof Error ? error.message : "Inzyte laden is mislukt",
@@ -286,6 +311,98 @@ export const useInzyteWorkspaceController = (record: Deal) => {
     }
   };
 
+  const generateMonthlyReport = async () => {
+    setBusy("monthly_report");
+    try {
+      const report = await dataProvider.inzyteRequest<SeoMonthlyReport>({
+        action: "monthly_report",
+        dealId: record.id,
+        reportingMonth,
+      });
+      setSelectedMonthlyReport(report);
+      setBootstrap((current) =>
+        current
+          ? {
+              ...current,
+              monthlyReports: [
+                report,
+                ...current.monthlyReports.filter(
+                  (existing) => existing.id !== report.id,
+                ),
+              ],
+            }
+          : current,
+      );
+      await queryClient.invalidateQueries({ queryKey: ["deals"] });
+      notify("SEO-maandrapport is ververst en als concept opgeslagen", {
+        type: "success",
+      });
+      return report;
+    } catch (error) {
+      notify(
+        error instanceof Error
+          ? error.message
+          : "SEO-maandrapport maken is mislukt",
+        { type: "error" },
+      );
+      throw error;
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const chooseReportingMonth = (month: string) => {
+    setReportingMonth(month);
+    setSelectedMonthlyReport(
+      bootstrap?.monthlyReports.find(
+        (report) => report.reporting_month.slice(0, 7) === month,
+      ) || null,
+    );
+  };
+
+  const finalizeMonthlyReport = async (params: {
+    reportId: number;
+    clientSummary: string;
+    workSummary: string;
+    nextSteps: string;
+    noteText: string;
+  }) => {
+    setBusy("finalize_monthly_report");
+    try {
+      const report = await dataProvider.inzyteRequest<SeoMonthlyReport>({
+        action: "finalize_monthly_report",
+        dealId: record.id,
+        ...params,
+      });
+      setSelectedMonthlyReport(report);
+      setBootstrap((current) =>
+        current
+          ? {
+              ...current,
+              monthlyReports: current.monthlyReports.map((existing) =>
+                existing.id === report.id ? report : existing,
+              ),
+            }
+          : current,
+      );
+      await queryClient.invalidateQueries({ queryKey: ["deals"] });
+      notify("SEO-maandrapport is definitief bij de opdracht opgeslagen", {
+        type: "success",
+      });
+      return report;
+    } catch (error) {
+      notify(
+        error instanceof Error
+          ? error.message
+          : "SEO-maandrapport opslaan is mislukt",
+        { type: "error" },
+      );
+      throw error;
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const runAudience = async (
     action: "audience" | "audience_intelligence" = "audience",
   ) => {
@@ -448,6 +565,9 @@ export const useInzyteWorkspaceController = (record: Deal) => {
     setStartDate,
     endDate,
     setEndDate,
+    reportingMonth,
+    chooseReportingMonth,
+    selectedMonthlyReport,
     linked,
     hasGa4,
     historyRuns,
@@ -458,6 +578,8 @@ export const useInzyteWorkspaceController = (record: Deal) => {
     saveLink,
     unlink,
     saveNote,
+    generateMonthlyReport,
+    finalizeMonthlyReport,
     runAction,
     runAudience,
     runStructuredAi,
