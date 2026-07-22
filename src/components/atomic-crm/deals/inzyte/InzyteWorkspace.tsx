@@ -24,6 +24,31 @@ import { useInzyteWorkspaceController } from "./useInzyteWorkspaceController";
 
 const stopCardEvent = (event: SyntheticEvent) => event.stopPropagation();
 
+const sourceConnectionLabel = (record: Deal): string => {
+  const labels = [
+    record.inzyte_link?.ga4_connection_id && record.inzyte_link?.ga4_property_id
+      ? "GA4-property"
+      : null,
+    record.inzyte_link?.gsc_site_url ? "Search Console" : null,
+    record.inzyte_link?.gbp_location_id ? "Bedrijfsprofiel" : null,
+    record.inzyte_link?.ads_customer_id ? "Google Ads" : null,
+  ].filter(Boolean);
+  if (labels.length === 1) return `${labels[0]} gekoppeld`;
+  if (labels.length > 1) return `${labels.length} meetbronnen gekoppeld`;
+  return record.inzyte_link
+    ? "Account gekoppeld, meetbron ontbreekt"
+    : "Koppeling nodig";
+};
+
+const hasMeasurementSource = (record: Deal): boolean =>
+  Boolean(
+    (record.inzyte_link?.ga4_connection_id &&
+      record.inzyte_link?.ga4_property_id) ||
+      record.inzyte_link?.gsc_site_url ||
+      record.inzyte_link?.gbp_location_id ||
+      record.inzyte_link?.ads_customer_id,
+  );
+
 export const InzyteWorkspace = ({ record }: { record: Deal }) => {
   const controller = useInzyteWorkspaceController(record);
 
@@ -62,16 +87,17 @@ export const InzyteWorkspace = ({ record }: { record: Deal }) => {
               </DialogDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 pr-4">
-              {controller.linked ? (
+              {controller.linked && hasMeasurementSource(record) ? (
                 <Badge className="gap-1 bg-emerald-600 text-white">
-                  <CheckCircle2 className="size-3.5" /> Opdracht gekoppeld
+                  <CheckCircle2 className="size-3.5" />{" "}
+                  {sourceConnectionLabel(record)}
                 </Badge>
               ) : (
                 <Badge
                   variant="outline"
                   className="border-amber-500/40 text-amber-600"
                 >
-                  <Link2 className="size-3.5" /> Koppeling nodig
+                  <Link2 className="size-3.5" /> {sourceConnectionLabel(record)}
                 </Badge>
               )}
               {controller.bootstrap?.link?.last_error ? (
@@ -131,7 +157,7 @@ export const InzyteCardActions = ({ record }: { record: Deal }) => (
             "ml-0.5",
             record.inzyte_link?.last_error
               ? "text-rose-600"
-              : record.inzyte_link
+              : record.inzyte_link && hasMeasurementSource(record)
                 ? "text-emerald-600"
                 : "text-amber-600",
           )}
@@ -140,7 +166,7 @@ export const InzyteCardActions = ({ record }: { record: Deal }) => (
           {record.inzyte_link?.last_error
             ? "aandacht nodig"
             : record.inzyte_link
-              ? "gekoppeld"
+              ? sourceConnectionLabel(record).toLowerCase()
               : "nog koppelen"}
         </span>
       </span>

@@ -64,6 +64,17 @@ export const monthlyReportPeriod = (
   };
 };
 
+const isSuccessfulSource = (value: unknown): boolean =>
+  isRecord(value) && value.status === "success";
+
+export const hasSuccessfulMonthlyComparison = (
+  pairs: Array<{ current: unknown; previous: unknown }>,
+): boolean =>
+  pairs.some(
+    ({ current, previous }) =>
+      isSuccessfulSource(current) && isSuccessfulSource(previous),
+  );
+
 const isRecord = (value: unknown): value is JsonObject =>
   value !== null && typeof value === "object" && !Array.isArray(value);
 

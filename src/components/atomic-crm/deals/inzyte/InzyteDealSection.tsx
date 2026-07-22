@@ -38,11 +38,18 @@ const monthLabel = (value: string): string =>
   REPORT_MONTH_FORMATTER.format(new Date(`${value.slice(0, 7)}-01T00:00:00Z`));
 
 export const InzyteDealSection = ({ record }: { record: Deal }) => {
+  const activeSources = INZYTE_SOURCES.filter((source) =>
+    source.isActive(record),
+  );
   const connectionLabel = record.inzyte_link?.last_error
     ? "Koppeling vraagt aandacht"
-    : record.inzyte_link
-      ? "Klant gekoppeld"
-      : "Nog niet gekoppeld";
+    : activeSources.length === 1
+      ? `${activeSources[0].label}-bron gekoppeld`
+      : activeSources.length > 1
+        ? `${activeSources.length} meetbronnen gekoppeld`
+        : record.inzyte_link
+          ? "Account gekoppeld, meetbron ontbreekt"
+          : "Nog niet gekoppeld";
 
   return (
     <section
@@ -63,7 +70,7 @@ export const InzyteDealSection = ({ record }: { record: Deal }) => {
               className={cn(
                 record.inzyte_link?.last_error
                   ? "border-rose-500/40 text-rose-600"
-                  : record.inzyte_link
+                  : activeSources.length > 0
                     ? "border-emerald-500/40 text-emerald-600"
                     : "border-amber-500/40 text-amber-600",
               )}

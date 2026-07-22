@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildMonthlyHeadlineMetrics,
   defaultReportingMonth,
+  hasSuccessfulMonthlyComparison,
   monthlyReportPeriod,
 } from "./monthlyReport.ts";
 
@@ -85,5 +86,33 @@ describe("buildMonthlyHeadlineMetrics", () => {
     expect(
       metrics.find((metric) => metric.key === "activeUsers"),
     ).toBeUndefined();
+  });
+});
+
+describe("hasSuccessfulMonthlyComparison", () => {
+  it("requires both months from the same source", () => {
+    expect(
+      hasSuccessfulMonthlyComparison([
+        {
+          current: { status: "success" },
+          previous: { status: "failed" },
+        },
+        {
+          current: { status: "unavailable" },
+          previous: { status: "success" },
+        },
+      ]),
+    ).toBe(false);
+  });
+
+  it("accepts one complete month-on-month source pair", () => {
+    expect(
+      hasSuccessfulMonthlyComparison([
+        {
+          current: { status: "success" },
+          previous: { status: "success" },
+        },
+      ]),
+    ).toBe(true);
   });
 });

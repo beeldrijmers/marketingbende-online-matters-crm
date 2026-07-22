@@ -14,6 +14,7 @@ import {
 } from "./actions.ts";
 import {
   buildMonthlyHeadlineMetrics,
+  hasSuccessfulMonthlyComparison,
   monthlyReportPeriod,
   type MonthlyHeadlineMetric,
   type MonthlyReportPeriod,
@@ -238,8 +239,15 @@ const boundedSnapshot = (result: unknown): unknown => {
   };
 };
 
-const safeRunError = (error: unknown): string => {
+const safeRunError = (error: unknown, action?: InzyteAction): string => {
   const message = error instanceof Error ? error.message : String(error || "");
+  if (
+    message.startsWith(
+      "De meetbron is correct gekoppeld, maar de AI-vraagfunctie",
+    )
+  ) {
+    return message;
+  }
   if (message.includes("abort")) {
     return "Inzyte had te lang nodig om te antwoorden.";
   }
@@ -248,6 +256,14 @@ const safeRunError = (error: unknown): string => {
   }
   if (message.includes("reauth") || message.includes("expired")) {
     return "De Google-koppeling moet opnieuw worden geautoriseerd.";
+  }
+  if (
+    action === "vraagbaak" &&
+    /provider|openrouter|openai|api.?key|unauthori[sz]ed|401|er is een fout opgetreden/i.test(
+      message,
+    )
+  ) {
+    return "De meetbron is correct gekoppeld, maar de AI-vraagfunctie heeft geen geldige AI-toegang. Vernieuw de AI-sleutel van het analyseplatform en probeer daarna opnieuw.";
   }
   return "Inzyte kon deze opdracht nu niet uitvoeren. Controleer de koppelingen en probeer opnieuw.";
 };
@@ -493,7 +509,7 @@ const runRemoteAction = async (
       .eq("id", link.id);
     return { result, runId };
   } catch (error) {
-    const message = safeRunError(error);
+    const message = safeRunError(error, action);
     if (runId) {
       await supabaseAdmin
         .from("inzyte_runs")
@@ -504,13 +520,15 @@ const runRemoteAction = async (
         })
         .eq("id", runId);
     }
-    await supabaseAdmin
-      .from("inzyte_links")
-      .update({
-        last_error: message,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", link.id);
+    if (action !== "vraagbaak") {
+      await supabaseAdmin
+        .from("inzyte_links")
+        .update({
+          last_error: message,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", link.id);
+    }
     throw new Error(message);
   }
 };
@@ -651,6 +669,48 @@ const settleMonthlyAction = async ({
   }
 };
 
+const settleMonthlyPair = async ({
+  currentStart,
+  currentEnd,
+  previousStart,
+  previousEnd,
+  ...actionOptions
+}: {
+  enabled: boolean;
+  action: "overview" | "search_console";
+  dealId: number;
+  saleId: number;
+  link: InzyteLink;
+  currentStart: string;
+  currentEnd: string;
+  previousStart: string;
+  previousEnd: string;
+}): Promise<{
+  current: MonthlySourceResult;
+  previous: MonthlySourceResult;
+}> => {
+  const results: MonthlySourceResult[] = [];
+  // Deliberately sequential per provider: each overview request fans out into
+  // many Google API calls and two simultaneous months exhaust the quota.
+  for (const [startDate, endDate] of [
+    [currentStart, currentEnd],
+    [previousStart, previousEnd],
+  ]) {
+    results.push(
+      await settleMonthlyAction({
+        ...actionOptions,
+        startDate,
+        endDate,
+      }),
+    );
+  }
+  const [current, previous] = results as [
+    MonthlySourceResult,
+    MonthlySourceResult,
+  ];
+  return { current, previous };
+};
+
 const formatMetric = (metric: MonthlyHeadlineMetric): string => {
   if (metric.format === "percent") {
     return `${metric.current.toLocaleString("nl-NL", {
@@ -694,7 +754,7 @@ const defaultClientSummary = ({
     )} met ${monthLabel(period.previousStart)}.`,
     workCount > 0
       ? `In de meetmaand zijn ${workCount} werkzaamheden als afgerond vastgelegd.`
-      : "In de meetmaand zijn nog geen afgeronde werkzaamheden in het CRM-logboek vastgelegd.",
+      : "Voor deze meetmaand zijn nog geen afgeronde werkzaamheden in de klantupdate opgenomen.",
   ];
   if (favourable) {
     lines.push(
@@ -742,55 +802,49 @@ const generateMonthlyReport = async (
 
   const period = monthlyReportPeriod(requestedMonth);
   const dealId = Number(deal.id);
-  const [work, ga4Current, ga4Previous, gscCurrent, gscPrevious] =
-    await Promise.all([
-      loadMonthlyWorkContext(dealId, period),
-      settleMonthlyAction({
-        enabled: hasGa4,
-        action: "overview",
-        dealId,
-        saleId,
-        link,
-        startDate: period.currentStart,
-        endDate: period.currentEnd,
-      }),
-      settleMonthlyAction({
-        enabled: hasGa4,
-        action: "overview",
-        dealId,
-        saleId,
-        link,
-        startDate: period.previousStart,
-        endDate: period.previousEnd,
-      }),
-      settleMonthlyAction({
-        enabled: hasGsc,
-        action: "search_console",
-        dealId,
-        saleId,
-        link,
-        startDate: period.currentStart,
-        endDate: period.currentEnd,
-      }),
-      settleMonthlyAction({
-        enabled: hasGsc,
-        action: "search_console",
-        dealId,
-        saleId,
-        link,
-        startDate: period.previousStart,
-        endDate: period.previousEnd,
-      }),
-    ]);
-  const successfulSources = [
-    ga4Current,
-    ga4Previous,
-    gscCurrent,
-    gscPrevious,
-  ].filter((source) => source.status === "success").length;
-  if (successfulSources === 0) {
+  const [work, ga4, gsc] = await Promise.all([
+    loadMonthlyWorkContext(dealId, period),
+    settleMonthlyPair({
+      enabled: hasGa4,
+      action: "overview",
+      dealId,
+      saleId,
+      link,
+      currentStart: period.currentStart,
+      currentEnd: period.currentEnd,
+      previousStart: period.previousStart,
+      previousEnd: period.previousEnd,
+    }),
+    settleMonthlyPair({
+      enabled: hasGsc,
+      action: "search_console",
+      dealId,
+      saleId,
+      link,
+      currentStart: period.currentStart,
+      currentEnd: period.currentEnd,
+      previousStart: period.previousStart,
+      previousEnd: period.previousEnd,
+    }),
+  ]);
+  const ga4Current = ga4.current;
+  const ga4Previous = ga4.previous;
+  const gscCurrent = gsc.current;
+  const gscPrevious = gsc.previous;
+  const hasComparableSource = hasSuccessfulMonthlyComparison([
+    { current: ga4Current, previous: ga4Previous },
+    { current: gscCurrent, previous: gscPrevious },
+  ]);
+  if (!hasComparableSource) {
+    const errors = [ga4Current, ga4Previous, gscCurrent, gscPrevious]
+      .flatMap((source) => (source.status === "failed" ? [source.error] : []))
+      .filter(
+        (message, index, messages) => messages.indexOf(message) === index,
+      );
     throw userError(
-      "GA4 en Search Console konden geen meetgegevens leveren. Controleer de koppelingen en probeer opnieuw.",
+      `Er is nog geen volledige maand-op-maandmeting beschikbaar. ${
+        errors[0] || "Controleer de gegevenskoppeling en probeer opnieuw."
+      }`,
       409,
     );
   }
@@ -803,6 +857,12 @@ const generateMonthlyReport = async (
     gscCurrent: sourceData(gscCurrent),
     gscPrevious: sourceData(gscPrevious),
   });
+  if (metrics.length === 0) {
+    throw userError(
+      "De gekoppelde bron leverde voor deze twee maanden nog geen vergelijkbare kerncijfers. Er is daarom geen klant-PDF gemaakt.",
+      409,
+    );
+  }
   const companyName =
     (isRecord(deal.companies) && optionalText(deal.companies.name)) ||
     optionalText(deal.name) ||
@@ -815,8 +875,9 @@ const generateMonthlyReport = async (
     workCount: work.currentCount,
   });
   const reportData = {
-    version: 1,
+    version: 2,
     generatedAt: new Date().toISOString(),
+    presentation: { brand: "online_matters" },
     period,
     assignment: {
       id: deal.id,
@@ -869,7 +930,7 @@ const generateMonthlyReport = async (
         client_summary: clientSummary,
         work_summary: defaultWorkSummary(work.current),
         next_steps:
-          "Bespreek de belangrijkste ontwikkeling, leg de prioriteiten voor de komende maand vast en registreer elke afgeronde SEO-stap in de opdracht.",
+          "Bespreek de belangrijkste ontwikkeling en leg de concrete SEO-prioriteiten voor de komende maand vast.",
         report_data: reportData,
         headline_metrics: metrics,
         current_work_count: work.currentCount,
@@ -905,11 +966,62 @@ const finalizeMonthlyReport = async (
   if (loadError) throw loadError;
   if (!existing) throw userError("Dit maandrapport is niet gevonden.", 404);
 
+  const existingReportData = isRecord(existing.report_data)
+    ? existing.report_data
+    : {};
+  const existingSources = isRecord(existingReportData.sources)
+    ? existingReportData.sources
+    : {};
+  const sourcePair = (key: "ga4" | "searchConsole") => {
+    const source = isRecord(existingSources[key]) ? existingSources[key] : {};
+    return { current: source.current, previous: source.previous };
+  };
+  const hasComparableMeasurement = hasSuccessfulMonthlyComparison([
+    sourcePair("ga4"),
+    sourcePair("searchConsole"),
+  ]);
+  if (
+    !hasComparableMeasurement ||
+    !Array.isArray(existing.headline_metrics) ||
+    existing.headline_metrics.length === 0
+  ) {
+    throw userError(
+      "Dit rapport bevat geen volledige maand-op-maandmeting en kan nog niet definitief worden gemaakt. Vernieuw eerst het rapport.",
+      409,
+    );
+  }
+
   const clientSummary =
     optionalText(body.clientSummary, 20_000) || existing.client_summary;
   const workSummary =
     optionalText(body.workSummary, 20_000) || existing.work_summary;
   const nextSteps = optionalText(body.nextSteps, 20_000) || existing.next_steps;
+  if (!clientSummary || clientSummary.length < 40) {
+    throw userError("Schrijf eerst een bruikbare samenvatting voor de klant.");
+  }
+  if (
+    !workSummary ||
+    workSummary.length < 20 ||
+    /geen afgeronde werkzaamheden|geen werkzaamheden geregistreerd|vul (?:hier )?.*werkzaamheden/i.test(
+      workSummary,
+    )
+  ) {
+    throw userError(
+      "Leg eerst de concrete werkzaamheden uit deze meetmaand vast.",
+    );
+  }
+  if (!nextSteps || nextSteps.length < 20) {
+    throw userError("Leg eerst de concrete focus voor komende maand vast.");
+  }
+  const reportBrand =
+    body.reportBrand === "neutral" ? "neutral" : "online_matters";
+  const existingPresentation = isRecord(existingReportData.presentation)
+    ? existingReportData.presentation
+    : {};
+  const reportData = {
+    ...existingReportData,
+    presentation: { ...existingPresentation, brand: reportBrand },
+  };
   const finalizedAt = new Date().toISOString();
   const { data: report, error: updateError } = await supabaseAdmin
     .from("seo_monthly_reports")
@@ -918,6 +1030,7 @@ const finalizeMonthlyReport = async (
       client_summary: clientSummary,
       work_summary: workSummary,
       next_steps: nextSteps,
+      report_data: reportData,
       finalized_at: finalizedAt,
       updated_at: finalizedAt,
     })

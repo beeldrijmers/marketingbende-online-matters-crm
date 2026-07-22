@@ -366,6 +366,7 @@ export const useInzyteWorkspaceController = (record: Deal) => {
     workSummary: string;
     nextSteps: string;
     noteText: string;
+    reportBrand: "online_matters" | "neutral";
   }) => {
     setBusy("finalize_monthly_report");
     try {

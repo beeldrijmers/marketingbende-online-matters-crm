@@ -331,6 +331,9 @@ export type SeoWorkCompletion = {
 export type SeoMonthlyReportData = {
   version: number;
   generatedAt: string;
+  presentation?: {
+    brand?: "online_matters" | "neutral";
+  };
   period: {
     reportingMonth: string;
     currentStart: string;

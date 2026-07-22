@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import {
+  AlertTriangle,
   CalendarRange,
   CheckCircle2,
   Clipboard,
@@ -7,6 +8,7 @@ import {
   FileDown,
   History,
   Loader2,
+  Palette,
   RefreshCw,
   SearchCheck,
   TrendingDown,
@@ -16,6 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type {
@@ -23,142 +26,25 @@ import type {
   SeoMonthlyHeadlineMetric,
   SeoMonthlyReport,
 } from "../../types";
+import {
+  buildSeoMonthlyReportDocument,
+  buildSeoMonthlyReportText,
+  changeLabel,
+  customerFacingText,
+  dateLabel,
+  getCustomerReportReadiness,
+  getSeoReportBrand,
+  metricValue,
+  monthLabel,
+  ONLINE_MATTERS_LOGO_URL,
+  type SeoReportBrand,
+} from "./seoMonthlyReportDocument";
 import type { InzyteWorkspaceController } from "./useInzyteWorkspaceController";
-
-const MONTH_FORMATTER = new Intl.DateTimeFormat("nl-NL", {
-  month: "long",
-  year: "numeric",
-  timeZone: "UTC",
-});
-const DATE_FORMATTER = new Intl.DateTimeFormat("nl-NL", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  timeZone: "UTC",
-});
-
-const monthLabel = (date: string): string =>
-  MONTH_FORMATTER.format(new Date(`${date.slice(0, 7)}-01T00:00:00Z`));
-
-const dateLabel = (date: string): string =>
-  DATE_FORMATTER.format(new Date(`${date.slice(0, 10)}T00:00:00Z`));
 
 const maxReportingMonth = (): string => {
   const date = new Date();
   date.setMonth(date.getMonth() - 1, 1);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-};
-
-const metricValue = (
-  metric: SeoMonthlyHeadlineMetric,
-  value: number,
-): string => {
-  if (metric.format === "percent") {
-    return `${value.toLocaleString("nl-NL", { maximumFractionDigits: 1 })}%`;
-  }
-  return value.toLocaleString("nl-NL", {
-    maximumFractionDigits: metric.format === "decimal" ? 1 : 0,
-  });
-};
-
-const changeLabel = (metric: SeoMonthlyHeadlineMetric): string => {
-  if (metric.changePercent === null) return "Geen vergelijkingspercentage";
-  const sign = metric.changePercent > 0 ? "+" : "";
-  return `${sign}${metric.changePercent.toLocaleString("nl-NL", {
-    maximumFractionDigits: 1,
-  })}%`;
-};
-
-const escapeHtml = (value: string): string =>
-  value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-
-const paragraphs = (value: string): string =>
-  escapeHtml(value)
-    .split(/\n{2,}/)
-    .map((paragraph) => `<p>${paragraph.replaceAll("\n", "<br>")}</p>`)
-    .join("");
-
-const reportText = ({
-  report,
-  clientSummary,
-  workSummary,
-  nextSteps,
-}: {
-  report: SeoMonthlyReport;
-  clientSummary: string;
-  workSummary: string;
-  nextSteps: string;
-}): string => {
-  const metrics = report.headline_metrics
-    .map(
-      (metric) =>
-        `• ${metric.label}: ${metricValue(metric, metric.current)} (vorige maand ${metricValue(metric, metric.previous)}; ${changeLabel(metric)}${metric.group === "website_context" ? "; websitecontext" : ""})`,
-    )
-    .join("\n");
-  return [
-    report.title,
-    `Meetperiode: ${dateLabel(report.current_start)} t/m ${dateLabel(
-      report.current_end,
-    )}, vergeleken met ${dateLabel(report.previous_start)} t/m ${dateLabel(
-      report.previous_end,
-    )}.`,
-    "Samenvatting",
-    clientSummary,
-    "Meetresultaten",
-    metrics || "Geen vergelijkbare kerncijfers beschikbaar.",
-    "Werkzaamheden in deze meetmaand",
-    workSummary,
-    "Volgende stappen",
-    nextSteps,
-    "Toelichting: de cijfers tonen maand-op-maand ontwikkeling. Ze bewijzen op zichzelf geen direct oorzakelijk verband met één afzonderlijke SEO-wijziging; kalendermaanden kunnen bovendien in lengte verschillen.",
-  ].join("\n\n");
-};
-
-const printDocument = ({
-  report,
-  companyName,
-  clientSummary,
-  workSummary,
-  nextSteps,
-}: {
-  report: SeoMonthlyReport;
-  companyName: string;
-  clientSummary: string;
-  workSummary: string;
-  nextSteps: string;
-}): string => {
-  const metrics = report.headline_metrics
-    .map(
-      (metric) => `
-        <article class="metric">
-          <span>${escapeHtml(metric.label)}</span>
-          <strong>${escapeHtml(metricValue(metric, metric.current))}</strong>
-          <small>vorige maand ${escapeHtml(metricValue(metric, metric.previous))}</small>
-          <small class="scope">${metric.group === "seo" ? "SEO-kerncijfer" : "Websitecontext"} · ${escapeHtml(metric.source)}</small>
-          <div class="definition">${escapeHtml(metric.definition)}</div>
-          <em class="${metric.favourable === true ? "good" : metric.favourable === false ? "bad" : "neutral"}">${escapeHtml(changeLabel(metric))}</em>
-        </article>`,
-    )
-    .join("");
-  return `<!doctype html>
-<html lang="nl"><head><meta charset="utf-8"><title>${escapeHtml(report.title)}</title>
-<style>
-@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Inter,Arial,sans-serif;color:#162033;margin:0;line-height:1.5}header{border-bottom:3px solid #0ea5e9;padding-bottom:18px;margin-bottom:24px}.brand{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#0284c7;font-weight:800}h1{font-size:28px;line-height:1.15;margin:7px 0 4px}h2{font-size:17px;margin:26px 0 8px}.muted{color:#64748b}.period{margin-top:7px;font-size:13px}.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.metric{border:1px solid #dbe4ee;border-radius:10px;padding:12px;position:relative;break-inside:avoid}.metric span,.metric small{display:block;color:#64748b;font-size:11px}.metric strong{font-size:22px;display:block;margin:4px 0}.metric .scope{margin-top:5px;color:#0284c7;font-weight:700}.metric .definition{margin-top:6px;color:#64748b;font-size:10px}.metric em{position:absolute;right:12px;top:12px;font-size:11px;font-style:normal;font-weight:700}.good{color:#059669}.bad{color:#dc2626}.neutral{color:#64748b}.section{border:1px solid #e2e8f0;border-radius:12px;padding:15px 17px;margin-top:12px}.section p{margin:0 0 9px}.section p:last-child{margin-bottom:0}.evidence{display:flex;gap:10px;margin-top:10px}.pill{font-size:11px;background:#f1f5f9;border-radius:999px;padding:5px 9px}footer{margin-top:28px;padding-top:12px;border-top:1px solid #e2e8f0;color:#64748b;font-size:10px}.disclaimer{background:#f8fafc;padding:10px;border-radius:8px;margin-top:18px;font-size:10px;color:#64748b}@media print{button{display:none}}
-</style></head><body>
-<header><div class="brand">Marketingbende · SEO maandupdate</div><h1>${escapeHtml(companyName)}</h1><div class="muted">${escapeHtml(report.title)}</div><div class="period">${escapeHtml(dateLabel(report.current_start))} t/m ${escapeHtml(dateLabel(report.current_end))} · vergelijking met ${escapeHtml(monthLabel(report.previous_start))}</div></header>
-<h2>Samenvatting</h2><div class="section">${paragraphs(clientSummary)}</div>
-<h2>Resultaten maand-op-maand</h2><p class="muted">SEO-kerncijfers komen uit Search Console of organisch GA4-verkeer. Algemene GA4-cijfers staan apart als websitecontext.</p><div class="metrics">${metrics || '<div class="muted">Voor deze periode zijn nog geen vergelijkbare kerncijfers beschikbaar.</div>'}</div>
-<h2>Uitgevoerde werkzaamheden</h2><div class="section">${paragraphs(workSummary)}</div>
-<div class="evidence"><span class="pill">${report.current_work_count} werkzaamheden deze maand</span><span class="pill">${report.all_time_work_count} werkzaamheden all-time</span></div>
-<h2>Volgende stappen</h2><div class="section">${paragraphs(nextSteps)}</div>
-<div class="disclaimer">De gerapporteerde cijfers tonen ontwikkeling en samenhang. Ze bewijzen op zichzelf geen direct oorzakelijk verband tussen één afzonderlijke wijziging en het gemeten resultaat. Kalendermaanden kunnen daarnaast één tot drie meetdagen in lengte verschillen.</div>
-<footer>Gegenereerd vanuit CRM + Inzyte op ${escapeHtml(new Date(report.generated_at).toLocaleString("nl-NL"))}. Databronnen: GA4 en/of Google Search Console, afhankelijk van de klantkoppelingen.</footer>
-<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));</script></body></html>`;
 };
 
 const sourceState = (
@@ -230,6 +116,7 @@ const MetricCard = ({ metric }: { metric: SeoMonthlyHeadlineMetric }) => {
 const ReportPreview = ({
   report,
   companyName,
+  brand,
   clientSummary,
   setClientSummary,
   workSummary,
@@ -239,6 +126,7 @@ const ReportPreview = ({
 }: {
   report: SeoMonthlyReport;
   companyName: string;
+  brand: SeoReportBrand;
   clientSummary: string;
   setClientSummary: (value: string) => void;
   workSummary: string;
@@ -249,13 +137,33 @@ const ReportPreview = ({
   const ga4 = sourceState(report, "ga4");
   const gsc = sourceState(report, "searchConsole");
   const work = report.report_data?.work;
+  const isOnlineMatters = brand === "online_matters";
   return (
     <section className="overflow-hidden rounded-2xl border bg-background shadow-sm">
-      <header className="border-b bg-linear-to-r from-sky-500/[0.12] via-background to-background p-5 md:p-7">
+      <header
+        className={cn(
+          "border-b p-5 md:p-7",
+          isOnlineMatters
+            ? "bg-linear-to-r from-lime-500/[0.16] via-background to-background"
+            : "bg-linear-to-r from-blue-500/[0.12] via-background to-background",
+        )}
+      >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="text-xs font-bold uppercase tracking-[0.16em] text-sky-600">
-              Rapportvoorbeeld · Marketingbende
+            {isOnlineMatters ? (
+              <img
+                src={ONLINE_MATTERS_LOGO_URL}
+                alt="Online Matters"
+                className="mb-4 h-auto w-52 max-w-full rounded-sm bg-white p-1"
+              />
+            ) : null}
+            <div
+              className={cn(
+                "text-xs font-bold uppercase tracking-[0.16em]",
+                isOnlineMatters ? "text-lime-700" : "text-blue-600",
+              )}
+            >
+              Klantvoorbeeld · SEO-maandrapport
             </div>
             <h2 className="mt-2 text-2xl font-semibold">{companyName}</h2>
             <div className="mt-1 text-sm text-muted-foreground">
@@ -344,7 +252,8 @@ const ReportPreview = ({
                 Werkzaamheden in deze meetmaand
               </span>
               <span className="mt-1 block text-xs text-muted-foreground">
-                Gevuld vanuit het blijvende CRM/Trello-werkzaamhedenlogboek.
+                Gebaseerd op de werkzaamheden die voor deze opdracht zijn
+                afgerond. Alleen deze tekst komt in de klantversie.
               </span>
               <Textarea
                 className="mt-2 min-h-36 resize-y"
@@ -381,7 +290,7 @@ const ReportPreview = ({
                     {report.all_time_work_count}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    all-time afgerond
+                    sinds de start afgerond
                   </div>
                 </div>
               </div>
@@ -392,7 +301,7 @@ const ReportPreview = ({
             </div>
             <div className="rounded-xl border p-4">
               <div className="text-sm font-semibold">
-                All-time werkzaamheden
+                Historische werkzaamheden
               </div>
               <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
                 {(work?.allTime || []).slice(0, 30).map((item) => (
@@ -479,27 +388,52 @@ const SeoMonthlyReportEditor = ({
   companyName: string;
   controller: InzyteWorkspaceController;
 }) => {
-  const [clientSummary, setClientSummary] = useState(
-    report.client_summary || "",
+  const [clientSummary, setClientSummary] = useState(() =>
+    customerFacingText(report.client_summary || ""),
   );
-  const [workSummary, setWorkSummary] = useState(report.work_summary || "");
-  const [nextSteps, setNextSteps] = useState(report.next_steps || "");
+  const [workSummary, setWorkSummary] = useState(() =>
+    customerFacingText(report.work_summary || ""),
+  );
+  const [nextSteps, setNextSteps] = useState(() =>
+    customerFacingText(report.next_steps || ""),
+  );
+  const [brand, setBrand] = useState<SeoReportBrand>(() =>
+    getSeoReportBrand(report),
+  );
+  const readiness = useMemo(
+    () =>
+      getCustomerReportReadiness({
+        report,
+        clientSummary,
+        workSummary,
+        nextSteps,
+      }),
+    [clientSummary, nextSteps, report, workSummary],
+  );
   const clientUpdate = useMemo(
-    () => reportText({ report, clientSummary, workSummary, nextSteps }),
+    () =>
+      buildSeoMonthlyReportText({
+        report,
+        clientSummary,
+        workSummary,
+        nextSteps,
+      }),
     [clientSummary, nextSteps, report, workSummary],
   );
 
   const openPrintPreview = () => {
+    if (!readiness.ready) return;
     const popup = window.open("", "_blank");
     if (!popup) return;
     popup.opener = null;
     popup.document.write(
-      printDocument({
+      buildSeoMonthlyReportDocument({
         report,
         companyName,
         clientSummary,
         workSummary,
         nextSteps,
+        brand,
       }),
     );
     popup.document.close();
@@ -507,7 +441,7 @@ const SeoMonthlyReportEditor = ({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card px-4 py-3 shadow-sm">
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm">
         <div className="mr-auto">
           <div className="text-sm font-semibold">Rapport gebruiken</div>
           <div className="text-xs text-muted-foreground">
@@ -515,19 +449,36 @@ const SeoMonthlyReportEditor = ({
             inhoud.
           </div>
         </div>
-        <Button type="button" variant="outline" onClick={openPrintPreview}>
+        <label className="flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-medium">
+          <Palette className="size-4 text-lime-600" />
+          Online Matters-stijl
+          <Switch
+            checked={brand === "online_matters"}
+            onCheckedChange={(checked) =>
+              setBrand(checked ? "online_matters" : "neutral")
+            }
+            aria-label="Online Matters-huisstijl gebruiken"
+          />
+        </label>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!readiness.ready}
+          onClick={openPrintPreview}
+        >
           <FileDown className="size-4" /> PDF-afdrukvoorbeeld
         </Button>
         <Button
           type="button"
           variant="outline"
+          disabled={!readiness.ready}
           onClick={() => void navigator.clipboard.writeText(clientUpdate)}
         >
           <Clipboard className="size-4" /> Update kopiëren
         </Button>
         <Button
           type="button"
-          disabled={controller.busy !== null}
+          disabled={!readiness.ready || controller.busy !== null}
           onClick={() =>
             void controller
               .finalizeMonthlyReport({
@@ -536,6 +487,7 @@ const SeoMonthlyReportEditor = ({
                 workSummary,
                 nextSteps,
                 noteText: clientUpdate,
+                reportBrand: brand,
               })
               .catch(() => undefined)
           }
@@ -550,9 +502,27 @@ const SeoMonthlyReportEditor = ({
             : "Definitief opslaan"}
         </Button>
       </div>
+      {!readiness.ready ? (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <div>
+            <div className="font-semibold">Rapport nog niet deelbaar</div>
+            <div className="mt-0.5 text-xs leading-5">
+              Nog nodig: {readiness.reasons.join(", ")}. De PDF, kopieerknop en
+              definitieve opslag blijven uit totdat de klantversie compleet is.
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] px-4 py-2.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+          <CheckCircle2 className="size-4" /> Klantversie is compleet en gereed
+          voor controle.
+        </div>
+      )}
       <ReportPreview
         report={report}
         companyName={companyName}
+        brand={brand}
         clientSummary={clientSummary}
         setClientSummary={setClientSummary}
         workSummary={workSummary}
