@@ -96,6 +96,7 @@ export const DealList = ({
       disableSyncWithLocation={embedded}
       hideTitle={embedded}
       inlineFilters={embedded}
+      className={embedded ? "mt-[13px]" : undefined}
       title={attentionPipeline ? false : (dashboardSelection?.label ?? false)}
       sort={{ field: "index", order: "DESC" }}
       filters={attentionPipeline ? undefined : dealFilters}
