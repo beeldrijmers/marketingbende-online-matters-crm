@@ -20,15 +20,13 @@ const Header = () => {
     currentPath = "/";
   } else if (matchPath("/companies/*", location.pathname)) {
     currentPath = "/companies";
-  } else if (matchPath("/deals/*", location.pathname)) {
-    currentPath = "/deals";
   } else {
     currentPath = false;
   }
 
   return (
     <>
-      <nav className="grow">
+      <div className="grow">
         <header className="bg-secondary">
           <div className="w-full px-4 lg:px-6">
             <div className="flex justify-between items-center gap-4 lg:grid lg:grid-cols-[1fr_auto_1fr]">
@@ -50,18 +48,11 @@ const Header = () => {
                 <Wordmark title={title} />
               </Link>
               <div>
-                <nav className="flex">
+                <nav className="flex" aria-label="Hoofdnavigatie">
                   <NavigationTab
                     label={translate("ra.page.dashboard")}
                     to="/"
                     isActive={currentPath === "/"}
-                  />
-                  <NavigationTab
-                    label={translate("resources.deals.name", {
-                      smart_count: 2,
-                    })}
-                    to="/deals"
-                    isActive={currentPath === "/deals"}
                   />
                   <NavigationTab
                     label={translate("resources.companies.name", {
@@ -90,7 +81,7 @@ const Header = () => {
             </div>
           </div>
         </header>
-      </nav>
+      </div>
     </>
   );
 };
@@ -106,7 +97,7 @@ const Wordmark = ({ title }: { title: string }) => {
   return (
     <h1 className="flex items-center gap-2 text-xl leading-none">
       {/* pr-1 gives the italic overhang of the last glyph room before the badge */}
-      <span className="pr-1 font-black italic tracking-wide bg-gradient-to-r from-blue-500 to-violet-500 [.dark_&]:from-blue-400 [.dark_&]:to-violet-400 bg-clip-text text-transparent">
+      <span className="bg-linear-to-r from-blue-500 to-violet-500 bg-clip-text pr-1 font-black italic tracking-wide text-transparent [.dark_&]:from-blue-400 [.dark_&]:to-violet-400">
         {mainText}
       </span>
       {hasCrmSuffix && (

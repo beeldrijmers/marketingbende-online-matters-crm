@@ -1,7 +1,12 @@
 import type { Identifier } from "ra-core";
 
-export const DEAL_ATTENTION_PATH = "/deals/aandacht";
-export const DEAL_BILLING_PATH = "/deals/facturatie";
+export const DASHBOARD_WORKBOARD_PATH = "/?tab=workboard";
+export const DEAL_ATTENTION_PATH = "/?tab=workboard&focus=attention";
+export const DEAL_BILLING_PATH = "/?tab=workboard&focus=billing";
+
+// Kept as redirects so bookmarks and links in older emails remain useful.
+export const LEGACY_DEAL_ATTENTION_PATH = "/deals/aandacht";
+export const LEGACY_DEAL_BILLING_PATH = "/deals/facturatie";
 
 export type DashboardDealSelection = {
   ids: Identifier[];
@@ -14,10 +19,17 @@ export const getDashboardDealSelectionPath = (
 ) => (kind === "attention" ? DEAL_ATTENTION_PATH : DEAL_BILLING_PATH);
 
 export const getDashboardDealReturnPath = (path: string, search: string) => {
-  const params = new URLSearchParams(search);
+  const [pathname, pathQuery = ""] = path.split("?", 2);
+  const params = new URLSearchParams(pathQuery);
+  const currentParams = new URLSearchParams(search);
+  currentParams.forEach((value, key) => {
+    if (!params.has(key)) params.set(key, value);
+  });
   params.delete("deal");
+  params.delete("edit");
+  params.delete("new");
   const query = params.toString();
-  return query ? `${path}?${query}` : path;
+  return query ? `${pathname}?${query}` : pathname;
 };
 
 export const getDashboardDealDetailPath = (
@@ -27,6 +39,29 @@ export const getDashboardDealDetailPath = (
   const [path, query = ""] = returnPath.split("?", 2);
   const params = new URLSearchParams(query);
   params.set("deal", String(dealId));
+  params.delete("edit");
+  params.delete("new");
+  return `${path}?${params.toString()}`;
+};
+
+export const getDashboardDealEditPath = (
+  returnPath: string,
+  dealId: Identifier,
+) => {
+  const [path, query = ""] = returnPath.split("?", 2);
+  const params = new URLSearchParams(query);
+  params.set("edit", String(dealId));
+  params.delete("deal");
+  params.delete("new");
+  return `${path}?${params.toString()}`;
+};
+
+export const getDashboardDealCreatePath = (returnPath: string) => {
+  const [path, query = ""] = returnPath.split("?", 2);
+  const params = new URLSearchParams(query);
+  params.set("new", "1");
+  params.delete("deal");
+  params.delete("edit");
   return `${path}?${params.toString()}`;
 };
 

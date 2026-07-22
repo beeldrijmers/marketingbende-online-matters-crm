@@ -8,6 +8,37 @@ import type { Deal, Task } from "../types";
 import { findDealLabel } from "./dealUtils";
 import { DealCard } from "./DealCard";
 
+const stageTone: Record<string, { border: string; dot: string }> = {
+  "informatie-pipeline": {
+    border: "border-t-slate-500",
+    dot: "bg-slate-500",
+  },
+  "bevestigd-inplannen": {
+    border: "border-t-blue-500",
+    dot: "bg-blue-500",
+  },
+  "on-hold": { border: "border-t-amber-500", dot: "bg-amber-500" },
+  bezig: { border: "border-t-violet-500", dot: "bg-violet-500" },
+  "controle-livegang": {
+    border: "border-t-cyan-500",
+    dot: "bg-cyan-500",
+  },
+  "facturatie-live": {
+    border: "border-t-emerald-500",
+    dot: "bg-emerald-500",
+  },
+  won: { border: "border-t-green-600", dot: "bg-green-600" },
+  maandelijks: {
+    border: "border-t-fuchsia-500",
+    dot: "bg-fuchsia-500",
+  },
+};
+
+const fallbackTone = {
+  border: "border-t-muted-foreground",
+  dot: "bg-muted-foreground",
+};
+
 export const DealColumn = ({
   attentionPipeline = false,
   detailBasePath,
@@ -27,41 +58,34 @@ export const DealColumn = ({
 }) => {
   const totalAmount = deals.reduce((sum, deal) => sum + (deal.amount ?? 0), 0);
   const { dealStages, currency } = useConfigurationContext();
+  const tone = stageTone[stage] ?? fallbackTone;
   return (
     <div
       className={cn(
-        "flex h-full flex-1 flex-col overflow-hidden",
-        attentionPipeline ? "min-w-72" : "min-w-56",
+        "flex h-full w-72 min-w-72 flex-none flex-col overflow-hidden rounded-xl border border-t-4 bg-muted/30 shadow-sm",
+        tone.border,
+        attentionPipeline && "bg-muted/20",
       )}
     >
-      <div
-        className={cn(
-          "flex shrink-0 items-center gap-2",
-          attentionPipeline ? "justify-start px-1" : "justify-center",
-        )}
-      >
-        <h3
-          className={cn(
-            "rounded-full bg-muted px-3 py-0.5 text-sm font-semibold text-foreground",
-            attentionPipeline && "bg-foreground text-background",
-          )}
-        >
-          {findDealLabel(dealStages, stage)}
-        </h3>
-        {attentionPipeline ? (
-          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground">
-            {deals.length}
-          </span>
-        ) : null}
-        <p className="text-xs text-muted-foreground tabular-nums">
-          {totalAmount.toLocaleString("nl-NL", {
-            notation: "compact",
-            style: "currency",
-            currency,
-            currencyDisplay: "narrowSymbol",
-            minimumSignificantDigits: 3,
-          })}
-        </p>
+      <div className="flex min-h-14 shrink-0 items-start gap-2 border-b bg-card/55 px-3 py-2.5">
+        <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", tone.dot)} />
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-semibold leading-5 text-foreground">
+            {findDealLabel(dealStages, stage)}
+          </h3>
+          <p className="text-[11px] tabular-nums text-muted-foreground">
+            {totalAmount.toLocaleString("nl-NL", {
+              notation: "compact",
+              style: "currency",
+              currency,
+              currencyDisplay: "narrowSymbol",
+              minimumSignificantDigits: 3,
+            })}
+          </p>
+        </div>
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground">
+          {deals.length}
+        </span>
       </div>
       <Droppable droppableId={stage}>
         {(droppableProvided, snapshot) => (
@@ -69,8 +93,8 @@ export const DealColumn = ({
             ref={droppableProvided.innerRef}
             {...droppableProvided.droppableProps}
             className={cn(
-              "mt-1.5 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain rounded-2xl border-2 border-dashed border-transparent p-1 pb-3 [scrollbar-gutter:stable] transition-colors duration-200",
-              attentionPipeline && "bg-muted/20 p-1.5",
+              "flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain border-2 border-dashed border-transparent p-2 [scrollbar-gutter:stable] transition-colors duration-200",
+              attentionPipeline && "p-2",
               snapshot.isDraggingOver && "border-primary/40 bg-muted",
             )}
           >

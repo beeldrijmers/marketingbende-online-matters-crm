@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Sparkles,
 } from "lucide-react";
+import { useSearchParams } from "react-router";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -34,10 +35,37 @@ export const DashboardWorkspace = ({
   mobile?: boolean;
 }) => {
   const isDemo = import.meta.env.VITE_IS_DEMO === "true";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedView = searchParams.get("tab");
+  const activeView = dashboardViews.some(({ value }) => value === requestedView)
+    ? requestedView!
+    : isDemo
+      ? "today"
+      : "workboard";
+
+  const changeView = (nextView: string) => {
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set("tab", nextView);
+        if (nextView !== "workboard") {
+          next.delete("focus");
+          next.delete("deal");
+          next.delete("edit");
+          next.delete("new");
+          next.delete("filter");
+          next.delete("q");
+        }
+        return next;
+      },
+      { replace: true },
+    );
+  };
 
   return (
     <Tabs
-      defaultValue={isDemo ? "today" : "workboard"}
+      value={activeView}
+      onValueChange={changeView}
       className="min-w-0 gap-4"
     >
       <div className="overflow-x-auto pb-0.5">
@@ -59,7 +87,7 @@ export const DashboardWorkspace = ({
       </div>
 
       <TabsContent value="workboard" className="min-w-0">
-        {isDemo ? <Welcome /> : <TrelloWorkflowOverview />}
+        {isDemo ? <Welcome /> : <TrelloWorkflowOverview mobile={mobile} />}
       </TabsContent>
 
       <TabsContent value="today">

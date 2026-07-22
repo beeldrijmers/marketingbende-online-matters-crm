@@ -17,6 +17,7 @@ import {
 } from "./dashboardDealKanbanModel";
 import {
   createDashboardDealSelection,
+  getDashboardDealSelectionPath,
   type DashboardDealSelection,
 } from "./dashboardDealSelection";
 import { summarizeDealAttention } from "./dealWorkflow";
@@ -145,10 +146,12 @@ const useBillingDealSelection = () => {
 };
 
 const DashboardDealKanban = ({
+  embedded = false,
   isPending,
   mobile,
   selection,
 }: {
+  embedded?: boolean;
   isPending: boolean;
   mobile: boolean;
   selection: DashboardDealSelection;
@@ -157,16 +160,26 @@ const DashboardDealKanban = ({
 
   return (
     <ResourceContextProvider value="deals">
-      {mobile ? (
+      {mobile && !embedded ? (
         <MobileDealsList dashboardSelection={selection} />
       ) : (
-        <DealList dashboardSelection={selection} />
+        <DealList
+          dashboardSelection={selection}
+          detailBasePath={getDashboardDealSelectionPath(selection.kind)}
+          embedded={embedded}
+        />
       )}
     </ResourceContextProvider>
   );
 };
 
-const AttentionDealsPage = ({ mobile = false }: { mobile?: boolean }) => {
+const AttentionDealsPage = ({
+  embedded = false,
+  mobile = false,
+}: {
+  embedded?: boolean;
+  mobile?: boolean;
+}) => {
   const {
     counts,
     filter,
@@ -183,6 +196,7 @@ const AttentionDealsPage = ({ mobile = false }: { mobile?: boolean }) => {
     <ResourceContextProvider value="deals">
       <AttentionPipelineHeader
         counts={counts}
+        embedded={embedded}
         filter={filter}
         mobile={mobile}
         onFilterChange={setFilter}
@@ -190,23 +204,34 @@ const AttentionDealsPage = ({ mobile = false }: { mobile?: boolean }) => {
         search={search}
         visibleCount={visibleCount}
       />
-      {mobile ? (
+      {mobile && !embedded ? (
         <MobileDealsList
           attentionPipeline
           dashboardSelection={selection}
           hideHeader
         />
       ) : (
-        <DealList dashboardSelection={selection} />
+        <DealList
+          dashboardSelection={selection}
+          detailBasePath={getDashboardDealSelectionPath(selection.kind)}
+          embedded={embedded}
+        />
       )}
     </ResourceContextProvider>
   );
 };
 
-const BillingDealsPage = ({ mobile = false }: { mobile?: boolean }) => {
+const BillingDealsPage = ({
+  embedded = false,
+  mobile = false,
+}: {
+  embedded?: boolean;
+  mobile?: boolean;
+}) => {
   const { isPending, selection } = useBillingDealSelection();
   return (
     <DashboardDealKanban
+      embedded={embedded}
       isPending={isPending}
       mobile={mobile}
       selection={selection}
@@ -220,6 +245,16 @@ export const MobileAttentionDealsKanbanPage = () => (
   <AttentionDealsPage mobile />
 );
 export const MobileBillingDealsKanbanPage = () => <BillingDealsPage mobile />;
+export const AttentionDealsDashboard = ({
+  mobile = false,
+}: {
+  mobile?: boolean;
+}) => <AttentionDealsPage embedded mobile={mobile} />;
+export const BillingDealsDashboard = ({
+  mobile = false,
+}: {
+  mobile?: boolean;
+}) => <BillingDealsPage embedded mobile={mobile} />;
 
 const DashboardDealKanbanSkeleton = () => (
   <div className="flex flex-col gap-4 py-2">

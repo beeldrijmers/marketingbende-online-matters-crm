@@ -17,7 +17,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { CompanyAvatar } from "../companies/CompanyAvatar";
 import { DealWorkflowBadge } from "../deals/DealWorkflowIndicator";
-import { DEAL_ATTENTION_PATH } from "../deals/dashboardDealSelection";
+import {
+  DEAL_ATTENTION_PATH,
+  getDashboardDealDetailPath,
+} from "../deals/dashboardDealSelection";
 import {
   buildOpenTasksByDeal,
   rankDealsForAttention,
@@ -131,7 +134,10 @@ export const DealActionQueue = () => {
                     <CompanyAvatar width={20} height={20} />
                   </ReferenceField>
                   <Link
-                    to={`/deals/${deal.id}/show`}
+                    to={getDashboardDealDetailPath(
+                      DEAL_ATTENTION_PATH,
+                      deal.id,
+                    )}
                     className="min-w-0 flex-1 no-underline hover:underline"
                   >
                     <span className="block truncate text-sm font-semibold">

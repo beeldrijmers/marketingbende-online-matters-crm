@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Archive, ArchiveRestore, Pencil } from "lucide-react";
 import {
   InfiniteListBase,
@@ -12,7 +12,7 @@ import {
   useUpdate,
 } from "ra-core";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { EditButton } from "@/components/admin/edit-button";
 import { ReferenceArrayField } from "@/components/admin/reference-array-field";
@@ -42,10 +42,12 @@ import {
 
 export const DealShow = ({
   closeTo = "/deals",
+  editTo,
   open,
   id,
 }: {
   closeTo?: string;
+  editTo?: string;
   open: boolean;
   id?: string;
 }) => {
@@ -66,7 +68,7 @@ export const DealShow = ({
         <DealDialogTitle />
         {id ? (
           <ShowBase id={id}>
-            <DealShowContent />
+            <DealShowContent closeTo={closeTo} editTo={editTo} />
           </ShowBase>
         ) : null}
       </DialogContent>
@@ -83,7 +85,13 @@ const DealDialogTitle = () => {
   );
 };
 
-const DealShowContent = () => {
+const DealShowContent = ({
+  closeTo,
+  editTo,
+}: {
+  closeTo: string;
+  editTo?: string;
+}) => {
   const translate = useTranslate();
   const { dealStages, dealCategories, currency } = useConfigurationContext();
   const isMobile = useIsMobile();
@@ -131,19 +139,31 @@ const DealShowContent = () => {
             <div className={`flex gap-2 ${record.archived_at ? "" : "pr-12"}`}>
               {record.archived_at ? (
                 <>
-                  <UnarchiveButton record={record} />
+                  <UnarchiveButton record={record} redirectTo={closeTo} />
                   <DeleteButton />
                 </>
               ) : (
                 <>
                   <MoneybirdDocumentControl record={record} kind="estimate" />
                   <MoneybirdDocumentControl record={record} kind="invoice" />
-                  <ArchiveButton record={record} />
+                  <ArchiveButton record={record} redirectTo={closeTo} />
                   {/* The desktop EditButton navigates to /deals/:id, a route
                       that only exists in the desktop Admin. On mobile we edit
                       in place through a sheet instead. */}
                   {isMobile ? (
                     <MobileEditButton record={record} />
+                  ) : editTo ? (
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="flex h-9 items-center gap-2"
+                    >
+                      <Link to={editTo}>
+                        <Pencil className="size-4" />
+                        {translate("ra.action.edit")}
+                      </Link>
+                    </Button>
                   ) : (
                     <EditButton />
                   )}
@@ -338,7 +358,13 @@ const ArchivedTitle = () => {
   );
 };
 
-const ArchiveButton = ({ record }: { record: Deal }) => {
+const ArchiveButton = ({
+  record,
+  redirectTo,
+}: {
+  record: Deal;
+  redirectTo?: string;
+}) => {
   const translate = useTranslate();
   const [update] = useUpdate();
   const redirect = useRedirect();
@@ -354,7 +380,8 @@ const ArchiveButton = ({ record }: { record: Deal }) => {
       },
       {
         onSuccess: () => {
-          redirect("list", "deals");
+          if (redirectTo) redirect(redirectTo);
+          else redirect("list", "deals");
           notify("resources.deals.archived.success", {
             type: "info",
             undoable: false,
@@ -383,17 +410,26 @@ const ArchiveButton = ({ record }: { record: Deal }) => {
   );
 };
 
-const UnarchiveButton = ({ record }: { record: Deal }) => {
+const UnarchiveButton = ({
+  record,
+  redirectTo,
+}: {
+  record: Deal;
+  redirectTo?: string;
+}) => {
   const translate = useTranslate();
   const dataProvider = useDataProvider();
   const redirect = useRedirect();
   const notify = useNotify();
   const refresh = useRefresh();
+  const queryClient = useQueryClient();
 
   const { mutate } = useMutation({
     mutationFn: () => dataProvider.unarchiveDeal(record),
-    onSuccess: () => {
-      redirect("list", "deals");
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["deals"] });
+      if (redirectTo) redirect(redirectTo);
+      else redirect("list", "deals");
       notify("resources.deals.unarchived.success", {
         type: "info",
         undoable: false,

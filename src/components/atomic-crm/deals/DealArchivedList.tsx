@@ -19,7 +19,13 @@ import type { Deal } from "../types";
 import { DealCardContent } from "./DealCard";
 import { getRelativeTimeString } from "./dealUtils";
 
-export const DealArchivedList = ({ className }: { className?: string }) => {
+export const DealArchivedList = ({
+  className,
+  detailBasePath,
+}: {
+  className?: string;
+  detailBasePath?: string;
+}) => {
   const translate = useTranslate();
   const [locale = "en"] = useLocaleState();
   const { identity } = useGetIdentity();
@@ -86,7 +92,10 @@ export const DealArchivedList = ({ className }: { className?: string }) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
                   {deals.map((deal: Deal) => (
                     <div key={deal.id}>
-                      <DealCardContent deal={deal} />
+                      <DealCardContent
+                        deal={deal}
+                        detailBasePath={detailBasePath}
+                      />
                     </div>
                   ))}
                 </div>

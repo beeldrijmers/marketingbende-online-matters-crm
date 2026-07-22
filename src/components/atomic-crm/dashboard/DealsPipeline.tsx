@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { SimpleList } from "../simple-list/SimpleList";
 import { CompanyAvatar } from "../companies/CompanyAvatar";
 import { findDealLabel } from "../deals/dealUtils";
+import { DASHBOARD_WORKBOARD_PATH } from "../deals/dashboardDealSelection";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Deal } from "../types";
 
@@ -33,14 +34,14 @@ export const DealsPipeline = () => {
     if (!data) {
       return;
     }
+    const pipelineStatuses = new Set(dealPipelineStatuses);
     const deals: Deal[] = [];
-    dealStages
-      .filter((stage) => !dealPipelineStatuses.includes(stage.value))
-      .forEach((stage) =>
-        data
-          .filter((deal) => deal.stage === stage.value)
-          .forEach((deal) => deals.push(deal)),
-      );
+    for (const stage of dealStages) {
+      if (pipelineStatuses.has(stage.value)) continue;
+      for (const deal of data) {
+        if (deal.stage === stage.value) deals.push(deal);
+      }
+    }
     return deals;
   };
 
@@ -52,7 +53,7 @@ export const DealsPipeline = () => {
         </div>
         <Link
           className="text-xl font-semibold text-foreground hover:underline"
-          to="/deals"
+          to={DASHBOARD_WORKBOARD_PATH}
         >
           {translate("crm.dashboard.deals_pipeline")}
         </Link>

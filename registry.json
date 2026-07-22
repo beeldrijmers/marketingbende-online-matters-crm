@@ -706,6 +706,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/DealDashboardRedirect.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/DealCreate.tsx",
           "type": "registry:component"
         },

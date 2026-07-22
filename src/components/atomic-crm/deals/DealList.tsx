@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import type { InputProps } from "ra-core";
 import { useGetIdentity, useListContext, useTranslate } from "ra-core";
 import { Link, matchPath, useLocation } from "react-router";
+import { Plus } from "lucide-react";
 import { AutocompleteInput } from "@/components/admin/autocomplete-input";
 import { CreateButton } from "@/components/admin/create-button";
 import { ExportButton } from "@/components/admin/export-button";
@@ -29,7 +30,11 @@ import { OnlyMineInput } from "./OnlyMineInput";
 import { InternalExternalInput } from "./InternalExternalInput";
 import { SyncTrelloButton } from "./SyncTrelloButton";
 import {
+  DASHBOARD_WORKBOARD_PATH,
   type DashboardDealSelection,
+  getDashboardDealCreatePath,
+  getDashboardDealDetailPath,
+  getDashboardDealEditPath,
   getDashboardDealReturnPath,
   getDashboardDealSelectionPath,
   getDashboardDealSelectionFilter,
@@ -38,9 +43,15 @@ import { findDealLabel } from "./dealUtils";
 
 type DealListProps = {
   dashboardSelection?: DashboardDealSelection;
+  detailBasePath?: string;
+  embedded?: boolean;
 };
 
-export const DealList = ({ dashboardSelection }: DealListProps = {}) => {
+export const DealList = ({
+  dashboardSelection,
+  detailBasePath,
+  embedded = false,
+}: DealListProps = {}) => {
   const { identity } = useGetIdentity();
   const { dealCategories } = useConfigurationContext();
   const translate = useTranslate();
@@ -80,12 +91,26 @@ export const DealList = ({ dashboardSelection }: DealListProps = {}) => {
         "archived_at@is": null,
         ...getDashboardDealSelectionFilter(dashboardSelection ?? null),
       }}
-      disableBreadcrumb={attentionPipeline}
+      disableBreadcrumb={embedded || attentionPipeline}
       disableHeader={attentionPipeline}
+      disableSyncWithLocation={embedded}
+      hideTitle={embedded}
       title={attentionPipeline ? false : (dashboardSelection?.label ?? false)}
       sort={{ field: "index", order: "DESC" }}
       filters={attentionPipeline ? undefined : dealFilters}
-      actions={attentionPipeline ? false : <DealActions />}
+      actions={
+        attentionPipeline ? (
+          false
+        ) : (
+          <DealActions
+            detailBasePath={
+              detailBasePath ??
+              (embedded ? DASHBOARD_WORKBOARD_PATH : undefined)
+            }
+            embedded={embedded}
+          />
+        )
+      }
       pagination={null}
       storeKey={
         dashboardSelection
@@ -93,15 +118,23 @@ export const DealList = ({ dashboardSelection }: DealListProps = {}) => {
           : "deals.full-workboard.v1"
       }
     >
-      <DealLayout dashboardSelection={dashboardSelection} />
+      <DealLayout
+        dashboardSelection={dashboardSelection}
+        detailBasePath={detailBasePath}
+        embedded={embedded}
+      />
     </List>
   );
 };
 
 const DealLayout = ({
   dashboardSelection,
+  detailBasePath,
+  embedded,
 }: {
   dashboardSelection?: DashboardDealSelection;
+  detailBasePath?: string;
+  embedded: boolean;
 }) => {
   const translate = useTranslate();
   const location = useLocation();
@@ -112,24 +145,39 @@ const DealLayout = ({
   } | null>(null);
   const [taskDeal, setTaskDeal] = useState<Deal | null>(null);
   const attentionPipeline = dashboardSelection?.kind === "attention";
-  const detailBasePath = dashboardSelection
-    ? getDashboardDealSelectionPath(dashboardSelection.kind)
+  const resolvedDetailBasePath =
+    detailBasePath ??
+    (dashboardSelection
+      ? getDashboardDealSelectionPath(dashboardSelection.kind)
+      : embedded
+        ? DASHBOARD_WORKBOARD_PATH
+        : undefined);
+  const dashboardReturnPath = resolvedDetailBasePath
+    ? getDashboardDealReturnPath(resolvedDetailBasePath, location.search)
     : undefined;
-  const dashboardReturnPath = detailBasePath
-    ? getDashboardDealReturnPath(detailBasePath, location.search)
+  const dashboardParams = new URLSearchParams(location.search);
+  const dashboardDealId =
+    dashboardSelection || embedded ? dashboardParams.get("deal") : null;
+  const dashboardEditId = embedded ? dashboardParams.get("edit") : null;
+  const dashboardCreateOpen = embedded && dashboardParams.get("new") === "1";
+  const matchCreate =
+    dashboardSelection || embedded
+      ? null
+      : matchPath("/deals/create", location.pathname);
+  const matchShow =
+    dashboardSelection || embedded
+      ? null
+      : matchPath("/deals/:id/show", location.pathname);
+  const matchEdit =
+    dashboardSelection || embedded
+      ? null
+      : matchPath("/deals/:id", location.pathname);
+  const createOpen = dashboardCreateOpen || !!matchCreate;
+  const editId = dashboardEditId ?? matchEdit?.params.id;
+  const showId = dashboardDealId ?? matchShow?.params.id;
+  const createTo = dashboardReturnPath
+    ? getDashboardDealCreatePath(dashboardReturnPath)
     : undefined;
-  const dashboardDealId = dashboardSelection
-    ? new URLSearchParams(location.search).get("deal")
-    : null;
-  const matchCreate = dashboardSelection
-    ? null
-    : matchPath("/deals/create", location.pathname);
-  const matchShow = dashboardSelection
-    ? null
-    : matchPath("/deals/:id/show", location.pathname);
-  const matchEdit = dashboardSelection
-    ? null
-    : matchPath("/deals/:id", location.pathname);
 
   const { data, isPending, filterValues, total } = useListContext<Deal>();
   const hasFilters = filterValues && Object.keys(filterValues).length > 0;
@@ -139,9 +187,22 @@ const DealLayout = ({
   if (!data?.length && !hasFilters)
     return (
       <>
-        <DealEmpty>
-          <DealShow open={!!matchShow} id={matchShow?.params.id} />
-          <DealArchivedList />
+        <DealEmpty
+          createCloseTo={dashboardReturnPath}
+          createOpen={createOpen}
+          createTo={createTo}
+        >
+          <DealShow
+            closeTo={dashboardReturnPath ?? "/deals"}
+            editTo={
+              showId && dashboardReturnPath
+                ? getDashboardDealEditPath(dashboardReturnPath, showId)
+                : undefined
+            }
+            open={Boolean(showId)}
+            id={showId}
+          />
+          <DealArchivedList detailBasePath={dashboardReturnPath} />
         </DealEmpty>
       </>
     );
@@ -158,7 +219,7 @@ const DealLayout = ({
             })}
           </p>
           <Button asChild variant="ghost" size="sm">
-            <Link to="/deals" replace>
+            <Link to={DASHBOARD_WORKBOARD_PATH} replace>
               {translate("resources.deals.all_deals", {
                 _: "Alle opdrachten",
               })}
@@ -179,6 +240,7 @@ const DealLayout = ({
       <DealListContent
         attentionPipeline={attentionPipeline}
         detailBasePath={dashboardReturnPath}
+        embedded={embedded}
         onDealStageChange={
           attentionPipeline
             ? (deal, destinationStage) =>
@@ -187,12 +249,26 @@ const DealLayout = ({
         }
         onPlanTask={setTaskDeal}
       />
-      <DealCreate open={!!matchCreate} />
-      <DealEdit open={!!matchEdit && !matchCreate} id={matchEdit?.params.id} />
+      <DealCreate closeTo={dashboardReturnPath} open={createOpen} />
+      <DealEdit
+        closeTo={dashboardReturnPath}
+        open={Boolean(editId) && !createOpen}
+        id={editId}
+        showTo={
+          editId && dashboardReturnPath
+            ? getDashboardDealDetailPath(dashboardReturnPath, editId)
+            : undefined
+        }
+      />
       <DealShow
         closeTo={dashboardReturnPath ?? "/deals"}
-        open={dashboardSelection ? !!dashboardDealId : !!matchShow}
-        id={dashboardDealId ?? matchShow?.params.id}
+        editTo={
+          showId && dashboardReturnPath
+            ? getDashboardDealEditPath(dashboardReturnPath, showId)
+            : undefined
+        }
+        open={Boolean(showId)}
+        id={showId}
       />
       {recentMove ? (
         <AttentionMovePrompt
@@ -236,15 +312,38 @@ const DealListSkeleton = () => {
   );
 };
 
-const DealActions = () => (
-  <TopToolbar>
-    <SyncTrelloButton />
-    <FilterButton />
-    <DealArchivedList />
-    <ExportButton />
-    <CreateButton label="resources.deals.action.new" />
-  </TopToolbar>
-);
+const DealActions = ({
+  detailBasePath,
+  embedded,
+}: {
+  detailBasePath?: string;
+  embedded: boolean;
+}) => {
+  const location = useLocation();
+  const translate = useTranslate();
+  const returnPath = detailBasePath
+    ? getDashboardDealReturnPath(detailBasePath, location.search)
+    : undefined;
+
+  return (
+    <TopToolbar>
+      {!embedded ? <SyncTrelloButton /> : null}
+      <FilterButton />
+      <DealArchivedList detailBasePath={returnPath} />
+      <ExportButton />
+      {embedded && returnPath ? (
+        <Button asChild size="sm">
+          <Link to={getDashboardDealCreatePath(returnPath)}>
+            <Plus className="size-4" />
+            {translate("resources.deals.action.new")}
+          </Link>
+        </Button>
+      ) : (
+        <CreateButton label="resources.deals.action.new" />
+      )}
+    </TopToolbar>
+  );
+};
 
 /**
  *

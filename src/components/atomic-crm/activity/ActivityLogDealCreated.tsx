@@ -2,6 +2,10 @@ import { type RaRecord, useTranslate } from "ra-core";
 import { Link } from "react-router";
 
 import { ReferenceField } from "@/components/admin/reference-field";
+import {
+  DASHBOARD_WORKBOARD_PATH,
+  getDashboardDealDetailPath,
+} from "../deals/dashboardDealSelection";
 import { RelativeDate } from "../misc/RelativeDate";
 import type { ActivityDealCreated } from "../types";
 import { ActivityActorAvatar } from "./ActivityActor";
@@ -35,7 +39,7 @@ export function ActivityLogDealCreated({
           sourceAuthor={deal.activity_source_author}
         />
         <div className="w-[20px] h-[20px] bg-muted rounded-full shrink-0" />
-        <span className="text-muted-foreground text-sm flex-grow">
+        <span className="grow text-sm text-muted-foreground">
           {translate(
             isCurrentUser
               ? "crm.activity.you_added_deal"
@@ -45,7 +49,11 @@ export function ActivityLogDealCreated({
           {isMobile ? (
             deal.name
           ) : (
-            <Link to={`/deals/${deal.id}/show`}>{deal.name}</Link>
+            <Link
+              to={getDashboardDealDetailPath(DASHBOARD_WORKBOARD_PATH, deal.id)}
+            >
+              {deal.name}
+            </Link>
           )}{" "}
           {context !== "company" && (
             <>

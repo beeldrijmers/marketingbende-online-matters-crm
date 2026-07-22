@@ -2,6 +2,10 @@ import { type RaRecord, useTranslate } from "ra-core";
 
 import { ReferenceField } from "@/components/admin/reference-field";
 import { CompanyAvatar } from "../companies/CompanyAvatar";
+import {
+  DASHBOARD_WORKBOARD_PATH,
+  getDashboardDealDetailPath,
+} from "../deals/dashboardDealSelection";
 import { RelativeDate } from "../misc/RelativeDate";
 import type { ActivityDealNoteCreated } from "../types";
 import { ActivityActorAvatar } from "./ActivityActor";
@@ -33,7 +37,7 @@ export function ActivityLogDealNoteCreated({
   return (
     <ActivityLogNote
       header={
-        <div className="flex min-w-0 flex-grow flex-wrap items-center gap-x-2 gap-y-1">
+        <div className="flex min-w-0 grow flex-wrap items-center gap-x-2 gap-y-1">
           <ActivityActorAvatar
             salesId={activity.sales_id}
             source={source}
@@ -54,7 +58,7 @@ export function ActivityLogDealNoteCreated({
             </ReferenceField>
           </ReferenceField>
 
-          <span className="basis-full text-sm leading-5 text-muted-foreground sm:basis-auto sm:flex-grow">
+          <span className="basis-full text-sm leading-5 text-muted-foreground sm:basis-auto sm:grow">
             {translate(
               isCurrentUser
                 ? "crm.activity.you_added_note_about_deal"
@@ -96,7 +100,14 @@ export function ActivityLogDealNoteCreated({
         </div>
       }
       text={dealNote.text}
-      link={isMobile ? false : `/deals/${dealNote.deal_id}/show`}
+      link={
+        isMobile
+          ? false
+          : getDashboardDealDetailPath(
+              DASHBOARD_WORKBOARD_PATH,
+              dealNote.deal_id,
+            )
+      }
       sourceAuthorInHeader={source === "trello"}
     />
   );

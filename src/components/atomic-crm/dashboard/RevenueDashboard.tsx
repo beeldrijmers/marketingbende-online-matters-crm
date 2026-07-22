@@ -9,6 +9,7 @@ import {
 import { useGetList, useTranslate } from "ra-core";
 import { memo, useMemo } from "react";
 import { Link } from "react-router";
+import { DASHBOARD_WORKBOARD_PATH } from "../deals/dashboardDealSelection";
 
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -167,7 +168,7 @@ export const RevenueDashboard = memo(() => {
 
       {model.unplannedDealCount > 0 ? (
         <Link
-          to="/deals"
+          to={DASHBOARD_WORKBOARD_PATH}
           className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm no-underline"
         >
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />

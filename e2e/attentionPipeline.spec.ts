@@ -32,6 +32,22 @@ test.describe("attention pipeline", () => {
     await page.getByLabel("E-mail").fill("pipeline@example.com");
     await page.getByRole("textbox", { name: "Wachtwoord" }).fill("password");
     await page.getByRole("button", { name: "Inloggen" }).click();
+    await expect(
+      page.getByRole("tab", { name: "Vandaag", exact: true }),
+    ).toBeVisible();
+
+    // Historic assignment URLs remain useful but never reopen a separate
+    // assignments page: the Dashboard is now the single workspace.
+    await page.goto("http://localhost:5175/#/deals");
+    await expect(page).toHaveURL(/#\/\?tab=workboard$/);
+    await expect(
+      page.getByRole("heading", {
+        name: "Opdrachtenbord · van begin tot eind",
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Alle opdrachten", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
 
     await page.getByRole("tab", { name: "Vandaag", exact: true }).click();
     const attentionHeading = page.getByRole("heading", {
@@ -46,7 +62,7 @@ test.describe("attention pipeline", () => {
       .getByRole("link", { name: "Werkbord", exact: true })
       .click();
 
-    await expect(page).toHaveURL(/#\/deals\/aandacht$/);
+    await expect(page).toHaveURL(/#\/\?tab=workboard&focus=attention$/);
     await expect(
       page.getByRole("heading", { name: "Aandacht-pipeline" }),
     ).toBeVisible();

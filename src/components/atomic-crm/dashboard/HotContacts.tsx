@@ -12,6 +12,10 @@ import { cn } from "@/lib/utils";
 
 import { CompanyAvatar } from "../companies/CompanyAvatar";
 import { DealWorkflowBadge } from "../deals/DealWorkflowIndicator";
+import {
+  DASHBOARD_WORKBOARD_PATH,
+  getDashboardDealDetailPath,
+} from "../deals/dashboardDealSelection";
 import { buildOpenTasksByDeal } from "../deals/dealWorkflow";
 import type { Contact, Deal, Task } from "../types";
 import { rankHotLeads } from "./hotLeads";
@@ -68,7 +72,7 @@ export const HotContacts = () => {
           </p>
         </div>
         <Button asChild variant="ghost" size="sm" className="shrink-0">
-          <Link to="/deals">
+          <Link to={DASHBOARD_WORKBOARD_PATH}>
             {translate("resources.contacts.hot.open_board")}
             <ArrowRight className="size-4" />
           </Link>
@@ -117,7 +121,10 @@ export const HotContacts = () => {
                   <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 items-start gap-2">
                       <Link
-                        to={`/deals/${lead.primaryDeal.id}/show`}
+                        to={getDashboardDealDetailPath(
+                          DASHBOARD_WORKBOARD_PATH,
+                          lead.primaryDeal.id,
+                        )}
                         className="min-w-0 flex-1 no-underline hover:underline"
                       >
                         <span className="block truncate text-sm font-semibold text-foreground">

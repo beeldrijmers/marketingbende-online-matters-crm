@@ -18,12 +18,22 @@ import { CompanyAvatar } from "../companies/CompanyAvatar";
 import type { Deal } from "../types";
 import { DealInputs } from "./DealInputs";
 
-export const DealEdit = ({ open, id }: { open: boolean; id?: string }) => {
+export const DealEdit = ({
+  closeTo = "/deals",
+  id,
+  open,
+  showTo,
+}: {
+  closeTo?: string;
+  id?: string;
+  open: boolean;
+  showTo?: string;
+}) => {
   const redirect = useRedirect();
   const notify = useNotify();
 
   const handleClose = () => {
-    redirect("/deals", undefined, undefined, undefined, {
+    redirect(closeTo, undefined, undefined, undefined, {
       _scrollToTop: false,
     });
   };
@@ -38,13 +48,17 @@ export const DealEdit = ({ open, id }: { open: boolean; id?: string }) => {
             mutationOptions={{
               onSuccess: () => {
                 notify("resources.deals.updated", {});
-                redirect(`/deals/${id}/show`, undefined, undefined, undefined, {
-                  _scrollToTop: false,
-                });
+                redirect(
+                  showTo ?? `/deals/${id}/show`,
+                  undefined,
+                  undefined,
+                  undefined,
+                  { _scrollToTop: false },
+                );
               },
             }}
           >
-            <EditHeader />
+            <EditHeader showTo={showTo} />
             <Form>
               <DealInputs />
               <FormToolbar />
@@ -56,7 +70,7 @@ export const DealEdit = ({ open, id }: { open: boolean; id?: string }) => {
   );
 };
 
-function EditHeader() {
+function EditHeader({ showTo }: { showTo?: string }) {
   const translate = useTranslate();
   const { defaultTitle } = useEditContext<Deal>();
   const deal = useRecordContext<Deal>();
@@ -76,7 +90,7 @@ function EditHeader() {
         <div className="flex gap-2 pr-12">
           <DeleteButton />
           <Button asChild variant="outline" className="h-9">
-            <Link to={`/deals/${deal.id}/show`}>
+            <Link to={showTo ?? `/deals/${deal.id}/show`}>
               {translate("resources.deals.action.back_to_deal")}
             </Link>
           </Button>

@@ -1,7 +1,5 @@
-import React from "react";
-
-const DealList = React.lazy(() => import("./DealList"));
+import { DealDashboardRedirect } from "./DealDashboardRedirect";
 
 export default {
-  list: DealList,
+  list: DealDashboardRedirect,
 };

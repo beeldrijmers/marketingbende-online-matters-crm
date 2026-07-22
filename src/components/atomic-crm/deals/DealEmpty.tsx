@@ -8,7 +8,17 @@ import useAppBarHeight from "../misc/useAppBarHeight";
 import type { Contact } from "../types";
 import { DealCreate } from "./DealCreate";
 
-export const DealEmpty = ({ children }: { children?: ReactNode }) => {
+export const DealEmpty = ({
+  children,
+  createCloseTo,
+  createOpen,
+  createTo,
+}: {
+  children?: ReactNode;
+  createCloseTo?: string;
+  createOpen?: boolean;
+  createTo?: string;
+}) => {
   const translate = useTranslate();
   const location = useLocation();
   const matchCreate = matchPath("/deals/create", location.pathname);
@@ -46,8 +56,15 @@ export const DealEmpty = ({ children }: { children?: ReactNode }) => {
               {translate("resources.deals.empty.description")}
             </p>
           </div>
-          <CreateButton label="resources.deals.action.create" />
-          <DealCreate open={!!matchCreate} />
+          {createTo ? (
+            <CreateButtonLink to={createTo} />
+          ) : (
+            <CreateButton label="resources.deals.action.create" />
+          )}
+          <DealCreate
+            closeTo={createCloseTo}
+            open={createOpen ?? !!matchCreate}
+          />
           {children}
         </>
       ) : (
@@ -69,5 +86,17 @@ export const DealEmpty = ({ children }: { children?: ReactNode }) => {
         </div>
       )}
     </div>
+  );
+};
+
+const CreateButtonLink = ({ to }: { to: string }) => {
+  const translate = useTranslate();
+  return (
+    <Link
+      to={to}
+      className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-xs transition-colors hover:bg-primary/90"
+    >
+      {translate("resources.deals.action.create")}
+    </Link>
   );
 };

@@ -15,13 +15,19 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { Deal } from "../types";
 import { DealInputs } from "./DealInputs";
 
-export const DealCreate = ({ open }: { open: boolean }) => {
+export const DealCreate = ({
+  closeTo = "/deals",
+  open,
+}: {
+  closeTo?: string;
+  open: boolean;
+}) => {
   const redirect = useRedirect();
   const dataProvider = useDataProvider();
   const translate = useTranslate();
 
   const handleClose = () => {
-    redirect("/deals");
+    redirect(closeTo);
   };
 
   const queryClient = useQueryClient();
@@ -50,13 +56,13 @@ export const DealCreate = ({ open }: { open: boolean }) => {
     );
     // refresh the list of deals in the cache as we used dataProvider.update(),
     // which does not update the cache
-    const dealsById = dealsToShift.reduce(
-      (acc, d) => ({
-        ...acc,
-        [d.id]: { ...d, index: d.index + 1 },
-      }),
-      {} as { [key: string]: Deal },
-    );
+    const dealsById: { [key: string]: Deal } = {};
+    for (const existingDeal of dealsToShift) {
+      dealsById[existingDeal.id] = {
+        ...existingDeal,
+        index: existingDeal.index + 1,
+      };
+    }
     const now = Date.now();
     queryClient.setQueriesData<GetListResult | undefined>(
       { queryKey: ["deals", "getList"] },
@@ -69,7 +75,7 @@ export const DealCreate = ({ open }: { open: boolean }) => {
       },
       { updatedAt: now },
     );
-    redirect("/deals");
+    redirect(closeTo);
   };
 
   const { identity } = useGetIdentity();

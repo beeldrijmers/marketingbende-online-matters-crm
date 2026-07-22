@@ -15,7 +15,11 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CompanyAvatar } from "../companies/CompanyAvatar";
 import { MoneybirdDocumentControl } from "../deals/MoneybirdDocumentButtons";
-import { DEAL_BILLING_PATH } from "../deals/dashboardDealSelection";
+import {
+  DEAL_BILLING_PATH,
+  getDashboardDealDetailPath,
+  getDashboardDealEditPath,
+} from "../deals/dashboardDealSelection";
 import type { Deal } from "../types";
 import { type BillingState, getBillingState } from "./billingQueueModel";
 
@@ -96,7 +100,7 @@ export const BillingQueue = () => {
                   <CompanyAvatar width={20} height={20} />
                 </ReferenceField>
                 <Link
-                  to={`/deals/${deal.id}/show`}
+                  to={getDashboardDealDetailPath(DEAL_BILLING_PATH, deal.id)}
                   className="min-w-0 flex-1 no-underline hover:underline"
                 >
                   <span className="block truncate text-sm font-semibold">
@@ -114,7 +118,11 @@ export const BillingQueue = () => {
                   <MoneybirdDocumentControl record={deal} kind="invoice" />
                 ) : (
                   <Button asChild size="sm" variant="outline">
-                    <Link to={`/deals/${deal.id}`}>Aanvullen</Link>
+                    <Link
+                      to={getDashboardDealEditPath(DEAL_BILLING_PATH, deal.id)}
+                    >
+                      Aanvullen
+                    </Link>
                   </Button>
                 )}
               </div>

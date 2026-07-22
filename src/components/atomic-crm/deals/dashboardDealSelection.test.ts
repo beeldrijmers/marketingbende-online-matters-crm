@@ -1,8 +1,11 @@
 import {
   createDashboardDealSelection,
+  DASHBOARD_WORKBOARD_PATH,
   DEAL_ATTENTION_PATH,
   DEAL_BILLING_PATH,
+  getDashboardDealCreatePath,
   getDashboardDealDetailPath,
+  getDashboardDealEditPath,
   getDashboardDealReturnPath,
   getDashboardDealSelectionPath,
   getDashboardDealSelectionFilter,
@@ -39,8 +42,9 @@ describe("dashboard deal selection", () => {
   });
 
   it("uses dedicated, refresh-safe routes for both dashboard boards", () => {
-    expect(DEAL_ATTENTION_PATH).toBe("/deals/aandacht");
-    expect(DEAL_BILLING_PATH).toBe("/deals/facturatie");
+    expect(DASHBOARD_WORKBOARD_PATH).toBe("/?tab=workboard");
+    expect(DEAL_ATTENTION_PATH).toBe("/?tab=workboard&focus=attention");
+    expect(DEAL_BILLING_PATH).toBe("/?tab=workboard&focus=billing");
     expect(getDashboardDealSelectionPath("attention")).toBe(
       DEAL_ATTENTION_PATH,
     );
@@ -53,9 +57,17 @@ describe("dashboard deal selection", () => {
       "?filter=today&q=voodoo&deal=12",
     );
 
-    expect(returnPath).toBe("/deals/aandacht?filter=today&q=voodoo");
+    expect(returnPath).toBe(
+      "/?tab=workboard&focus=attention&filter=today&q=voodoo",
+    );
     expect(getDashboardDealDetailPath(returnPath, 42)).toBe(
-      "/deals/aandacht?filter=today&q=voodoo&deal=42",
+      "/?tab=workboard&focus=attention&filter=today&q=voodoo&deal=42",
+    );
+    expect(getDashboardDealEditPath(returnPath, 42)).toBe(
+      "/?tab=workboard&focus=attention&filter=today&q=voodoo&edit=42",
+    );
+    expect(getDashboardDealCreatePath(returnPath)).toBe(
+      "/?tab=workboard&focus=attention&filter=today&q=voodoo&new=1",
     );
   });
 });

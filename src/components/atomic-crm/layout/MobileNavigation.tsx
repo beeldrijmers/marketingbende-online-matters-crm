@@ -6,15 +6,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import {
-  Building2,
-  Handshake,
-  Home,
-  ListTodo,
-  Plus,
-  Settings,
-  Users,
-} from "lucide-react";
+import { Building2, Home, ListTodo, Plus, Settings, Users } from "lucide-react";
 import { useTranslate } from "ra-core";
 import { Link, matchPath, useLocation, useMatch } from "react-router";
 import { ContactCreateSheet } from "../contacts/ContactCreateSheet";
@@ -35,8 +27,6 @@ export const MobileNavigation = () => {
     currentPath = "/companies";
   } else if (matchPath("/tasks/*", location.pathname)) {
     currentPath = "/tasks";
-  } else if (matchPath("/deals/*", location.pathname)) {
-    currentPath = "/deals";
   } else {
     currentPath = false;
   }
@@ -75,12 +65,6 @@ export const MobileNavigation = () => {
             Icon={Users}
             label={translate("resources.contacts.name", { smart_count: 2 })}
             isActive={currentPath === "/contacts"}
-          />
-          <NavigationButton
-            href="/deals"
-            Icon={Handshake}
-            label={translate("resources.deals.name", { smart_count: 2 })}
-            isActive={currentPath === "/deals"}
           />
           <NavigationButton
             href="/companies"

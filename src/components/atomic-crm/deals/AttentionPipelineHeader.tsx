@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 
 import type { DealAttentionCounts } from "./dealWorkflow";
 import type { AttentionPipelineFilter } from "./dashboardDealKanbanModel";
+import { DASHBOARD_WORKBOARD_PATH } from "./dashboardDealSelection";
 
 const filters: Array<{
   key: AttentionPipelineFilter;
@@ -69,6 +70,7 @@ const filters: Array<{
 
 export const AttentionPipelineHeader = ({
   counts,
+  embedded = false,
   filter,
   mobile = false,
   onFilterChange,
@@ -77,6 +79,7 @@ export const AttentionPipelineHeader = ({
   visibleCount,
 }: {
   counts: DealAttentionCounts;
+  embedded?: boolean;
   filter: AttentionPipelineFilter;
   mobile?: boolean;
   onFilterChange: (filter: AttentionPipelineFilter) => void;
@@ -87,24 +90,26 @@ export const AttentionPipelineHeader = ({
   <section
     className={cn(
       "mb-3 overflow-hidden rounded-2xl border bg-card shadow-sm",
-      mobile && "mx-4 mt-3",
+      mobile && !embedded && "mx-4 mt-3",
     )}
   >
     <div
       className={cn("flex flex-wrap items-start gap-4 p-4", !mobile && "p-5")}
     >
       <div className="min-w-0 flex-1">
-        <Button
-          asChild
-          variant="ghost"
-          size="sm"
-          className="-ml-2 mb-1 h-7 px-2 text-muted-foreground"
-        >
-          <Link to="/">
-            <ArrowLeft className="size-4" />
-            Dashboard
-          </Link>
-        </Button>
+        {!embedded ? (
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="-ml-2 mb-1 h-7 px-2 text-muted-foreground"
+          >
+            <Link to="/">
+              <ArrowLeft className="size-4" />
+              Dashboard
+            </Link>
+          </Button>
+        ) : null}
         <div className="flex flex-wrap items-center gap-2">
           <h1
             className={cn(
@@ -130,9 +135,9 @@ export const AttentionPipelineHeader = ({
             : "Versleep een deal of gebruik Fase. Plan de volgende taak zonder het bord te verlaten."}
         </p>
       </div>
-      {!mobile ? (
+      {!mobile && !embedded ? (
         <Button asChild variant="outline" className="shrink-0">
-          <Link to="/deals">
+          <Link to={DASHBOARD_WORKBOARD_PATH}>
             Volledige pipeline
             <MoveRight className="size-4" />
           </Link>

@@ -56,16 +56,12 @@ import { StartPage } from "../login/StartPage.tsx";
 import { useIsMobile } from "@/hooks/use-mobile.ts";
 import { MobileTasksList } from "../tasks/MobileTasksList.tsx";
 import { ContactListMobile } from "../contacts/ContactList.tsx";
-import { MobileDealsList } from "../deals/MobileDealsList.tsx";
-import {
-  AttentionDealsKanbanPage,
-  BillingDealsKanbanPage,
-  MobileAttentionDealsKanbanPage,
-  MobileBillingDealsKanbanPage,
-} from "../deals/DashboardDealKanbanPage.tsx";
+import { DealDashboardRedirect } from "../deals/DealDashboardRedirect.tsx";
 import {
   DEAL_ATTENTION_PATH,
   DEAL_BILLING_PATH,
+  LEGACY_DEAL_ATTENTION_PATH,
+  LEGACY_DEAL_BILLING_PATH,
 } from "../deals/dashboardDealSelection.ts";
 import { MobileCompaniesList } from "../companies/MobileCompaniesList.tsx";
 import { ContactShow } from "../contacts/ContactShow.tsx";
@@ -316,10 +312,13 @@ const DesktopAdmin = (
         <Route path={ImportPage.path} element={<ImportPage />} />
         <Route path={ChangelogPage.path} element={<ChangelogPage />} />
         <Route
-          path={DEAL_ATTENTION_PATH}
-          element={<AttentionDealsKanbanPage />}
+          path={LEGACY_DEAL_ATTENTION_PATH}
+          element={<DealDashboardRedirect basePath={DEAL_ATTENTION_PATH} />}
         />
-        <Route path={DEAL_BILLING_PATH} element={<BillingDealsKanbanPage />} />
+        <Route
+          path={LEGACY_DEAL_BILLING_PATH}
+          element={<DealDashboardRedirect basePath={DEAL_BILLING_PATH} />}
+        />
       </CustomRoutes>
       <Resource name="deals" {...deals} />
       <Resource name="contacts" {...contacts}>
@@ -410,12 +409,12 @@ const MobileAdmin = (
           <Route path={ImportPage.path} element={<ImportPage />} />
           <Route path={ChangelogPage.path} element={<ChangelogPage />} />
           <Route
-            path={DEAL_ATTENTION_PATH}
-            element={<MobileAttentionDealsKanbanPage />}
+            path={LEGACY_DEAL_ATTENTION_PATH}
+            element={<DealDashboardRedirect basePath={DEAL_ATTENTION_PATH} />}
           />
           <Route
-            path={DEAL_BILLING_PATH}
-            element={<MobileBillingDealsKanbanPage />}
+            path={LEGACY_DEAL_BILLING_PATH}
+            element={<DealDashboardRedirect basePath={DEAL_BILLING_PATH} />}
           />
         </CustomRoutes>
         <Resource
@@ -431,7 +430,7 @@ const MobileAdmin = (
           list={MobileCompaniesList}
           show={CompanyShow}
         />
-        <Resource name="deals" list={MobileDealsList} />
+        <Resource name="deals" list={DealDashboardRedirect} />
         <Resource name="tasks" list={MobileTasksList} />
         {/* Sales team management has no mobile-specific screens, but the
             resource must be registered so /sales deeplinks (and crossing the

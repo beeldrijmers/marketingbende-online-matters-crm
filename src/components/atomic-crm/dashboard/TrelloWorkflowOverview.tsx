@@ -1,65 +1,50 @@
 import {
   AlertTriangle,
-  ArrowRight,
-  CalendarDays,
-  Columns3,
+  CircleDollarSign,
   ListChecks,
+  Radar,
 } from "lucide-react";
-import { useGetList } from "ra-core";
+import { ResourceContextProvider, useGetList } from "ra-core";
 import { useMemo } from "react";
-import { Link } from "react-router";
+import { useSearchParams } from "react-router";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 
-import { DealWorkflowIndicator } from "../deals/DealWorkflowIndicator";
-import { buildOpenTasksByDeal } from "../deals/dealWorkflow";
-import { findDealLabel, formatISODateString } from "../deals/dealUtils";
+import {
+  AttentionDealsDashboard,
+  BillingDealsDashboard,
+} from "../deals/DashboardDealKanbanPage";
+import { DealList } from "../deals/DealList";
+import { DASHBOARD_WORKBOARD_PATH } from "../deals/dashboardDealSelection";
 import { SyncTrelloButton } from "../deals/SyncTrelloButton";
 import { useConfigurationContext } from "../root/ConfigurationContext";
-import { AssigneesField } from "../sales/AssigneesField";
-import type { Deal, IntegrationRun, Task } from "../types";
+import type { Deal, IntegrationRun } from "../types";
 import { formatIntegrationRunDate } from "./integrationStatusModel";
 import { buildTrelloBoardSnapshot } from "./trelloBoardModel";
 
-const stageTone: Record<string, { dot: string; column: string }> = {
-  "informatie-pipeline": {
-    dot: "bg-slate-500",
-    column: "border-t-slate-500",
-  },
-  "bevestigd-inplannen": {
-    dot: "bg-blue-500",
-    column: "border-t-blue-500",
-  },
-  "on-hold": { dot: "bg-amber-500", column: "border-t-amber-500" },
-  bezig: { dot: "bg-violet-500", column: "border-t-violet-500" },
-  "controle-livegang": {
-    dot: "bg-cyan-500",
-    column: "border-t-cyan-500",
-  },
-  "facturatie-live": {
-    dot: "bg-emerald-500",
-    column: "border-t-emerald-500",
-  },
-  won: { dot: "bg-green-600", column: "border-t-green-600" },
-  maandelijks: { dot: "bg-fuchsia-500", column: "border-t-fuchsia-500" },
-};
+type WorkboardFocus = "all" | "attention" | "billing";
 
-const fallbackTone = { dot: "bg-muted-foreground", column: "border-t-muted" };
+const workboardViews = [
+  { value: "all", label: "Alle opdrachten", icon: ListChecks },
+  { value: "attention", label: "Aandacht nodig", icon: Radar },
+  { value: "billing", label: "Facturatie", icon: CircleDollarSign },
+] as const;
 
-const localTodayKey = (): string => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-export const TrelloWorkflowOverview = () => {
-  const { dealCategories, dealStages } = useConfigurationContext();
+export const TrelloWorkflowOverview = ({
+  mobile = false,
+}: {
+  mobile?: boolean;
+}) => {
+  const { dealStages } = useConfigurationContext();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedFocus = searchParams.get("focus");
+  const focus: WorkboardFocus =
+    requestedFocus === "attention" || requestedFocus === "billing"
+      ? requestedFocus
+      : "all";
   const {
     data: deals = [],
     error: dealsError,
@@ -69,14 +54,6 @@ export const TrelloWorkflowOverview = () => {
     sort: { field: "updated_at", order: "DESC" },
     filter: { "archived_at@is": null },
   });
-  const { data: tasks = [], isPending: tasksPending } = useGetList<Task>(
-    "tasks",
-    {
-      pagination: { page: 1, perPage: 1000 },
-      sort: { field: "due_date", order: "ASC" },
-      filter: {},
-    },
-  );
   const { data: runs = [] } = useGetList<IntegrationRun>(
     "integration_runs",
     {
@@ -91,7 +68,6 @@ export const TrelloWorkflowOverview = () => {
     () => buildTrelloBoardSnapshot(deals, dealStages),
     [dealStages, deals],
   );
-  const tasksByDeal = useMemo(() => buildOpenTasksByDeal(tasks), [tasks]);
   const latestRun = runs.find((run) => run.integration === "trello");
   const globalCounts: Record<string, number> | undefined = latestRun?.summary
     ?.stageCounts
@@ -121,6 +97,23 @@ export const TrelloWorkflowOverview = () => {
     "controle-livegang",
   ].reduce((total, stage) => total + (summaryCounts[stage] ?? 0), 0);
 
+  const setFocus = (nextFocus: WorkboardFocus) => {
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        if (nextFocus === "all") next.delete("focus");
+        else next.set("focus", nextFocus);
+        next.delete("deal");
+        next.delete("edit");
+        next.delete("new");
+        next.delete("filter");
+        next.delete("q");
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
   return (
     <section className="flex min-w-0 flex-col gap-3">
       <div className="flex flex-wrap items-start gap-3">
@@ -140,15 +133,7 @@ export const TrelloWorkflowOverview = () => {
               : ""}
           </p>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <SyncTrelloButton />
-          <Button asChild size="sm" variant="outline">
-            <Link to="/deals">
-              Open groot werkbord
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
-        </div>
+        <SyncTrelloButton />
       </div>
 
       <div className="flex flex-wrap gap-2 text-xs">
@@ -173,10 +158,36 @@ export const TrelloWorkflowOverview = () => {
       </div>
 
       <Card className="overflow-hidden py-0">
-        {dealsPending || tasksPending ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-muted/20 p-3">
+          <div
+            role="group"
+            aria-label="Weergave van het opdrachtenbord"
+            className="flex max-w-full gap-1 overflow-x-auto rounded-xl border bg-card p-1"
+          >
+            {workboardViews.map(({ icon: Icon, label, value }) => (
+              <Button
+                key={value}
+                type="button"
+                size="sm"
+                variant={focus === value ? "default" : "ghost"}
+                aria-pressed={focus === value}
+                className="shrink-0"
+                onClick={() => setFocus(value)}
+              >
+                <Icon className="size-4" />
+                {label}
+              </Button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Zoek, filter, versleep, bewerk en plan rechtstreeks vanuit dit bord.
+          </p>
+        </div>
+
+        {dealsPending ? (
           <div className="flex gap-3 overflow-hidden p-3">
             {Array.from({ length: 5 }).map((_, index) => (
-              <Skeleton key={index} className="h-80 min-w-64 rounded-xl" />
+              <Skeleton key={index} className="h-96 min-w-72 rounded-xl" />
             ))}
           </div>
         ) : dealsError ? (
@@ -191,22 +202,16 @@ export const TrelloWorkflowOverview = () => {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto bg-muted/20">
-            <div className="flex min-w-max items-stretch gap-3 p-3">
-              {snapshot.columns.map((column) => (
-                <WorkflowColumn
-                  key={column.stage.value}
-                  deals={column.deals}
-                  globalCount={globalCounts?.[column.stage.value]}
-                  label={column.stage.label}
-                  stage={column.stage.value}
-                  categoryLabel={(category) =>
-                    findDealLabel(dealCategories, category) ?? category
-                  }
-                  tasksByDeal={tasksByDeal}
-                />
-              ))}
-            </div>
+          <div className="min-w-0 bg-muted/10 p-3">
+            {focus === "attention" ? (
+              <AttentionDealsDashboard mobile={mobile} />
+            ) : focus === "billing" ? (
+              <BillingDealsDashboard mobile={mobile} />
+            ) : (
+              <ResourceContextProvider value="deals">
+                <DealList detailBasePath={DASHBOARD_WORKBOARD_PATH} embedded />
+              </ResourceContextProvider>
+            )}
           </div>
         )}
       </Card>
@@ -234,117 +239,3 @@ const BoardSummaryBadge = ({
     <span className="font-semibold tabular-nums">{value}</span>
   </Badge>
 );
-
-const WorkflowColumn = ({
-  categoryLabel,
-  deals,
-  globalCount,
-  label,
-  stage,
-  tasksByDeal,
-}: {
-  categoryLabel: (category: string) => string;
-  deals: Deal[];
-  globalCount?: number;
-  label: string;
-  stage: string;
-  tasksByDeal: Map<Deal["id"], Task[]>;
-}) => {
-  const tone = stageTone[stage] ?? fallbackTone;
-  const differentGlobalCount =
-    globalCount != null && globalCount !== deals.length;
-
-  return (
-    <div
-      className={cn(
-        "flex h-[calc(100svh-15rem)] min-h-[30rem] max-h-[58rem] w-64 flex-col rounded-xl border border-t-4 bg-muted/45 shadow-sm",
-        tone.column,
-      )}
-    >
-      <div className="flex min-h-14 items-start gap-2 border-b px-3 py-2.5">
-        <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", tone.dot)} />
-        <h3 className="min-w-0 flex-1 text-sm font-semibold leading-5">
-          {label}
-        </h3>
-        <Badge variant="secondary" className="shrink-0 tabular-nums">
-          {differentGlobalCount
-            ? `${deals.length}/${globalCount}`
-            : deals.length}
-        </Badge>
-      </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2 [scrollbar-gutter:stable]">
-        {deals.length > 0 ? (
-          deals.map((deal) => (
-            <WorkflowCard
-              key={deal.id}
-              categoryLabel={categoryLabel}
-              deal={deal}
-              openTasks={tasksByDeal.get(deal.id) ?? []}
-            />
-          ))
-        ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-background/45 px-4 text-center text-xs text-muted-foreground">
-            <Columns3 className="size-5 opacity-60" />
-            Geen kaarten in deze fase
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const WorkflowCard = ({
-  categoryLabel,
-  deal,
-  openTasks,
-}: {
-  categoryLabel: (category: string) => string;
-  deal: Deal;
-  openTasks: Task[];
-}) => {
-  const deadline = formatISODateString(deal.expected_closing_date);
-  const overdue =
-    deal.expected_closing_date != null &&
-    deal.expected_closing_date < localTodayKey() &&
-    deal.stage !== "won" &&
-    deal.stage !== "on-hold";
-
-  return (
-    <Link
-      to={`/deals/${deal.id}/show`}
-      className="group rounded-lg border bg-card p-2.5 text-card-foreground shadow-sm no-underline transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <p className="line-clamp-3 text-sm font-semibold leading-5 group-hover:text-primary">
-        {deal.name}
-      </p>
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-        {deal.category ? (
-          <Badge
-            variant="secondary"
-            className="max-w-full truncate px-1.5 py-0 text-[10px]"
-          >
-            {categoryLabel(deal.category)}
-          </Badge>
-        ) : null}
-        {deadline ? (
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 text-[11px] text-muted-foreground",
-              overdue && "font-semibold text-destructive",
-            )}
-          >
-            <CalendarDays className="size-3" />
-            {deadline}
-          </span>
-        ) : null}
-        <AssigneesField
-          ids={deal.assignee_ids}
-          size={16}
-          showParties={false}
-          className="ml-auto"
-        />
-      </div>
-      <DealWorkflowIndicator deal={deal} openTasks={openTasks} />
-    </Link>
-  );
-};

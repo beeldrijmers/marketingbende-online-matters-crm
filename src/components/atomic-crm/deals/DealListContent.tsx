@@ -20,11 +20,13 @@ import { getDealsByStage } from "./stages";
 export const DealListContent = ({
   attentionPipeline = false,
   detailBasePath,
+  embedded = false,
   onDealStageChange,
   onPlanTask,
 }: {
   attentionPipeline?: boolean;
   detailBasePath?: string;
+  embedded?: boolean;
   onDealStageChange?: (deal: Deal, destinationStage: string) => void;
   onPlanTask?: (deal: Deal) => void;
 } = {}) => {
@@ -178,9 +180,13 @@ export const DealListContent = ({
     <DragDropContext onDragEnd={onDragEnd}>
       <div
         className={
-          attentionPipeline
-            ? "h-[calc(100dvh-23rem)] min-h-96 overflow-x-auto overscroll-contain pb-2"
-            : "h-[calc(100dvh-11rem)] min-h-80 overflow-x-auto overscroll-contain pb-2"
+          embedded
+            ? attentionPipeline
+              ? "h-[calc(100svh-31rem)] min-h-[30rem] overflow-x-auto overscroll-contain pb-2"
+              : "h-[calc(100svh-22rem)] min-h-[34rem] overflow-x-auto overscroll-contain pb-2"
+            : attentionPipeline
+              ? "h-[calc(100dvh-23rem)] min-h-96 overflow-x-auto overscroll-contain pb-2"
+              : "h-[calc(100dvh-11rem)] min-h-80 overflow-x-auto overscroll-contain pb-2"
         }
       >
         <div className="flex h-full gap-4">
