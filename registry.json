@@ -754,6 +754,22 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/inzyte/inzyteData.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/inzyte/InzyteWorkspace.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/inzyte/InzyteDataView.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/inzyte/InzyteConnections.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/dashboard/trelloBoardModel.ts",
           "type": "registry:component"
         },

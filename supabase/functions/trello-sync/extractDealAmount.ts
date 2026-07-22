@@ -48,7 +48,15 @@ const findFirstAmount = (text: string): number | null => {
 export const hasExplicitPriceCorrection = (text: string): boolean =>
   /\b(?:(?:aangepast|afgesproken|definitief|nieuw)(?:e)?\s+(?:prijs|bedrag|tarief)|(?:prijs|bedrag|tarief)\s*(?::|=|is\b|wordt\b))/i.test(
     text,
-  ) && !/\b(?:oud|oude|voorheen|was)\s+(?:prijs|bedrag|tarief)\b/i.test(text);
+  ) &&
+  !/\b(?:oud|oude|voorheen|was)\s+(?:prijs|bedrag|tarief)\b/i.test(text) &&
+  !/\b(?:uur(?:tarief|prijs)?|per\s+uur|p\s*\/\s*u|urenraming)\b/i.test(text);
+
+const withoutInternalCosts = (text: string): string =>
+  text.replace(
+    /[^.!?\n]*(?:software|licentie|tooling|inkoop)(?:kosten|prijs)?[^.!?\n]*/gi,
+    "",
+  );
 
 export const extractDealAmount = (
   name: string,
@@ -69,14 +77,12 @@ export const extractDealAmount = (
 
   // The card name usually carries the agreed price (e.g. "(eenmalig 750 excl.
   // btw)"), so it takes precedence over the (often multi-price) description.
-  // Comments are a final fallback when the maintained fields carry no price.
+  // A casual comment can mention software costs, an hourly rate or an old
+  // estimate; only the explicitly labelled correction handled above is safe
+  // enough to turn into the deal's total value.
   return (
     findFirstAmount(name ?? "") ??
-    findFirstAmount(desc ?? "") ??
-    [...commentTexts]
-      .reverse()
-      .map(findFirstAmount)
-      .find((amount) => amount != null) ??
+    findFirstAmount(withoutInternalCosts(desc ?? "")) ??
     null
   );
 };

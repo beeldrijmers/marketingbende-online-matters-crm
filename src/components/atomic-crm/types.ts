@@ -35,6 +35,7 @@ export type SalesFormData = {
   administrator: boolean;
   disabled: boolean;
   partij?: PartyKey;
+  hourly_rate?: number | null;
 };
 
 export type Sale = {
@@ -45,6 +46,7 @@ export type Sale = {
   disabled?: boolean;
   user_id: string;
   partij?: PartyKey;
+  hourly_rate?: number | null;
 
   /**
    * This is a copy of the user's email, to make it easier to handle by react admin
@@ -171,6 +173,9 @@ export type Deal = {
   moneybird_invoice_created_by?: Identifier;
   moneybird_invoice_error?: string;
   moneybird_invoice_administration_id?: string;
+  // Read-only, batched enrichment used by the Kanban to show which Inzyte
+  // sources are already assigned without opening every card.
+  inzyte_link?: InzyteLink | null;
 } & Pick<RaRecord, "id">;
 
 export type IntegrationRun = {
@@ -204,6 +209,99 @@ export type IntegrationRun = {
   };
   error: string | null;
 } & Pick<RaRecord, "id">;
+
+export type InzyteIntegration = {
+  id: string;
+  userId: string;
+  provider: string;
+  active: boolean;
+  expiresAt: string | null;
+  updatedAt: string | null;
+  profile: {
+    name: string | null;
+    email: string | null;
+    picture: string | null;
+  };
+  settings: {
+    needsReauth: boolean;
+    reauthReason: string | null;
+    propertyId: string | null;
+    propertyName: string | null;
+    siteUrl: string | null;
+    accountId: string | null;
+    locationId: string | null;
+    locationName: string | null;
+    customerId: string | null;
+    accountName: string | null;
+    loginCustomerId: string | null;
+  };
+};
+
+export type InzyteWorkspace = {
+  id: string;
+  email: string;
+  name: string;
+  picture: string | null;
+  integrations: InzyteIntegration[];
+};
+
+export type InzyteLink = {
+  id: number;
+  deal_id: number;
+  company_id: number | null;
+  website_url: string | null;
+  inzyte_user_id: string;
+  ga4_connection_id: string | null;
+  ga4_connection_name: string | null;
+  ga4_property_id: string | null;
+  ga4_property_name: string | null;
+  gsc_site_url: string | null;
+  gbp_account_id: string | null;
+  gbp_location_id: string | null;
+  gbp_location_name: string | null;
+  ads_customer_id: string | null;
+  ads_account_name: string | null;
+  ads_login_customer_id: string | null;
+  last_verified_at: string | null;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InzyteRun = {
+  id: number;
+  deal_id: number;
+  inzyte_link_id: number | null;
+  action: string;
+  status: "running" | "success" | "failed";
+  date_start: string | null;
+  date_end: string | null;
+  started_at: string;
+  finished_at: string | null;
+  result: unknown;
+  summary: Record<string, unknown>;
+  error: string | null;
+};
+
+export type InzyteBootstrap = {
+  deal: {
+    id: number;
+    name: string;
+    companyId: number | null;
+    companyName: string | null;
+    companyWebsite: string | null;
+  };
+  link: InzyteLink | null;
+  suggestedLink: InzyteLink | null;
+  workspaces: InzyteWorkspace[];
+  recentRuns: InzyteRun[];
+};
+
+export type InzyteRequest = {
+  action: string;
+  dealId: Identifier;
+  [key: string]: unknown;
+};
 
 export type DealNote = {
   deal_id: Identifier;

@@ -264,6 +264,8 @@ export const dutchCrmMessages = {
         contact_ids: "Contacten",
         category: "Categorie",
         amount: "Budget",
+        amount_helper:
+          "Laat leeg zolang het totaalbedrag nog te bepalen is (NTB)",
         revenue_period: "Type omzet",
         assignee_ids: "Toegewezen aan",
         on_hold: "In de wacht",
@@ -294,6 +296,9 @@ export const dutchCrmMessages = {
       moneybird: {
         estimate: {
           action: "Offerte in Moneybird",
+          card_action: "Offerte",
+          card_view: "Offerte",
+          card_pending: "Offerte...",
           view: "Bekijk offerte in Moneybird",
           pending: "Offerte wordt aangemaakt...",
           dialog_title: "Moneybird-offerte aanmaken",
@@ -307,6 +312,9 @@ export const dutchCrmMessages = {
         },
         invoice: {
           action: "Factuur in Moneybird",
+          card_action: "Factuur",
+          card_view: "Factuur",
+          card_pending: "Factuur...",
           view: "Bekijk factuur in Moneybird",
           pending: "Factuur wordt aangemaakt...",
           dialog_title: "Moneybird-factuur aanmaken",
@@ -322,6 +330,8 @@ export const dutchCrmMessages = {
         amount: "Bedrag (excl. btw)",
         no_address: "Geen adres bekend voor dit bedrijf",
         description_label: "Omschrijving op het document",
+        description_helper:
+          "Alleen deze klanttekst gaat mee naar Moneybird; interne kaartnotities worden niet overgenomen.",
         tax_rate: "BTW-tarief",
         tax_rate_placeholder: "Kies een btw-tarief",
         tax_rate_loading: "Tarieven laden...",
@@ -335,7 +345,8 @@ export const dutchCrmMessages = {
         warning_title: "Let op: echt document",
         no_company:
           "Deze opdracht heeft geen gekoppeld bedrijf; koppel eerst een bedrijf.",
-        no_amount: "Deze opdracht heeft geen bedrag; stel eerst een bedrag in.",
+        no_amount:
+          "Het totaalbedrag is nog te bepalen (NTB). Open de opdracht, kies Bewerken en vul eerst het bevestigde bedrag in.",
         wrong_currency:
           "De Moneybird-koppeling werkt alleen met de valuta EUR.",
         creating: "Bezig met aanmaken...",
@@ -381,7 +392,7 @@ export const dutchCrmMessages = {
       invalid_date: "Ongeldige datum",
       no_date: "Nog niet gepland",
       duration_days: "%{smart_count} dag |||| %{smart_count} dagen",
-      no_amount: "Nog geen bedrag",
+      no_amount: "NTB",
       per_month_suffix: "/mnd",
       move_error:
         "De opdracht kon niet worden verplaatst. Het bord is teruggezet naar de opgeslagen situatie.",
@@ -453,6 +464,10 @@ export const dutchCrmMessages = {
         administrator: "Beheerder",
         disabled: "Uitgeschakeld",
         partij: "Partij",
+        hourly_rate: "Uurtarief (excl. btw)",
+        hourly_rate_helper:
+          "Persoonlijk tarief; laat leeg zolang dit nog te bepalen is (NTB)",
+        hourly_rate_invalid: "Vul een geldig positief uurtarief in",
       },
       create: {
         error: "Er is een fout opgetreden bij het aanmaken van de gebruiker.",

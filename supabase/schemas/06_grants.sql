@@ -205,6 +205,16 @@ grant all on table public.integration_runs to service_role;
 revoke all on table public.integration_runs from anon, authenticated;
 grant select on table public.integration_runs to authenticated;
 
+-- Inzyte connection identifiers and result snapshots contain no OAuth tokens,
+-- but remain read-only in the browser. Assignment RLS limits visibility.
+grant all on table public.inzyte_links to service_role;
+revoke all on table public.inzyte_links from anon, authenticated;
+grant select on table public.inzyte_links to authenticated;
+
+grant all on table public.inzyte_runs to service_role;
+revoke all on table public.inzyte_runs from anon, authenticated;
+grant select on table public.inzyte_runs to authenticated;
+
 -- View grants
 grant all on table public.activity_log to anon;
 grant all on table public.activity_log to authenticated;
@@ -276,6 +286,12 @@ revoke all on sequence public.gmail_connections_id_seq from anon, authenticated;
 
 grant all on sequence public.integration_runs_id_seq to service_role;
 revoke all on sequence public.integration_runs_id_seq from anon, authenticated;
+
+grant all on sequence public.inzyte_links_id_seq to service_role;
+revoke all on sequence public.inzyte_links_id_seq from anon, authenticated;
+
+grant all on sequence public.inzyte_runs_id_seq to service_role;
+revoke all on sequence public.inzyte_runs_id_seq from anon, authenticated;
 
 -- Default privileges: secure-by-default for NEW objects. Only service_role
 -- (and postgres) get automatic access; anon/authenticated are granted exactly

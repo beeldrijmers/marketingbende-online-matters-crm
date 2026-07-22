@@ -257,6 +257,8 @@ export const englishCrmMessages = {
         contact_ids: "Contacts",
         category: "Category",
         amount: "Budget",
+        amount_helper:
+          "Leave blank while the total amount is still to be determined (TBD)",
         revenue_period: "One-off / recurring",
         assignee_ids: "Assigned to",
         on_hold: "On hold",
@@ -287,6 +289,9 @@ export const englishCrmMessages = {
       moneybird: {
         estimate: {
           action: "Estimate in Moneybird",
+          card_action: "Estimate",
+          card_view: "Estimate",
+          card_pending: "Estimate...",
           view: "View estimate in Moneybird",
           pending: "Creating estimate...",
           dialog_title: "Create Moneybird estimate",
@@ -300,6 +305,9 @@ export const englishCrmMessages = {
         },
         invoice: {
           action: "Invoice in Moneybird",
+          card_action: "Invoice",
+          card_view: "Invoice",
+          card_pending: "Invoice...",
           view: "View invoice in Moneybird",
           pending: "Creating invoice...",
           dialog_title: "Create Moneybird invoice",
@@ -315,6 +323,8 @@ export const englishCrmMessages = {
         amount: "Amount (excl. VAT)",
         no_address: "No address known for this company",
         description_label: "Description on the document",
+        description_helper:
+          "Only this customer-facing text is sent to Moneybird; internal card notes are not copied.",
         tax_rate: "VAT rate",
         tax_rate_placeholder: "Choose a VAT rate",
         tax_rate_loading: "Loading rates...",
@@ -327,7 +337,8 @@ export const englishCrmMessages = {
           "Multiple contacts are linked; the document goes to the company, not a specific contact.",
         warning_title: "Note: real document",
         no_company: "This deal has no linked company; link a company first.",
-        no_amount: "This deal has no amount; set an amount first.",
+        no_amount:
+          "The total amount is still to be determined (TBD). Open the deal, choose Edit and enter the confirmed amount first.",
         wrong_currency:
           "The Moneybird integration only works with the EUR currency.",
         creating: "Creating...",
@@ -373,7 +384,7 @@ export const englishCrmMessages = {
       invalid_date: "Invalid date",
       no_date: "Not scheduled yet",
       duration_days: "%{smart_count} day |||| %{smart_count} days",
-      no_amount: "No amount yet",
+      no_amount: "TBD",
       per_month_suffix: "/mo",
       move_error:
         "The deal could not be moved. The board has been restored to the saved state.",
@@ -445,6 +456,10 @@ export const englishCrmMessages = {
         administrator: "Admin",
         disabled: "Disabled",
         partij: "Party",
+        hourly_rate: "Hourly rate (excl. VAT)",
+        hourly_rate_helper:
+          "Personal rate; leave blank while it is still to be determined (TBD)",
+        hourly_rate_invalid: "Enter a valid non-negative hourly rate",
       },
       create: {
         error: "An error occurred while creating the user.",

@@ -181,6 +181,14 @@ describe("resolveRevenuePeriod", () => {
       "eenmalig",
     );
   });
+  it("ignores recurring work that is explicitly excluded from the assignment", () => {
+    expect(
+      resolveRevenuePeriod(
+        "overig",
+        "B2B-inrichting en een terugkerende prijs-/voorraadsynchronisatie vallen hier niet onder.",
+      ),
+    ).toBeNull();
+  });
 });
 
 describe("resolveIsInternal", () => {

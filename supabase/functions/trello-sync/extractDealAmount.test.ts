@@ -82,12 +82,30 @@ describe("extractDealAmount", () => {
     ).toBe(300);
   });
 
-  it("uses a comment as fallback without letting casual history beat the title", () => {
+  it("uses an explicitly labelled comment without letting casual history beat the title", () => {
     expect(extractDealAmount("Project", "", ["Tarief: € 700 eenmalig"])).toBe(
       700,
     );
     expect(
       extractDealAmount("Project € 900", "", ["Oude offerte was € 700"]),
     ).toBe(900);
+  });
+
+  it("does not accept an explicitly labelled hourly rate as the deal total", () => {
+    expect(
+      extractDealAmount("Project", "", [
+        "Definitief tarief: €75 per uur; totaal volgt na akkoord.",
+      ]),
+    ).toBeNull();
+  });
+
+  it("does not mistake an hourly estimate awaiting approval for the total deal value", () => {
+    expect(
+      extractDealAmount(
+        "Hunting XL — offerte laten goedkeuren",
+        "De software kost 80 excl. btw; laat weten hoeveel uur je ermee bezig bent.",
+        ["Raming: 7 uur à €75. Eerst expliciet startakkoord ophalen."],
+      ),
+    ).toBeNull();
   });
 });

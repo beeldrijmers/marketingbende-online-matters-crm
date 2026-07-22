@@ -14,6 +14,7 @@ import {
 import { useState } from "react";
 import { useFormState } from "react-hook-form";
 import { RecordField } from "@/components/admin/record-field";
+import { NumberInput } from "@/components/admin/number-input";
 import { TextInput } from "@/components/admin/text-input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -200,6 +201,7 @@ const ProfileForm = ({
               <TextRender source="last_name" isEditMode={isEditMode} />
             </div>
             <TextRender source="email" isEditMode={isEditMode} />
+            <HourlyRateRender isEditMode={isEditMode} />
             <LanguageSelector />
           </div>
 
@@ -335,6 +337,36 @@ const TextRender = ({
     <div className={className}>
       <RecordField source={source} label={label} />
     </div>
+  );
+};
+
+const HourlyRateRender = ({ isEditMode }: { isEditMode: boolean }) => {
+  const translate = useTranslate();
+
+  if (isEditMode) {
+    return (
+      <NumberInput
+        source="hourly_rate"
+        min={0}
+        step={0.01}
+        helperText="resources.sales.fields.hourly_rate_helper"
+      />
+    );
+  }
+
+  return (
+    <RecordField<Sale>
+      source="hourly_rate"
+      label="resources.sales.fields.hourly_rate"
+      render={(sale) =>
+        sale.hourly_rate == null
+          ? translate("resources.deals.no_amount", { _: "NTB" })
+          : `${sale.hourly_rate.toLocaleString("nl-NL", {
+              style: "currency",
+              currency: "EUR",
+            })}/uur`
+      }
+    />
   );
 };
 

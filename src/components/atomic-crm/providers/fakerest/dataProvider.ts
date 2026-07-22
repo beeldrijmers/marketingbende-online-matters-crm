@@ -185,7 +185,7 @@ export const createDataProvider = ({
         const { page, perPage } = pagination;
         const start = (page - 1) * perPage;
         return {
-          data: visible.slice(start, start + perPage),
+          data: visible.slice(start, start + perPage) as any,
           total: visible.length,
         };
       }
@@ -359,6 +359,11 @@ export const createDataProvider = ({
     syncTrelloCards: async () => {
       throw new Error(
         "De Trello-synchronisatie is niet beschikbaar in de demomodus.",
+      );
+    },
+    inzyteRequest: async () => {
+      throw new Error(
+        "De Inzyte-koppeling is niet beschikbaar in de demomodus.",
       );
     },
     getConfiguration: async (): Promise<ConfigurationContextValue> => {

@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, FileText, Receipt } from "lucide-react";
+import {
+  CircleDollarSign,
+  ExternalLink,
+  FileText,
+  Receipt,
+} from "lucide-react";
 import {
   useGetOne,
   useNotify,
@@ -7,7 +12,7 @@ import {
   useTranslate,
   useDataProvider,
 } from "ra-core";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -28,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import { useMoneybirdConnection } from "../misc/useMoneybirdConnection";
@@ -56,9 +62,11 @@ const formatAmount = (amount: number, currency: string) =>
   amount.toLocaleString("nl-NL", { style: "currency", currency });
 
 const MoneybirdDocumentButton = ({
+  compact = false,
   record,
   kind,
 }: {
+  compact?: boolean;
   record: Deal;
   kind: DocumentKind;
 }) => {
@@ -82,7 +90,8 @@ const MoneybirdDocumentButton = ({
     "resources.deals.moneybird.not_connected_hint",
   );
 
-  const handleClick = () => {
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
     if (notConnected) {
       notify(notConnectedHint, { type: "warning" });
       return;
@@ -94,16 +103,26 @@ const MoneybirdDocumentButton = ({
     <>
       <Button
         onClick={handleClick}
+        onPointerDown={(event) => event.stopPropagation()}
         size="sm"
         variant="outline"
-        className={`flex items-center gap-2 h-9 ${notConnected ? "opacity-60" : ""}`}
+        className={cn(
+          "flex items-center gap-2",
+          compact ? "h-7 px-2 text-[11px]" : "h-9",
+          notConnected && "opacity-60",
+        )}
         disabled={isPending || connectionLoading}
         title={notConnected ? notConnectedHint : undefined}
+        aria-label={translate(`resources.deals.moneybird.${kind}.action`)}
       >
-        <Icon className="w-4 h-4" />
+        <Icon className={compact ? "size-3.5" : "size-4"} />
         {isPending
-          ? translate(`resources.deals.moneybird.${kind}.pending`)
-          : translate(`resources.deals.moneybird.${kind}.action`)}
+          ? translate(
+              `resources.deals.moneybird.${kind}.${compact ? "card_pending" : "pending"}`,
+            )
+          : translate(
+              `resources.deals.moneybird.${kind}.${compact ? "card_action" : "action"}`,
+            )}
       </Button>
       {open ? (
         <MoneybirdDocumentDialog
@@ -134,9 +153,10 @@ const MoneybirdDocumentDialog = ({
   const refresh = useRefresh();
   const { currency } = useConfigurationContext();
 
-  const [description, setDescription] = useState(
-    record.description || record.name || "",
-  );
+  // Trello-backed descriptions contain internal context (and can include
+  // operational notes). A customer-facing document therefore starts with the
+  // concise assignment name; the user can deliberately expand it here.
+  const [description, setDescription] = useState(record.name || "");
   const [taxRateId, setTaxRateId] = useState<string>("");
   const [isCreating, setIsCreating] = useState(false);
 
@@ -187,13 +207,13 @@ const MoneybirdDocumentDialog = ({
         taxRateId,
         description,
       }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["deals"] }),
   });
 
   const handleCreate = async () => {
     try {
       setIsCreating(true);
       await mutateAsync();
-      await queryClient.invalidateQueries({ queryKey: ["deals"] });
       notify(`resources.deals.moneybird.${kind}.success`, { type: "success" });
       refresh();
       onClose();
@@ -211,8 +231,8 @@ const MoneybirdDocumentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="md:min-w-lg max-w-xl">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[calc(100svh-2rem)] max-w-xl flex-col gap-0 overflow-hidden p-0 md:min-w-lg">
+        <DialogHeader className="shrink-0 border-b px-6 py-5 pr-12">
           <DialogTitle>
             {translate(`resources.deals.moneybird.${kind}.dialog_title`)}
           </DialogTitle>
@@ -221,131 +241,139 @@ const MoneybirdDocumentDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        {missingCompany ? (
-          <Alert variant="destructive">
-            <AlertDescription>
-              {translate("resources.deals.moneybird.no_company")}
-            </AlertDescription>
-          </Alert>
-        ) : null}
-        {missingAmount ? (
-          <Alert variant="destructive">
-            <AlertDescription>
-              {translate("resources.deals.moneybird.no_amount")}
-            </AlertDescription>
-          </Alert>
-        ) : null}
-        {wrongCurrency ? (
-          <Alert variant="destructive">
-            <AlertDescription>
-              {translate("resources.deals.moneybird.wrong_currency")}
-            </AlertDescription>
-          </Alert>
-        ) : null}
-
-        {!blocked ? (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground tracking-wide">
-                {translate("resources.deals.moneybird.company")}
-              </span>
-              <span className="text-sm font-medium">{company?.name}</span>
-              <span className="text-sm text-muted-foreground">
-                {company?.address
-                  ? [company.address, company.zipcode, company.city]
-                      .filter(Boolean)
-                      .join(", ")
-                  : translate("resources.deals.moneybird.no_address")}
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground tracking-wide">
-                {translate("resources.deals.moneybird.amount")}
-              </span>
-              <span className="text-sm font-medium">
-                {formatAmount(record.amount ?? 0, currency)}
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="moneybird-description">
-                {translate("resources.deals.moneybird.description_label")}
-              </Label>
-              <Textarea
-                id="moneybird-description"
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                rows={3}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="moneybird-tax-rate">
-                {translate("resources.deals.moneybird.tax_rate")}
-              </Label>
-              <Select
-                value={taxRateId || undefined}
-                onValueChange={setTaxRateId}
-                disabled={taxRatesLoading}
-              >
-                <SelectTrigger id="moneybird-tax-rate" className="w-full">
-                  <SelectValue
-                    placeholder={translate(
-                      taxRatesLoading
-                        ? "resources.deals.moneybird.tax_rate_loading"
-                        : "resources.deals.moneybird.tax_rate_placeholder",
-                    )}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {taxRates?.map((rate) => (
-                    <SelectItem key={rate.id} value={rate.id}>
-                      {rate.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {taxRatesError ? (
-                <Alert variant="destructive">
-                  <AlertDescription className="flex flex-col gap-2">
-                    {translate("resources.deals.moneybird.tax_rate_error")}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="self-start"
-                      onClick={() => refetchTaxRates()}
-                    >
-                      {translate("resources.deals.moneybird.tax_rate_retry")}
-                    </Button>
-                  </AlertDescription>
-                </Alert>
-              ) : null}
-            </div>
-
-            {contactCount === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                {translate("resources.deals.moneybird.no_contact_hint")}
-              </p>
-            ) : null}
-            {contactCount > 1 ? (
-              <p className="text-xs text-muted-foreground">
-                {translate("resources.deals.moneybird.multiple_contacts_hint")}
-              </p>
-            ) : null}
-
-            <Alert>
-              <AlertTitle>
-                {translate("resources.deals.moneybird.warning_title")}
-              </AlertTitle>
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
+          {missingCompany ? (
+            <Alert variant="destructive">
               <AlertDescription>
-                {translate(`resources.deals.moneybird.${kind}.warning`)}
+                {translate("resources.deals.moneybird.no_company")}
               </AlertDescription>
             </Alert>
-          </div>
-        ) : null}
+          ) : null}
+          {missingAmount ? (
+            <Alert variant="destructive">
+              <AlertDescription>
+                {translate("resources.deals.moneybird.no_amount")}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          {wrongCurrency ? (
+            <Alert variant="destructive">
+              <AlertDescription>
+                {translate("resources.deals.moneybird.wrong_currency")}
+              </AlertDescription>
+            </Alert>
+          ) : null}
 
-        <DialogFooter>
+          {!blocked ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground tracking-wide">
+                  {translate("resources.deals.moneybird.company")}
+                </span>
+                <span className="text-sm font-medium">{company?.name}</span>
+                <span className="text-sm text-muted-foreground">
+                  {company?.address
+                    ? [company.address, company.zipcode, company.city]
+                        .filter(Boolean)
+                        .join(", ")
+                    : translate("resources.deals.moneybird.no_address")}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground tracking-wide">
+                  {translate("resources.deals.moneybird.amount")}
+                </span>
+                <span className="text-sm font-medium">
+                  {formatAmount(record.amount ?? 0, currency)}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="moneybird-description">
+                  {translate("resources.deals.moneybird.description_label")}
+                </Label>
+                <Textarea
+                  id="moneybird-description"
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  className="min-h-24 max-h-48 resize-y field-sizing-fixed"
+                  rows={4}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {translate("resources.deals.moneybird.description_helper")}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="moneybird-tax-rate">
+                  {translate("resources.deals.moneybird.tax_rate")}
+                </Label>
+                <Select
+                  value={taxRateId || undefined}
+                  onValueChange={setTaxRateId}
+                  disabled={taxRatesLoading}
+                >
+                  <SelectTrigger id="moneybird-tax-rate" className="w-full">
+                    <SelectValue
+                      placeholder={translate(
+                        taxRatesLoading
+                          ? "resources.deals.moneybird.tax_rate_loading"
+                          : "resources.deals.moneybird.tax_rate_placeholder",
+                      )}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {taxRates?.map((rate) => (
+                      <SelectItem key={rate.id} value={rate.id}>
+                        {rate.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {taxRatesError ? (
+                  <Alert variant="destructive">
+                    <AlertDescription className="flex flex-col gap-2">
+                      {translate("resources.deals.moneybird.tax_rate_error")}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="self-start"
+                        onClick={() => refetchTaxRates()}
+                      >
+                        {translate("resources.deals.moneybird.tax_rate_retry")}
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                ) : null}
+              </div>
+
+              {contactCount === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  {translate("resources.deals.moneybird.no_contact_hint")}
+                </p>
+              ) : null}
+              {contactCount > 1 ? (
+                <p className="text-xs text-muted-foreground">
+                  {translate(
+                    "resources.deals.moneybird.multiple_contacts_hint",
+                  )}
+                </p>
+              ) : null}
+
+              <Alert>
+                <AlertTitle>
+                  {translate("resources.deals.moneybird.warning_title")}
+                </AlertTitle>
+                <AlertDescription>
+                  {translate(`resources.deals.moneybird.${kind}.warning`)}
+                </AlertDescription>
+              </Alert>
+            </div>
+          ) : null}
+        </div>
+
+        <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
           <Button variant="ghost" onClick={onClose} disabled={isCreating}>
             {translate("ra.action.cancel")}
           </Button>
@@ -368,9 +396,11 @@ const MoneybirdDocumentDialog = ({
 };
 
 const ViewMoneybirdDocumentButton = ({
+  compact = false,
   record,
   kind,
 }: {
+  compact?: boolean;
   record: Deal;
   kind: DocumentKind;
 }) => {
@@ -398,11 +428,23 @@ const ViewMoneybirdDocumentButton = ({
       asChild
       size="sm"
       variant="outline"
-      className="flex items-center gap-2 h-9"
+      className={cn(
+        "flex items-center gap-2",
+        compact ? "h-7 px-2 text-[11px]" : "h-9",
+      )}
     >
-      <a href={href} target="_blank" rel="noreferrer">
-        <ExternalLink className="w-4 h-4" />
-        {translate(`resources.deals.moneybird.${kind}.view`)}
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        onClick={(event) => event.stopPropagation()}
+        onPointerDown={(event) => event.stopPropagation()}
+        aria-label={translate(`resources.deals.moneybird.${kind}.view`)}
+      >
+        <ExternalLink className={compact ? "size-3.5" : "size-4"} />
+        {translate(
+          `resources.deals.moneybird.${kind}.${compact ? "card_view" : "view"}`,
+        )}
       </a>
     </Button>
   );
@@ -410,14 +452,43 @@ const ViewMoneybirdDocumentButton = ({
 
 // Renders the create-or-view control for one document kind on a deal.
 export const MoneybirdDocumentControl = ({
+  compact = false,
   record,
   kind,
 }: {
+  compact?: boolean;
   record: Deal;
   kind: DocumentKind;
 }) =>
   idOf(record, kind) ? (
-    <ViewMoneybirdDocumentButton record={record} kind={kind} />
+    <ViewMoneybirdDocumentButton
+      compact={compact}
+      record={record}
+      kind={kind}
+    />
   ) : (
-    <MoneybirdDocumentButton record={record} kind={kind} />
+    <MoneybirdDocumentButton compact={compact} record={record} kind={kind} />
   );
+
+// A compact, drag-safe financial toolbar for the Kanban card itself. The full
+// details dialog remains available, but creating or opening a document no
+// longer requires opening the assignment first.
+export const MoneybirdCardActions = ({ record }: { record: Deal }) => {
+  if (record.is_internal) return null;
+
+  return (
+    <div
+      className="mt-1 flex flex-wrap items-center gap-1 border-t pt-1.5"
+      onClick={(event) => event.stopPropagation()}
+      onPointerDown={(event) => event.stopPropagation()}
+      onKeyDown={(event) => event.stopPropagation()}
+    >
+      <span className="mr-auto flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+        <CircleDollarSign className="size-3.5" />
+        Moneybird
+      </span>
+      <MoneybirdDocumentControl compact record={record} kind="estimate" />
+      <MoneybirdDocumentControl compact record={record} kind="invoice" />
+    </div>
+  );
+};

@@ -116,9 +116,8 @@ const DealMiscInputs = () => {
       />
       <NumberInput
         source="amount"
-        defaultValue={0}
-        helperText={false}
-        validate={required()}
+        min={0}
+        helperText="resources.deals.fields.amount_helper"
       />
       <SelectInput
         source="revenue_period"

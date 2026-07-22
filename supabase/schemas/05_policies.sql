@@ -23,11 +23,20 @@ alter table public.gmail_oauth_states enable row level security;
 -- anon/authenticated can neither read nor write it.
 alter table public.inbound_email_events enable row level security;
 alter table public.integration_runs enable row level security;
+alter table public.inzyte_links enable row level security;
+alter table public.inzyte_runs enable row level security;
 
 -- Integration history contains operational metadata but no credentials. It is
 -- visible to active CRM users; only edge functions write it (no write policy).
 create policy "Enable read access for active CRM users" on public.integration_runs
     for select to authenticated using (public.is_active_crm_user());
+
+-- Inzyte links and snapshots follow the visibility of their assignment. All
+-- mutations are service-role only through the edge function.
+create policy "Enable read access for visible Inzyte assignments" on public.inzyte_links
+    for select to authenticated using (deal_id in (select id from public.deals));
+create policy "Enable read access for visible Inzyte runs" on public.inzyte_runs
+    for select to authenticated using (deal_id in (select id from public.deals));
 
 -- Companies
 create policy "Enable read access for authenticated users" on public.companies for select to authenticated using (public.is_active_crm_user());

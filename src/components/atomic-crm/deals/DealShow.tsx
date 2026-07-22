@@ -111,7 +111,7 @@ const DealShowContent = ({
   // flagged today's deals for almost the whole day).
   const closingIsPast = isBeforeToday(record.expected_closing_date);
   const amountLabel =
-    record.amount != null
+    record.amount != null && record.amount > 0
       ? record.amount.toLocaleString("nl-NL", {
           style: "currency",
           currency,
@@ -241,7 +241,7 @@ const DealShowContent = ({
                 {amountLabel ?? (
                   <span className="text-muted-foreground">
                     {translate("resources.deals.no_amount", {
-                      _: "Nog geen bedrag",
+                      _: "NTB",
                     })}
                   </span>
                 )}

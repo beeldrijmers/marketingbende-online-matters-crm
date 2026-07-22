@@ -4,6 +4,7 @@ import { corsHeaders, OptionsMiddleware } from "../_shared/cors.ts";
 import { createErrorResponse } from "../_shared/utils.ts";
 import { AuthMiddleware, UserMiddleware } from "../_shared/authentication.ts";
 import { getUserSale } from "../_shared/getUserSale.ts";
+import { normalizeHourlyRate } from "./hourlyRate.ts";
 
 async function updateSaleDisabled(user_id: string, disabled: boolean) {
   return await supabaseAdmin
@@ -48,6 +49,23 @@ async function updateSalePartij(user_id: string, partij: string) {
   return sales.at(0);
 }
 
+async function updateSaleHourlyRate(
+  user_id: string,
+  hourly_rate: number | null,
+) {
+  const { data: sales, error: salesError } = await supabaseAdmin
+    .from("sales")
+    .update({ hourly_rate })
+    .eq("user_id", user_id)
+    .select("*");
+
+  if (!sales?.length || salesError) {
+    console.error("Error updating user hourly rate:", salesError);
+    throw salesError ?? new Error("Failed to update hourly rate");
+  }
+  return sales.at(0);
+}
+
 async function createSale(
   user_id: string,
   data: {
@@ -58,6 +76,7 @@ async function createSale(
     disabled: boolean;
     administrator: boolean;
     partij?: string;
+    hourly_rate?: number | null;
   },
 ) {
   const { data: sales, error: salesError } = await supabaseAdmin
@@ -95,7 +114,15 @@ async function inviteUser(req: Request, currentUserSale: any) {
     disabled,
     administrator,
     partij,
+    hourly_rate,
   } = await req.json();
+
+  let hourlyRate: number | null | undefined;
+  try {
+    hourlyRate = normalizeHourlyRate(hourly_rate);
+  } catch (error) {
+    return createErrorResponse(400, (error as Error).message);
+  }
 
   if (!currentUserSale.administrator) {
     return createErrorResponse(401, "Not Authorized");
@@ -149,6 +176,7 @@ async function inviteUser(req: Request, currentUserSale: any) {
         disabled,
         administrator,
         ...(isValidParty(partij) ? { partij } : {}),
+        ...(hourlyRate !== undefined ? { hourly_rate: hourlyRate } : {}),
       });
 
       return new Response(
@@ -194,6 +222,9 @@ async function inviteUser(req: Request, currentUserSale: any) {
     if (isValidParty(partij)) {
       sale = await updateSalePartij(user.id, partij);
     }
+    if (hourlyRate !== undefined) {
+      sale = await updateSaleHourlyRate(user.id, hourlyRate);
+    }
 
     return new Response(
       JSON.stringify({
@@ -219,6 +250,7 @@ async function patchUser(req: Request, currentUserSale: any) {
     administrator,
     disabled,
     partij,
+    hourly_rate,
   } = await req.json();
   const { data: sale } = await supabaseAdmin
     .from("sales")
@@ -233,6 +265,13 @@ async function patchUser(req: Request, currentUserSale: any) {
   // Users can only update their own profile unless they are an administrator
   if (!currentUserSale.administrator && currentUserSale.id !== sale.id) {
     return createErrorResponse(401, "Not Authorized");
+  }
+
+  let hourlyRate: number | null | undefined;
+  try {
+    hourlyRate = normalizeHourlyRate(hourly_rate);
+  } catch (error) {
+    return createErrorResponse(400, (error as Error).message);
   }
 
   const { data, error: userError } =
@@ -253,6 +292,9 @@ async function patchUser(req: Request, currentUserSale: any) {
 
   // Only administrators can update the administrator and disabled status
   if (!currentUserSale.administrator) {
+    if (hourlyRate !== undefined) {
+      await updateSaleHourlyRate(data.user.id, hourlyRate);
+    }
     const { data: new_sale } = await supabaseAdmin
       .from("sales")
       .select("*")
@@ -276,6 +318,9 @@ async function patchUser(req: Request, currentUserSale: any) {
     let sale = await updateSaleAdministrator(data.user.id, administrator);
     if (isValidParty(partij)) {
       sale = await updateSalePartij(data.user.id, partij);
+    }
+    if (hourlyRate !== undefined) {
+      sale = await updateSaleHourlyRate(data.user.id, hourlyRate);
     }
     return new Response(
       JSON.stringify({

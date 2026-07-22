@@ -6,6 +6,7 @@ import {
   useTranslate,
 } from "ra-core";
 import { BooleanInput } from "@/components/admin/boolean-input";
+import { NumberInput } from "@/components/admin/number-input";
 import { SelectInput } from "@/components/admin/select-input";
 import { TextInput } from "@/components/admin/text-input";
 
@@ -37,6 +38,12 @@ export function SalesInputs() {
         validate={required()}
         defaultValue="marketingbende"
         helperText={false}
+      />
+      <NumberInput
+        source="hourly_rate"
+        min={0}
+        step={0.01}
+        helperText="resources.sales.fields.hourly_rate_helper"
       />
       <BooleanInput
         source="administrator"

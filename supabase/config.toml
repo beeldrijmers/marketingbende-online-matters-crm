@@ -184,6 +184,8 @@ verify_jwt = false
 verify_jwt = false
 [functions.moneybird_connection]
 verify_jwt = false
+[functions.inzyte]
+verify_jwt = false
 [functions.resend_inbound]
 verify_jwt = false
 [functions.gmail-connection]

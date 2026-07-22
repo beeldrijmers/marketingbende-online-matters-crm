@@ -10,6 +10,7 @@ import type {
   ContactNote,
   Deal,
   DealNote,
+  InzyteRequest,
   RAFile,
   Sale,
   SalesFormData,
@@ -32,6 +33,31 @@ const getBaseDataProvider = () =>
     supabaseClient: getSupabaseClient(),
     sortOrder: "asc,desc.nullslast" as any,
   });
+
+const enrichDealsWithInzyteLinks = async <T extends Deal>(
+  deals: T[],
+): Promise<T[]> => {
+  const dealIds: number[] = [];
+  for (const deal of deals) {
+    const dealId = Number(deal.id);
+    if (Number.isFinite(dealId)) dealIds.push(dealId);
+  }
+  if (dealIds.length === 0) return deals;
+
+  const { data: links, error } = await getSupabaseClient()
+    .from("inzyte_links")
+    .select("*")
+    .in("deal_id", dealIds);
+  if (error || !links) return deals;
+
+  const linkByDealId = new Map(
+    links.map((link) => [Number(link.deal_id), link]),
+  );
+  return deals.map((deal) => ({
+    ...deal,
+    inzyte_link: linkByDealId.get(Number(deal.id)) ?? null,
+  }));
+};
 
 const writeTrelloDealDeadline = async (
   dealId: Identifier,
@@ -74,8 +100,60 @@ const processCompanyLogo = async (params: any) => {
 const getDataProviderWithCustomMethods = () => {
   const baseDataProvider = getBaseDataProvider();
 
+  const getList: DataProvider["getList"] = async (resource, params) => {
+    if (resource === "deals") {
+      const response = await baseDataProvider.getList(resource, params);
+      return {
+        ...response,
+        data: (await enrichDealsWithInzyteLinks(
+          response.data as Deal[],
+        )) as typeof response.data,
+      };
+    }
+    if (resource === "companies") {
+      return baseDataProvider.getList("companies_summary", params);
+    }
+    if (resource === "contacts") {
+      return baseDataProvider.getList("contacts_summary", params);
+    }
+    if (resource === "activity_log" || resource === "activity_log_global") {
+      const { data, total } = await baseDataProvider.getList(resource, params);
+      // Rename snake_case view columns to camelCase to match Activity type
+      return {
+        data: data.map((row: any) => ({
+          ...row,
+          contactNote: row.contact_note ?? undefined,
+          dealNote: row.deal_note ?? undefined,
+          contact_note: undefined,
+          deal_note: undefined,
+        })),
+        total,
+      };
+    }
+
+    return baseDataProvider.getList(resource, params);
+  };
+
+  const getOne: DataProvider["getOne"] = async (resource, params) => {
+    if (resource === "deals") {
+      const response = await baseDataProvider.getOne(resource, params);
+      const [deal] = await enrichDealsWithInzyteLinks([response.data as Deal]);
+      return { ...response, data: deal as typeof response.data };
+    }
+    if (resource === "companies") {
+      return baseDataProvider.getOne("companies_summary", params);
+    }
+    if (resource === "contacts") {
+      return baseDataProvider.getOne("contacts_summary", params);
+    }
+
+    return baseDataProvider.getOne(resource, params);
+  };
+
   return {
     ...baseDataProvider,
+    getList,
+    getOne,
     async update(resource: string, params: any) {
       if (resource === "deals") {
         const deadline = getChangedTrelloDeadline(params);
@@ -86,43 +164,6 @@ const getDataProviderWithCustomMethods = () => {
         }
       }
       return baseDataProvider.update(resource, params);
-    },
-    async getList(resource: string, params: GetListParams) {
-      if (resource === "companies") {
-        return baseDataProvider.getList("companies_summary", params);
-      }
-      if (resource === "contacts") {
-        return baseDataProvider.getList("contacts_summary", params);
-      }
-      if (resource === "activity_log" || resource === "activity_log_global") {
-        const { data, total } = await baseDataProvider.getList(
-          resource,
-          params,
-        );
-        // Rename snake_case view columns to camelCase to match Activity type
-        return {
-          data: data.map((row: any) => ({
-            ...row,
-            contactNote: row.contact_note ?? undefined,
-            dealNote: row.deal_note ?? undefined,
-            contact_note: undefined,
-            deal_note: undefined,
-          })),
-          total,
-        };
-      }
-
-      return baseDataProvider.getList(resource, params);
-    },
-    async getOne(resource: string, params: any) {
-      if (resource === "companies") {
-        return baseDataProvider.getOne("companies_summary", params);
-      }
-      if (resource === "contacts") {
-        return baseDataProvider.getOne("contacts_summary", params);
-      }
-
-      return baseDataProvider.getOne(resource, params);
     },
     // Same view mapping for reference lists (e.g. the contacts tab on a
     // company): components can keep using the base resource name, so ra-core's
@@ -198,6 +239,7 @@ const getDataProviderWithCustomMethods = () => {
         avatar,
         disabled,
         partij,
+        hourly_rate,
       } = data;
 
       const { data: updatedData, error } =
@@ -214,6 +256,7 @@ const getDataProviderWithCustomMethods = () => {
             disabled,
             avatar,
             partij,
+            hourly_rate,
           },
         });
 
@@ -627,6 +670,28 @@ const getDataProviderWithCustomMethods = () => {
       }
       return data.data;
     },
+    async inzyteRequest<T = unknown>(params: InzyteRequest): Promise<T> {
+      const { data, error } = await getSupabaseClient().functions.invoke<{
+        data: T;
+      }>("inzyte", {
+        method: "POST",
+        body: params,
+      });
+      if (!data || error) {
+        const errorDetails = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(
+          errorDetails?.message ||
+            "Inzyte kon deze opdracht nu niet uitvoeren.",
+        );
+      }
+      return data.data;
+    },
     async getConfiguration(): Promise<ConfigurationContextValue> {
       const { data } = await baseDataProvider.getOne("configuration", {
         id: 1,
@@ -790,22 +855,15 @@ const applyFullTextSearch = (columns: string[]) => (params: GetListParams) => {
     ...params,
     filter: {
       ...filter,
-      "@or": columns.reduce((acc, column) => {
-        if (column === "email")
-          return {
-            ...acc,
-            [`email_fts@ilike`]: sanitizedQ,
-          };
-        if (column === "phone")
-          return {
-            ...acc,
-            [`phone_fts@ilike`]: sanitizedQ,
-          };
-        else
-          return {
-            ...acc,
-            [`${column}@ilike`]: sanitizedQ,
-          };
+      "@or": columns.reduce<Record<string, string>>((acc, column) => {
+        const target =
+          column === "email"
+            ? "email_fts"
+            : column === "phone"
+              ? "phone_fts"
+              : column;
+        acc[`${target}@ilike`] = sanitizedQ;
+        return acc;
       }, {}),
     },
   };

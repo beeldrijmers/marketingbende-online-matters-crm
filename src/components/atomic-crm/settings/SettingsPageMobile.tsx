@@ -56,6 +56,7 @@ const ChangePasswordButton = () => {
   const notify = useNotify();
   const { identity } = useGetIdentity();
   const dataProvider = useDataProvider<CrmDataProvider>();
+  const queryClient = useQueryClient();
 
   const { mutate: updatePassword } = useMutation({
     mutationKey: ["updatePassword"],
@@ -69,7 +70,8 @@ const ChangePasswordButton = () => {
       }
       return dataProvider.updatePassword(identity.id);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["sales"] });
       notify("crm.profile.password_reset_sent", {
         messageArgs: {
           _: "A reset password email has been sent to your email address",
@@ -155,7 +157,7 @@ const ProfileSection = () => {
   const queryClient = useQueryClient();
 
   const saveField = useCallback(
-    async (field: string, value: string) => {
+    async (field: string, value: string | number | null) => {
       if (!identity || !data) return;
       const current = data[field as keyof typeof data];
       if (value === current) return;
@@ -265,6 +267,35 @@ const ProfileSection = () => {
           value={data.email ?? ""}
           onSave={(v) => saveField("email", v)}
         />
+
+        <ItemSeparator />
+
+        <InlineEditRow
+          label={translate("resources.sales.fields.hourly_rate")}
+          value={data.hourly_rate?.toString() ?? ""}
+          displayValue={
+            data.hourly_rate == null
+              ? translate("resources.deals.no_amount", { _: "NTB" })
+              : `${data.hourly_rate.toLocaleString("nl-NL", {
+                  style: "currency",
+                  currency: "EUR",
+                })}/uur`
+          }
+          inputType="number"
+          onSave={(value) => {
+            const hourlyRate = value === "" ? null : Number(value);
+            if (
+              hourlyRate !== null &&
+              (!Number.isFinite(hourlyRate) || hourlyRate < 0)
+            ) {
+              notify("resources.sales.fields.hourly_rate_invalid", {
+                type: "warning",
+              });
+              return;
+            }
+            saveField("hourly_rate", hourlyRate);
+          }}
+        />
       </ItemGroup>
     </div>
   );
@@ -273,19 +304,19 @@ const ProfileSection = () => {
 const InlineEditRow = ({
   label,
   value,
+  displayValue,
+  inputType = "text",
   onSave,
 }: {
   label: string;
   value: string;
+  displayValue?: string;
+  inputType?: "text" | "number";
   onSave: (value: string) => void;
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setEditValue(value);
-  }, [value]);
 
   useEffect(() => {
     if (isEditing) {
@@ -332,6 +363,9 @@ const InlineEditRow = ({
           <input
             ref={inputRef}
             aria-label={label}
+            type={inputType}
+            min={inputType === "number" ? 0 : undefined}
+            step={inputType === "number" ? 0.01 : undefined}
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={handleSave}
@@ -347,7 +381,10 @@ const InlineEditRow = ({
     <Item
       size="sm"
       className="cursor-pointer"
-      onClick={() => setIsEditing(true)}
+      onClick={() => {
+        setEditValue(value);
+        setIsEditing(true);
+      }}
     >
       <ItemContent>
         <ItemTitle className="font-normal text-muted-foreground">
@@ -355,7 +392,7 @@ const InlineEditRow = ({
         </ItemTitle>
       </ItemContent>
       <ItemActions>
-        <span className="text-base">{value}</span>
+        <span className="text-base">{displayValue ?? value}</span>
       </ItemActions>
     </Item>
   );

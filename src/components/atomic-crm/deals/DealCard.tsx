@@ -15,6 +15,8 @@ import { AttentionDealActions } from "./AttentionDealActions";
 import { DealWorkflowIndicator } from "./DealWorkflowIndicator";
 import { getDashboardDealDetailPath } from "./dashboardDealSelection";
 import { getDealWorkflow } from "./dealWorkflow";
+import { MoneybirdCardActions } from "./MoneybirdDocumentButtons";
+import { InzyteCardActions } from "./inzyte/InzyteWorkspace";
 
 // A monthly/recurring price hint anywhere in the card text ("EUR 300 p/m",
 // "per maand", "maandelijks") means we show the amount as a monthly rate.
@@ -22,10 +24,26 @@ import { getDealWorkflow } from "./dealWorkflow";
 // deals (e.g. imported from Trello) that never got the field set.
 const RECURRING_RE = /per\s*maand|p\/m|\/\s*mnd|\bmnd\b|maandelijks/i;
 const EMPTY_TASKS: Task[] = [];
+const CURRENCY_FORMATTERS = new Map<string, Intl.NumberFormat>();
 
-const isRecurringDeal = (deal: Deal): boolean =>
-  deal.revenue_period === "maandelijks" ||
-  RECURRING_RE.test(`${deal.name ?? ""} ${deal.description ?? ""}`);
+const formatCurrency = (amount: number, currency: string): string => {
+  let formatter = CURRENCY_FORMATTERS.get(currency);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat("nl-NL", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+    CURRENCY_FORMATTERS.set(currency, formatter);
+  }
+  return formatter.format(amount);
+};
+
+const isRecurringDeal = (deal: Deal): boolean => {
+  if (deal.revenue_period) return deal.revenue_period === "maandelijks";
+  return RECURRING_RE.test(`${deal.name ?? ""} ${deal.description ?? ""}`);
+};
 
 const moneybirdLabel = (deal: Deal): string | null =>
   deal.moneybird_invoice_id
@@ -106,12 +124,7 @@ export const DealCardContent = ({
   };
 
   const formattedAmount = deal.amount
-    ? new Intl.NumberFormat("nl-NL", {
-        style: "currency",
-        currency,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(deal.amount)
+    ? formatCurrency(deal.amount, currency)
     : null;
   const recurring = isRecurringDeal(deal);
   const moneybird = moneybirdLabel(deal);
@@ -132,6 +145,15 @@ export const DealCardContent = ({
       {...provided?.dragHandleProps}
       ref={provided?.innerRef}
       onClick={handleClick}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleClick();
+        }
+      }}
+      role="link"
+      tabIndex={0}
     >
       <RecordContextProvider value={deal}>
         <Card
@@ -236,6 +258,8 @@ export const DealCardContent = ({
                 onPlanTask={onPlanTask ? () => onPlanTask(deal) : undefined}
               />
             ) : null}
+            <MoneybirdCardActions record={deal} />
+            <InzyteCardActions record={deal} />
             {attentionPipeline && onMoveToStage && onPlanTask ? (
               <AttentionDealActions
                 deal={deal}

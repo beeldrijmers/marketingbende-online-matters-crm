@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { InputProps } from "ra-core";
 import { FieldTitle, useInput, useResourceContext } from "ra-core";
 import { FormControl, FormField, FormLabel } from "@/components/admin/form";
@@ -50,15 +50,18 @@ export const NumberInput = (props: NumberInputProps) => {
     const value = event.target.value;
     const numberValue = parse(value);
 
-    setValue(value);
-    field.onChange(numberValue ?? 0);
+    field.onChange(numberValue);
   };
 
-  const [value, setValue] = useState<string | undefined>(
-    field.value?.toString() ?? "",
-  );
-
   const hasFocus = React.useRef(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const setInputRef = useCallback(
+    (node: HTMLInputElement | null) => {
+      inputRef.current = node;
+      field.ref(node);
+    },
+    [field],
+  );
 
   const handleFocus = (event: React.FocusEvent<HTMLInputElement>) => {
     onFocus?.(event);
@@ -68,12 +71,12 @@ export const NumberInput = (props: NumberInputProps) => {
   const handleBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     field.onBlur?.(event);
     hasFocus.current = false;
-    setValue(field.value?.toString() ?? "");
+    event.currentTarget.value = field.value?.toString() ?? "";
   };
 
   useEffect(() => {
-    if (!hasFocus.current) {
-      setValue(field.value?.toString() ?? "");
+    if (!hasFocus.current && inputRef.current) {
+      inputRef.current.value = field.value?.toString() ?? "";
     }
   }, [field.value]);
 
@@ -93,8 +96,9 @@ export const NumberInput = (props: NumberInputProps) => {
         <Input
           {...rest}
           {...field}
+          ref={setInputRef}
           type="number"
-          value={value}
+          defaultValue={field.value?.toString() ?? ""}
           onChange={handleChange}
           onFocus={handleFocus}
           onBlur={handleBlur}
@@ -112,7 +116,7 @@ export interface NumberInputProps
       React.ComponentProps<"input">,
       "defaultValue" | "onBlur" | "onChange" | "type"
     > {
-  parse?: (value: string) => number;
+  parse?: (value: string) => number | null;
 }
 
 const convertStringToNumber = (value?: string | null) => {

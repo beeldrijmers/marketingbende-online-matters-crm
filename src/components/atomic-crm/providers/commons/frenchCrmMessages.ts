@@ -265,6 +265,8 @@ export const frenchCrmMessages = {
         contact_ids: "Contacts",
         category: "Catégorie",
         amount: "Budget",
+        amount_helper:
+          "Laissez vide tant que le montant total reste à déterminer",
         revenue_period: "Type de revenu",
         assignee_ids: "Assigné à",
         on_hold: "En attente",
@@ -296,6 +298,9 @@ export const frenchCrmMessages = {
       moneybird: {
         estimate: {
           action: "Devis dans Moneybird",
+          card_action: "Devis",
+          card_view: "Devis",
+          card_pending: "Devis...",
           view: "Voir le devis dans Moneybird",
           pending: "Création du devis...",
           dialog_title: "Créer un devis Moneybird",
@@ -309,6 +314,9 @@ export const frenchCrmMessages = {
         },
         invoice: {
           action: "Facture dans Moneybird",
+          card_action: "Facture",
+          card_view: "Facture",
+          card_pending: "Facture...",
           view: "Voir la facture dans Moneybird",
           pending: "Création de la facture...",
           dialog_title: "Créer une facture Moneybird",
@@ -324,6 +332,8 @@ export const frenchCrmMessages = {
         amount: "Montant (hors TVA)",
         no_address: "Aucune adresse connue pour cette entreprise",
         description_label: "Description sur le document",
+        description_helper:
+          "Seul ce texte destiné au client est envoyé à Moneybird ; les notes internes ne sont pas copiées.",
         tax_rate: "Taux de TVA",
         tax_rate_placeholder: "Choisissez un taux de TVA",
         tax_rate_loading: "Chargement des taux...",
@@ -338,7 +348,7 @@ export const frenchCrmMessages = {
         no_company:
           "Cette affaire n'a pas d'entreprise liée ; liez d'abord une entreprise.",
         no_amount:
-          "Cette affaire n'a pas de montant ; définissez d'abord un montant.",
+          "Le montant total reste à déterminer. Ouvrez l'affaire, choisissez Modifier et saisissez d'abord le montant confirmé.",
         wrong_currency:
           "L'intégration Moneybird ne fonctionne qu'avec la devise EUR.",
         creating: "Création...",
@@ -384,7 +394,7 @@ export const frenchCrmMessages = {
       invalid_date: "Date invalide",
       no_date: "Pas encore planifiée",
       duration_days: "%{smart_count} jour |||| %{smart_count} jours",
-      no_amount: "Pas encore de montant",
+      no_amount: "À déterminer",
       per_month_suffix: "/mois",
       move_error:
         "L'affaire n'a pas pu être déplacée. Le tableau a été rétabli à l'état enregistré.",
@@ -456,6 +466,10 @@ export const frenchCrmMessages = {
         administrator: "Admin",
         disabled: "Désactivé",
         partij: "Partie",
+        hourly_rate: "Taux horaire (hors TVA)",
+        hourly_rate_helper:
+          "Taux personnel ; laissez vide tant qu'il reste à déterminer",
+        hourly_rate_invalid: "Saisissez un taux horaire positif valide",
       },
       create: {
         error:

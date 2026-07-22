@@ -77,6 +77,17 @@ export function SalesList() {
         <DataTable.Col source="partij">
           <PartijField />
         </DataTable.Col>
+        <DataTable.Col
+          source="hourly_rate"
+          render={(record: Sale) =>
+            record.hourly_rate == null
+              ? "NTB"
+              : `${record.hourly_rate.toLocaleString("nl-NL", {
+                  style: "currency",
+                  currency: "EUR",
+                })}/uur`
+          }
+        />
         <DataTable.Col label={false}>
           <OptionsField />
         </DataTable.Col>

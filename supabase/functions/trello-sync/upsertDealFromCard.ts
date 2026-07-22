@@ -208,6 +208,7 @@ export const upsertDealFromCard = async (
     const canCorrectTextRevenuePeriod =
       existingDeal.activity_source === "trello" &&
       categoryResolution.source === "default" &&
+      (!currentCategory || currentCategory === DEFAULT_CATEGORY) &&
       revenuePeriod != null &&
       currentRevenuePeriod !== revenuePeriod;
 

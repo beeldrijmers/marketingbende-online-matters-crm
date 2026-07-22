@@ -124,11 +124,18 @@ export const resolveIsInternal = ({
 export type RevenuePeriod = "maandelijks" | "eenmalig";
 
 const periodFromText = (text: string): RevenuePeriod | null => {
+  // Excluded future work is context, not the billing model of this assignment.
+  // Example: "een terugkerende synchronisatie valt hier niet onder" must not
+  // classify the current one-off import as monthly revenue.
+  const relevantText = text.replace(
+    /\b(?:per\s*maand|maandelijks|terugkerend\w*|abonnement|retainer)\b[^.!?\n]{0,100}\b(?:valt|vallen|hoort|horen)\b[^.!?\n]{0,40}\bniet\b[^.!?\n]*/gi,
+    "",
+  );
   const monthly =
     /per\s*maand|p\s*\/\s*m|\/\s*mnd|\bmnd\b|maandelijks|terugkerend|abonnement|retainer/i.test(
-      text,
+      relevantText,
     );
-  const oneOff = /\beenmalig(?:e)?\b|one[- ]?off/i.test(text);
+  const oneOff = /\beenmalig(?:e)?\b|one[- ]?off/i.test(relevantText);
 
   // Conflicting prose is not a license to guess. A list or label can still
   // decide below, but otherwise the CRM leaves the field unclassified.
