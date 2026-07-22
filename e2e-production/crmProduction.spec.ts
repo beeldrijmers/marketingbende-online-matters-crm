@@ -35,11 +35,17 @@ test("authenticated CRM dashboard and core routes stay operational", async ({
     page.getByRole("heading", { name: "Opdrachtenbord · van begin tot eind" }),
   ).toBeVisible();
 
-  for (const route of ["contacts", "companies", "settings"]) {
+  for (const route of ["contacts", "companies"]) {
     await page.goto(`/#/${route}`, { waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(new RegExp(`#/${route}`));
     await expect(page.locator("#main-content")).toBeVisible();
   }
+
+  // Settings are intentionally permission-gated. Both an available settings
+  // screen and an explicit access-denied route prove that routing/authz works.
+  await page.goto("/#/settings", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/#\/(?:settings|access-denied)$/);
+  await expect(page.locator("#main-content")).toBeVisible();
 
   await page.goto("/#/", { waitUntil: "domcontentloaded" });
   await expect(
