@@ -67,10 +67,10 @@ export const DealColumn = ({
         attentionPipeline && "bg-muted/20",
       )}
     >
-      <div className="flex min-h-14 shrink-0 items-start gap-2 border-b bg-card/55 px-3 py-2.5">
+      <div className="flex h-[76px] shrink-0 items-start gap-2 border-b bg-card/55 px-3 py-2.5">
         <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", tone.dot)} />
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-semibold leading-5 text-foreground">
+          <h3 className="line-clamp-2 text-sm font-semibold leading-5 text-foreground">
             {findDealLabel(dealStages, stage)}
           </h3>
           <p className="text-[11px] tabular-nums text-muted-foreground">
