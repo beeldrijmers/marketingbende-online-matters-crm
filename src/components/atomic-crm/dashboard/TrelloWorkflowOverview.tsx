@@ -157,7 +157,7 @@ export const TrelloWorkflowOverview = ({
         ) : null}
       </div>
 
-      <Card className="overflow-hidden py-0">
+      <Card className="gap-0 overflow-hidden py-0">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-muted/20 p-3">
           <div
             role="group"
