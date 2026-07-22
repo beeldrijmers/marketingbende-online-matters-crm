@@ -762,6 +762,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/inzyte/InzyteDealSection.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/inzyte/InzyteDataView.tsx",
           "type": "registry:component"
         },

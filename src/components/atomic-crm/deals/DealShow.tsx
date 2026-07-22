@@ -33,6 +33,7 @@ import { DealEditSheet } from "./DealEditSheet";
 import { DealInboundEmail } from "./DealInboundEmail";
 import { DealSteps } from "./DealSteps";
 import { MoneybirdDocumentControl } from "./MoneybirdDocumentButtons";
+import { InzyteDealSection } from "./inzyte/InzyteDealSection";
 import {
   findDealLabel,
   formatISODateString,
@@ -294,6 +295,12 @@ const DealShowContent = ({
               <p className="text-sm leading-6">{record.description}</p>
             </div>
           )}
+
+          {!record.archived_at ? (
+            <div className="m-4">
+              <InzyteDealSection record={record} />
+            </div>
+          ) : null}
 
           <div className="m-4">
             <Separator className="mb-4" />

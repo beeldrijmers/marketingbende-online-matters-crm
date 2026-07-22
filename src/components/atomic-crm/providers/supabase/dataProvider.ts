@@ -101,15 +101,6 @@ const getDataProviderWithCustomMethods = () => {
   const baseDataProvider = getBaseDataProvider();
 
   const getList: DataProvider["getList"] = async (resource, params) => {
-    if (resource === "deals") {
-      const response = await baseDataProvider.getList(resource, params);
-      return {
-        ...response,
-        data: (await enrichDealsWithInzyteLinks(
-          response.data as Deal[],
-        )) as typeof response.data,
-      };
-    }
     if (resource === "companies") {
       return baseDataProvider.getList("companies_summary", params);
     }

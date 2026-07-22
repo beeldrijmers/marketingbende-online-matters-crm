@@ -16,7 +16,6 @@ import { DealWorkflowIndicator } from "./DealWorkflowIndicator";
 import { getDashboardDealDetailPath } from "./dashboardDealSelection";
 import { getDealWorkflow } from "./dealWorkflow";
 import { MoneybirdCardActions } from "./MoneybirdDocumentButtons";
-import { InzyteCardActions } from "./inzyte/InzyteWorkspace";
 
 // A monthly/recurring price hint anywhere in the card text ("EUR 300 p/m",
 // "per maand", "maandelijks") means we show the amount as a monthly rate.
@@ -259,7 +258,6 @@ export const DealCardContent = ({
               />
             ) : null}
             <MoneybirdCardActions record={deal} />
-            <InzyteCardActions record={deal} />
             {attentionPipeline && onMoveToStage && onPlanTask ? (
               <AttentionDealActions
                 deal={deal}
