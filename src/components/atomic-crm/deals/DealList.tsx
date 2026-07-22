@@ -95,6 +95,7 @@ export const DealList = ({
       disableHeader={attentionPipeline}
       disableSyncWithLocation={embedded}
       hideTitle={embedded}
+      inlineFilters={embedded}
       title={attentionPipeline ? false : (dashboardSelection?.label ?? false)}
       sort={{ field: "index", order: "DESC" }}
       filters={attentionPipeline ? undefined : dealFilters}
@@ -329,7 +330,7 @@ const DealActions = ({
     : undefined;
 
   return (
-    <TopToolbar>
+    <TopToolbar className={embedded ? "flex-none" : undefined}>
       {!embedded ? <SyncTrelloButton /> : null}
       <FilterButton />
       <DealArchivedList detailBasePath={returnPath} />

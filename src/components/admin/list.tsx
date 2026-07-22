@@ -105,6 +105,7 @@ export const ListView = <RecordType extends RaRecord = RaRecord>(
     disableBreadcrumb,
     disableHeader,
     hideTitle,
+    inlineFilters,
     filters,
     pagination = defaultPagination,
     title,
@@ -150,7 +151,7 @@ export const ListView = <RecordType extends RaRecord = RaRecord>(
             <div
               className={cn(
                 "my-2 flex flex-wrap items-start justify-between gap-2",
-                hideTitle && "justify-end",
+                hideTitle && !inlineFilters && "justify-end",
               )}
             >
               {!hideTitle ? (
@@ -158,6 +159,7 @@ export const ListView = <RecordType extends RaRecord = RaRecord>(
                   {finalTitle}
                 </h2>
               ) : null}
+              {inlineFilters ? <FilterForm className="min-w-0 flex-1" /> : null}
               {actions ?? (
                 <div className="flex items-center gap-2">
                   {filters && filters.length > 0 ? <FilterButton /> : null}
@@ -166,7 +168,7 @@ export const ListView = <RecordType extends RaRecord = RaRecord>(
                 </div>
               )}
             </div>
-            <FilterForm />
+            {!inlineFilters ? <FilterForm /> : null}
           </>
         ) : null}
 
@@ -220,6 +222,7 @@ export interface ListViewProps<RecordType extends RaRecord = RaRecord> {
   disableBreadcrumb?: boolean;
   disableHeader?: boolean;
   hideTitle?: boolean;
+  inlineFilters?: boolean;
   render?: (props: ListControllerResult<RecordType, Error>) => ReactNode;
   actions?: ReactElement | false;
   filters?: ReactNode[];
