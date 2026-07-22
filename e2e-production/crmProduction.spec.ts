@@ -27,7 +27,15 @@ test("authenticated CRM dashboard and core routes stay operational", async ({
   await expect(page).not.toHaveURL(/\/login/, { timeout: 15_000 });
   await expect(page.locator("#main-content")).toBeVisible();
 
-  for (const route of ["deals", "contacts", "companies", "settings"]) {
+  // The former standalone assignments route deliberately lands on the
+  // Dashboard workboard; old bookmarks must keep working after consolidation.
+  await page.goto("/#/deals", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/#\/\?tab=workboard$/);
+  await expect(
+    page.getByRole("heading", { name: "Opdrachtenbord · van begin tot eind" }),
+  ).toBeVisible();
+
+  for (const route of ["contacts", "companies", "settings"]) {
     await page.goto(`/#/${route}`, { waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(new RegExp(`#/${route}`));
     await expect(page.locator("#main-content")).toBeVisible();
@@ -49,7 +57,7 @@ test("authenticated CRM dashboard and core routes stay operational", async ({
   await attentionSection
     .getByRole("link", { name: "Werkbord", exact: true })
     .click();
-  await expect(page).toHaveURL(/#\/deals\/aandacht$/);
+  await expect(page).toHaveURL(/#\/\?tab=workboard&focus=attention$/);
   await expect(
     page.getByRole("heading", { name: "Aandacht-pipeline" }),
   ).toBeVisible();
@@ -62,12 +70,14 @@ test("authenticated CRM dashboard and core routes stay operational", async ({
     page.getByRole("searchbox", { name: "Zoek in aandachtspipeline" }),
   ).toBeVisible();
 
-  for (const [route, label] of [
-    ["deals/aandacht", "Aandacht-pipeline"],
-    ["deals/facturatie", "Facturatie afhandelen"],
+  for (const [route, focus, label] of [
+    ["deals/aandacht", "attention", "Aandacht-pipeline"],
+    ["deals/facturatie", "billing", "Facturatie afhandelen"],
   ] as const) {
     await page.goto(`/#/${route}`, { waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(new RegExp(`#/${route}$`));
+    await expect(page).toHaveURL(
+      new RegExp(`#/\\?tab=workboard&focus=${focus}$`),
+    );
     await expect(page.locator("#main-content")).toBeVisible();
     await expect(page.getByText(label, { exact: false }).first()).toBeVisible();
   }
