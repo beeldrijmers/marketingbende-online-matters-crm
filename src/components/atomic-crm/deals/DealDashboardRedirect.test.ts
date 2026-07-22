@@ -1,8 +1,8 @@
-import { getDealDashboardRedirectPath } from "./DealDashboardRedirect";
 import {
   DEAL_ATTENTION_PATH,
   DEAL_BILLING_PATH,
 } from "./dashboardDealSelection";
+import { getDealDashboardRedirectPath } from "./dealDashboardRedirectPath";
 
 describe("DealDashboardRedirect", () => {
   it("maps historic list, create, show and edit URLs to dashboard state", () => {

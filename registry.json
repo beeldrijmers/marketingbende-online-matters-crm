@@ -638,6 +638,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/dealDashboardRedirectPath.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/dashboardDealSelection.ts",
           "type": "registry:component"
         },
