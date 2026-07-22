@@ -762,6 +762,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/inzyte/seoMonthlyReportDocument.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/inzyte/inzytePresentation.ts",
           "type": "registry:component"
         },
