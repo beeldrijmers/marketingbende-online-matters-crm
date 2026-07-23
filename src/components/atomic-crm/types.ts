@@ -267,6 +267,10 @@ export type InzyteLink = {
   ads_customer_id: string | null;
   ads_account_name: string | null;
   ads_login_customer_id: string | null;
+  ga4_verified_at?: string | null;
+  gsc_verified_at?: string | null;
+  gbp_verified_at?: string | null;
+  ads_verified_at?: string | null;
   last_verified_at: string | null;
   last_error: string | null;
   created_at: string;

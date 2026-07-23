@@ -616,10 +616,7 @@ export const SeoMonthlyReportWorkspace = ({
   const report = controller.selectedMonthlyReport;
   const companyName =
     controller.bootstrap?.deal.companyName || record.name || "Klant";
-  const hasReportSources = Boolean(
-    controller.bootstrap?.link?.ga4_property_id ||
-      controller.bootstrap?.link?.gsc_site_url,
-  );
+  const hasReportSources = controller.hasGa4 || controller.hasGsc;
   const generateReport = () => {
     const replacesFinalReport =
       report?.status === "final" &&
@@ -689,8 +686,8 @@ export const SeoMonthlyReportWorkspace = ({
         </div>
         {!hasReportSources ? (
           <div className="border-t border-amber-500/20 bg-amber-500/[0.08] px-6 py-3 text-sm text-amber-700 dark:text-amber-400">
-            Koppel minimaal GA4 of Search Console bij de instellingen onderaan
-            deze pagina.
+            Controleer minimaal één GA4- of Search Console-bron bij de
+            instellingen onderaan deze pagina.
           </div>
         ) : null}
       </div>

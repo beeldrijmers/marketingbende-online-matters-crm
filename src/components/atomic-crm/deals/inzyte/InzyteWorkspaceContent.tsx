@@ -398,7 +398,7 @@ const DateBar = ({ controller }: { controller: InzyteWorkspaceController }) => {
                 bootstrap.link?.ga4_property_name ||
                 bootstrap.link?.ga4_property_id
               }`
-            : "GA4 nog niet ingesteld"}
+            : "GA4 niet gecontroleerd"}
         </Badge>
       </div>
     </div>
@@ -428,9 +428,9 @@ const AnalysisGrid = ({
           loading={controller.busy === action}
           disabled={
             controller.busy !== null ||
-            !controller.hasGa4 ||
-            (action === "search_console" &&
-              !controller.bootstrap?.link?.gsc_site_url)
+            (action === "search_console"
+              ? !controller.hasGsc
+              : !controller.hasGa4)
           }
           onClick={() =>
             void controller
@@ -592,7 +592,7 @@ const MoreAnalysisContent = ({
         <ActionButton
           action="business_profile"
           controller={controller}
-          disabled={!controller.bootstrap?.link?.gbp_location_id}
+          disabled={!controller.hasGbp}
           onClick={() =>
             void controller
               .runAction("business_profile", { forceRefresh: true })
@@ -602,7 +602,7 @@ const MoreAnalysisContent = ({
         <ActionButton
           action="google_ads"
           controller={controller}
-          disabled={!controller.bootstrap?.link?.ads_customer_id}
+          disabled={!controller.hasAds}
           icon={<MousePointerClick className="size-4" />}
           onClick={() =>
             void controller

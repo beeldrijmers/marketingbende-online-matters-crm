@@ -27,6 +27,10 @@ import {
 } from "./authProvider";
 import { getSupabaseClient } from "./supabase";
 import { getChangedTrelloDeadline } from "../../deals/trelloDeadlineWriteback";
+import {
+  matchesInzyteVerificationFilter,
+  type InzyteVerificationFilter,
+} from "../../deals/inzyte/inzyteVerification";
 
 const getBaseDataProvider = () =>
   supabaseDataProvider({
@@ -123,13 +127,25 @@ const getDataProviderWithCustomMethods = () => {
       return baseDataProvider.getList("contacts_summary", params);
     }
     if (resource === "deals") {
-      const response = await baseDataProvider.getList(resource, params);
+      const { inzyte_status: inzyteStatus, ...databaseFilter } =
+        params.filter ?? {};
+      const response = await baseDataProvider.getList(resource, {
+        ...params,
+        filter: databaseFilter,
+      });
       const enriched = await enrichDealsWithIntegrations(
         response.data as Deal[],
       );
+      const visible = enriched.filter((deal) =>
+        matchesInzyteVerificationFilter(
+          deal,
+          inzyteStatus as InzyteVerificationFilter | undefined,
+        ),
+      );
       return {
         ...response,
-        data: enriched as typeof response.data,
+        data: visible as typeof response.data,
+        total: inzyteStatus ? visible.length : response.total,
       };
     }
     if (resource === "activity_log" || resource === "activity_log_global") {

@@ -4,29 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { Deal } from "../../types";
 import { InzyteWorkspace } from "./InzyteWorkspace";
-
-const INZYTE_SOURCES = [
-  {
-    label: "GA4",
-    isActive: (record: Deal) =>
-      Boolean(
-        record.inzyte_link?.ga4_connection_id &&
-          record.inzyte_link?.ga4_property_id,
-      ),
-  },
-  {
-    label: "GSC",
-    isActive: (record: Deal) => Boolean(record.inzyte_link?.gsc_site_url),
-  },
-  {
-    label: "GBP",
-    isActive: (record: Deal) => Boolean(record.inzyte_link?.gbp_location_id),
-  },
-  {
-    label: "Ads",
-    isActive: (record: Deal) => Boolean(record.inzyte_link?.ads_customer_id),
-  },
-];
+import {
+  getInzyteConnectionSummary,
+  getInzyteSourceStates,
+} from "./inzyteVerification";
 
 const REPORT_MONTH_FORMATTER = new Intl.DateTimeFormat("nl-NL", {
   month: "short",
@@ -38,18 +19,8 @@ const monthLabel = (value: string): string =>
   REPORT_MONTH_FORMATTER.format(new Date(`${value.slice(0, 7)}-01T00:00:00Z`));
 
 export const InzyteDealSection = ({ record }: { record: Deal }) => {
-  const activeSources = INZYTE_SOURCES.filter((source) =>
-    source.isActive(record),
-  );
-  const connectionLabel = record.inzyte_link?.last_error
-    ? "Koppeling vraagt aandacht"
-    : activeSources.length === 1
-      ? `${activeSources[0].label}-bron gekoppeld`
-      : activeSources.length > 1
-        ? `${activeSources.length} meetbronnen gekoppeld`
-        : record.inzyte_link
-          ? "Account gekoppeld, meetbron ontbreekt"
-          : "Nog niet gekoppeld";
+  const sourceStates = getInzyteSourceStates(record.inzyte_link);
+  const connection = getInzyteConnectionSummary(record.inzyte_link);
 
   return (
     <section
@@ -68,14 +39,16 @@ export const InzyteDealSection = ({ record }: { record: Deal }) => {
             <Badge
               variant="outline"
               className={cn(
-                record.inzyte_link?.last_error
+                connection.tone === "error"
                   ? "border-rose-500/40 text-rose-600"
-                  : activeSources.length > 0
+                  : connection.tone === "success"
                     ? "border-emerald-500/40 text-emerald-600"
-                    : "border-amber-500/40 text-amber-600",
+                    : connection.tone === "warning"
+                      ? "border-amber-500/40 text-amber-600"
+                      : "text-muted-foreground",
               )}
             >
-              {connectionLabel}
+              {connection.label}
             </Badge>
           </div>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
@@ -84,23 +57,30 @@ export const InzyteDealSection = ({ record }: { record: Deal }) => {
           </p>
           {record.inzyte_link ? (
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {INZYTE_SOURCES.map((source) => {
-                const active = source.isActive(record);
-                return (
-                  <Badge
-                    key={source.label}
-                    variant="secondary"
-                    className={cn(
-                      "text-[10px] uppercase tracking-wide",
-                      active
-                        ? "bg-emerald-500/10 text-emerald-600"
+              {sourceStates.map((source) => (
+                <Badge
+                  key={source.key}
+                  variant="secondary"
+                  title={
+                    source.verified
+                      ? `${source.label} is voor deze opdracht gecontroleerd`
+                      : source.configured
+                        ? `${source.label} is ingesteld maar nog niet gecontroleerd`
+                        : `${source.label} is niet ingesteld`
+                  }
+                  className={cn(
+                    "text-[10px] uppercase tracking-wide",
+                    source.verified
+                      ? "bg-emerald-500/10 text-emerald-600"
+                      : source.configured
+                        ? "bg-amber-500/10 text-amber-600"
                         : "text-muted-foreground/60",
-                    )}
-                  >
-                    {source.label} {active ? "✓" : "—"}
-                  </Badge>
-                );
-              })}
+                  )}
+                >
+                  {source.shortLabel}{" "}
+                  {source.verified ? "✓" : source.configured ? "?" : "—"}
+                </Badge>
+              ))}
               {record.latest_seo_report ? (
                 <Badge
                   variant="outline"

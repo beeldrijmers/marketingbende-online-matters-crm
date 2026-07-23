@@ -193,6 +193,11 @@ const numberFromString = (value: string): number | null => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
+const DUTCH_DATE_TIME_FORMATTER = new Intl.DateTimeFormat("nl-NL", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
 export const formatInzyteScalar = (value: unknown, field = ""): string => {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "boolean") return value ? "Ja" : "Nee";
@@ -206,10 +211,7 @@ export const formatInzyteScalar = (value: unknown, field = ""): string => {
   }
   const parsedDate = Date.parse(value);
   if (/^\d{4}-\d{2}-\d{2}T/.test(value) && Number.isFinite(parsedDate)) {
-    return new Intl.DateTimeFormat("nl-NL", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(new Date(parsedDate));
+    return DUTCH_DATE_TIME_FORMATTER.format(new Date(parsedDate));
   }
   const numeric = numberFromString(value);
   if (numeric !== null) {
@@ -238,7 +240,9 @@ const normalizeGa4Rows = (value: InzyteJsonRecord): InzyteJsonRecord[] => {
   if (!Array.isArray(value.rows) || dimensions.length + metrics.length === 0) {
     return [];
   }
-  return value.rows.filter(isInzyteRecord).map((row) => {
+  const normalizedRows: InzyteJsonRecord[] = [];
+  for (const row of value.rows) {
+    if (!isInzyteRecord(row)) continue;
     const normalized: InzyteJsonRecord = {};
     const dimensionValues = Array.isArray(row.dimensionValues)
       ? row.dimensionValues
@@ -252,8 +256,9 @@ const normalizeGa4Rows = (value: InzyteJsonRecord): InzyteJsonRecord[] => {
     metrics.forEach((name, index) => {
       normalized[name] = cellValue(metricValues[index]);
     });
-    return normalized;
-  });
+    normalizedRows.push(normalized);
+  }
+  return normalizedRows;
 };
 
 const scalarColumns = (rows: InzyteJsonRecord[]): string[] => {
@@ -581,5 +586,5 @@ export const buildInzytePrintDocument = ({
     metrics || scalarCards
       ? `<div class="metrics">${metrics}${scalarCards}</div>`
       : ""
-  }${narratives}${tables}${empty}<footer>Gegenereerd vanuit het CRM met de gekoppelde Inzyte-gegevens. Controleer conclusies vóór verzending aan de klant.</footer></main><script>window.addEventListener("load",()=>window.print())</script></body></html>`;
+  }${narratives}${tables}${empty}<footer>Opgesteld door Marketingbende. Controleer de conclusies vóór verzending aan de klant.</footer></main><script>window.addEventListener("load",()=>window.print())</script></body></html>`;
 };

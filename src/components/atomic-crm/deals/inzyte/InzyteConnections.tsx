@@ -20,6 +20,7 @@ import type {
   InzyteWorkspace,
 } from "../../types";
 import { findNamedArray } from "./inzyteData";
+import { getInzyteConnectionSummary } from "./inzyteVerification";
 
 type JsonRecord = Record<string, unknown>;
 type GoogleProvider =
@@ -52,6 +53,22 @@ const getText = (row: JsonRecord, keys: string[]): string => {
     }
   }
   return "";
+};
+
+const getSourceOptions = (
+  rows: JsonRecord[],
+  idKeys: string[],
+  nameKeys: string[],
+): Array<{ id: string; name: string }> => {
+  const seen = new Set<string>();
+  const options: Array<{ id: string; name: string }> = [];
+  for (const row of rows) {
+    const id = getText(row, idKeys);
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    options.push({ id, name: getText(row, nameKeys) || id });
+  }
+  return options;
 };
 
 const fromLink = (
@@ -109,34 +126,32 @@ const SourceSelect = ({
   nameKeys: string[];
   placeholder: string;
   onSelect: (id: string, row?: JsonRecord) => void;
-}) => (
-  <div className="space-y-2">
-    <Label htmlFor={id}>{label}</Label>
-    <select
-      id={id}
-      value={value}
-      onChange={(event) => {
-        const selected = rows.find(
-          (row) => getText(row, idKeys) === event.target.value,
-        );
-        onSelect(event.target.value, selected);
-      }}
-      className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-3"
-    >
-      <option value="">{placeholder}</option>
-      {rows.map((row, index) => {
-        const optionId = getText(row, idKeys);
-        if (!optionId) return null;
-        const optionName = getText(row, nameKeys) || optionId;
-        return (
-          <option key={`${optionId}-${index}`} value={optionId}>
-            {optionName}
+}) => {
+  const options = getSourceOptions(rows, idKeys, nameKeys);
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <select
+        id={id}
+        value={value}
+        onChange={(event) => {
+          const selected = rows.find(
+            (row) => getText(row, idKeys) === event.target.value,
+          );
+          onSelect(event.target.value, selected);
+        }}
+        className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-3"
+      >
+        <option value="">{placeholder}</option>
+        {options.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.name}
           </option>
-        );
-      })}
-    </select>
-  </div>
-);
+        ))}
+      </select>
+    </div>
+  );
+};
 
 const ProviderCard = ({
   title,
@@ -174,8 +189,8 @@ const ProviderCard = ({
         {state.needsReauth
           ? "Opnieuw koppelen"
           : state.connected
-            ? "Verbonden"
-            : "Niet verbonden"}
+            ? "Google-account actief"
+            : "Geen Google-account"}
       </Badge>
     </div>
     <Button
@@ -214,6 +229,7 @@ export const InzyteConnections = ({
   onUnlink: () => Promise<void>;
 }) => {
   const initialLink = bootstrap.link || bootstrap.suggestedLink;
+  const connectionSummary = getInzyteConnectionSummary(bootstrap.link);
   const [draft, setDraft] = useState<InzyteLinkDraft>(() =>
     fromLink(initialLink, bootstrap.deal.companyWebsite),
   );
@@ -274,9 +290,16 @@ export const InzyteConnections = ({
               deze opdracht gekoppeld.
             </p>
           </div>
-          {bootstrap.link ? (
+          {connectionSummary.tone === "success" ? (
             <Badge className="gap-1 bg-emerald-600 text-white">
-              <ShieldCheck className="size-3.5" /> Veilig gekoppeld
+              <ShieldCheck className="size-3.5" /> Meetbronnen gecontroleerd
+            </Badge>
+          ) : bootstrap.link ? (
+            <Badge
+              variant="outline"
+              className="border-amber-500/40 text-amber-600"
+            >
+              Controle nodig
             </Badge>
           ) : (
             <Badge variant="outline">Nog niet opgeslagen</Badge>
@@ -326,6 +349,14 @@ export const InzyteConnections = ({
           </div>
         </div>
       </section>
+
+      {bootstrap.link && connectionSummary.tone !== "success" ? (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-4 text-sm text-amber-700 dark:text-amber-400">
+          De oude instellingen zijn wel bewaard, maar tellen nog niet als
+          actieve klantkoppeling. Haal de beschikbare bronnen live op,
+          controleer de klantnaam/property en sla ze daarna opnieuw op.
+        </div>
+      ) : null}
 
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -390,7 +421,8 @@ export const InzyteConnections = ({
         <h3 className="text-lg font-semibold">Bronnen voor deze opdracht</h3>
         <p className="mt-1 text-sm text-muted-foreground">
           Deze selectie is opdrachtgebonden. Daardoor kan één bureau-account
-          veilig meerdere klanten bedienen.
+          meerdere klanten bedienen. Alleen een bron uit de live opgehaalde
+          lijst kan als gecontroleerd worden opgeslagen.
         </p>
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           <div className="space-y-2">
@@ -506,34 +538,6 @@ export const InzyteConnections = ({
           />
         </div>
 
-        <details className="mt-5 rounded-lg border bg-muted/20 p-4">
-          <summary className="cursor-pointer text-sm font-medium">
-            Handmatig invoeren als Google geen lijst teruggeeft
-          </summary>
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            {[
-              ["GA4-property-id", "ga4PropertyId", "Bijv. 123456789"],
-              ["Search Console-site", "gscSiteUrl", "sc-domain:voorbeeld.nl"],
-              ["Bedrijfsprofiel-locatie-id", "gbpLocationId", "locations/…"],
-              ["Google Ads-klant-id", "adsCustomerId", "1234567890"],
-            ].map(([label, key, placeholder]) => (
-              <div key={key} className="space-y-2">
-                <Label htmlFor={`manual-${key}`}>{label}</Label>
-                <Input
-                  id={`manual-${key}`}
-                  value={draft[key as keyof InzyteLinkDraft]}
-                  placeholder={placeholder}
-                  onChange={(event) =>
-                    update({
-                      [key]: event.target.value,
-                    } as Partial<InzyteLinkDraft>)
-                  }
-                />
-              </div>
-            ))}
-          </div>
-        </details>
-
         <div className="mt-6 flex flex-wrap items-center gap-2 border-t pt-5">
           <Button
             type="button"
@@ -545,7 +549,7 @@ export const InzyteConnections = ({
             ) : (
               <CheckCircle2 className="size-4" />
             )}
-            Koppeling voor deze opdracht opslaan
+            Bronnen controleren en opslaan
           </Button>
           {bootstrap.link ? (
             <Button

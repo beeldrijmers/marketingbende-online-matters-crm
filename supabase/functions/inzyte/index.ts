@@ -29,6 +29,7 @@ import {
   type ReportEvidenceBundle,
   type ReportNarrative,
 } from "./reportEvidence.ts";
+import { verifySelectedSources } from "./sourceVerification.ts";
 
 type JsonObject = Record<string, unknown>;
 
@@ -49,6 +50,10 @@ type InzyteLink = {
   ads_customer_id: string | null;
   ads_account_name: string | null;
   ads_login_customer_id: string | null;
+  ga4_verified_at: string | null;
+  gsc_verified_at: string | null;
+  gbp_verified_at: string | null;
+  ads_verified_at: string | null;
   created_by: number | null;
   last_verified_at: string | null;
   last_error: string | null;
@@ -368,22 +373,24 @@ const saveLink = async (
   }
 
   const connectionId = optionalUuid(body.ga4ConnectionId);
+  let selectedConnection: JsonObject | null = null;
   if (connectionId) {
     const integrations = Array.isArray(workspace.integrations)
       ? workspace.integrations
       : [];
-    const ownsConnection = integrations.some(
+    const connection = integrations.find(
       (integration) =>
         isRecord(integration) &&
         integration.id === connectionId &&
         integration.provider === "google_ga4" &&
         integration.active === true,
     );
-    if (!ownsConnection) {
+    if (!connection || !isRecord(connection)) {
       throw userError(
         "De gekozen GA4-koppeling hoort niet bij dit Inzyte-account.",
       );
     }
+    selectedConnection = connection;
   }
 
   const propertyId = optionalText(body.ga4PropertyId, 40);
@@ -391,27 +398,64 @@ const saveLink = async (
     throw userError("Kies een geldige GA4-property.");
   }
 
+  const websiteUrl = optionalWebsite(body.websiteUrl);
+  const gscSiteUrl = optionalText(body.gscSiteUrl, 2_000);
+  const gbpLocationId = optionalText(body.gbpLocationId);
+  const adsCustomerId =
+    optionalText(body.adsCustomerId, 40)?.replace(/-/g, "") || null;
+  const setupSources = await loadSetupSources(inzyteUserId, connectionId);
+  let verifiedSources: ReturnType<typeof verifySelectedSources>;
+  try {
+    verifiedSources = verifySelectedSources(
+      {
+        websiteUrl,
+        ga4ConnectionId: connectionId,
+        ga4PropertyId: propertyId,
+        gscSiteUrl,
+        gbpLocationId,
+        adsCustomerId,
+      },
+      setupSources,
+    );
+  } catch (error) {
+    throw userError(
+      error instanceof Error
+        ? error.message
+        : "De gekozen meetbronnen konden niet live worden gecontroleerd.",
+    );
+  }
+
   const now = new Date().toISOString();
+  const hasVerifiedSource = Object.values(verifiedSources).some(Boolean);
+  const connectionProfile =
+    selectedConnection && isRecord(selectedConnection.profile)
+      ? selectedConnection.profile
+      : null;
   const row = {
     deal_id: Number(deal.id),
     company_id: deal.company_id ? Number(deal.company_id) : null,
-    website_url: optionalWebsite(body.websiteUrl),
+    website_url: websiteUrl,
     inzyte_user_id: inzyteUserId,
     ga4_connection_id: connectionId,
-    ga4_connection_name: optionalText(body.ga4ConnectionName),
-    ga4_property_id: propertyId,
-    ga4_property_name: optionalText(body.ga4PropertyName),
-    gsc_site_url: optionalText(body.gscSiteUrl, 2_000),
-    gbp_account_id: optionalText(body.gbpAccountId),
-    gbp_location_id: optionalText(body.gbpLocationId),
-    gbp_location_name: optionalText(body.gbpLocationName),
-    ads_customer_id:
-      optionalText(body.adsCustomerId, 40)?.replace(/-/g, "") || null,
-    ads_account_name: optionalText(body.adsAccountName),
-    ads_login_customer_id:
-      optionalText(body.adsLoginCustomerId, 40)?.replace(/-/g, "") || null,
+    ga4_connection_name:
+      (connectionProfile &&
+        optionalText(connectionProfile.name || connectionProfile.email)) ||
+      optionalText(body.ga4ConnectionName),
+    ga4_property_id: verifiedSources.ga4?.propertyId || null,
+    ga4_property_name: verifiedSources.ga4?.propertyName || null,
+    gsc_site_url: verifiedSources.gsc?.siteUrl || null,
+    gbp_account_id: verifiedSources.gbp?.accountId || null,
+    gbp_location_id: verifiedSources.gbp?.locationId || null,
+    gbp_location_name: verifiedSources.gbp?.locationName || null,
+    ads_customer_id: verifiedSources.ads?.customerId || null,
+    ads_account_name: verifiedSources.ads?.accountName || null,
+    ads_login_customer_id: verifiedSources.ads?.loginCustomerId || null,
+    ga4_verified_at: verifiedSources.ga4 ? now : null,
+    gsc_verified_at: verifiedSources.gsc ? now : null,
+    gbp_verified_at: verifiedSources.gbp ? now : null,
+    ads_verified_at: verifiedSources.ads ? now : null,
     created_by: saleId,
-    last_verified_at: now,
+    last_verified_at: hasVerifiedSource ? now : null,
     last_error: null,
     updated_at: now,
   };
@@ -462,12 +506,27 @@ const runRemoteAction = async (
     payload: body.payload,
     forceRefresh: body.forceRefresh,
   });
+  const verificationField = request.requiresGa4
+    ? "ga4_verified_at"
+    : action === "search_console"
+      ? "gsc_verified_at"
+      : action === "business_profile"
+        ? "gbp_verified_at"
+        : action === "google_ads"
+          ? "ads_verified_at"
+          : null;
   if (
     request.requiresGa4 &&
     (!link.ga4_connection_id || !link.ga4_property_id)
   ) {
     throw userError(
       "Koppel eerst een GA4-account en property aan deze opdracht.",
+      409,
+    );
+  }
+  if (verificationField && !link[verificationField]) {
+    throw userError(
+      "Deze meetbron is nog niet live gecontroleerd voor deze opdracht. Open Koppelingen en sla de bron opnieuw op.",
       409,
     );
   }
@@ -509,12 +568,14 @@ const runRemoteAction = async (
         })
         .eq("id", runId);
     }
+    const verifiedAt = new Date().toISOString();
     await supabaseAdmin
       .from("inzyte_links")
       .update({
-        last_verified_at: new Date().toISOString(),
+        ...(verificationField ? { [verificationField]: verifiedAt } : {}),
+        last_verified_at: verifiedAt,
         last_error: null,
-        updated_at: new Date().toISOString(),
+        updated_at: verifiedAt,
       })
       .eq("id", link.id);
     return { result, runId };
@@ -740,7 +801,13 @@ const enhanceReportNarrative = async ({
     metrics,
     evidence,
   });
-  if (!link.ga4_connection_id || !link.ga4_property_id) return fallback;
+  if (
+    !link.ga4_connection_id ||
+    !link.ga4_property_id ||
+    !link.ga4_verified_at
+  ) {
+    return fallback;
+  }
   try {
     const response = await callInzyte("vraagbaak/ask", {
       userId: link.inzyte_user_id,
@@ -780,11 +847,13 @@ const generateMonthlyReport = async (
   if (!link) {
     throw userError("Koppel deze opdracht eerst aan een Inzyte-account.", 409);
   }
-  const hasGa4 = Boolean(link.ga4_connection_id && link.ga4_property_id);
-  const hasGsc = Boolean(link.gsc_site_url);
+  const hasGa4 = Boolean(
+    link.ga4_connection_id && link.ga4_property_id && link.ga4_verified_at,
+  );
+  const hasGsc = Boolean(link.gsc_site_url && link.gsc_verified_at);
   if (!hasGa4 && !hasGsc) {
     throw userError(
-      "Koppel minimaal GA4 of Search Console om een maandrapport te maken.",
+      "Controleer minimaal GA4 of Search Console om een maandrapport te maken.",
       409,
     );
   }

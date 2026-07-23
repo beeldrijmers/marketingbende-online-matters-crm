@@ -33,6 +33,10 @@ import generateData from "./dataGenerator";
 import type { Db } from "./dataGenerator/types";
 import { withSupabaseFilterAdapter } from "./internal/supabaseAdapter";
 import { dedupeActivitiesBySourceEvent } from "../../activity/activityDeduplication";
+import {
+  matchesInzyteVerificationFilter,
+  type InzyteVerificationFilter,
+} from "../../deals/inzyte/inzyteVerification";
 
 const TASK_MARKED_AS_DONE = "TASK_MARKED_AS_DONE";
 const TASK_MARKED_AS_UNDONE = "TASK_MARKED_AS_UNDONE";
@@ -188,6 +192,25 @@ export const createDataProvider = ({
           data: visible.slice(start, start + perPage) as any,
           total: visible.length,
         };
+      }
+      if (resource === "deals") {
+        const { inzyte_status: inzyteStatus, ...databaseFilter } =
+          params.filter ?? {};
+        const response = await baseDataProvider.getList(resource, {
+          ...params,
+          filter: databaseFilter,
+        });
+        const visible = (response.data as Deal[]).filter((deal) =>
+          matchesInzyteVerificationFilter(
+            deal,
+            inzyteStatus as InzyteVerificationFilter | undefined,
+          ),
+        );
+        return {
+          ...response,
+          data: visible as any,
+          total: inzyteStatus ? visible.length : response.total,
+        } as any;
       }
       return baseDataProvider.getList(resource, params);
     },

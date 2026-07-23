@@ -12,6 +12,7 @@ import type {
 } from "../../types";
 import type { InzyteLinkDraft } from "./InzyteConnections";
 import { findNamedArray, unwrapInzyteData } from "./inzyteData";
+import { isInzyteSourceVerified } from "./inzyteVerification";
 
 export type ActionResult = {
   data: unknown;
@@ -244,7 +245,9 @@ export const useInzyteWorkspaceController = (record: Deal) => {
         dealId: record.id,
         ...draft,
       });
-      notify("Inzyte is aan deze opdracht gekoppeld", { type: "success" });
+      notify("De gekozen klantbronnen zijn live gecontroleerd en opgeslagen", {
+        type: "success",
+      });
       await queryClient.invalidateQueries({ queryKey: ["deals"] });
       await loadBootstrap();
     } catch (error) {
@@ -530,9 +533,10 @@ export const useInzyteWorkspaceController = (record: Deal) => {
   };
 
   const linked = Boolean(bootstrap?.link);
-  const hasGa4 = Boolean(
-    bootstrap?.link?.ga4_connection_id && bootstrap?.link?.ga4_property_id,
-  );
+  const hasGa4 = isInzyteSourceVerified(bootstrap?.link, "ga4");
+  const hasGsc = isInzyteSourceVerified(bootstrap?.link, "gsc");
+  const hasGbp = isInzyteSourceVerified(bootstrap?.link, "gbp");
+  const hasAds = isInzyteSourceVerified(bootstrap?.link, "ads");
   const historyRuns = bootstrap?.recentRuns || [];
   const selectedResult = results[selectedAction];
   const connectionsKey = `${bootstrap?.link?.id || "new"}-${
@@ -573,6 +577,9 @@ export const useInzyteWorkspaceController = (record: Deal) => {
     selectedMonthlyReport,
     linked,
     hasGa4,
+    hasGsc,
+    hasGbp,
+    hasAds,
     historyRuns,
     connectionsKey,
     loadBootstrap,

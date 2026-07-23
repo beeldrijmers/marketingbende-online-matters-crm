@@ -77,6 +77,18 @@ export const DealList = ({
         optionValue="value"
       />
     </WrapperField>,
+    <WrapperField source="inzyte_status" label="Meetbronkoppeling">
+      <SelectInput
+        source="inzyte_status"
+        label={false}
+        emptyText="Meetbronkoppeling"
+        choices={[
+          { id: "active", name: "Meetbron actief (gecontroleerd)" },
+          { id: "review", name: "Controle nodig" },
+          { id: "none", name: "Geen meetbron" },
+        ]}
+      />
+    </WrapperField>,
     <InternalExternalInput source="is_internal" alwaysOn />,
     <CompletionScopeInput source="stage@neq" alwaysOn />,
     <OnlyMineInput source="sales_id" alwaysOn />,

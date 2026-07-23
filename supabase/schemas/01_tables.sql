@@ -411,13 +411,28 @@ create table public.inzyte_links (
     ads_customer_id text,
     ads_account_name text,
     ads_login_customer_id text,
+    ga4_verified_at timestamp with time zone,
+    gsc_verified_at timestamp with time zone,
+    gbp_verified_at timestamp with time zone,
+    ads_verified_at timestamp with time zone,
     created_by bigint,
     last_verified_at timestamp with time zone,
     last_error text,
     created_at timestamp with time zone not null default now(),
     updated_at timestamp with time zone not null default now(),
     constraint inzyte_links_ga4_property_id_check
-        check (ga4_property_id is null or ga4_property_id ~ '^[0-9]+$')
+        check (ga4_property_id is null or ga4_property_id ~ '^[0-9]+$'),
+    constraint inzyte_links_ga4_verification_check
+        check (
+            ga4_verified_at is null
+            or (ga4_connection_id is not null and ga4_property_id is not null)
+        ),
+    constraint inzyte_links_gsc_verification_check
+        check (gsc_verified_at is null or gsc_site_url is not null),
+    constraint inzyte_links_gbp_verification_check
+        check (gbp_verified_at is null or gbp_location_id is not null),
+    constraint inzyte_links_ads_verification_check
+        check (ads_verified_at is null or ads_customer_id is not null)
 );
 
 create unique index uq__inzyte_links__deal_id
