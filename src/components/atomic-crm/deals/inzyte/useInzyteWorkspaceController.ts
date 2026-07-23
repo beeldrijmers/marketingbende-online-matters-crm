@@ -363,7 +363,9 @@ export const useInzyteWorkspaceController = (record: Deal) => {
   const finalizeMonthlyReport = async (params: {
     reportId: number;
     clientSummary: string;
+    interpretation: string;
     workSummary: string;
+    caveats: string;
     nextSteps: string;
     noteText: string;
     reportBrand: "online_matters" | "neutral";

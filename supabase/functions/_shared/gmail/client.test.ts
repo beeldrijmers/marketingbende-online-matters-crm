@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { listGmailHistoryMessageIds, listGmailLabels } from "./client.ts";
+import {
+  listGmailHistoryMessageIds,
+  listGmailLabels,
+  searchGmailMessageIds,
+} from "./client.ts";
 
 const fetchResponse = (body: unknown) =>
   ({
@@ -54,5 +58,37 @@ describe("Gmail API selection", () => {
       { id: "Label_CRM", name: "CRM", type: "user" },
     ]);
     expect(String(fetch.mock.calls[0][0])).toContain("/labels");
+  });
+
+  it("searches sent-mail context with pagination and a strict result cap", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        fetchResponse({
+          messages: [{ id: "one" }, { id: "two" }],
+          nextPageToken: "next",
+        }),
+      )
+      .mockResolvedValueOnce(
+        fetchResponse({
+          messages: [{ id: "two" }, { id: "three" }, { id: "four" }],
+        }),
+      );
+    vi.stubGlobal("fetch", fetch);
+
+    await expect(
+      searchGmailMessageIds(
+        "token",
+        'in:sent {"Voorbeeldbedrijf" "voorbeeld.nl"}',
+        3,
+      ),
+    ).resolves.toEqual(["one", "two", "three"]);
+
+    const firstUrl = new URL(String(fetch.mock.calls[0][0]));
+    const secondUrl = new URL(String(fetch.mock.calls[1][0]));
+    expect(firstUrl.searchParams.get("q")).toBe(
+      'in:sent {"Voorbeeldbedrijf" "voorbeeld.nl"}',
+    );
+    expect(secondUrl.searchParams.get("pageToken")).toBe("next");
   });
 });

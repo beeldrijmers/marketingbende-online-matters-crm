@@ -92,14 +92,21 @@ describe("SEO-klantrapport", () => {
       companyName: "Voorbeeldbedrijf",
       clientSummary:
         "De analyse uit CRM + Inzyte laat een duidelijke groei zien.",
+      interpretation:
+        "De groei betekent dat meer relevante bezoekers de website via Google weten te vinden.",
       workSummary:
         "De taken uit het CRM/Trello-werkzaamhedenlogboek zijn uitgevoerd.",
+      caveats:
+        "De ontwikkeling blijft mede afhankelijk van seizoen en concurrentie.",
       nextSteps: "Volgende maand verbeteren we de belangrijkste pagina's.",
       brand: "online_matters",
     });
 
     expect(html).toContain("Online Matters");
+    expect(html).toContain("Wat deze ontwikkeling betekent");
     expect(html).toContain("Wat we deze maand hebben uitgevoerd");
+    expect(html).toContain("Eerlijke aandachtspunten");
+    expect(html).toContain("Vooruitblik");
     expect(html).not.toMatch(/CRM|Inzyte|Trello|Marketingbende/);
     expect(html).not.toContain("crm.marketingbende.nl");
   });
@@ -108,7 +115,11 @@ describe("SEO-klantrapport", () => {
     const readiness = getCustomerReportReadiness({
       report: report(false),
       clientSummary: "Dit is een voldoende lange samenvatting voor de klant.",
+      interpretation:
+        "Dit is een praktische duiding van de beschikbare ontwikkeling.",
       workSummary: "Er zijn geen afgeronde werkzaamheden geregistreerd.",
+      caveats:
+        "De gegevens zijn nog onvolledig en vragen daarom om voorzichtigheid.",
       nextSteps: "Komende maand verbeteren we de belangrijkste landingspagina.",
     });
 
@@ -123,12 +134,19 @@ describe("SEO-klantrapport", () => {
     const text = buildSeoMonthlyReportText({
       report: report(),
       clientSummary: "In het CRM-logboek zien we voldoende meetbare groei.",
+      interpretation:
+        "De resultaten uit Inzyte geven een bruikbaar beeld van de ontwikkeling.",
       workSummary:
         "De taken uit Trello zijn deze maand volgens planning afgerond.",
+      caveats:
+        "De CRM-historie bevat nog enkele meetpunten die we blijven volgen.",
       nextSteps: "De analyse in Inzyte gebruiken we voor de volgende stap.",
     });
 
     expect(text).not.toMatch(/CRM|Inzyte|Trello/);
+    expect(text).toContain("Wat deze ontwikkeling betekent");
+    expect(text).toContain("Eerlijke aandachtspunten");
+    expect(text).toContain("Vooruitblik");
     expect(customerFacingText("CRM + Inzyte")).toBe("Online Matters");
   });
 });

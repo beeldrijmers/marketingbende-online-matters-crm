@@ -16,9 +16,19 @@ import {
   buildMonthlyHeadlineMetrics,
   hasSuccessfulMonthlyComparison,
   monthlyReportPeriod,
-  type MonthlyHeadlineMetric,
   type MonthlyReportPeriod,
 } from "./monthlyReport.ts";
+import { loadSentGmailContext } from "./gmailReportContext.ts";
+import {
+  buildDefaultReportNarrative,
+  buildNarrativePromptContext,
+  buildReportEvidence,
+  mergeInzyteNarrative,
+  MONTHLY_NARRATIVE_QUESTION,
+  sanitizeReportEvidenceText,
+  type ReportEvidenceBundle,
+  type ReportNarrative,
+} from "./reportEvidence.ts";
 
 type JsonObject = Record<string, unknown>;
 
@@ -711,76 +721,55 @@ const settleMonthlyPair = async ({
   return { current, previous };
 };
 
-const formatMetric = (metric: MonthlyHeadlineMetric): string => {
-  if (metric.format === "percent") {
-    return `${metric.current.toLocaleString("nl-NL", {
-      maximumFractionDigits: 1,
-    })}%`;
-  }
-  return metric.current.toLocaleString("nl-NL", {
-    maximumFractionDigits: metric.format === "decimal" ? 1 : 0,
-  });
-};
-
-const defaultClientSummary = ({
+const enhanceReportNarrative = async ({
   companyName,
   period,
   metrics,
-  workCount,
+  evidence,
+  link,
 }: {
   companyName: string;
   period: MonthlyReportPeriod;
-  metrics: MonthlyHeadlineMetric[];
-  workCount: number;
-}): string => {
-  const comparable = metrics.filter(
-    (metric) => metric.group === "seo" && metric.changePercent !== null,
-  );
-  const favourable = comparable
-    .filter((metric) => metric.favourable === true)
-    .sort(
-      (left, right) =>
-        Math.abs(right.changePercent || 0) - Math.abs(left.changePercent || 0),
-    )[0];
-  const attention = comparable
-    .filter((metric) => metric.favourable === false)
-    .sort(
-      (left, right) =>
-        Math.abs(right.changePercent || 0) - Math.abs(left.changePercent || 0),
-    )[0];
-  const lines = [
-    `Deze SEO-update voor ${companyName} vergelijkt ${monthLabel(
-      period.reportingMonth,
-    )} met ${monthLabel(period.previousStart)}.`,
-    workCount > 0
-      ? `In de meetmaand zijn ${workCount} werkzaamheden als afgerond vastgelegd.`
-      : "Voor deze meetmaand zijn nog geen afgeronde werkzaamheden in de klantupdate opgenomen.",
-  ];
-  if (favourable) {
-    lines.push(
-      `${favourable.label} kwam uit op ${formatMetric(favourable)} (${favourable.changePercent! >= 0 ? "+" : ""}${favourable.changePercent!.toLocaleString("nl-NL", { maximumFractionDigits: 1 })}% maand-op-maand).`,
-    );
+  metrics: ReturnType<typeof buildMonthlyHeadlineMetrics>;
+  evidence: ReportEvidenceBundle;
+  link: InzyteLink;
+}): Promise<ReportNarrative> => {
+  const fallback = buildDefaultReportNarrative({
+    companyName,
+    period,
+    metrics,
+    evidence,
+  });
+  if (!link.ga4_connection_id || !link.ga4_property_id) return fallback;
+  try {
+    const response = await callInzyte("vraagbaak/ask", {
+      userId: link.inzyte_user_id,
+      method: "POST",
+      body: {
+        question: MONTHLY_NARRATIVE_QUESTION,
+        analyticsContext: buildNarrativePromptContext({
+          companyName,
+          period,
+          metrics,
+          evidence,
+        }),
+        propertyId: link.ga4_property_id,
+        connectionId: link.ga4_connection_id,
+        propertyName: link.ga4_property_name,
+        dateRange: {
+          startDate: period.currentStart,
+          endDate: period.currentEnd,
+        },
+        language: "nl",
+      },
+    });
+    return mergeInzyteNarrative(response, fallback);
+  } catch {
+    // The source-backed deterministic narrative remains available if AI is
+    // temporarily unavailable or returns an unusable response.
+    return fallback;
   }
-  if (attention) {
-    lines.push(
-      `${attention.label} vraagt aandacht (${attention.changePercent! >= 0 ? "+" : ""}${attention.changePercent!.toLocaleString("nl-NL", { maximumFractionDigits: 1 })}% maand-op-maand).`,
-    );
-  }
-  if (comparable.length === 0 && metrics.length > 0) {
-    lines.push(
-      "Er zijn wel algemene websitecijfers beschikbaar, maar die gebruiken we niet als zelfstandig bewijs voor SEO-resultaat.",
-    );
-  }
-  lines.push(
-    "De cijfers laten een ontwikkeling zien; ze bewijzen op zichzelf geen direct oorzakelijk verband met één afzonderlijke wijziging.",
-  );
-  return lines.join(" ");
 };
-
-const defaultWorkSummary = (work: WorkCompletion[]): string =>
-  work.length > 0
-    ? work.map((item) => `• ${item.task_text}`).join("\n")
-    : "Er zijn voor deze meetmaand nog geen afgeronde werkzaamheden geregistreerd.";
 
 const generateMonthlyReport = async (
   deal: JsonObject,
@@ -802,7 +791,7 @@ const generateMonthlyReport = async (
 
   const period = monthlyReportPeriod(requestedMonth);
   const dealId = Number(deal.id);
-  const [work, ga4, gsc] = await Promise.all([
+  const [work, ga4, gsc, sentMail] = await Promise.all([
     loadMonthlyWorkContext(dealId, period),
     settleMonthlyPair({
       enabled: hasGa4,
@@ -826,6 +815,7 @@ const generateMonthlyReport = async (
       previousStart: period.previousStart,
       previousEnd: period.previousEnd,
     }),
+    loadSentGmailContext({ saleId, deal, period }),
   ]);
   const ga4Current = ga4.current;
   const ga4Previous = ga4.previous;
@@ -868,21 +858,41 @@ const generateMonthlyReport = async (
     optionalText(deal.name) ||
     "de klant";
   const title = `SEO-maandupdate ${monthLabel(period.reportingMonth)}`;
-  const clientSummary = defaultClientSummary({
+  const evidence = buildReportEvidence({
+    assignmentDescription: optionalText(deal.description, 50_000),
+    currentWork: work.current,
+    allTimeWork: work.allTime,
+    currentNotes: work.currentInternalActivity,
+    allTimeNotes: work.allTimeInternalActivity,
+    sentMail: sentMail.messages,
+    gmailStatus: sentMail.status,
+    period,
+  });
+  const narrative = await enhanceReportNarrative({
     companyName,
     period,
     metrics,
-    workCount: work.currentCount,
+    evidence,
+    link,
   });
   const reportData = {
-    version: 2,
+    version: 3,
     generatedAt: new Date().toISOString(),
     presentation: { brand: "online_matters" },
+    narrative: {
+      interpretation: narrative.interpretation,
+      caveats: narrative.caveats,
+      generatedBy: narrative.generatedBy,
+      reviewed: false,
+    },
     period,
     assignment: {
       id: deal.id,
       name: deal.name,
-      description: deal.description,
+      description: sanitizeReportEvidenceText(
+        optionalText(deal.description, 50_000) || "",
+        8_000,
+      ),
       category: deal.category,
       createdAt: deal.created_at,
       recurring: deal.revenue_period === "maandelijks",
@@ -898,6 +908,13 @@ const generateMonthlyReport = async (
       allTimeNoteCount: work.allTimeNoteCount,
       allTimeInternalActivity: work.allTimeInternalActivity,
       currentInternalActivity: work.currentInternalActivity,
+    },
+    evidence: {
+      counts: evidence.counts,
+      gmailStatus: evidence.gmailStatus,
+      current: evidence.current,
+      allTime: evidence.allTime,
+      safety: "credentials_removed",
     },
     financialSnapshot: {
       estimateId: deal.moneybird_estimate_id,
@@ -927,10 +944,9 @@ const generateMonthlyReport = async (
           : period.previousEnd,
         status: "draft",
         title,
-        client_summary: clientSummary,
-        work_summary: defaultWorkSummary(work.current),
-        next_steps:
-          "Bespreek de belangrijkste ontwikkeling en leg de concrete SEO-prioriteiten voor de komende maand vast.",
+        client_summary: narrative.clientSummary,
+        work_summary: narrative.workSummary,
+        next_steps: narrative.nextSteps,
         report_data: reportData,
         headline_metrics: metrics,
         current_work_count: work.currentCount,
@@ -991,11 +1007,25 @@ const finalizeMonthlyReport = async (
     );
   }
 
-  const clientSummary =
-    optionalText(body.clientSummary, 20_000) || existing.client_summary;
-  const workSummary =
-    optionalText(body.workSummary, 20_000) || existing.work_summary;
-  const nextSteps = optionalText(body.nextSteps, 20_000) || existing.next_steps;
+  const existingNarrative = isRecord(existingReportData.narrative)
+    ? existingReportData.narrative
+    : {};
+  const safeReportText = (value: unknown, fallback: unknown): string =>
+    sanitizeReportEvidenceText(
+      optionalText(value, 20_000) || optionalText(fallback, 20_000) || "",
+      20_000,
+    );
+  const clientSummary = safeReportText(
+    body.clientSummary,
+    existing.client_summary,
+  );
+  const interpretation = safeReportText(
+    body.interpretation,
+    existingNarrative.interpretation,
+  );
+  const workSummary = safeReportText(body.workSummary, existing.work_summary);
+  const caveats = safeReportText(body.caveats, existingNarrative.caveats);
+  const nextSteps = safeReportText(body.nextSteps, existing.next_steps);
   if (!clientSummary || clientSummary.length < 40) {
     throw userError("Schrijf eerst een bruikbare samenvatting voor de klant.");
   }
@@ -1010,6 +1040,16 @@ const finalizeMonthlyReport = async (
       "Leg eerst de concrete werkzaamheden uit deze meetmaand vast.",
     );
   }
+  if (!interpretation || interpretation.length < 30) {
+    throw userError(
+      "Leg eerst uit wat de gemeten ontwikkeling praktisch betekent.",
+    );
+  }
+  if (!caveats || caveats.length < 20) {
+    throw userError(
+      "Leg eerst de eerlijke aandachtspunten voor de klant vast.",
+    );
+  }
   if (!nextSteps || nextSteps.length < 20) {
     throw userError("Leg eerst de concrete focus voor komende maand vast.");
   }
@@ -1018,11 +1058,18 @@ const finalizeMonthlyReport = async (
   const existingPresentation = isRecord(existingReportData.presentation)
     ? existingReportData.presentation
     : {};
+  const finalizedAt = new Date().toISOString();
   const reportData = {
     ...existingReportData,
     presentation: { ...existingPresentation, brand: reportBrand },
+    narrative: {
+      ...existingNarrative,
+      interpretation,
+      caveats,
+      reviewed: true,
+      reviewedAt: finalizedAt,
+    },
   };
-  const finalizedAt = new Date().toISOString();
   const { data: report, error: updateError } = await supabaseAdmin
     .from("seo_monthly_reports")
     .update({
@@ -1048,8 +1095,12 @@ const finalizeMonthlyReport = async (
       report.title,
       `Meetperiode: ${report.current_start} t/m ${report.current_end} vergeleken met ${report.previous_start} t/m ${report.previous_end}.`,
       clientSummary,
+      "Wat dit betekent:",
+      interpretation,
       "Werkzaamheden:",
       workSummary,
+      "Eerlijke aandachtspunten:",
+      caveats,
       "Volgende stappen:",
       nextSteps,
     ]
@@ -1076,7 +1127,7 @@ const finalizeMonthlyReport = async (
       date: finalizedAt,
       sales_id: saleId,
       activity_source: "manual",
-      activity_source_author: "CRM + Inzyte",
+      activity_source_author: "Online Matters",
       source_event_id: sourceEventId,
     });
     if (error) throw error;

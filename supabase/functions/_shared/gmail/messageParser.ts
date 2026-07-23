@@ -11,6 +11,7 @@ export interface GmailMessagePart {
 export interface GmailMessage {
   id: string;
   historyId?: string;
+  internalDate?: string;
   labelIds?: string[];
   payload?: GmailMessagePart;
 }
@@ -76,8 +77,10 @@ export const normalizeGmailMessage = async (
   message: GmailMessage,
   loadAttachment: AttachmentLoader = async () => "",
 ): Promise<NormalizedInboundEmail> => {
-  const text = await findBody(message.payload, "text/plain", loadAttachment);
-  const html = await findBody(message.payload, "text/html", loadAttachment);
+  const [text, html] = await Promise.all([
+    findBody(message.payload, "text/plain", loadAttachment),
+    findBody(message.payload, "text/html", loadAttachment),
+  ]);
   return {
     from: header(message.payload, "From"),
     to: splitAddresses(header(message.payload, "To")),

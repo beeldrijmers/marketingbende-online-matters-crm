@@ -120,6 +120,33 @@ export const listGmailHistoryMessageIds = async (
   return { ids: [...ids], historyId: latestHistoryId };
 };
 
+export const searchGmailMessageIds = async (
+  accessToken: string,
+  query: string,
+  maximum = 40,
+): Promise<string[]> => {
+  const ids = new Set<string>();
+  let pageToken: string | undefined;
+  const limit = Math.min(Math.max(Math.trunc(maximum), 1), 200);
+  do {
+    const params = new URLSearchParams({
+      q: query,
+      maxResults: String(Math.min(limit - ids.size, 100)),
+    });
+    if (pageToken) params.set("pageToken", pageToken);
+    const page = await googleFetch<{
+      messages?: Array<{ id?: string }>;
+      nextPageToken?: string;
+    }>(`${GMAIL_API}/messages?${params}`, accessToken);
+    for (const message of page.messages ?? []) {
+      if (message.id) ids.add(message.id);
+      if (ids.size >= limit) break;
+    }
+    pageToken = ids.size < limit ? page.nextPageToken : undefined;
+  } while (pageToken);
+  return [...ids];
+};
+
 export const getGmailMessage = (
   accessToken: string,
   messageId: string,

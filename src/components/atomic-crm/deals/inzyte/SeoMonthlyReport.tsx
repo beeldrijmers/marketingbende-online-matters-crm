@@ -64,12 +64,6 @@ const sourceState = (
     : { ok: false, label: "Bron onvolledig" };
 };
 
-const activityText = (activity: Record<string, unknown>): string =>
-  typeof activity.text === "string" ? activity.text : "Notitie zonder tekst";
-
-const activityDate = (activity: Record<string, unknown>): string | null =>
-  typeof activity.date === "string" ? activity.date : null;
-
 const MetricCard = ({ metric }: { metric: SeoMonthlyHeadlineMetric }) => {
   const Icon =
     metric.favourable === true
@@ -113,14 +107,135 @@ const MetricCard = ({ metric }: { metric: SeoMonthlyHeadlineMetric }) => {
   );
 };
 
+const ReportEvidencePanel = ({ report }: { report: SeoMonthlyReport }) => {
+  const work = report.report_data?.work;
+  const evidence = report.report_data?.evidence;
+  const evidenceCounts = evidence?.counts;
+  return (
+    <aside className="space-y-3">
+      <div className="rounded-xl border bg-muted/25 p-4">
+        <div className="text-sm font-semibold">Bronnen van dit rapport</div>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+          De redactie gebruikt relevante informatie uit het volledige
+          opdrachtdossier. Alleen gecontroleerde klanttekst komt in de PDF.
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+          {[
+            ["Opdrachtomschrijving", evidenceCounts?.assignment || 0],
+            ["Afgeronde stappen", evidenceCounts?.completedWork || 0],
+            ["Kaartopmerkingen", evidenceCounts?.cardComments || 0],
+            ["Verzonden e-mails", evidenceCounts?.sentEmails || 0],
+            ["Overige notities", evidenceCounts?.otherNotes || 0],
+          ].map(([label, count]) => (
+            <div key={String(label)} className="rounded-lg border p-2">
+              <div className="text-lg font-semibold">{count}</div>
+              <div className="text-muted-foreground">{label}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 text-xs leading-5 text-muted-foreground">
+          {evidence?.gmailStatus === "connected"
+            ? "Relevante verzonden e-mails zijn meegenomen."
+            : evidence?.gmailStatus === "not_connected"
+              ? "De mailbox is niet gekoppeld; het rapport gebruikt de overige opdrachtbronnen."
+              : evidence?.gmailStatus === "failed"
+                ? "Verzonden e-mails konden tijdelijk niet worden gecontroleerd; vernieuw het rapport om opnieuw te proberen."
+                : "Er zijn voor deze opdracht geen relevante verzonden SEO-updates gevonden."}
+        </div>
+      </div>
+      <details open className="rounded-xl border p-4">
+        <summary className="cursor-pointer text-sm font-semibold">
+          Gebruikte informatie uit deze meetmaand ·{" "}
+          {evidence?.current?.length || 0}
+        </summary>
+        <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
+          {(evidence?.current || []).slice(0, 30).map((item) => (
+            <div key={item.id} className="rounded-lg bg-muted/35 p-2 text-xs">
+              <div className="font-medium">{item.title}</div>
+              <div className="mt-1 line-clamp-5 whitespace-pre-wrap text-muted-foreground">
+                {item.excerpt}
+              </div>
+              {item.date ? (
+                <div className="mt-1 text-muted-foreground">
+                  {new Date(item.date).toLocaleDateString("nl-NL")}
+                </div>
+              ) : null}
+            </div>
+          ))}
+          {!evidence?.current?.length ? (
+            <div className="text-xs text-muted-foreground">
+              Voor deze meetmaand is nog geen aanvullende voortgang vastgelegd.
+            </div>
+          ) : null}
+        </div>
+      </details>
+      <details className="rounded-xl border p-4">
+        <summary className="cursor-pointer text-sm font-semibold">
+          Historisch dossier · {evidence?.allTime?.length || 0} bronnen
+        </summary>
+        <p className="mt-2 text-xs leading-5 text-muted-foreground">
+          Oudere informatie geeft context en helpt voorkomen dat eerder werk
+          wordt vergeten, maar wordt niet als nieuw werk gepresenteerd.
+        </p>
+        <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
+          {(evidence?.allTime || []).slice(0, 30).map((item) => (
+            <div
+              key={item.id}
+              className="border-l-2 border-sky-500/30 pl-3 text-xs"
+            >
+              <div className="font-medium">{item.title}</div>
+              <div className="line-clamp-3 text-muted-foreground">
+                {item.excerpt}
+              </div>
+            </div>
+          ))}
+          {!evidence?.allTime?.length ? (
+            <div className="text-xs text-muted-foreground">
+              Het historische dossier wordt vanaf het volgende rapport verder
+              opgebouwd.
+            </div>
+          ) : null}
+        </div>
+      </details>
+      <div className="rounded-xl border p-4">
+        <div className="text-sm font-semibold">Werkzaamhedenregistratie</div>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <div>
+            <div className="text-2xl font-semibold">
+              {report.current_work_count}
+            </div>
+            <div className="text-xs text-muted-foreground">deze meetmaand</div>
+          </div>
+          <div>
+            <div className="text-2xl font-semibold">
+              {report.all_time_work_count}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              sinds de start afgerond
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 text-xs text-muted-foreground">
+          Het dossier bevat daarnaast {work?.allTimeNoteCount || 0}{" "}
+          voortgangsnotities.
+        </div>
+      </div>
+    </aside>
+  );
+};
+
 const ReportPreview = ({
   report,
   companyName,
   brand,
   clientSummary,
   setClientSummary,
+  interpretation,
+  setInterpretation,
   workSummary,
   setWorkSummary,
+  caveats,
+  setCaveats,
   nextSteps,
   setNextSteps,
 }: {
@@ -129,14 +244,17 @@ const ReportPreview = ({
   brand: SeoReportBrand;
   clientSummary: string;
   setClientSummary: (value: string) => void;
+  interpretation: string;
+  setInterpretation: (value: string) => void;
   workSummary: string;
   setWorkSummary: (value: string) => void;
+  caveats: string;
+  setCaveats: (value: string) => void;
   nextSteps: string;
   setNextSteps: (value: string) => void;
 }) => {
   const ga4 = sourceState(report, "ga4");
   const gsc = sourceState(report, "searchConsole");
-  const work = report.report_data?.work;
   const isOnlineMatters = brand === "online_matters";
   return (
     <section className="overflow-hidden rounded-2xl border bg-background shadow-sm">
@@ -245,6 +363,21 @@ const ReportPreview = ({
           )}
         </section>
 
+        <label className="block rounded-xl border border-sky-500/20 bg-sky-500/[0.04] p-4">
+          <span className="text-sm font-semibold">
+            Wat deze ontwikkeling betekent
+          </span>
+          <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+            De praktische duiding van de cijfers, zonder een onbewezen direct
+            verband met één wijziging te claimen.
+          </span>
+          <Textarea
+            className="mt-2 min-h-28 resize-y bg-background"
+            value={interpretation}
+            onChange={(event) => setInterpretation(event.target.value)}
+          />
+        </label>
+
         <div className="grid gap-5 xl:grid-cols-[1.25fr_.75fr]">
           <div className="space-y-5">
             <label className="block">
@@ -262,7 +395,21 @@ const ReportPreview = ({
               />
             </label>
             <label className="block">
-              <span className="text-sm font-semibold">Volgende stappen</span>
+              <span className="text-sm font-semibold">
+                Eerlijke aandachtspunten
+              </span>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                Benoem wat nog niet overtuigend groeit, welke afhankelijkheden
+                er zijn en waar voorzichtigheid in de interpretatie nodig is.
+              </span>
+              <Textarea
+                className="mt-2 min-h-28 resize-y"
+                value={caveats}
+                onChange={(event) => setCaveats(event.target.value)}
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-semibold">Vooruitblik</span>
               <Textarea
                 className="mt-2 min-h-24 resize-y"
                 value={nextSteps}
@@ -271,100 +418,7 @@ const ReportPreview = ({
             </label>
           </div>
 
-          <aside className="space-y-3">
-            <div className="rounded-xl border bg-muted/25 p-4">
-              <div className="text-sm font-semibold">
-                Bewijs van werkzaamheden
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <div>
-                  <div className="text-2xl font-semibold">
-                    {report.current_work_count}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    deze meetmaand
-                  </div>
-                </div>
-                <div>
-                  <div className="text-2xl font-semibold">
-                    {report.all_time_work_count}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    sinds de start afgerond
-                  </div>
-                </div>
-              </div>
-              <div className="mt-3 text-xs text-muted-foreground">
-                Daarnaast bevat de opdracht {work?.allTimeNoteCount || 0}{" "}
-                voortgangsnotities als interne onderbouwing.
-              </div>
-            </div>
-            <div className="rounded-xl border p-4">
-              <div className="text-sm font-semibold">
-                Historische werkzaamheden
-              </div>
-              <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
-                {(work?.allTime || []).slice(0, 30).map((item) => (
-                  <div
-                    key={item.id}
-                    className="border-l-2 border-sky-500/30 pl-3 text-xs"
-                  >
-                    <div className="font-medium">{item.task_text}</div>
-                    <div className="text-muted-foreground">
-                      {new Date(item.completed_at).toLocaleDateString("nl-NL")}
-                    </div>
-                  </div>
-                ))}
-                {!work?.allTime?.length ? (
-                  <div className="text-xs text-muted-foreground">
-                    Vanaf nu worden afgeronde stappen hier blijvend per maand
-                    opgebouwd.
-                  </div>
-                ) : null}
-              </div>
-            </div>
-            <details className="rounded-xl border p-4">
-              <summary className="cursor-pointer text-sm font-semibold">
-                Interne voortgang uit deze meetmaand ·{" "}
-                {work?.currentInternalActivity?.length || 0}
-              </summary>
-              <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                Alleen als interne bron getoond; deze notities komen niet
-                automatisch in de klant-PDF.
-              </p>
-              <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
-                {(work?.currentInternalActivity || [])
-                  .slice(0, 20)
-                  .map((activity) => {
-                    const date = activityDate(activity);
-                    return (
-                      <div
-                        key={
-                          typeof activity.id === "number"
-                            ? activity.id
-                            : `${date || "notitie"}-${activityText(activity).slice(0, 80)}`
-                        }
-                        className="rounded-lg bg-muted/35 p-2 text-xs"
-                      >
-                        <div className="line-clamp-4 whitespace-pre-wrap">
-                          {activityText(activity)}
-                        </div>
-                        {date ? (
-                          <div className="mt-1 text-muted-foreground">
-                            {new Date(date).toLocaleDateString("nl-NL")}
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-                {!work?.currentInternalActivity?.length ? (
-                  <div className="text-xs text-muted-foreground">
-                    Geen voortgangsnotities in deze meetmaand.
-                  </div>
-                ) : null}
-              </div>
-            </details>
-          </aside>
+          <ReportEvidencePanel report={report} />
         </div>
 
         <div className="rounded-xl border border-slate-500/15 bg-slate-500/[0.04] p-3 text-xs leading-5 text-muted-foreground">
@@ -391,8 +445,14 @@ const SeoMonthlyReportEditor = ({
   const [clientSummary, setClientSummary] = useState(() =>
     customerFacingText(report.client_summary || ""),
   );
+  const [interpretation, setInterpretation] = useState(() =>
+    customerFacingText(report.report_data?.narrative?.interpretation || ""),
+  );
   const [workSummary, setWorkSummary] = useState(() =>
     customerFacingText(report.work_summary || ""),
+  );
+  const [caveats, setCaveats] = useState(() =>
+    customerFacingText(report.report_data?.narrative?.caveats || ""),
   );
   const [nextSteps, setNextSteps] = useState(() =>
     customerFacingText(report.next_steps || ""),
@@ -405,20 +465,24 @@ const SeoMonthlyReportEditor = ({
       getCustomerReportReadiness({
         report,
         clientSummary,
+        interpretation,
         workSummary,
+        caveats,
         nextSteps,
       }),
-    [clientSummary, nextSteps, report, workSummary],
+    [caveats, clientSummary, interpretation, nextSteps, report, workSummary],
   );
   const clientUpdate = useMemo(
     () =>
       buildSeoMonthlyReportText({
         report,
         clientSummary,
+        interpretation,
         workSummary,
+        caveats,
         nextSteps,
       }),
-    [clientSummary, nextSteps, report, workSummary],
+    [caveats, clientSummary, interpretation, nextSteps, report, workSummary],
   );
 
   const openPrintPreview = () => {
@@ -431,7 +495,9 @@ const SeoMonthlyReportEditor = ({
         report,
         companyName,
         clientSummary,
+        interpretation,
         workSummary,
+        caveats,
         nextSteps,
         brand,
       }),
@@ -484,7 +550,9 @@ const SeoMonthlyReportEditor = ({
               .finalizeMonthlyReport({
                 reportId: report.id,
                 clientSummary,
+                interpretation,
                 workSummary,
+                caveats,
                 nextSteps,
                 noteText: clientUpdate,
                 reportBrand: brand,
@@ -525,8 +593,12 @@ const SeoMonthlyReportEditor = ({
         brand={brand}
         clientSummary={clientSummary}
         setClientSummary={setClientSummary}
+        interpretation={interpretation}
+        setInterpretation={setInterpretation}
         workSummary={workSummary}
         setWorkSummary={setWorkSummary}
+        caveats={caveats}
+        setCaveats={setCaveats}
         nextSteps={nextSteps}
         setNextSteps={setNextSteps}
       />
@@ -581,8 +653,9 @@ export const SeoMonthlyReportWorkspace = ({
               Maand-op-maand SEO-update
             </h2>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
-              Combineert GA4 en Search Console met alle vastgelegde
-              werkzaamheden uit deze opdracht. De laatst volledig meetbare
+              Combineert GA4 en Search Console met de opdrachtomschrijving,
+              afgeronde werkzaamheden, kaartopmerkingen, voortgangsnotities en
+              relevante verzonden e-mails. De laatst volledig meetbare
               kalendermaand wordt vergeleken met de maand ervoor.
             </p>
           </div>

@@ -334,6 +334,13 @@ export type SeoMonthlyReportData = {
   presentation?: {
     brand?: "online_matters" | "neutral";
   };
+  narrative?: {
+    interpretation?: string;
+    caveats?: string;
+    generatedBy?: "evidence_rules" | "inzyte_ai";
+    reviewed?: boolean;
+    reviewedAt?: string;
+  };
   period: {
     reportingMonth: string;
     currentStart: string;
@@ -359,6 +366,43 @@ export type SeoMonthlyReportData = {
     allTimeInternalActivity: Array<Record<string, unknown>>;
   };
   financialSnapshot?: Record<string, unknown>;
+  evidence?: {
+    counts?: {
+      assignment?: number;
+      completedWork?: number;
+      cardComments?: number;
+      sentEmails?: number;
+      otherNotes?: number;
+    };
+    gmailStatus?: "connected" | "not_connected" | "no_match" | "failed";
+    current?: Array<{
+      id: string;
+      kind:
+        | "assignment"
+        | "completed_work"
+        | "card_comment"
+        | "sent_email"
+        | "note";
+      date: string | null;
+      title: string;
+      excerpt: string;
+      currentPeriod: boolean;
+    }>;
+    allTime?: Array<{
+      id: string;
+      kind:
+        | "assignment"
+        | "completed_work"
+        | "card_comment"
+        | "sent_email"
+        | "note";
+      date: string | null;
+      title: string;
+      excerpt: string;
+      currentPeriod: boolean;
+    }>;
+    safety?: string;
+  };
 };
 
 export type SeoMonthlyReportSummary = {
