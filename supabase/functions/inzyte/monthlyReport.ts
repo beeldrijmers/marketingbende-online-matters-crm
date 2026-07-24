@@ -11,8 +11,8 @@ export type MonthlyReportPeriod = {
 export type MonthlyHeadlineMetric = {
   key: string;
   label: string;
-  source: "GA4" | "Search Console";
-  group: "seo" | "website_context";
+  source: "GA4" | "Search Console" | "Google Ads" | "Google Bedrijfsprofiel";
+  group: "seo" | "website_context" | "ads" | "local";
   definition: string;
   format: "number" | "percent" | "decimal";
   current: number;
@@ -192,7 +192,7 @@ const headlineMetric = ({
 }: {
   key: string;
   label: string;
-  source: "GA4" | "Search Console";
+  source: MonthlyHeadlineMetric["source"];
   group: MonthlyHeadlineMetric["group"];
   definition: string;
   format: MonthlyHeadlineMetric["format"];
@@ -224,11 +224,19 @@ export const buildMonthlyHeadlineMetrics = ({
   ga4Previous,
   gscCurrent,
   gscPrevious,
+  adsCurrent,
+  adsPrevious,
+  gbpCurrent,
+  gbpPrevious,
 }: {
   ga4Current?: unknown;
   ga4Previous?: unknown;
   gscCurrent?: unknown;
   gscPrevious?: unknown;
+  adsCurrent?: unknown;
+  adsPrevious?: unknown;
+  gbpCurrent?: unknown;
+  gbpPrevious?: unknown;
 }): MonthlyHeadlineMetric[] => {
   const metrics = [
     headlineMetric({
@@ -344,6 +352,149 @@ export const buildMonthlyHeadlineMetrics = ({
       current: metricValue(gscCurrent, ["position", "averagePosition"]),
       previous: metricValue(gscPrevious, ["position", "averagePosition"]),
       lowerIsBetter: true,
+    }),
+    headlineMetric({
+      key: "adsClicks",
+      label: "Advertentieklikken",
+      source: "Google Ads",
+      group: "ads",
+      definition: "Klikken op de gekoppelde Google Ads-campagnes.",
+      format: "number",
+      current: metricValue(adsCurrent, ["clicks", "totalClicks"], true),
+      previous: metricValue(adsPrevious, ["clicks", "totalClicks"], true),
+    }),
+    headlineMetric({
+      key: "adsImpressions",
+      label: "Advertentievertoningen",
+      source: "Google Ads",
+      group: "ads",
+      definition:
+        "Aantal keren dat advertenties uit het gekoppelde account zijn vertoond.",
+      format: "number",
+      current: metricValue(
+        adsCurrent,
+        ["impressions", "totalImpressions"],
+        true,
+      ),
+      previous: metricValue(
+        adsPrevious,
+        ["impressions", "totalImpressions"],
+        true,
+      ),
+    }),
+    headlineMetric({
+      key: "adsConversions",
+      label: "Advertentieconversies",
+      source: "Google Ads",
+      group: "ads",
+      definition:
+        "Conversies die in het gekoppelde Google Ads-account zijn geregistreerd.",
+      format: "number",
+      current: metricValue(
+        adsCurrent,
+        ["conversions", "totalConversions"],
+        true,
+      ),
+      previous: metricValue(
+        adsPrevious,
+        ["conversions", "totalConversions"],
+        true,
+      ),
+    }),
+    headlineMetric({
+      key: "businessProfileViews",
+      label: "Bedrijfsprofiel-weergaven",
+      source: "Google Bedrijfsprofiel",
+      group: "local",
+      definition:
+        "Weergaven van het gekoppelde Google Bedrijfsprofiel in Zoeken en Maps.",
+      format: "number",
+      current: metricValue(
+        gbpCurrent,
+        ["profileViews", "businessImpressions", "totalViews"],
+        true,
+      ),
+      previous: metricValue(
+        gbpPrevious,
+        ["profileViews", "businessImpressions", "totalViews"],
+        true,
+      ),
+    }),
+    headlineMetric({
+      key: "businessProfileActions",
+      label: "Acties vanuit Bedrijfsprofiel",
+      source: "Google Bedrijfsprofiel",
+      group: "local",
+      definition:
+        "Gemeten websiteklikken, belacties en routeaanvragen vanuit het gekoppelde bedrijfsprofiel.",
+      format: "number",
+      current: metricValue(
+        gbpCurrent,
+        ["profileActions", "totalActions"],
+        true,
+      ),
+      previous: metricValue(
+        gbpPrevious,
+        ["profileActions", "totalActions"],
+        true,
+      ),
+    }),
+    headlineMetric({
+      key: "businessProfileWebsiteClicks",
+      label: "Websiteklikken vanuit Bedrijfsprofiel",
+      source: "Google Bedrijfsprofiel",
+      group: "local",
+      definition:
+        "Klikken vanuit het gekoppelde Google Bedrijfsprofiel naar de website.",
+      format: "number",
+      current: metricValue(
+        gbpCurrent,
+        ["websiteClicks", "businessWebsiteClicks"],
+        true,
+      ),
+      previous: metricValue(
+        gbpPrevious,
+        ["websiteClicks", "businessWebsiteClicks"],
+        true,
+      ),
+    }),
+    headlineMetric({
+      key: "businessProfileCalls",
+      label: "Belacties vanuit Bedrijfsprofiel",
+      source: "Google Bedrijfsprofiel",
+      group: "local",
+      definition:
+        "Belacties die vanuit het gekoppelde Google Bedrijfsprofiel zijn gestart.",
+      format: "number",
+      current: metricValue(
+        gbpCurrent,
+        ["callClicks", "businessConversations"],
+        true,
+      ),
+      previous: metricValue(
+        gbpPrevious,
+        ["callClicks", "businessConversations"],
+        true,
+      ),
+    }),
+    headlineMetric({
+      key: "businessProfileDirections",
+      label: "Routeaanvragen vanuit Bedrijfsprofiel",
+      source: "Google Bedrijfsprofiel",
+      group: "local",
+      definition:
+        "Routeaanvragen vanuit het gekoppelde Google Bedrijfsprofiel.",
+      format: "number",
+      current: metricValue(
+        gbpCurrent,
+        ["directionRequests", "businessDirectionRequests"],
+        true,
+      ),
+      previous: metricValue(
+        gbpPrevious,
+        ["directionRequests", "businessDirectionRequests"],
+        true,
+      ),
     }),
   ];
   return metrics.filter(

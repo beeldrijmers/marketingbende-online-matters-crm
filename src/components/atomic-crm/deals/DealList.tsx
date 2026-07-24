@@ -84,8 +84,8 @@ export const DealList = ({
         emptyText="Meetbronkoppeling"
         choices={[
           { id: "active", name: "Meetbron actief (gecontroleerd)" },
-          { id: "review", name: "Controle nodig" },
-          { id: "none", name: "Geen meetbron" },
+          { id: "review", name: "Brongegevens niet bevestigd" },
+          { id: "none", name: "Geen meetbron gekoppeld" },
         ]}
       />
     </WrapperField>,

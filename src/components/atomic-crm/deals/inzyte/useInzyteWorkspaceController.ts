@@ -263,7 +263,7 @@ export const useInzyteWorkspaceController = (record: Deal) => {
   const unlink = async () => {
     if (
       !window.confirm(
-        "Alleen de koppeling met deze opdracht verwijderen? Inzyte zelf blijft intact.",
+        "De broninstellingen bij deze opdracht verwijderen? De Google-autorisatie blijft intact.",
       )
     ) {
       return;
@@ -275,7 +275,9 @@ export const useInzyteWorkspaceController = (record: Deal) => {
       setSources({});
       await queryClient.invalidateQueries({ queryKey: ["deals"] });
       await loadBootstrap();
-      notify("De opdracht is losgekoppeld van Inzyte", { type: "success" });
+      notify("De broninstellingen zijn bij deze opdracht verwijderd", {
+        type: "success",
+      });
     } catch (error) {
       notify(
         error instanceof Error ? error.message : "Loskoppelen is mislukt",
@@ -337,7 +339,7 @@ export const useInzyteWorkspaceController = (record: Deal) => {
           : current,
       );
       await queryClient.invalidateQueries({ queryKey: ["deals"] });
-      notify("SEO-maandrapport is ververst en als concept opgeslagen", {
+      notify("Maandrapport is ververst en als concept opgeslagen", {
         type: "success",
       });
       return report;
@@ -345,7 +347,7 @@ export const useInzyteWorkspaceController = (record: Deal) => {
       notify(
         error instanceof Error
           ? error.message
-          : "SEO-maandrapport maken is mislukt",
+          : "Maandrapport maken is mislukt",
         { type: "error" },
       );
       throw error;
@@ -392,7 +394,7 @@ export const useInzyteWorkspaceController = (record: Deal) => {
           : current,
       );
       await queryClient.invalidateQueries({ queryKey: ["deals"] });
-      notify("SEO-maandrapport is definitief bij de opdracht opgeslagen", {
+      notify("Maandrapport is definitief bij de opdracht opgeslagen", {
         type: "success",
       });
       return report;
@@ -400,7 +402,7 @@ export const useInzyteWorkspaceController = (record: Deal) => {
       notify(
         error instanceof Error
           ? error.message
-          : "SEO-maandrapport opslaan is mislukt",
+          : "Maandrapport opslaan is mislukt",
         { type: "error" },
       );
       throw error;

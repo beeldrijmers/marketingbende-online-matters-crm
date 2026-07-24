@@ -880,12 +880,13 @@ const UnlinkedContent = ({
           <Link2 className="mt-0.5 size-5 text-amber-600" />
           <div>
             <h2 className="font-semibold">
-              Koppel deze opdracht eerst aan Inzyte
+              Meetgegevens toevoegen is optioneel
             </h2>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Selecteer hieronder het juiste klantaccount en de Google-bronnen.
-              Daarna verschijnen op deze ene pagina de klantupdate, PDF en alle
-              analyses.
+              De maandrapportage hierboven werkt al met werkzaamheden,
+              kaartnotities en relevante correspondentie. Selecteer hieronder
+              alleen een klantaccount en Google-bronnen als u de rapportage met
+              gecontroleerde maand-op-maandcijfers wilt verrijken.
             </p>
           </div>
         </div>
@@ -913,9 +914,9 @@ export const InzyteWorkspaceContent = ({
 }) => (
   <div className="min-h-0 flex-1 overflow-y-auto bg-muted/5">
     <div className="mx-auto w-full max-w-[1800px] space-y-5 p-4 pb-12 md:p-6">
+      <SeoMonthlyReportWorkspace record={record} controller={controller} />
       {controller.linked ? (
         <>
-          <SeoMonthlyReportWorkspace record={record} controller={controller} />
           <DateBar controller={controller} />
           <AnalysisGrid controller={controller} />
           <ResultSection record={record} controller={controller} />

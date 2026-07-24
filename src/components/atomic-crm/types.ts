@@ -310,8 +310,8 @@ export type InzyteBootstrap = {
 export type SeoMonthlyHeadlineMetric = {
   key: string;
   label: string;
-  source: "GA4" | "Search Console";
-  group: "seo" | "website_context";
+  source: "GA4" | "Search Console" | "Google Ads" | "Google Bedrijfsprofiel";
+  group: "seo" | "website_context" | "ads" | "local";
   definition: string;
   format: "number" | "percent" | "decimal";
   current: number;
@@ -337,6 +337,11 @@ export type SeoMonthlyReportData = {
   generatedAt: string;
   presentation?: {
     brand?: "online_matters" | "neutral";
+  };
+  measurement?: {
+    mode?: "work_only" | "analytics_and_work";
+    hasComparableMeasurement?: boolean;
+    attemptedSources?: string[];
   };
   narrative?: {
     interpretation?: string;

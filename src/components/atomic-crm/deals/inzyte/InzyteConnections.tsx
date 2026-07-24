@@ -299,7 +299,7 @@ export const InzyteConnections = ({
               variant="outline"
               className="border-amber-500/40 text-amber-600"
             >
-              Controle nodig
+              Brongegevens niet bevestigd
             </Badge>
           ) : (
             <Badge variant="outline">Nog niet opgeslagen</Badge>
@@ -352,9 +352,9 @@ export const InzyteConnections = ({
 
       {bootstrap.link && connectionSummary.tone !== "success" ? (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-4 text-sm text-amber-700 dark:text-amber-400">
-          De oude instellingen zijn wel bewaard, maar tellen nog niet als
-          actieve klantkoppeling. Haal de beschikbare bronnen live op,
-          controleer de klantnaam/property en sla ze daarna opnieuw op.
+          Er staan brongegevens opgeslagen, maar die zijn niet live bevestigd en
+          vormen dus geen actieve koppeling. Haal de beschikbare bronnen live
+          op, controleer de klantnaam/property en sla de juiste bron op.
         </div>
       ) : null}
 

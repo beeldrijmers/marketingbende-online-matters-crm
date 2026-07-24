@@ -45,11 +45,7 @@ export const InzyteWorkspace = ({ record }: { record: Deal }) => {
           onPointerDown={stopCardEvent}
         >
           <BarChart3 className="size-3.5 text-sky-500" />
-          {connection.tone === "success"
-            ? "Open"
-            : record.inzyte_link
-              ? "Controleren"
-              : "Instellen"}
+          Open
         </Button>
       </DialogTrigger>
       <DialogContent
@@ -67,8 +63,9 @@ export const InzyteWorkspace = ({ record }: { record: Deal }) => {
                 Klantinzichten · {record.name}
               </DialogTitle>
               <DialogDescription className="mt-1">
-                Maak een klantupdate, PDF-rapport of verdiepende analyse met de
-                live gecontroleerde klantgegevens.
+                Maak altijd een klantupdate of PDF-rapport van de vastgelegde
+                voortgang en voeg gecontroleerde meetgegevens toe wanneer die
+                beschikbaar zijn.
               </DialogDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 pr-4">
@@ -89,7 +86,9 @@ export const InzyteWorkspace = ({ record }: { record: Deal }) => {
                 </Badge>
               )}
               {controller.bootstrap?.link?.last_error ? (
-                <Badge variant="destructive">Koppeling vraagt aandacht</Badge>
+                <Badge variant="destructive">
+                  Broncontrole vraagt aandacht
+                </Badge>
               ) : null}
             </div>
           </div>
@@ -100,7 +99,7 @@ export const InzyteWorkspace = ({ record }: { record: Deal }) => {
             <div className="text-center">
               <Loader2 className="mx-auto size-8 animate-spin text-sky-500" />
               <p className="mt-3 text-sm text-muted-foreground">
-                Klantkoppelingen en historie laden…
+                Klantgegevens en historie laden…
               </p>
             </div>
           </div>

@@ -52,7 +52,7 @@ describe("Inzyte-koppelbewijs", () => {
       verified: false,
     });
     expect(getInzyteConnectionSummary(storedOnly)).toMatchObject({
-      label: "GA4 ingesteld, controle nodig",
+      label: "GA4-brongegevens niet bevestigd",
       tone: "warning",
     });
   });

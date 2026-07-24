@@ -138,6 +138,33 @@ describe("brononderbouwde SEO-maandrapportage", () => {
     expect(narrative.nextSteps).toContain("komende");
   });
 
+  it("rapporteert werkzaamheden eerlijk wanneer meetgegevens ontbreken", () => {
+    const narrative = buildDefaultReportNarrative({
+      companyName: "Voorbeeldbedrijf",
+      period,
+      metrics: [],
+      evidence: evidence(),
+    });
+
+    expect(narrative.clientSummary).toContain(
+      "geen volledige gecontroleerde meetreeks",
+    );
+    expect(narrative.clientSummary).toContain("uitgevoerd werk");
+    expect(narrative.interpretation).toContain(
+      "geen betrouwbare conclusie over verkeer",
+    );
+    expect(narrative.workSummary).toContain("Paginatitels");
+    expect(narrative.caveats).toContain(
+      "geen volledige gecontroleerde maand-op-maandmeting",
+    );
+    expect(narrative.nextSteps).toContain(
+      "Werkzaamheden en klantbesluiten consequent",
+    );
+    expect(narrative.interpretation).not.toMatch(
+      /stabiele basis|beter presteerde|duidelijke groei/i,
+    );
+  });
+
   it("accepteert alleen bruikbare gestructureerde redactietekst en houdt een veilige fallback", () => {
     const fallback = buildDefaultReportNarrative({
       companyName: "Voorbeeldbedrijf",

@@ -87,6 +87,34 @@ describe("buildMonthlyHeadlineMetrics", () => {
       metrics.find((metric) => metric.key === "activeUsers"),
     ).toBeUndefined();
   });
+
+  it("neemt gecontroleerde Ads- en Bedrijfsprofielcijfers mee", () => {
+    const metrics = buildMonthlyHeadlineMetrics({
+      adsCurrent: {
+        summary: { clicks: 80, impressions: 2400, conversions: 12 },
+      },
+      adsPrevious: {
+        summary: { clicks: 60, impressions: 2000, conversions: 8 },
+      },
+      gbpCurrent: { totals: { profileViews: 900, profileActions: 45 } },
+      gbpPrevious: { totals: { profileViews: 750, profileActions: 30 } },
+    });
+
+    expect(metrics.find((metric) => metric.key === "adsClicks")).toMatchObject({
+      source: "Google Ads",
+      group: "ads",
+      current: 80,
+      previous: 60,
+    });
+    expect(
+      metrics.find((metric) => metric.key === "businessProfileViews"),
+    ).toMatchObject({
+      source: "Google Bedrijfsprofiel",
+      group: "local",
+      current: 900,
+      previous: 750,
+    });
+  });
 });
 
 describe("hasSuccessfulMonthlyComparison", () => {

@@ -380,9 +380,8 @@ export const buildDefaultReportNarrative = ({
   metrics: MonthlyHeadlineMetric[];
   evidence: ReportEvidenceBundle;
 }): ReportNarrative => {
-  const comparable = metrics.filter(
-    (metric) => metric.changePercent !== null && metric.group === "seo",
-  );
+  const hasMetrics = metrics.length > 0;
+  const comparable = metrics.filter((metric) => metric.changePercent !== null);
   const favourable = comparable
     .filter((metric) => metric.favourable === true)
     .sort(
@@ -402,9 +401,13 @@ export const buildDefaultReportNarrative = ({
     (item) => item.kind !== "assignment",
   ).length;
 
-  const summary: string[] = [
-    `In ${monthLabel(period.reportingMonth)} hebben we voor ${companyName} verder gebouwd aan de organische vindbaarheid en de kwaliteit van de website. De update is gebaseerd op de meetgegevens én ${currentSourceCount} relevante voortgangsbron${currentSourceCount === 1 ? "" : "nen"} uit de opdracht.`,
-  ];
+  const summary: string[] = hasMetrics
+    ? [
+        `In ${monthLabel(period.reportingMonth)} hebben we voor ${companyName} verder gewerkt aan de afgesproken digitale doelen. Deze update combineert gecontroleerde meetgegevens met ${currentSourceCount} relevante voortgangsbron${currentSourceCount === 1 ? "" : "nen"} uit de opdracht.`,
+      ]
+    : [
+        `In ${monthLabel(period.reportingMonth)} hebben we de voortgang voor ${companyName} in kaart gebracht op basis van ${currentSourceCount} relevante voortgangsbron${currentSourceCount === 1 ? "" : "nen"} uit de opdracht. Er was geen volledige gecontroleerde meetreeks beschikbaar; deze update gaat daarom over aantoonbaar uitgevoerd werk en voortgang, niet over verkeers- of rankingresultaten.`,
+      ];
   if (favourable) {
     summary.push(
       `De duidelijkste positieve ontwikkeling zien we bij ${favourable.label.toLocaleLowerCase("nl-NL")}: ${formatMetric(favourable, favourable.current)}, oftewel ${changeText(favourable)} ten opzichte van de vorige maand.`,
@@ -416,7 +419,7 @@ export const buildDefaultReportNarrative = ({
   }
   if (currentWork.length > 0) {
     summary.push(
-      `${currentWork.length} concrete werkzaamhe${currentWork.length === 1 ? "id is" : "den zijn"} deze meetmaand als afgerond vastgelegd.`,
+      `${currentWork.length} concrete werkzaamhe${currentWork.length === 1 ? "id is" : "den zijn"} deze rapportagemaand als afgerond vastgelegd.`,
     );
   }
   if (attention) {
@@ -425,15 +428,17 @@ export const buildDefaultReportNarrative = ({
     );
   }
 
-  const interpretation = [
-    favourable
-      ? `De stijging bij ${favourable.label.toLocaleLowerCase("nl-NL")} laat zien dat de website in deze periode beter presteerde op dit onderdeel.`
-      : "De cijfers laten in deze periode vooral een stabiele basis zien waarop verder kan worden geoptimaliseerd.",
-    attention
-      ? `De minder gunstige ontwikkeling bij ${attention.label.toLocaleLowerCase("nl-NL")} betekent dat we niet alleen naar groei kijken, maar ook gericht controleren waar bereik, relevantie of doorklik mogelijk achterblijft.`
-      : "Er is geen afzonderlijk SEO-kerncijfer dat in deze vergelijking als duidelijke terugval is aangemerkt.",
-    "We koppelen deze ontwikkeling aan het uitgevoerde werk als onderbouwing, niet als bewijs dat één wijziging het volledige resultaat heeft veroorzaakt.",
-  ].join(" ");
+  const interpretation = hasMetrics
+    ? [
+        favourable
+          ? `De stijging bij ${favourable.label.toLocaleLowerCase("nl-NL")} laat zien dat de digitale prestaties in deze periode op dit onderdeel gunstiger waren.`
+          : "De beschikbare cijfers geven een bruikbaar meetbeeld waarop verder kan worden geoptimaliseerd.",
+        attention
+          ? `De minder gunstige ontwikkeling bij ${attention.label.toLocaleLowerCase("nl-NL")} betekent dat we gericht controleren waar bereik, relevantie, doorklik of conversie mogelijk achterblijft.`
+          : "Binnen de beschikbare kerncijfers is in deze vergelijking geen afzonderlijke duidelijke terugval aangemerkt.",
+        "We koppelen deze ontwikkeling aan het uitgevoerde werk als onderbouwing, niet als bewijs dat één wijziging het volledige resultaat heeft veroorzaakt.",
+      ].join(" ")
+    : "Deze rapportage laat zien welke werkzaamheden en voortgang aantoonbaar zijn vastgelegd. Zonder een volledige gecontroleerde meetreeks kunnen we daar nog geen betrouwbare conclusie over verkeer, vindbaarheid, advertenties of conversies aan verbinden.";
 
   const completedLines = currentWork.map((item) => item.excerpt);
   const sourceCompletedLines = evidence.current.flatMap((item) =>
@@ -459,7 +464,13 @@ export const buildDefaultReportNarrative = ({
           ]
         : []),
       ...caveatLines,
-      "Een maand-op-maandvergelijking blijft gevoelig voor seizoen, campagnes, concurrentie en wijzigingen buiten de SEO-werkzaamheden",
+      ...(hasMetrics
+        ? [
+            "Een maand-op-maandvergelijking blijft gevoelig voor seizoen, campagnes, concurrentie en wijzigingen buiten de uitgevoerde werkzaamheden",
+          ]
+        : [
+            "Er was geen volledige gecontroleerde maand-op-maandmeting beschikbaar; uitspraken over effect op verkeer, vindbaarheid, advertenties of conversies zijn daarom niet verantwoord",
+          ]),
     ],
     4,
   ).join("\n");
@@ -475,7 +486,14 @@ export const buildDefaultReportNarrative = ({
             `De ontwikkeling van ${attention.label.toLocaleLowerCase("nl-NL")} gericht volgen en de onderliggende zoekopdrachten en pagina's controleren`,
           ]
         : []),
-      "De belangrijkste SEO-kerncijfers opnieuw vergelijken zodra de volgende kalendermaand volledig meetbaar is",
+      ...(hasMetrics
+        ? [
+            "De belangrijkste kerncijfers opnieuw vergelijken zodra de volgende kalendermaand volledig meetbaar is",
+          ]
+        : [
+            "Werkzaamheden en klantbesluiten consequent blijven vastleggen voor de volgende maandupdate",
+            "Indien gewenst een relevante meetbron controleren zodat een volgende rapportage ook meetresultaten kan bevatten",
+          ]),
     ],
     5,
   ).join("\n");
@@ -577,7 +595,7 @@ export const buildNarrativePromptContext = ({
 }): string =>
   JSON.stringify({
     klant: companyName,
-    meetmaand: period.reportingMonth,
+    rapportagemaand: period.reportingMonth,
     vergelijking: {
       huidig: [period.currentStart, period.currentEnd],
       vorig: [period.previousStart, period.previousEnd],
@@ -603,4 +621,4 @@ export const buildNarrativePromptContext = ({
     bronTellingen: evidence.counts,
   }).slice(0, 28_000);
 
-export const MONTHLY_NARRATIVE_QUESTION = `Schrijf op basis van het aangeleverde bronmateriaal een klantklare Nederlandse SEO-maandupdate in de toon van een persoonlijke, deskundige statusmail. Gebruik uitsluitend aantoonbare feiten uit het bronmateriaal. Formuleer positief waar de cijfers dat toelaten, benoem minder gunstige ontwikkelingen en onzekerheden eerlijk, en eindig met concreet toekomstperspectief. Maak geen oorzakelijke claims die niet zijn bewezen. Noem geen interne systemen, kaartsoftware, mailboxsoftware, CRM of analyseplatform. Neem werkzaamheden uit de meetmaand op; gebruik oudere informatie alleen als relevante context. Geef uitsluitend geldige JSON terug met exact deze velden: {"clientSummary":"2-4 korte alinea's","interpretation":"wat de ontwikkeling praktisch betekent","workSummary":"bullets met concreet uitgevoerd werk","caveats":"bullets met eerlijke aandachtspunten","nextSteps":"bullets met focus voor komende maand"}.`;
+export const MONTHLY_NARRATIVE_QUESTION = `Schrijf op basis van het aangeleverde bronmateriaal een klantklare Nederlandse maandupdate in de toon van een persoonlijke, deskundige statusmail. Gebruik uitsluitend aantoonbare feiten uit het bronmateriaal. De uitgevoerde werkzaamheden en vastgelegde voortgang vormen altijd de basis. Gebruik meetcijfers alleen als ze werkelijk zijn aangeleverd; zonder cijfers mag je geen groei, stabiliteit, verkeers-, advertentie-, conversie- of rankingresultaat suggereren. Formuleer positief waar de feiten dat toelaten, benoem minder gunstige ontwikkelingen en onzekerheden eerlijk, en eindig met concreet toekomstperspectief. Maak geen oorzakelijke claims die niet zijn bewezen. Noem geen interne systemen, kaartsoftware, mailboxsoftware, CRM of analyseplatform. Neem werkzaamheden uit de rapportagemaand op; gebruik oudere informatie alleen als relevante context. Geef uitsluitend geldige JSON terug met exact deze velden: {"clientSummary":"2-4 korte alinea's","interpretation":"wat de voortgang of gemeten ontwikkeling praktisch betekent","workSummary":"bullets met concreet uitgevoerd werk","caveats":"bullets met eerlijke aandachtspunten en eventuele meetbeperking","nextSteps":"bullets met focus voor komende maand"}.`;

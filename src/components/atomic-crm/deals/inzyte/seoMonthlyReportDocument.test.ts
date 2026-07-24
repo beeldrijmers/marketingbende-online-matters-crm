@@ -85,7 +85,7 @@ const report = (complete = true): SeoMonthlyReport => ({
   },
 });
 
-describe("SEO-klantrapport", () => {
+describe("klantklare maandrapportage", () => {
   it("gebruikt de Online Matters-huisstijl zonder interne systeemnamen", () => {
     const html = buildSeoMonthlyReportDocument({
       report: report(),
@@ -111,7 +111,7 @@ describe("SEO-klantrapport", () => {
     expect(html).not.toContain("crm.marketingbende.nl");
   });
 
-  it("blokkeert delen als een volledige vergelijking of werkzaamheden ontbreken", () => {
+  it("blokkeert delen alleen als de klantinhoud onvoldoende is", () => {
     const readiness = getCustomerReportReadiness({
       report: report(false),
       clientSummary: "Dit is een voldoende lange samenvatting voor de klant.",
@@ -124,10 +124,58 @@ describe("SEO-klantrapport", () => {
     });
 
     expect(readiness.ready).toBe(false);
-    expect(readiness.reasons).toContain("een volledige maand-op-maandmeting");
-    expect(readiness.reasons).toContain(
-      "concrete werkzaamheden uit de meetmaand",
+    expect(readiness.reasons).not.toContain(
+      "een volledige maand-op-maandmeting",
     );
+    expect(readiness.reasons).toContain(
+      "concrete werkzaamheden uit de rapportagemaand",
+    );
+  });
+
+  it("maakt een volledige werkrapportage zonder meetkoppeling", () => {
+    const workOnly = report(false);
+    workOnly.title = "Maandrapportage juni 2026";
+    workOnly.data_through = null;
+    workOnly.headline_metrics = [];
+    workOnly.report_data.measurement = {
+      mode: "work_only",
+      hasComparableMeasurement: false,
+      attemptedSources: [],
+    };
+
+    const content = {
+      clientSummary:
+        "Deze maand zijn de afgesproken verbeteringen uitgevoerd en is de voortgang met de klant afgestemd.",
+      interpretation:
+        "De vastgelegde werkzaamheden brengen de opdracht inhoudelijk verder; zonder meetreeks verbinden we hier geen resultaatclaim aan.",
+      workSummary:
+        "De paginatitels zijn aangescherpt en de belangrijkste interne links zijn gecontroleerd.",
+      caveats:
+        "Er is geen gecontroleerde meetreeks beschikbaar, waardoor uitspraken over verkeer en vindbaarheid niet verantwoord zijn.",
+      nextSteps:
+        "Komende maand controleren we de nieuwe pagina's en leggen we de volgende werkzaamheden vast.",
+    };
+    const readiness = getCustomerReportReadiness({
+      report: workOnly,
+      ...content,
+    });
+    const html = buildSeoMonthlyReportDocument({
+      report: workOnly,
+      companyName: "Voorbeeldbedrijf",
+      brand: "online_matters",
+      ...content,
+    });
+    const text = buildSeoMonthlyReportText({
+      report: workOnly,
+      ...content,
+    });
+
+    expect(readiness.ready).toBe(true);
+    expect(html).toContain("Voortgang zonder meetkoppeling");
+    expect(html).toContain("Wat deze voortgang betekent");
+    expect(html).not.toContain("Meetresultaten maand-op-maand");
+    expect(text).toContain("Maandrapportage juni 2026");
+    expect(text).toContain("geen volledige gecontroleerde");
   });
 
   it("maakt ook de gekopieerde klantupdate vrij van interne termen", () => {

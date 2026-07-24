@@ -84,7 +84,7 @@ export const getInzyteConnectionSummary = (
 } => {
   if (!link) {
     return {
-      label: "Nog niet ingesteld",
+      label: "Geen meetbron gekoppeld",
       tone: "neutral",
       configuredCount: 0,
       verifiedCount: 0,
@@ -97,7 +97,7 @@ export const getInzyteConnectionSummary = (
 
   if (link.last_error) {
     return {
-      label: "Koppeling vraagt aandacht",
+      label: "Broncontrole vraagt aandacht",
       tone: "error",
       configuredCount: configured.length,
       verifiedCount: verified.length,
@@ -120,7 +120,7 @@ export const getInzyteConnectionSummary = (
     return {
       label: `${verified.length} gecontroleerd · ${
         configured.length - verified.length
-      } controle nodig`,
+      } niet bevestigd`,
       tone: "warning",
       configuredCount: configured.length,
       verifiedCount: verified.length,
@@ -129,7 +129,7 @@ export const getInzyteConnectionSummary = (
 
   if (configured.length === 1) {
     return {
-      label: `${configured[0].label} ingesteld, controle nodig`,
+      label: `${configured[0].label}-brongegevens niet bevestigd`,
       tone: "warning",
       configuredCount: 1,
       verifiedCount: 0,
@@ -138,7 +138,7 @@ export const getInzyteConnectionSummary = (
 
   if (configured.length > 1) {
     return {
-      label: `${configured.length} bronnen ingesteld, controle nodig`,
+      label: `${configured.length} brongegevens niet bevestigd`,
       tone: "warning",
       configuredCount: configured.length,
       verifiedCount: 0,
@@ -146,7 +146,7 @@ export const getInzyteConnectionSummary = (
   }
 
   return {
-    label: "Account ingesteld, meetbron ontbreekt",
+    label: "Geen meetbron gekoppeld",
     tone: "warning",
     configuredCount: 0,
     verifiedCount: 0,

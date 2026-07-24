@@ -34,6 +34,7 @@ import {
   dateLabel,
   getCustomerReportReadiness,
   getSeoReportBrand,
+  hasCompleteMeasurementPair,
   metricValue,
   monthLabel,
   ONLINE_MATTERS_LOGO_URL,
@@ -49,7 +50,7 @@ const maxReportingMonth = (): string => {
 
 const sourceState = (
   report: SeoMonthlyReport,
-  source: "ga4" | "searchConsole",
+  source: "ga4" | "searchConsole" | "businessProfile" | "googleAds",
 ): { ok: boolean; label: string } => {
   const sources = report.report_data?.sources as
     | Record<
@@ -59,10 +60,28 @@ const sourceState = (
     | undefined;
   const current = sources?.[source]?.current?.status;
   const previous = sources?.[source]?.previous?.status;
-  return current === "success" && previous === "success"
-    ? { ok: true, label: "Beide maanden gemeten" }
-    : { ok: false, label: "Bron onvolledig" };
+  if (current === "success" && previous === "success") {
+    return { ok: true, label: "Beide maanden gemeten" };
+  }
+  if (
+    (!current && !previous) ||
+    (current === "unavailable" && previous === "unavailable")
+  ) {
+    return { ok: false, label: "Niet gekoppeld" };
+  }
+  if (current === "failed" || previous === "failed") {
+    return { ok: false, label: "Tijdelijk niet beschikbaar" };
+  }
+  return { ok: false, label: "Onvolledig" };
 };
+
+const metricGroupLabel = (group: SeoMonthlyHeadlineMetric["group"]): string =>
+  ({
+    seo: "SEO-kerncijfer",
+    website_context: "Websitecontext",
+    ads: "Advertenties",
+    local: "Lokale zichtbaarheid",
+  })[group];
 
 const MetricCard = ({ metric }: { metric: SeoMonthlyHeadlineMetric }) => {
   const Icon =
@@ -97,7 +116,7 @@ const MetricCard = ({ metric }: { metric: SeoMonthlyHeadlineMetric }) => {
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
         <span>Vorige maand: {metricValue(metric, metric.previous)}</span>
         <Badge variant="secondary" className="text-[10px]">
-          {metric.group === "seo" ? "SEO-kerncijfer" : "Websitecontext"}
+          {metricGroupLabel(metric.group)}
         </Badge>
       </div>
       <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
@@ -140,12 +159,12 @@ const ReportEvidencePanel = ({ report }: { report: SeoMonthlyReport }) => {
               ? "De mailbox is niet gekoppeld; het rapport gebruikt de overige opdrachtbronnen."
               : evidence?.gmailStatus === "failed"
                 ? "Verzonden e-mails konden tijdelijk niet worden gecontroleerd; vernieuw het rapport om opnieuw te proberen."
-                : "Er zijn voor deze opdracht geen relevante verzonden SEO-updates gevonden."}
+                : "Er zijn voor deze opdracht geen relevante verzonden voortgangsupdates gevonden."}
         </div>
       </div>
       <details open className="rounded-xl border p-4">
         <summary className="cursor-pointer text-sm font-semibold">
-          Gebruikte informatie uit deze meetmaand ·{" "}
+          Gebruikte informatie uit deze rapportagemaand ·{" "}
           {evidence?.current?.length || 0}
         </summary>
         <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
@@ -164,7 +183,8 @@ const ReportEvidencePanel = ({ report }: { report: SeoMonthlyReport }) => {
           ))}
           {!evidence?.current?.length ? (
             <div className="text-xs text-muted-foreground">
-              Voor deze meetmaand is nog geen aanvullende voortgang vastgelegd.
+              Voor deze rapportagemaand is nog geen aanvullende voortgang
+              vastgelegd.
             </div>
           ) : null}
         </div>
@@ -204,7 +224,9 @@ const ReportEvidencePanel = ({ report }: { report: SeoMonthlyReport }) => {
             <div className="text-2xl font-semibold">
               {report.current_work_count}
             </div>
-            <div className="text-xs text-muted-foreground">deze meetmaand</div>
+            <div className="text-xs text-muted-foreground">
+              deze rapportagemaand
+            </div>
           </div>
           <div>
             <div className="text-2xl font-semibold">
@@ -255,6 +277,10 @@ const ReportPreview = ({
 }) => {
   const ga4 = sourceState(report, "ga4");
   const gsc = sourceState(report, "searchConsole");
+  const gbp = sourceState(report, "businessProfile");
+  const ads = sourceState(report, "googleAds");
+  const hasMeasurement =
+    hasCompleteMeasurementPair(report) && report.headline_metrics.length > 0;
   const isOnlineMatters = brand === "online_matters";
   return (
     <section className="overflow-hidden rounded-2xl border bg-background shadow-sm">
@@ -281,7 +307,7 @@ const ReportPreview = ({
                 isOnlineMatters ? "text-lime-700" : "text-blue-600",
               )}
             >
-              Klantvoorbeeld · SEO-maandrapport
+              Klantvoorbeeld · maandrapportage
             </div>
             <h2 className="mt-2 text-2xl font-semibold">{companyName}</h2>
             <div className="mt-1 text-sm text-muted-foreground">
@@ -300,9 +326,11 @@ const ReportPreview = ({
             >
               {report.status === "final" ? "Definitief" : "Concept"}
             </Badge>
-            <Badge variant="secondary">
-              versus {monthLabel(report.previous_start)}
-            </Badge>
+            {hasMeasurement ? (
+              <Badge variant="secondary">
+                versus {monthLabel(report.previous_start)}
+              </Badge>
+            ) : null}
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2 text-xs">
@@ -318,8 +346,22 @@ const ReportPreview = ({
           >
             Search Console · {gsc.label}
           </Badge>
+          <Badge
+            variant="outline"
+            className={ads.ok ? "text-emerald-600" : "text-amber-600"}
+          >
+            Google Ads · {ads.label}
+          </Badge>
+          <Badge
+            variant="outline"
+            className={gbp.ok ? "text-emerald-600" : "text-amber-600"}
+          >
+            Bedrijfsprofiel · {gbp.label}
+          </Badge>
           <Badge variant="outline">
-            Data t/m {dateLabel(report.data_through || report.current_end)}
+            {hasMeasurement && report.data_through
+              ? `Meetdata t/m ${dateLabel(report.data_through)}`
+              : "Werkzaamhedenrapport zonder meetcijfers"}
           </Badge>
         </div>
       </header>
@@ -343,33 +385,45 @@ const ReportPreview = ({
         </section>
 
         <section>
-          <h3 className="text-lg font-semibold">Resultaten maand-op-maand</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            De volledige kalendermaand wordt met de direct voorgaande
-            kalendermaand vergeleken. SEO-kerncijfers en bredere websitecontext
-            zijn apart gemarkeerd.
-          </p>
-          {report.headline_metrics.length > 0 ? (
+          <h3 className="text-lg font-semibold">
+            {hasMeasurement
+              ? "Meetresultaten maand-op-maand"
+              : "Voortgang zonder meetkoppeling"}
+          </h3>
+          {hasMeasurement ? (
+            <p className="mt-1 text-sm text-muted-foreground">
+              De volledige kalendermaand wordt met de direct voorgaande
+              kalendermaand vergeleken. De bron en het soort meetpunt staan per
+              cijfer vermeld.
+            </p>
+          ) : null}
+          {hasMeasurement ? (
             <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {report.headline_metrics.map((metric) => (
                 <MetricCard key={metric.key} metric={metric} />
               ))}
             </div>
           ) : (
-            <div className="mt-3 rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
-              De gekoppelde bronnen leverden nog geen vergelijkbare totalen. De
-              ruwe meetgegevens blijven wel in dit maandarchief bewaard.
+            <div className="mt-3 rounded-xl border border-sky-500/20 bg-sky-500/[0.05] p-5 text-sm leading-6 text-muted-foreground">
+              Dit rapport is opgebouwd uit de vastgelegde werkzaamheden,
+              opdrachtinformatie, kaartnotities en relevante correspondentie. Er
+              is geen volledige gecontroleerde meetreeks gebruikt. Daarom worden
+              geen verkeers-, advertentie-, conversie- of rankingresultaten
+              geclaimd.
             </div>
           )}
         </section>
 
         <label className="block rounded-xl border border-sky-500/20 bg-sky-500/[0.04] p-4">
           <span className="text-sm font-semibold">
-            Wat deze ontwikkeling betekent
+            {hasMeasurement
+              ? "Wat deze ontwikkeling betekent"
+              : "Wat deze voortgang betekent"}
           </span>
           <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-            De praktische duiding van de cijfers, zonder een onbewezen direct
-            verband met één wijziging te claimen.
+            {hasMeasurement
+              ? "De praktische duiding van de cijfers, zonder een onbewezen direct verband met één wijziging te claimen."
+              : "De praktische duiding van het uitgevoerde werk, zonder meetresultaten te suggereren die niet beschikbaar zijn."}
           </span>
           <Textarea
             className="mt-2 min-h-28 resize-y bg-background"
@@ -382,7 +436,7 @@ const ReportPreview = ({
           <div className="space-y-5">
             <label className="block">
               <span className="text-sm font-semibold">
-                Werkzaamheden in deze meetmaand
+                Werkzaamheden in deze rapportagemaand
               </span>
               <span className="mt-1 block text-xs text-muted-foreground">
                 Gebaseerd op de werkzaamheden die voor deze opdracht zijn
@@ -422,11 +476,9 @@ const ReportPreview = ({
         </div>
 
         <div className="rounded-xl border border-slate-500/15 bg-slate-500/[0.04] p-3 text-xs leading-5 text-muted-foreground">
-          De cijfers tonen een ontwikkeling en kunnen de uitgevoerde
-          werkzaamheden ondersteunen. Ze bewijzen op zichzelf geen direct
-          oorzakelijk verband met één afzonderlijke SEO-wijziging.
-          Kalendermaanden kunnen daarnaast één tot drie meetdagen in lengte
-          verschillen.
+          {hasMeasurement
+            ? "De cijfers tonen een ontwikkeling en kunnen de uitgevoerde werkzaamheden ondersteunen. Ze bewijzen op zichzelf geen direct oorzakelijk verband met één afzonderlijke wijziging. Kalendermaanden kunnen daarnaast één tot drie meetdagen in lengte verschillen."
+            : "Deze versie verantwoordt wat aantoonbaar is uitgevoerd en vastgelegd. Zonder volledige gecontroleerde meetreeks doet het rapport bewust geen uitspraak over het effect op verkeer, vindbaarheid, advertenties of conversies."}
         </div>
       </div>
     </section>
@@ -616,7 +668,11 @@ export const SeoMonthlyReportWorkspace = ({
   const report = controller.selectedMonthlyReport;
   const companyName =
     controller.bootstrap?.deal.companyName || record.name || "Klant";
-  const hasReportSources = controller.hasGa4 || controller.hasGsc;
+  const hasVerifiedMeasurement =
+    controller.hasGa4 ||
+    controller.hasGsc ||
+    controller.hasGbp ||
+    controller.hasAds;
   const generateReport = () => {
     const replacesFinalReport =
       report?.status === "final" &&
@@ -644,21 +700,22 @@ export const SeoMonthlyReportWorkspace = ({
               variant="outline"
               className="mb-2 border-sky-500/30 text-sky-600"
             >
-              Vaste maandelijkse SEO-werkroute
+              Vaste maandelijkse rapportageroute
             </Badge>
             <h2 className="text-2xl font-semibold tracking-tight">
-              Maand-op-maand SEO-update
+              Maandrapportage
             </h2>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
-              Combineert GA4 en Search Console met de opdrachtomschrijving,
+              Maakt altijd een klantupdate van de opdrachtomschrijving,
               afgeronde werkzaamheden, kaartopmerkingen, voortgangsnotities en
-              relevante verzonden e-mails. De laatst volledig meetbare
-              kalendermaand wordt vergeleken met de maand ervoor.
+              relevante verzonden e-mails. Gecontroleerde GA4-, Search Console-,
+              Ads- en Bedrijfsprofielgegevens worden automatisch als
+              maandvergelijking toegevoegd wanneer ze beschikbaar zijn.
             </p>
           </div>
           <div className="flex flex-wrap items-end gap-2">
             <label className="text-xs font-medium text-muted-foreground">
-              Meetmaand
+              Rapportagemaand
               <Input
                 type="month"
                 max={maxReportingMonth()}
@@ -672,7 +729,7 @@ export const SeoMonthlyReportWorkspace = ({
             <Button
               type="button"
               size="lg"
-              disabled={!hasReportSources || controller.busy !== null}
+              disabled={controller.busy !== null}
               onClick={generateReport}
             >
               {controller.busy === "monthly_report" ? (
@@ -684,10 +741,11 @@ export const SeoMonthlyReportWorkspace = ({
             </Button>
           </div>
         </div>
-        {!hasReportSources ? (
-          <div className="border-t border-amber-500/20 bg-amber-500/[0.08] px-6 py-3 text-sm text-amber-700 dark:text-amber-400">
-            Controleer minimaal één GA4- of Search Console-bron bij de
-            instellingen onderaan deze pagina.
+        {!hasVerifiedMeasurement ? (
+          <div className="border-t border-sky-500/20 bg-sky-500/[0.07] px-6 py-3 text-sm text-sky-700 dark:text-sky-400">
+            Geen meetbron nodig: de rapportage wordt nu opgebouwd uit
+            werkzaamheden, notities en correspondentie. Koppel alleen een
+            meetbron wanneer u ook maand-op-maandcijfers wilt opnemen.
           </div>
         ) : null}
       </div>
@@ -733,9 +791,9 @@ export const SeoMonthlyReportWorkspace = ({
             Nog geen maandrapport voor deze opdracht
           </h3>
           <p className="mx-auto mt-1 max-w-xl text-sm text-muted-foreground">
-            Kies de meetmaand en maak het eerste rapport. Daarna blijft elke
-            maand als heropenbaar concept of definitieve update in de opdracht
-            staan.
+            Kies de rapportagemaand en maak het eerste rapport. Daarna blijft
+            elke maand als heropenbaar concept of definitieve update in de
+            opdracht staan.
           </p>
         </div>
       )}

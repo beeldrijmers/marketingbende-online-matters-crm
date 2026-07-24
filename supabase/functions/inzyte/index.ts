@@ -710,20 +710,29 @@ const settleMonthlyAction = async ({
   endDate,
 }: {
   enabled: boolean;
-  action: "overview" | "search_console";
+  action: "overview" | "search_console" | "business_profile" | "google_ads";
   dealId: number;
   saleId: number;
-  link: InzyteLink;
+  link: InzyteLink | null;
   startDate: string;
   endDate: string;
 }): Promise<MonthlySourceResult> => {
   if (!enabled) {
+    const sourceLabel = {
+      overview: "GA4",
+      search_console: "Search Console",
+      business_profile: "Google Bedrijfsprofiel",
+      google_ads: "Google Ads",
+    }[action];
     return {
       status: "unavailable",
-      error:
-        action === "overview"
-          ? "GA4 is nog niet aan deze opdracht gekoppeld."
-          : "Search Console is nog niet aan deze opdracht gekoppeld.",
+      error: `${sourceLabel} is niet live gecontroleerd voor deze opdracht.`,
+    };
+  }
+  if (!link) {
+    return {
+      status: "unavailable",
+      error: "Er is geen gecontroleerde meetbron voor deze opdracht.",
     };
   }
   try {
@@ -748,10 +757,10 @@ const settleMonthlyPair = async ({
   ...actionOptions
 }: {
   enabled: boolean;
-  action: "overview" | "search_console";
+  action: "overview" | "search_console" | "business_profile" | "google_ads";
   dealId: number;
   saleId: number;
-  link: InzyteLink;
+  link: InzyteLink | null;
   currentStart: string;
   currentEnd: string;
   previousStart: string;
@@ -793,7 +802,7 @@ const enhanceReportNarrative = async ({
   period: MonthlyReportPeriod;
   metrics: ReturnType<typeof buildMonthlyHeadlineMetrics>;
   evidence: ReportEvidenceBundle;
-  link: InzyteLink;
+  link: InzyteLink | null;
 }): Promise<ReportNarrative> => {
   const fallback = buildDefaultReportNarrative({
     companyName,
@@ -802,6 +811,8 @@ const enhanceReportNarrative = async ({
     evidence,
   });
   if (
+    metrics.length === 0 ||
+    !link ||
     !link.ga4_connection_id ||
     !link.ga4_property_id ||
     !link.ga4_verified_at
@@ -844,23 +855,16 @@ const generateMonthlyReport = async (
   saleId: number,
   requestedMonth: unknown,
 ) => {
-  if (!link) {
-    throw userError("Koppel deze opdracht eerst aan een Inzyte-account.", 409);
-  }
   const hasGa4 = Boolean(
-    link.ga4_connection_id && link.ga4_property_id && link.ga4_verified_at,
+    link?.ga4_connection_id && link.ga4_property_id && link.ga4_verified_at,
   );
-  const hasGsc = Boolean(link.gsc_site_url && link.gsc_verified_at);
-  if (!hasGa4 && !hasGsc) {
-    throw userError(
-      "Controleer minimaal GA4 of Search Console om een maandrapport te maken.",
-      409,
-    );
-  }
+  const hasGsc = Boolean(link?.gsc_site_url && link.gsc_verified_at);
+  const hasGbp = Boolean(link?.gbp_location_id && link.gbp_verified_at);
+  const hasAds = Boolean(link?.ads_customer_id && link.ads_verified_at);
 
   const period = monthlyReportPeriod(requestedMonth);
   const dealId = Number(deal.id);
-  const [work, ga4, gsc, sentMail] = await Promise.all([
+  const [work, ga4, gsc, gbp, ads, sentMail] = await Promise.all([
     loadMonthlyWorkContext(dealId, period),
     settleMonthlyPair({
       enabled: hasGa4,
@@ -884,29 +888,44 @@ const generateMonthlyReport = async (
       previousStart: period.previousStart,
       previousEnd: period.previousEnd,
     }),
+    settleMonthlyPair({
+      enabled: hasGbp,
+      action: "business_profile",
+      dealId,
+      saleId,
+      link,
+      currentStart: period.currentStart,
+      currentEnd: period.currentEnd,
+      previousStart: period.previousStart,
+      previousEnd: period.previousEnd,
+    }),
+    settleMonthlyPair({
+      enabled: hasAds,
+      action: "google_ads",
+      dealId,
+      saleId,
+      link,
+      currentStart: period.currentStart,
+      currentEnd: period.currentEnd,
+      previousStart: period.previousStart,
+      previousEnd: period.previousEnd,
+    }),
     loadSentGmailContext({ saleId, deal, period }),
   ]);
   const ga4Current = ga4.current;
   const ga4Previous = ga4.previous;
   const gscCurrent = gsc.current;
   const gscPrevious = gsc.previous;
+  const gbpCurrent = gbp.current;
+  const gbpPrevious = gbp.previous;
+  const adsCurrent = ads.current;
+  const adsPrevious = ads.previous;
   const hasComparableSource = hasSuccessfulMonthlyComparison([
     { current: ga4Current, previous: ga4Previous },
     { current: gscCurrent, previous: gscPrevious },
+    { current: gbpCurrent, previous: gbpPrevious },
+    { current: adsCurrent, previous: adsPrevious },
   ]);
-  if (!hasComparableSource) {
-    const errors = [ga4Current, ga4Previous, gscCurrent, gscPrevious]
-      .flatMap((source) => (source.status === "failed" ? [source.error] : []))
-      .filter(
-        (message, index, messages) => messages.indexOf(message) === index,
-      );
-    throw userError(
-      `Er is nog geen volledige maand-op-maandmeting beschikbaar. ${
-        errors[0] || "Controleer de gegevenskoppeling en probeer opnieuw."
-      }`,
-      409,
-    );
-  }
 
   const sourceData = (source: MonthlySourceResult): unknown =>
     source.status === "success" ? source.data : undefined;
@@ -915,18 +934,16 @@ const generateMonthlyReport = async (
     ga4Previous: sourceData(ga4Previous),
     gscCurrent: sourceData(gscCurrent),
     gscPrevious: sourceData(gscPrevious),
+    gbpCurrent: sourceData(gbpCurrent),
+    gbpPrevious: sourceData(gbpPrevious),
+    adsCurrent: sourceData(adsCurrent),
+    adsPrevious: sourceData(adsPrevious),
   });
-  if (metrics.length === 0) {
-    throw userError(
-      "De gekoppelde bron leverde voor deze twee maanden nog geen vergelijkbare kerncijfers. Er is daarom geen klant-PDF gemaakt.",
-      409,
-    );
-  }
   const companyName =
     (isRecord(deal.companies) && optionalText(deal.companies.name)) ||
     optionalText(deal.name) ||
     "de klant";
-  const title = `SEO-maandupdate ${monthLabel(period.reportingMonth)}`;
+  const title = `Maandrapportage ${monthLabel(period.reportingMonth)}`;
   const evidence = buildReportEvidence({
     assignmentDescription: optionalText(deal.description, 50_000),
     currentWork: work.current,
@@ -945,9 +962,22 @@ const generateMonthlyReport = async (
     link,
   });
   const reportData = {
-    version: 3,
+    version: 4,
     generatedAt: new Date().toISOString(),
     presentation: { brand: "online_matters" },
+    measurement: {
+      mode:
+        hasComparableSource && metrics.length > 0
+          ? "analytics_and_work"
+          : "work_only",
+      hasComparableMeasurement: hasComparableSource && metrics.length > 0,
+      attemptedSources: [
+        ...(hasGa4 ? ["GA4"] : []),
+        ...(hasGsc ? ["Search Console"] : []),
+        ...(hasGbp ? ["Google Bedrijfsprofiel"] : []),
+        ...(hasAds ? ["Google Ads"] : []),
+      ],
+    },
     narrative: {
       interpretation: narrative.interpretation,
       caveats: narrative.caveats,
@@ -969,6 +999,8 @@ const generateMonthlyReport = async (
     sources: {
       ga4: { current: ga4Current, previous: ga4Previous },
       searchConsole: { current: gscCurrent, previous: gscPrevious },
+      businessProfile: { current: gbpCurrent, previous: gbpPrevious },
+      googleAds: { current: adsCurrent, previous: adsPrevious },
     },
     work: {
       current: work.current,
@@ -995,7 +1027,10 @@ const generateMonthlyReport = async (
     },
   };
   const hasCurrentPeriodData =
-    ga4Current.status === "success" || gscCurrent.status === "success";
+    ga4Current.status === "success" ||
+    gscCurrent.status === "success" ||
+    gbpCurrent.status === "success" ||
+    adsCurrent.status === "success";
 
   const { data: report, error } = await supabaseAdmin
     .from("seo_monthly_reports")
@@ -1008,9 +1043,7 @@ const generateMonthlyReport = async (
         current_end: period.currentEnd,
         previous_start: period.previousStart,
         previous_end: period.previousEnd,
-        data_through: hasCurrentPeriodData
-          ? period.currentEnd
-          : period.previousEnd,
+        data_through: hasCurrentPeriodData ? period.currentEnd : null,
         status: "draft",
         title,
         client_summary: narrative.clientSummary,
@@ -1030,7 +1063,7 @@ const generateMonthlyReport = async (
     .select("*")
     .single();
   if (error || !report) {
-    throw error || new Error("SEO-maandrapport opslaan is mislukt.");
+    throw error || new Error("Maandrapport opslaan is mislukt.");
   }
   return report;
 };
@@ -1054,28 +1087,6 @@ const finalizeMonthlyReport = async (
   const existingReportData = isRecord(existing.report_data)
     ? existing.report_data
     : {};
-  const existingSources = isRecord(existingReportData.sources)
-    ? existingReportData.sources
-    : {};
-  const sourcePair = (key: "ga4" | "searchConsole") => {
-    const source = isRecord(existingSources[key]) ? existingSources[key] : {};
-    return { current: source.current, previous: source.previous };
-  };
-  const hasComparableMeasurement = hasSuccessfulMonthlyComparison([
-    sourcePair("ga4"),
-    sourcePair("searchConsole"),
-  ]);
-  if (
-    !hasComparableMeasurement ||
-    !Array.isArray(existing.headline_metrics) ||
-    existing.headline_metrics.length === 0
-  ) {
-    throw userError(
-      "Dit rapport bevat geen volledige maand-op-maandmeting en kan nog niet definitief worden gemaakt. Vernieuw eerst het rapport.",
-      409,
-    );
-  }
-
   const existingNarrative = isRecord(existingReportData.narrative)
     ? existingReportData.narrative
     : {};
@@ -1106,12 +1117,12 @@ const finalizeMonthlyReport = async (
     )
   ) {
     throw userError(
-      "Leg eerst de concrete werkzaamheden uit deze meetmaand vast.",
+      "Leg eerst de concrete werkzaamheden uit deze rapportagemaand vast.",
     );
   }
   if (!interpretation || interpretation.length < 30) {
     throw userError(
-      "Leg eerst uit wat de gemeten ontwikkeling praktisch betekent.",
+      "Leg eerst uit wat de voortgang praktisch voor de klant betekent.",
     );
   }
   if (!caveats || caveats.length < 20) {
@@ -1155,14 +1166,36 @@ const finalizeMonthlyReport = async (
     .select("*")
     .single();
   if (updateError || !report) {
-    throw updateError || new Error("SEO-maandrapport afronden is mislukt.");
+    throw updateError || new Error("Maandrapport afronden is mislukt.");
   }
 
+  const reportMeasurement = isRecord(existingReportData.measurement)
+    ? existingReportData.measurement
+    : {};
+  const existingSources = isRecord(existingReportData.sources)
+    ? existingReportData.sources
+    : {};
+  const sourcePair = (key: string) => {
+    const source = isRecord(existingSources[key]) ? existingSources[key] : {};
+    return { current: source.current, previous: source.previous };
+  };
+  const hasComparableMeasurement =
+    reportMeasurement.hasComparableMeasurement === true ||
+    (Array.isArray(existing.headline_metrics) &&
+      existing.headline_metrics.length > 0 &&
+      hasSuccessfulMonthlyComparison([
+        sourcePair("ga4"),
+        sourcePair("searchConsole"),
+        sourcePair("businessProfile"),
+        sourcePair("googleAds"),
+      ]));
   const noteText =
     optionalText(body.noteText, 30_000) ||
     [
       report.title,
-      `Meetperiode: ${report.current_start} t/m ${report.current_end} vergeleken met ${report.previous_start} t/m ${report.previous_end}.`,
+      hasComparableMeasurement
+        ? `Meetperiode: ${report.current_start} t/m ${report.current_end} vergeleken met ${report.previous_start} t/m ${report.previous_end}.`
+        : `Rapportageperiode: ${report.current_start} t/m ${report.current_end}. Er was voor deze rapportage geen volledige gecontroleerde maand-op-maandmeting beschikbaar.`,
       clientSummary,
       "Wat dit betekent:",
       interpretation,
@@ -1191,7 +1224,7 @@ const finalizeMonthlyReport = async (
   } else {
     const { error } = await supabaseAdmin.from("deal_notes").insert({
       deal_id: dealId,
-      type: "SEO-maandrapport",
+      type: "Maandrapportage",
       text: noteText,
       date: finalizedAt,
       sales_id: saleId,
