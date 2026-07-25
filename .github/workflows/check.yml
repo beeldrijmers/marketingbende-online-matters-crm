@@ -109,6 +109,17 @@ jobs:
       - name: Run Playwright tests
         run: make test-e2e-ci
 
+      - name: Upload E2E failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: e2e-failure-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
     build:
         name: 🔨 Build
         timeout-minutes: 10

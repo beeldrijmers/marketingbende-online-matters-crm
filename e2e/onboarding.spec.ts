@@ -1,11 +1,18 @@
 import { test, expect } from "./fixtures";
 
 test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
-  await page.goto("http://localhost:5175/?initial-setup=true");
+  await page.goto("http://localhost:5175/?initial-setup=true", {
+    waitUntil: "networkidle",
+  });
 
-  // Expect a title "to contain" a substring.
+  // The isolated Supabase stack can need a few extra seconds on a cold CI boot.
   await expect(page).toHaveTitle(/BANKAI CRM/);
-  await expect(page.getByText("Welkom bij BANKAI CRM")).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "Welkom bij BANKAI CRM",
+      exact: true,
+    }),
+  ).toBeVisible({ timeout: 15_000 });
 
   await page.getByLabel("Voornaam").fill("John");
   await page.getByLabel("Achternaam").fill("Doe");
