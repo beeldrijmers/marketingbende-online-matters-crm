@@ -27,6 +27,17 @@ const websiteDomain = (value: string): string => {
   }
 };
 
+const REPORT_RELEVANCE =
+  /\b(?:seo|search console|ga4|analytics|google|vindbaar|zoek(?:woord|opdracht|resultaat)|organisch|pagina|content|index|klik|vertoning|ctr|positie|ranking|redirect|sitemap|metadata|title tag|meta description|landingspagina|website|webshop|technisch|werkzaamheden|voortgang|status(?:update)?|aanpassing|aangepast|feedback|oplevering|opgeleverd|livegang|live gezet|ontwerp|huisstijl|logo|hosting|domein|tekst|afbeelding|shopify|wordpress|automatisering|integratie|koppeling|planning|volgende stap)\b/i;
+
+export const isRelevantReportMessage = ({
+  subject,
+  body,
+}: {
+  subject: string;
+  body: string;
+}): boolean => REPORT_RELEVANCE.test(`${subject}\n${body}`);
+
 export const buildSentMailSearchQuery = ({
   companyName,
   dealName,

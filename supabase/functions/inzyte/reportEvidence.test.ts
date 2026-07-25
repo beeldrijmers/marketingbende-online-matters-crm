@@ -5,6 +5,7 @@ import {
   buildDefaultReportNarrative,
   buildNarrativePromptContext,
   buildReportEvidence,
+  isNarrativeSupportedByMetrics,
   mergeInzyteNarrative,
   sanitizeReportEvidenceText,
 } from "./reportEvidence.ts";
@@ -90,6 +91,12 @@ const evidence = () =>
         date: "2026-06-30T10:00:00Z",
         source_event_id: "seo-monthly-report:1",
       },
+      {
+        id: 10,
+        text: "Komende maand verwijderen we de oude catalogus.",
+        date: "2026-05-15T10:00:00Z",
+        activity_source: "trello",
+      },
     ],
     sentMail: [
       {
@@ -97,6 +104,12 @@ const evidence = () =>
         subject: "SEO-update juni",
         date: "2026-07-08T10:00:00Z",
         text: "De nieuwe landingspagina staat live. De klikratio vraagt nog aandacht.",
+      },
+      {
+        id: "mail-2",
+        subject: "Nieuwe oplevering",
+        date: "2026-07-10T10:00:00Z",
+        text: "De nieuwe configurator is live gezet.",
       },
     ],
     gmailStatus: "connected",
@@ -106,18 +119,36 @@ const evidence = () =>
 describe("brononderbouwde SEO-maandrapportage", () => {
   it("verwijdert credentials en interne productnamen vóór redactieverwerking", () => {
     const safe = sanitizeReportEvidenceText(
-      "Trello en Inzyte in CRM\nWachtwoord: Geheim123!\ninfo@voorbeeld.nl",
+      "Trello en Inzyte in CRM\nInloggegevens:\nbeheerder\nGeheim123!\ninfo@voorbeeld.nl",
     );
-    expect(safe).not.toMatch(/Trello|Inzyte|CRM|Geheim123|info@voorbeeld/);
+    expect(safe).not.toMatch(
+      /Trello|Inzyte|CRM|beheerder|Geheim123|info@voorbeeld/,
+    );
+  });
+
+  it("behoudt gewone voortgangszinnen over beveiliging en koppelingen", () => {
+    const safe = sanitizeReportEvidenceText(
+      "Authenticatie is ingericht.\nDe API-koppeling is gecontroleerd.",
+    );
+
+    expect(safe).toContain("Authenticatie is ingericht");
+    expect(safe).toContain("API-koppeling is gecontroleerd");
   });
 
   it("neemt actuele en historische opdrachtbronnen mee zonder oude rapporten te herhalen", () => {
     const result = evidence();
     expect(result.counts.completedWork).toBe(2);
-    expect(result.counts.cardComments).toBe(1);
-    expect(result.counts.sentEmails).toBe(1);
+    expect(result.counts.cardComments).toBe(2);
+    expect(result.counts.sentEmails).toBe(2);
+    expect(result.currentCounts.completedWork).toBe(1);
+    expect(result.currentCounts.cardComments).toBe(1);
+    expect(result.currentCounts.sentEmails).toBe(1);
+    expect(result.allTimeCounts.sentEmails).toBe(2);
     expect(result.current.some((item) => item.kind === "sent_email")).toBe(
       true,
+    );
+    expect(result.current.some((item) => item.id === "mail:mail-2")).toBe(
+      false,
     );
     expect(
       result.items.some((item) => item.excerpt.includes("automatisch rapport")),
@@ -136,6 +167,7 @@ describe("brononderbouwde SEO-maandrapportage", () => {
     expect(narrative.workSummary).toContain("Paginatitels");
     expect(narrative.caveats).toContain("Klikratio");
     expect(narrative.nextSteps).toContain("komende");
+    expect(narrative.nextSteps).not.toContain("oude catalogus");
   });
 
   it("rapporteert werkzaamheden eerlijk wanneer meetgegevens ontbreken", () => {
@@ -180,7 +212,7 @@ describe("brononderbouwde SEO-maandrapportage", () => {
           clientSummary:
             "De meetmaand laat een positieve ontwikkeling zien, met voldoende aanknopingspunten om verder op door te bouwen.",
           interpretation:
-            "De groei ondersteunt de gekozen richting, terwijl we de kwaliteit van het verkeer blijven controleren.",
+            "De groei ondersteunt de gekozen richting, terwijl we de kwaliteit van de zoekresultaten blijven controleren.",
           workSummary:
             "• De belangrijkste paginatitels zijn gecontroleerd en aangescherpt.",
           caveats:
@@ -193,6 +225,41 @@ describe("brononderbouwde SEO-maandrapportage", () => {
     );
     expect(merged.generatedBy).toBe("inzyte_ai");
     expect(merged.caveats).toContain("klikratio");
+    expect(isNarrativeSupportedByMetrics(merged, metrics)).toBe(true);
+  });
+
+  it("weigert AI-tekst met meetclaims die niet in de gecontroleerde cijfers zitten", () => {
+    const fallback = buildDefaultReportNarrative({
+      companyName: "Voorbeeldbedrijf",
+      period,
+      metrics,
+      evidence: evidence(),
+    });
+    const unsupported = {
+      ...fallback,
+      clientSummary:
+        "De conversies zijn met 87% gestegen en laten een overtuigende ontwikkeling zien.",
+      generatedBy: "inzyte_ai" as const,
+    };
+
+    expect(isNarrativeSupportedByMetrics(unsupported, metrics)).toBe(false);
+  });
+
+  it("weigert een verkeerd absoluut meetgetal bij een bestaande bron", () => {
+    const fallback = buildDefaultReportNarrative({
+      companyName: "Voorbeeldbedrijf",
+      period,
+      metrics,
+      evidence: evidence(),
+    });
+    const unsupported = {
+      ...fallback,
+      clientSummary:
+        "De organische klikken zijn gestegen naar 999 en laten daarmee een positieve ontwikkeling zien.",
+      generatedBy: "inzyte_ai" as const,
+    };
+
+    expect(isNarrativeSupportedByMetrics(unsupported, metrics)).toBe(false);
   });
 
   it("stuurt geen credentials of interne namen mee in de redactiecontext", () => {

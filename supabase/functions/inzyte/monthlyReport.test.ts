@@ -115,6 +115,40 @@ describe("buildMonthlyHeadlineMetrics", () => {
       previous: 750,
     });
   });
+
+  it("vermijdt misleidende aliassen en dubbele Bedrijfsprofieltotalen", () => {
+    const metrics = buildMonthlyHeadlineMetrics({
+      ga4Current: { totals: { totalUsers: 90 } },
+      ga4Previous: { totals: { totalUsers: 80 } },
+      gbpCurrent: {
+        totals: {
+          profileActions: 45,
+          websiteClicks: 20,
+          callClicks: 10,
+        },
+      },
+      gbpPrevious: {
+        totals: {
+          profileActions: 30,
+          websiteClicks: 12,
+          callClicks: 8,
+        },
+      },
+    });
+
+    expect(
+      metrics.find((metric) => metric.key === "activeUsers"),
+    ).toBeUndefined();
+    expect(
+      metrics.find((metric) => metric.key === "businessProfileActions"),
+    ).toBeUndefined();
+    expect(
+      metrics.find((metric) => metric.key === "businessProfileWebsiteClicks"),
+    ).toBeDefined();
+    expect(
+      metrics.find((metric) => metric.key === "businessProfileCalls"),
+    ).toBeDefined();
+  });
 });
 
 describe("hasSuccessfulMonthlyComparison", () => {

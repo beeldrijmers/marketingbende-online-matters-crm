@@ -383,6 +383,20 @@ export type SeoMonthlyReportData = {
       sentEmails?: number;
       otherNotes?: number;
     };
+    currentCounts?: {
+      assignment?: number;
+      completedWork?: number;
+      cardComments?: number;
+      sentEmails?: number;
+      otherNotes?: number;
+    };
+    allTimeCounts?: {
+      assignment?: number;
+      completedWork?: number;
+      cardComments?: number;
+      sentEmails?: number;
+      otherNotes?: number;
+    };
     gmailStatus?: "connected" | "not_connected" | "no_match" | "failed";
     current?: Array<{
       id: string;

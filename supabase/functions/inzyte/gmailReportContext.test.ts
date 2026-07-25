@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  buildSentMailSearchQuery,
+  isRelevantReportMessage,
+} from "./gmailReportQuery.ts";
 import type { MonthlyReportPeriod } from "./monthlyReport.ts";
-import { buildSentMailSearchQuery } from "./gmailReportQuery.ts";
 
 const period: MonthlyReportPeriod = {
   reportingMonth: "2026-06-01",
@@ -39,5 +42,23 @@ describe("verzonden e-mail als rapportbron", () => {
         period,
       }),
     ).toBeNull();
+  });
+
+  it("neemt ook projectupdates zonder expliciete SEO-term mee", () => {
+    expect(
+      isRelevantReportMessage({
+        subject: "Voortgang webshop",
+        body: "De feedback is verwerkt en de nieuwe versie staat klaar voor oplevering.",
+      }),
+    ).toBe(true);
+  });
+
+  it("laat niet-inhoudelijke correspondentie buiten het rapport", () => {
+    expect(
+      isRelevantReportMessage({
+        subject: "Afspraak lunch",
+        body: "Tot volgende week dinsdag om twaalf uur.",
+      }),
+    ).toBe(false);
   });
 });

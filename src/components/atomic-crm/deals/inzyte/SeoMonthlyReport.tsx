@@ -61,7 +61,18 @@ const sourceState = (
   const current = sources?.[source]?.current?.status;
   const previous = sources?.[source]?.previous?.status;
   if (current === "success" && previous === "success") {
-    return { ok: true, label: "Beide maanden gemeten" };
+    const metricSource = {
+      ga4: "GA4",
+      searchConsole: "Search Console",
+      businessProfile: "Google Bedrijfsprofiel",
+      googleAds: "Google Ads",
+    }[source];
+    const hasUsableMetrics = report.headline_metrics.some(
+      (metric) => metric.source === metricSource,
+    );
+    return hasUsableMetrics
+      ? { ok: true, label: "Beide maanden gemeten" }
+      : { ok: false, label: "Geen bruikbare kerncijfers" };
   }
   if (
     (!current && !previous) ||
@@ -126,31 +137,59 @@ const MetricCard = ({ metric }: { metric: SeoMonthlyHeadlineMetric }) => {
   );
 };
 
+type ReportEvidenceItem = NonNullable<
+  NonNullable<SeoMonthlyReport["report_data"]["evidence"]>["current"]
+>[number];
+
+const countReportEvidenceItems = (items: ReportEvidenceItem[] = []) => ({
+  assignment: items.filter((item) => item.kind === "assignment").length,
+  completedWork: items.filter((item) => item.kind === "completed_work").length,
+  cardComments: items.filter((item) => item.kind === "card_comment").length,
+  sentEmails: items.filter((item) => item.kind === "sent_email").length,
+  otherNotes: items.filter((item) => item.kind === "note").length,
+});
+
 const ReportEvidencePanel = ({ report }: { report: SeoMonthlyReport }) => {
   const work = report.report_data?.work;
   const evidence = report.report_data?.evidence;
-  const evidenceCounts = evidence?.counts;
+  const currentCounts =
+    evidence?.currentCounts ||
+    countReportEvidenceItems(evidence?.current || []);
+  const allTimeCounts =
+    evidence?.allTimeCounts ||
+    evidence?.counts ||
+    countReportEvidenceItems(evidence?.allTime || []);
+  const allTimeTotal = Object.values(allTimeCounts).reduce(
+    (total, count) => total + (count || 0),
+    0,
+  );
   return (
     <aside className="space-y-3">
       <div className="rounded-xl border bg-muted/25 p-4">
-        <div className="text-sm font-semibold">Bronnen van dit rapport</div>
+        <div className="text-sm font-semibold">
+          Bronnen uit deze rapportagemaand
+        </div>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          De redactie gebruikt relevante informatie uit het volledige
-          opdrachtdossier. Alleen gecontroleerde klanttekst komt in de PDF.
+          Deze aantallen gaan uitsluitend over de gekozen maand. Historische
+          informatie blijft apart als context beschikbaar.
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
           {[
-            ["Opdrachtomschrijving", evidenceCounts?.assignment || 0],
-            ["Afgeronde stappen", evidenceCounts?.completedWork || 0],
-            ["Kaartopmerkingen", evidenceCounts?.cardComments || 0],
-            ["Verzonden e-mails", evidenceCounts?.sentEmails || 0],
-            ["Overige notities", evidenceCounts?.otherNotes || 0],
+            ["Afgeronde stappen", currentCounts.completedWork || 0],
+            ["Kaartopmerkingen", currentCounts.cardComments || 0],
+            ["Verzonden e-mails", currentCounts.sentEmails || 0],
+            ["Overige notities", currentCounts.otherNotes || 0],
           ].map(([label, count]) => (
             <div key={String(label)} className="rounded-lg border p-2">
               <div className="text-lg font-semibold">{count}</div>
               <div className="text-muted-foreground">{label}</div>
             </div>
           ))}
+        </div>
+        <div className="mt-3 rounded-lg border border-dashed px-3 py-2 text-xs text-muted-foreground">
+          De opdrachtomschrijving is als vaste context{" "}
+          {allTimeCounts.assignment ? "meegenomen" : "niet beschikbaar"}. Het
+          volledige dossier bevat {allTimeTotal} bruikbare bronitems.
         </div>
         <div className="mt-3 text-xs leading-5 text-muted-foreground">
           {evidence?.gmailStatus === "connected"
@@ -512,6 +551,9 @@ const SeoMonthlyReportEditor = ({
   const [brand, setBrand] = useState<SeoReportBrand>(() =>
     getSeoReportBrand(report),
   );
+  const [reviewConfirmed, setReviewConfirmed] = useState(
+    () => report.report_data?.narrative?.reviewed === true,
+  );
   const readiness = useMemo(
     () =>
       getCustomerReportReadiness({
@@ -578,6 +620,15 @@ const SeoMonthlyReportEditor = ({
             aria-label="Online Matters-huisstijl gebruiken"
           />
         </label>
+        <label className="flex h-9 items-center gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/[0.05] px-3 text-xs font-medium">
+          <CheckCircle2 className="size-4 text-emerald-600" />
+          Tekst en bronnen gecontroleerd
+          <Switch
+            checked={reviewConfirmed}
+            onCheckedChange={setReviewConfirmed}
+            aria-label="Bevestigen dat tekst en bronnen zijn gecontroleerd"
+          />
+        </label>
         <Button
           type="button"
           variant="outline"
@@ -589,14 +640,16 @@ const SeoMonthlyReportEditor = ({
         <Button
           type="button"
           variant="outline"
-          disabled={!readiness.ready}
+          disabled={!readiness.ready || !reviewConfirmed}
           onClick={() => void navigator.clipboard.writeText(clientUpdate)}
         >
           <Clipboard className="size-4" /> Update kopiëren
         </Button>
         <Button
           type="button"
-          disabled={!readiness.ready || controller.busy !== null}
+          disabled={
+            !readiness.ready || !reviewConfirmed || controller.busy !== null
+          }
           onClick={() =>
             void controller
               .finalizeMonthlyReport({
@@ -633,10 +686,24 @@ const SeoMonthlyReportEditor = ({
             </div>
           </div>
         </div>
+      ) : !reviewConfirmed ? (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <div>
+            <div className="font-semibold">
+              Inhoud compleet, broncontrole nodig
+            </div>
+            <div className="mt-0.5 text-xs leading-5">
+              Controleer de werkzaamheden, meetcijfers en klanttekst in het
+              voorbeeld. Bevestig daarna bovenaan dat tekst en bronnen zijn
+              gecontroleerd.
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] px-4 py-2.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-          <CheckCircle2 className="size-4" /> Klantversie is compleet en gereed
-          voor controle.
+          <CheckCircle2 className="size-4" /> Klantversie en brongegevens zijn
+          gecontroleerd en gereed om te delen.
         </div>
       )}
       <ReportPreview
@@ -644,15 +711,30 @@ const SeoMonthlyReportEditor = ({
         companyName={companyName}
         brand={brand}
         clientSummary={clientSummary}
-        setClientSummary={setClientSummary}
+        setClientSummary={(value) => {
+          setClientSummary(value);
+          setReviewConfirmed(false);
+        }}
         interpretation={interpretation}
-        setInterpretation={setInterpretation}
+        setInterpretation={(value) => {
+          setInterpretation(value);
+          setReviewConfirmed(false);
+        }}
         workSummary={workSummary}
-        setWorkSummary={setWorkSummary}
+        setWorkSummary={(value) => {
+          setWorkSummary(value);
+          setReviewConfirmed(false);
+        }}
         caveats={caveats}
-        setCaveats={setCaveats}
+        setCaveats={(value) => {
+          setCaveats(value);
+          setReviewConfirmed(false);
+        }}
         nextSteps={nextSteps}
-        setNextSteps={setNextSteps}
+        setNextSteps={(value) => {
+          setNextSteps(value);
+          setReviewConfirmed(false);
+        }}
       />
     </>
   );

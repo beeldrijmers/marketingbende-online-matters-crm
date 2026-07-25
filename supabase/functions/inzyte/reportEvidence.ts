@@ -31,6 +31,9 @@ export type ReportEvidenceBundle = {
   items: ReportEvidenceItem[];
   current: ReportEvidenceItem[];
   allTime: ReportEvidenceItem[];
+  currentCounts: ReportEvidenceCounts;
+  allTimeCounts: ReportEvidenceCounts;
+  /** @deprecated Kept for reports generated before current/all-time counts split. */
   counts: ReportEvidenceCounts;
   gmailStatus: "connected" | "not_connected" | "no_match" | "failed";
 };
@@ -75,14 +78,20 @@ const INTERNAL_TERMS = [
   [/\bMarketingbende\b/gi, "Online Matters"],
 ] as const;
 
-const CREDENTIAL_LABEL =
-  /\b(?:inlog(?:gegevens)?|login|gebruikersnaam|user(?:name)?|wachtwoord|password|api[- _]?key|secret|token|auth(?:enticatie)?|wp[- ]?admin)\b/i;
+const CREDENTIAL_BLOCK_LABEL =
+  /^\s*(?:inlog(?:gegevens)?|login(?:gegevens)?|credentials?|auth(?:enticatie)?|wp[- ]?admin)(?:\s+[^:\n]{0,50})?\s*:\s*$/i;
+const CREDENTIAL_VALUE_LABEL =
+  /^\s*(?:inlog(?:gegevens)?|login|gebruikersnaam|user(?:name)?|wachtwoord|password|api[- _]?key|secret|token|wp[- ]?admin)\s*:\s*\S+/i;
 const SECRETISH_VALUE =
   /^(?=.{10,180}$)(?=\S+$)(?=.*[a-z])(?=.*(?:\d|[^a-z0-9])).+$/i;
 const EMAIL_ADDRESS = /\b[\w.+%-]+@[\w.-]+\.[a-z]{2,}\b/gi;
 const INTERNAL_URL =
   /https?:\/\/(?:crm\.marketingbende\.nl|trello\.com|inzyte\.io)\S*/gi;
 const REPORT_NOTE_ID = /^seo-monthly-report:/i;
+const REPORT_MONTH_FORMATTER = new Intl.DateTimeFormat("nl-NL", {
+  month: "long",
+  timeZone: "UTC",
+});
 
 const asText = (value: unknown): string =>
   typeof value === "string" ? value.trim() : "";
@@ -105,6 +114,29 @@ const withinPeriod = (
     Number.isFinite(timestamp) &&
     timestamp >= start &&
     timestamp <= end + graceDays * 86_400_000
+  );
+};
+
+const mailReferencesReportingMonth = (
+  message: Pick<SentMailInput, "subject" | "text">,
+  period: MonthlyReportPeriod,
+): boolean => {
+  const monthDate = new Date(
+    `${period.reportingMonth.slice(0, 7)}-01T00:00:00Z`,
+  );
+  const monthName = REPORT_MONTH_FORMATTER.format(monthDate);
+  const year = String(monthDate.getUTCFullYear());
+  const monthNumber = String(monthDate.getUTCMonth() + 1).padStart(2, "0");
+  const content = `${message.subject}\n${message.text}`.toLocaleLowerCase(
+    "nl-NL",
+  );
+  return (
+    content.includes(`${monthName} ${year}`) ||
+    content.includes(`update ${monthName}`) ||
+    content.includes(`rapportage ${monthName}`) ||
+    content.includes(`${year}-${monthNumber}`) ||
+    content.includes(`${monthNumber}-${year}`) ||
+    content.includes(`${monthNumber}/${year}`)
   );
 };
 
@@ -137,13 +169,13 @@ export const sanitizeReportEvidenceText = (
     const line = rawLine.trim();
     if (skipSensitiveLines > 0) {
       skipSensitiveLines -= 1;
-      if (!line) continue;
-      if (SECRETISH_VALUE.test(line) || /^https?:\/\//i.test(line)) continue;
+      continue;
     }
-    if (CREDENTIAL_LABEL.test(line)) {
+    if (CREDENTIAL_BLOCK_LABEL.test(line)) {
       skipSensitiveLines = 3;
       continue;
     }
+    if (CREDENTIAL_VALUE_LABEL.test(line)) continue;
     if (SECRETISH_VALUE.test(line) && !/^https?:\/\//i.test(line)) continue;
     if (/^bron\s*\([^)]*\)\s*:/i.test(line)) continue;
     if (/^op .+ schreef .+:$/i.test(line)) break;
@@ -178,6 +210,25 @@ const noteKind = (note: NoteInput): ReportEvidenceKind => {
   if (/^gmail:/i.test(asText(note.source_event_id))) return "sent_email";
   return "note";
 };
+
+const countEvidence = (items: ReportEvidenceItem[]): ReportEvidenceCounts =>
+  items.reduce<ReportEvidenceCounts>(
+    (result, item) => {
+      if (item.kind === "assignment") result.assignment += 1;
+      if (item.kind === "completed_work") result.completedWork += 1;
+      if (item.kind === "card_comment") result.cardComments += 1;
+      if (item.kind === "sent_email") result.sentEmails += 1;
+      if (item.kind === "note") result.otherNotes += 1;
+      return result;
+    },
+    {
+      assignment: 0,
+      completedWork: 0,
+      cardComments: 0,
+      sentEmails: 0,
+      otherNotes: 0,
+    },
+  );
 
 export const buildReportEvidence = ({
   assignmentDescription,
@@ -262,43 +313,38 @@ export const buildReportEvidence = ({
     const subject = sanitizeReportEvidenceText(message.subject, 240);
     const excerpt = [subject, body].filter(Boolean).join("\n\n");
     if (!excerpt) continue;
+    const date = asDate(message.date);
+    const currentPeriod =
+      withinPeriod(date, period) ||
+      (withinPeriod(date, period, 21) &&
+        mailReferencesReportingMonth(message, period));
     items.push({
       id: `mail:${message.id}`,
       kind: "sent_email",
-      date: asDate(message.date),
+      date,
       title: subject || "Verzonden e-mail",
       excerpt,
-      // Status updates are often sent shortly after month end.
-      currentPeriod: withinPeriod(message.date, period, 21),
+      // A status update sent after month-end only counts for the reporting
+      // month when it explicitly names that month. This prevents new work from
+      // the following month being presented as older work.
+      currentPeriod,
     });
   }
 
   const deduped = uniqueEvidence(items).sort((left, right) =>
     String(right.date || "").localeCompare(String(left.date || "")),
   );
-  const counts = deduped.reduce<ReportEvidenceCounts>(
-    (result, item) => {
-      if (item.kind === "assignment") result.assignment += 1;
-      if (item.kind === "completed_work") result.completedWork += 1;
-      if (item.kind === "card_comment") result.cardComments += 1;
-      if (item.kind === "sent_email") result.sentEmails += 1;
-      if (item.kind === "note") result.otherNotes += 1;
-      return result;
-    },
-    {
-      assignment: 0,
-      completedWork: 0,
-      cardComments: 0,
-      sentEmails: 0,
-      otherNotes: 0,
-    },
-  );
+  const current = deduped.filter((item) => item.currentPeriod);
+  const currentCounts = countEvidence(current);
+  const allTimeCounts = countEvidence(deduped);
 
   return {
     items: deduped,
-    current: deduped.filter((item) => item.currentPeriod),
+    current,
     allTime: deduped,
-    counts,
+    currentCounts,
+    allTimeCounts,
+    counts: allTimeCounts,
     gmailStatus,
   };
 };
@@ -475,7 +521,7 @@ export const buildDefaultReportNarrative = ({
     4,
   ).join("\n");
 
-  const futureLines = evidence.allTime.flatMap((item) =>
+  const futureLines = evidence.current.flatMap((item) =>
     evidenceLines(item, FUTURE_PATTERN),
   );
   const nextSteps = uniqueBullets(
@@ -582,6 +628,136 @@ export const mergeInzyteNarrative = (
   };
 };
 
+const METRIC_TOPIC_REQUIREMENTS: Array<{
+  pattern: RegExp;
+  keys?: string[];
+  group?: MonthlyHeadlineMetric["group"];
+}> = [
+  {
+    pattern: /\b(?:organische\s+)?sessies?\b/i,
+    keys: ["organicSessions", "sessions"],
+  },
+  {
+    pattern: /\b(?:(?:actieve\s+)?gebruikers?|bezoekers?)\b/i,
+    keys: ["activeUsers"],
+  },
+  {
+    pattern: /\bverkeer\b/i,
+    keys: ["organicSessions", "sessions", "activeUsers"],
+  },
+  {
+    pattern: /\b(?:klikratio|ctr)\b/i,
+    keys: ["ctr"],
+  },
+  {
+    pattern: /\b(?:klikken?)\b/i,
+    keys: [
+      "clicks",
+      "adsClicks",
+      "businessProfileWebsiteClicks",
+      "businessProfileCalls",
+    ],
+  },
+  {
+    pattern: /\b(?:vertoningen?)\b/i,
+    keys: ["impressions", "adsImpressions", "businessProfileViews"],
+  },
+  {
+    pattern: /\b(?:conversies?|key events?)\b/i,
+    keys: ["conversions", "adsConversions"],
+  },
+  {
+    pattern: /\b(?:(?:gemiddelde\s+)?positie|rankings?)\b/i,
+    keys: ["position"],
+  },
+  {
+    pattern: /\b(?:advertenties?|campagneprestaties?)\b/i,
+    group: "ads",
+  },
+  {
+    pattern: /\b(?:bedrijfsprofiel|maps|routeaanvragen?|belacties?)\b/i,
+    group: "local",
+  },
+  {
+    pattern: /\bvindbaarheid\b/i,
+    group: "seo",
+  },
+];
+
+const metricNumberMatches = (claim: number, values: number[]): boolean =>
+  values.some((value) => Math.abs(value - claim) < 0.11);
+
+const metricsForRequirement = (
+  requirement: (typeof METRIC_TOPIC_REQUIREMENTS)[number],
+  metrics: MonthlyHeadlineMetric[],
+): MonthlyHeadlineMetric[] => {
+  if (requirement.group) {
+    return metrics.filter((metric) => metric.group === requirement.group);
+  }
+  const requiredKeys = new Set(requirement.keys || []);
+  return metrics.filter((metric) => requiredKeys.has(metric.key));
+};
+
+/**
+ * Rejects polished AI copy when it introduces a metric topic or percentage
+ * that is absent from the normalized, verified month comparison. The
+ * deterministic evidence narrative remains the safe fallback.
+ */
+export const isNarrativeSupportedByMetrics = (
+  narrative: ReportNarrative,
+  metrics: MonthlyHeadlineMetric[],
+): boolean => {
+  const text = [
+    narrative.clientSummary,
+    narrative.interpretation,
+    narrative.workSummary,
+    narrative.caveats,
+    narrative.nextSteps,
+  ].join("\n");
+
+  for (const requirement of METRIC_TOPIC_REQUIREMENTS) {
+    if (!requirement.pattern.test(text)) continue;
+    const supportingMetrics = metricsForRequirement(requirement, metrics);
+    if (supportingMetrics.length === 0) return false;
+
+    const allowedValues = supportingMetrics.flatMap((metric) => [
+      Math.abs(metric.current),
+      Math.abs(metric.previous),
+      Math.abs(metric.change),
+    ]);
+    const relatedClaims = text
+      .split(/(?<=[.!?])\s+|\n+/)
+      .filter((sentence) => requirement.pattern.test(sentence))
+      .flatMap((sentence) =>
+        Array.from(
+          sentence
+            .replace(/-?\d+(?:[.,]\d+)?\s*%/g, "")
+            .matchAll(/-?\d+(?:[.,]\d+)?/g),
+          (match) => Math.abs(Number(match[0].replace(",", "."))),
+        ),
+      )
+      .filter(Number.isFinite);
+    if (
+      relatedClaims.some((claim) => !metricNumberMatches(claim, allowedValues))
+    ) {
+      return false;
+    }
+  }
+
+  const allowedPercentages = metrics.flatMap((metric) => [
+    ...(metric.format === "percent" ? [metric.current, metric.previous] : []),
+    ...(metric.changePercent === null ? [] : [Math.abs(metric.changePercent)]),
+  ]);
+  const percentageClaims = Array.from(
+    text.matchAll(/(-?\d+(?:[.,]\d+)?)\s*%/g),
+    (match) => Math.abs(Number(match[1].replace(",", "."))),
+  ).filter(Number.isFinite);
+
+  return percentageClaims.every((claim) =>
+    metricNumberMatches(claim, allowedPercentages),
+  );
+};
+
 export const buildNarrativePromptContext = ({
   companyName,
   period,
@@ -618,7 +794,10 @@ export const buildNarrativePromptContext = ({
       datum: item.date,
       tekst: item.excerpt.slice(0, 550),
     })),
-    bronTellingen: evidence.counts,
+    bronTellingen: {
+      rapportagemaand: evidence.currentCounts,
+      volledigDossier: evidence.allTimeCounts,
+    },
   }).slice(0, 28_000);
 
 export const MONTHLY_NARRATIVE_QUESTION = `Schrijf op basis van het aangeleverde bronmateriaal een klantklare Nederlandse maandupdate in de toon van een persoonlijke, deskundige statusmail. Gebruik uitsluitend aantoonbare feiten uit het bronmateriaal. De uitgevoerde werkzaamheden en vastgelegde voortgang vormen altijd de basis. Gebruik meetcijfers alleen als ze werkelijk zijn aangeleverd; zonder cijfers mag je geen groei, stabiliteit, verkeers-, advertentie-, conversie- of rankingresultaat suggereren. Formuleer positief waar de feiten dat toelaten, benoem minder gunstige ontwikkelingen en onzekerheden eerlijk, en eindig met concreet toekomstperspectief. Maak geen oorzakelijke claims die niet zijn bewezen. Noem geen interne systemen, kaartsoftware, mailboxsoftware, CRM of analyseplatform. Neem werkzaamheden uit de rapportagemaand op; gebruik oudere informatie alleen als relevante context. Geef uitsluitend geldige JSON terug met exact deze velden: {"clientSummary":"2-4 korte alinea's","interpretation":"wat de voortgang of gemeten ontwikkeling praktisch betekent","workSummary":"bullets met concreet uitgevoerd werk","caveats":"bullets met eerlijke aandachtspunten en eventuele meetbeperking","nextSteps":"bullets met focus voor komende maand"}.`;

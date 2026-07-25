@@ -95,7 +95,7 @@ describe("klantklare maandrapportage", () => {
       interpretation:
         "De groei betekent dat meer relevante bezoekers de website via Google weten te vinden.",
       workSummary:
-        "De taken uit het CRM/Trello-werkzaamhedenlogboek zijn uitgevoerd.",
+        "• De taken uit het CRM/Trello-werkzaamhedenlogboek zijn uitgevoerd.\n• De belangrijkste pagina's zijn gecontroleerd.",
       caveats:
         "De ontwikkeling blijft mede afhankelijk van seizoen en concurrentie.",
       nextSteps: "Volgende maand verbeteren we de belangrijkste pagina's.",
@@ -107,6 +107,9 @@ describe("klantklare maandrapportage", () => {
     expect(html).toContain("Wat we deze maand hebben uitgevoerd");
     expect(html).toContain("Eerlijke aandachtspunten");
     expect(html).toContain("Vooruitblik");
+    expect(html).toContain("<ul><li>");
+    expect(html).toContain("Organische vindbaarheid");
+    expect(html).toContain("Search Console");
     expect(html).not.toMatch(/CRM|Inzyte|Trello|Marketingbende/);
     expect(html).not.toContain("crm.marketingbende.nl");
   });
@@ -196,5 +199,22 @@ describe("klantklare maandrapportage", () => {
     expect(text).toContain("Eerlijke aandachtspunten");
     expect(text).toContain("Vooruitblik");
     expect(customerFacingText("CRM + Inzyte")).toBe("Online Matters");
+  });
+
+  it("verwijdert credentials en interne links ook uit een lokaal PDF-voorbeeld", () => {
+    const safe = customerFacingText(
+      "Voortgang gecontroleerd.\nInloggegevens:\nbeheerder\nGeheim123!\nhttps://crm.marketingbende.nl/deals/42",
+    );
+
+    expect(safe).toContain("Voortgang gecontroleerd");
+    expect(safe).not.toMatch(/Inloggegevens|beheerder|Geheim123|crm\./i);
+  });
+
+  it("behoudt gewone werkzaamheden rond authenticatie", () => {
+    expect(
+      customerFacingText(
+        "Authenticatie is ingericht.\nDe API-koppeling is getest.",
+      ),
+    ).toContain("Authenticatie is ingericht");
   });
 });

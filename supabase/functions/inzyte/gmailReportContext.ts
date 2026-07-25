@@ -12,7 +12,10 @@ import {
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import type { MonthlyReportPeriod } from "./monthlyReport.ts";
 import type { ReportEvidenceBundle, SentMailInput } from "./reportEvidence.ts";
-import { buildSentMailSearchQuery } from "./gmailReportQuery.ts";
+import {
+  buildSentMailSearchQuery,
+  isRelevantReportMessage,
+} from "./gmailReportQuery.ts";
 
 type DealMailContext = {
   name?: unknown;
@@ -33,21 +36,32 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const text = (value: unknown): string =>
   typeof value === "string" ? value.trim() : "";
 
-const SEO_RELEVANCE =
-  /\b(?:seo|search console|ga4|analytics|google|vindbaar|zoek(?:woord|opdracht|resultaat)|organisch|pagina|content|index|klik|vertoning|ctr|positie|ranking|redirect|sitemap|metadata|title tag|meta description|landingspagina|website|technisch)\b/i;
-
-const relevantMessage = ({
-  subject,
-  body,
-}: {
-  subject: string;
-  body: string;
-}): boolean => SEO_RELEVANCE.test(`${subject}\n${body}`);
-
 const messageDate = (internalDate: string | undefined): string =>
   internalDate && Number.isFinite(Number(internalDate))
     ? new Date(Number(internalDate)).toISOString()
     : new Date().toISOString();
+
+const mapWithConcurrency = async <Input, Output>(
+  items: Input[],
+  concurrency: number,
+  mapper: (item: Input, index: number) => Promise<Output>,
+): Promise<Output[]> => {
+  const results = new Array<Output>(items.length);
+  let nextIndex = 0;
+  const processNext = async (): Promise<void> => {
+    const index = nextIndex;
+    nextIndex += 1;
+    if (index >= items.length) return;
+    results[index] = await mapper(items[index], index);
+    await processNext();
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () =>
+      processNext(),
+    ),
+  );
+  return results;
+};
 
 export const loadSentGmailContext = async ({
   saleId,
@@ -99,24 +113,34 @@ export const loadSentGmailContext = async ({
       clientSecret,
     });
     const ids = await searchGmailMessageIds(accessToken, query, 40);
-    const messages: SentMailInput[] = [];
-    // Keep the Gmail request rate bounded and avoid retaining attachments.
-    for (const messageId of ids) {
-      const message = await getGmailMessage(accessToken, messageId);
-      if (!(message.labelIds || []).includes("SENT")) continue;
-      const normalized = await normalizeGmailMessage(message, (attachmentId) =>
-        getGmailAttachmentData(accessToken, messageId, attachmentId),
-      );
-      const body = text(normalized.text) || text(normalized.html);
-      const subject = text(normalized.subject);
-      if (!relevantMessage({ subject, body })) continue;
-      messages.push({
-        id: messageId,
-        subject,
-        date: messageDate(message.internalDate),
-        text: body.slice(0, 12_000),
-      });
-    }
+    // Four workers keep Gmail latency low without releasing all requests at
+    // once. The result array retains the search order.
+    const messages = (
+      await mapWithConcurrency<string, SentMailInput | null>(
+        ids,
+        4,
+        async (messageId) => {
+          const message = await getGmailMessage(accessToken, messageId);
+          if (!(message.labelIds || []).some((labelId) => labelId === "SENT")) {
+            return null;
+          }
+          const normalized = await normalizeGmailMessage(
+            message,
+            (attachmentId) =>
+              getGmailAttachmentData(accessToken, messageId, attachmentId),
+          );
+          const body = text(normalized.text) || text(normalized.html);
+          const subject = text(normalized.subject);
+          if (!isRelevantReportMessage({ subject, body })) return null;
+          return {
+            id: messageId,
+            subject,
+            date: messageDate(message.internalDate),
+            text: body.slice(0, 12_000),
+          };
+        },
+      )
+    ).filter((message): message is SentMailInput => message !== null);
     return {
       status: messages.length > 0 ? "connected" : "no_match",
       messages,

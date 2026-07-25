@@ -274,8 +274,8 @@ export const buildMonthlyHeadlineMetrics = ({
       definition:
         "Alle actieve gebruikers in GA4; dit cijfer is niet uitsluitend aan SEO toe te schrijven.",
       format: "number",
-      current: metricValue(ga4Current, ["activeUsers", "totalUsers"]),
-      previous: metricValue(ga4Previous, ["activeUsers", "totalUsers"]),
+      current: metricValue(ga4Current, ["activeUsers"]),
+      previous: metricValue(ga4Previous, ["activeUsers"]),
     }),
     headlineMetric({
       key: "conversions",
@@ -466,16 +466,8 @@ export const buildMonthlyHeadlineMetrics = ({
       definition:
         "Belacties die vanuit het gekoppelde Google Bedrijfsprofiel zijn gestart.",
       format: "number",
-      current: metricValue(
-        gbpCurrent,
-        ["callClicks", "businessConversations"],
-        true,
-      ),
-      previous: metricValue(
-        gbpPrevious,
-        ["callClicks", "businessConversations"],
-        true,
-      ),
+      current: metricValue(gbpCurrent, ["callClicks"], true),
+      previous: metricValue(gbpPrevious, ["callClicks"], true),
     }),
     headlineMetric({
       key: "businessProfileDirections",
@@ -497,8 +489,21 @@ export const buildMonthlyHeadlineMetrics = ({
       ),
     }),
   ];
-  return metrics.filter(
+  const availableMetrics = metrics.filter(
     (metric): metric is MonthlyHeadlineMetric => metric !== null,
+  );
+  const detailedBusinessProfileActions = new Set([
+    "businessProfileWebsiteClicks",
+    "businessProfileCalls",
+    "businessProfileDirections",
+  ]);
+  const hasDetailedBusinessProfileActions = availableMetrics.some((metric) =>
+    detailedBusinessProfileActions.has(metric.key),
+  );
+  return availableMetrics.filter(
+    (metric) =>
+      metric.key !== "businessProfileActions" ||
+      !hasDetailedBusinessProfileActions,
   );
 };
 

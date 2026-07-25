@@ -23,6 +23,7 @@ import {
   buildDefaultReportNarrative,
   buildNarrativePromptContext,
   buildReportEvidence,
+  isNarrativeSupportedByMetrics,
   mergeInzyteNarrative,
   MONTHLY_NARRATIVE_QUESTION,
   sanitizeReportEvidenceText,
@@ -605,7 +606,12 @@ const runRemoteAction = async (
 };
 
 type MonthlySourceResult =
-  | { status: "success"; data: unknown; runId: number | null }
+  | {
+      status: "success";
+      data: unknown;
+      snapshot: unknown;
+      runId: number | null;
+    }
   | { status: "unavailable" | "failed"; error: string };
 
 type WorkCompletion = {
@@ -743,11 +749,32 @@ const settleMonthlyAction = async ({
       link,
       { startDate, endDate, forceRefresh: true },
     );
-    return { status: "success", data: boundedSnapshot(result), runId };
+    return {
+      status: "success",
+      data: result,
+      snapshot: boundedSnapshot(result),
+      runId,
+    };
   } catch (error) {
     return { status: "failed", error: safeRunError(error) };
   }
 };
+
+const storedMonthlySource = (
+  source: MonthlySourceResult,
+):
+  | Omit<Extract<MonthlySourceResult, { status: "success" }>, "snapshot">
+  | {
+      status: "unavailable" | "failed";
+      error: string;
+    } =>
+  source.status === "success"
+    ? {
+        status: source.status,
+        data: source.snapshot,
+        runId: source.runId,
+      }
+    : source;
 
 const settleMonthlyPair = async ({
   currentStart,
@@ -841,7 +868,10 @@ const enhanceReportNarrative = async ({
         language: "nl",
       },
     });
-    return mergeInzyteNarrative(response, fallback);
+    const enhanced = mergeInzyteNarrative(response, fallback);
+    return isNarrativeSupportedByMetrics(enhanced, metrics)
+      ? enhanced
+      : fallback;
   } catch {
     // The source-backed deterministic narrative remains available if AI is
     // temporarily unavailable or returns an unusable response.
@@ -962,7 +992,7 @@ const generateMonthlyReport = async (
     link,
   });
   const reportData = {
-    version: 4,
+    version: 5,
     generatedAt: new Date().toISOString(),
     presentation: { brand: "online_matters" },
     measurement: {
@@ -997,10 +1027,22 @@ const generateMonthlyReport = async (
       recurring: deal.revenue_period === "maandelijks",
     },
     sources: {
-      ga4: { current: ga4Current, previous: ga4Previous },
-      searchConsole: { current: gscCurrent, previous: gscPrevious },
-      businessProfile: { current: gbpCurrent, previous: gbpPrevious },
-      googleAds: { current: adsCurrent, previous: adsPrevious },
+      ga4: {
+        current: storedMonthlySource(ga4Current),
+        previous: storedMonthlySource(ga4Previous),
+      },
+      searchConsole: {
+        current: storedMonthlySource(gscCurrent),
+        previous: storedMonthlySource(gscPrevious),
+      },
+      businessProfile: {
+        current: storedMonthlySource(gbpCurrent),
+        previous: storedMonthlySource(gbpPrevious),
+      },
+      googleAds: {
+        current: storedMonthlySource(adsCurrent),
+        previous: storedMonthlySource(adsPrevious),
+      },
     },
     work: {
       current: work.current,
@@ -1012,6 +1054,8 @@ const generateMonthlyReport = async (
     },
     evidence: {
       counts: evidence.counts,
+      currentCounts: evidence.currentCounts,
+      allTimeCounts: evidence.allTimeCounts,
       gmailStatus: evidence.gmailStatus,
       current: evidence.current,
       allTime: evidence.allTime,
