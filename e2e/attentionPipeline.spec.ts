@@ -49,7 +49,7 @@ test.describe("attention scope", () => {
       // The phone shows one ranked list; the desktop scope switch is not part
       // of that screen.
       await expect(
-        page.getByRole("searchbox", { name: /zoek/i }).first(),
+        page.getByRole("textbox", { name: /zoek/i }).first(),
       ).toBeVisible();
       return;
     }

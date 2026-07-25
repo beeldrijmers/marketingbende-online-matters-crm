@@ -95,7 +95,7 @@ test("user onboarding", async ({ page, isMobile, dismissToast }) => {
   // desktop rail links to it directly; the phone's five-slot bar cannot, so it
   // is listed on "Vandaag".
   if (isMobile) {
-    await page.getByRole("link", { name: "Vandaag" }).click();
+    await page.getByRole("link", { name: "Vandaag", exact: true }).click();
     await page.waitForLoadState("networkidle");
   }
   await page.getByRole("link", { name: "Updates" }).first().click();

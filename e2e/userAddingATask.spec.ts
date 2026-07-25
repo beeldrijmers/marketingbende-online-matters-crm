@@ -95,10 +95,10 @@ test.describe("user adding a task", () => {
       );
       await menu.goToDashboard();
 
+      // The panel is a sibling of its heading, not a descendant, so assert the
+      // task is on the dashboard instead of walking up two levels of markup.
       await expect(page.getByText("Aankomende taken")).toBeVisible();
-      await expect(
-        page.getByText("Aankomende taken").locator("../.."),
-      ).toHaveText(/Follow up with Jane/);
+      await expect(page.getByText("Follow up with Jane")).toBeVisible();
       // The task row also renders the assignee avatar + party badge (from the
       // collaboration layer) between the due date and the "(Betreft: ...)"
       // suffix, which the browser exposes as separate text nodes. Assert the
