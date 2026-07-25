@@ -101,7 +101,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@inquirer/prompts": "^8.2.0",
-    "@playwright/mcp": "^0.0.76",
+    "@playwright/mcp": "0.0.78",
     "@playwright/test": "^1.60.0",
     "@storybook/react-vite": "^10.5.4",
     "@types/dompurify": "^3.0.5",

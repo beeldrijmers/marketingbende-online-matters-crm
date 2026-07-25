@@ -1134,6 +1134,14 @@
           "type": "registry:lib"
         },
         {
+          "path": "src/lib/sentryFiltering.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "src/lib/sentryFiltering.test.ts",
+          "type": "registry:lib"
+        },
+        {
           "path": "CHANGELOG.md",
           "type": "registry:file",
           "target": "~/CHANGELOG.md"

@@ -152,7 +152,7 @@ CREATE OR REPLACE FUNCTION "public"."get_note_attachments_function_url"() RETURN
 
 CREATE OR REPLACE FUNCTION "public"."get_user_id_by_email"("email" "text") RETURNS TABLE("id" "uuid")
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
+    SET "search_path" TO ''
     AS $_$
 BEGIN
   RETURN QUERY SELECT au.id FROM auth.users au WHERE au.email = $1;

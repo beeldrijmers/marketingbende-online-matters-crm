@@ -13,6 +13,27 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # ra-core 5 only supports React Router 6/7.
+      - dependency-name: react-router
+        update-types:
+          - version-update:semver-major
+      # CI and production deliberately run Node 22.
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
+      # TypeScript 7 is a compiler migration, not a routine version bump.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+      # The abandoned faker package must be replaced by @faker-js/faker
+      # instead of upgraded to its empty 6.x release.
+      - dependency-name: faker
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "@types/faker"
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: /

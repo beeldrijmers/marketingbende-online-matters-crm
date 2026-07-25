@@ -273,6 +273,8 @@ create table public.gmail_oauth_states (
     created_at timestamp with time zone not null default now()
 );
 
+create index gmail_oauth_states_sales_id_idx on public.gmail_oauth_states using btree (sales_id);
+
 -- Cache of the Moneybird contact created for a CRM company, PER administration.
 -- A Moneybird contact id is only valid inside the administration it was created
 -- in, and every user connects their own administration, so one company can map
