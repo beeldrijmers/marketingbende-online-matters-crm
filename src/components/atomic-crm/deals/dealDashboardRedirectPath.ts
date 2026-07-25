@@ -1,7 +1,7 @@
 import { matchPath } from "react-router";
 
 import {
-  DASHBOARD_WORKBOARD_PATH,
+  BOARD_PATH,
   getDashboardDealCreatePath,
   getDashboardDealDetailPath,
   getDashboardDealEditPath,
@@ -11,10 +11,10 @@ import {
 export const getDealDashboardRedirectPath = (
   pathname: string,
   search: string,
-  basePath = DASHBOARD_WORKBOARD_PATH,
+  basePath = BOARD_PATH,
 ) => {
   const returnPath = getDashboardDealReturnPath(basePath, search);
-  const translateHistoricDetail = basePath === DASHBOARD_WORKBOARD_PATH;
+  const translateHistoricDetail = basePath === BOARD_PATH;
   const createMatch = translateHistoricDetail
     ? matchPath("/deals/create", pathname)
     : null;

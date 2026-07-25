@@ -184,6 +184,8 @@ export const dutchCrmMessages = {
         managed_by_me: "Beheerd door mij",
         search: "Zoek naam, bedrijf...",
         this_week: "Deze week",
+        board: "Opdrachten",
+        board_short: "Bord",
         today: "Vandaag",
         tags: "Labels",
         tasks: "Taken",
@@ -196,7 +198,7 @@ export const dutchCrmMessages = {
         empty_title: "Nog geen actieve kansen",
         hot_label: "Heet",
         missing_contact: "Contact nog koppelen",
-        more: "Nog %{count} actieve relaties op het werkbord",
+        more: "Nog %{count} actieve relaties",
         open_board: "Alle kansen",
         pipeline: "%{amount} in werkstroom",
         reasons: {
@@ -227,6 +229,21 @@ export const dutchCrmMessages = {
       completion_scope: {
         active: "Alleen open werk",
         all: "Alle fasen",
+      },
+      board: {
+        count: "%{smart_count} opdracht |||| %{smart_count} opdrachten",
+        error_body:
+          "De opdrachten konden niet worden geladen. Probeer de pagina opnieuw te laden.",
+        error_title: "Bord niet beschikbaar",
+        focus_all: "Alles",
+        search: "Zoek opdracht of klant",
+        focus_attention: "Aandacht",
+        focus_billing: "Facturatie",
+        focus_label: "Weergave van het bord",
+        last_sync: "bijgewerkt %{moment}",
+        recurring_total: "%{amount} per maand",
+        unmapped:
+          "%{smart_count} opdracht heeft een onbekende fase en staat daarom in geen enkele kolom. |||| %{smart_count} opdrachten hebben een onbekende fase en staan daarom in geen enkele kolom.",
       },
       steps: {
         title: "Stappen",
@@ -488,6 +505,8 @@ export const dutchCrmMessages = {
     tasks: {
       name: "Taak |||| Taken",
       forcedCaseName: "Taak",
+      page_meta:
+        "Uw taken op vervaldatum, plus openstaande stappen om over te nemen",
       trello_text_readonly:
         "Deze stap komt uit Trello. Pas de omschrijving aan in Trello; wijzigingen hier worden bij de volgende synchronisatie overschreven.",
       fields: {
@@ -533,7 +552,7 @@ export const dutchCrmMessages = {
         team: "Team",
       },
       regarding_contact: "(Betreft: %{name})",
-      regarding_deal: "— %{name}",
+      regarding_deal: "· %{name}",
       trello_step: "Trello",
       to_claim: "Op te pakken",
       updated: "Taak bijgewerkt",
@@ -597,6 +616,7 @@ export const dutchCrmMessages = {
       loading: "Bezig met laden...",
       me: "Ik",
       task_count: "%{smart_count} taak |||| %{smart_count} taken",
+      record_count: "%{smart_count} resultaat |||| %{smart_count} resultaten",
     },
     changelog: {
       title: "Wijzigingslog",
@@ -640,10 +660,10 @@ export const dutchCrmMessages = {
     dashboard: {
       deals_pipeline: "Opdrachtenbord",
       deal_actions: {
-        title: "Dit heeft je aandacht nodig",
+        title: "Dit heeft uw aandacht nodig",
         subtitle:
           "Alleen afwijkingen: te laat, vandaag, verlopen of nog niet gepland.",
-        open_board: "Werkbord",
+        open_board: "Alles bekijken",
         empty_title: "Alles onder controle",
         empty: "Er zijn geen achterstallige of ongeplande opdrachten.",
         next_task: "Volgende taak",
@@ -655,7 +675,7 @@ export const dutchCrmMessages = {
           planning: "%{count} planning verlopen",
           unplanned: "%{count} zonder planning",
         },
-        more: "Nog %{count} aandachtspunten op het kanbanbord",
+        more: "Nog %{count} aandachtspunten",
       },
       revenue: {
         title: "Omzet per maand",
@@ -672,6 +692,8 @@ export const dutchCrmMessages = {
           "Nog geen omzetgegevens. Zet een bedrag en type (maandelijks/eenmalig) op uw opdrachten.",
       },
       latest_activity: "Recente updates",
+      latest_activity_meta:
+        "Notities en wijzigingen uit het CRM en de gekoppelde bronnen",
       latest_activity_error: "Fout bij het laden van de laatste activiteit",
       latest_notes: "Mijn laatste notities",
       latest_notes_added_ago: "toegevoegd %{timeAgo}",
@@ -680,6 +702,7 @@ export const dutchCrmMessages = {
         progress: "%{step}/3 voltooid",
         whats_next: "Wat nu?",
       },
+      all_tasks: "Alle taken",
       upcoming_tasks: "Aankomende taken",
     },
     header: {
@@ -770,6 +793,24 @@ export const dutchCrmMessages = {
     language: "Taal",
     navigation: {
       label: "CRM-navigatie",
+      account: "Account en instellingen",
+      collapse: "Inklappen",
+      expand: "Menu uitklappen",
+      finance: "Financieel",
+      group_overview: "Overzicht",
+      group_relations: "Relaties",
+      integrations: "Koppelingen",
+      today: "Vandaag",
+      updates: "Updates",
+    },
+    finance: {
+      meta: "%{smart_count} opdracht klaar om te factureren |||| %{smart_count} opdrachten klaar om te factureren",
+    },
+    updates: {
+      meta: "Alles wat het team recent heeft vastgelegd",
+    },
+    integrations: {
+      meta: "Status van Gmail, Trello en Moneybird",
     },
     profile: {
       gmail: {

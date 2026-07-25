@@ -27,7 +27,7 @@ import { Avatar } from "../contacts/Avatar";
 import { TagsList } from "../contacts/TagsList";
 import { findDealLabel } from "../deals/dealUtils";
 import {
-  DASHBOARD_WORKBOARD_PATH,
+  BOARD_PATH,
   getDashboardDealDetailPath,
 } from "../deals/dashboardDealSelection";
 import { MobileContent } from "../layout/MobileContent";
@@ -278,7 +278,7 @@ const DealsIterator = () => {
         {deals.map((deal) => (
           <div key={deal.id} className="p-0 text-sm">
             <RouterLink
-              to={getDashboardDealDetailPath(DASHBOARD_WORKBOARD_PATH, deal.id)}
+              to={getDashboardDealDetailPath(BOARD_PATH, deal.id)}
               className="flex items-center justify-between hover:bg-muted py-2 transition-colors"
             >
               <div className="flex-1 min-w-0">

@@ -179,6 +179,8 @@ export const englishCrmMessages = {
         managed_by_me: "Managed by me",
         search: "Search name, company...",
         this_week: "This week",
+        board: "Deals",
+        board_short: "Board",
         today: "Today",
         tags: "Tags",
         tasks: "Tasks",
@@ -222,6 +224,20 @@ export const englishCrmMessages = {
       completion_scope: {
         active: "Open work only",
         all: "All stages",
+      },
+      board: {
+        count: "%{smart_count} deal |||| %{smart_count} deals",
+        error_body: "The deals could not be loaded. Try reloading the page.",
+        error_title: "Board unavailable",
+        focus_all: "All",
+        search: "Search deal or client",
+        focus_attention: "Attention",
+        focus_billing: "Invoicing",
+        focus_label: "Board view",
+        last_sync: "updated %{moment}",
+        recurring_total: "%{amount} per month",
+        unmapped:
+          "%{smart_count} deal has an unknown stage and is therefore in no column. |||| %{smart_count} deals have an unknown stage and are therefore in no column.",
       },
       steps: {
         title: "Steps",
@@ -480,6 +496,7 @@ export const englishCrmMessages = {
     tasks: {
       name: "Task |||| Tasks",
       forcedCaseName: "Task",
+      page_meta: "Your tasks by due date, plus open steps you can pick up",
       trello_text_readonly:
         "This step comes from Trello. Edit the description in Trello; changes here are overwritten on the next sync.",
       fields: {
@@ -525,7 +542,7 @@ export const englishCrmMessages = {
         team: "Team",
       },
       regarding_contact: "(Re: %{name})",
-      regarding_deal: "— %{name}",
+      regarding_deal: "· %{name}",
       trello_step: "Trello",
       to_claim: "To pick up",
       updated: "Task updated",
@@ -590,6 +607,7 @@ export const englishCrmMessages = {
       loading: "Loading...",
       me: "Me",
       task_count: "%{smart_count} task |||| %{smart_count} tasks",
+      record_count: "%{smart_count} result |||| %{smart_count} results",
     },
     changelog: {
       title: "Changelog",
@@ -663,7 +681,9 @@ export const englishCrmMessages = {
         empty:
           "No revenue data yet. Set an amount and type (monthly/one-off) on your deals.",
       },
-      latest_activity: "Latest Activity",
+      latest_activity: "Recent updates",
+      latest_activity_meta:
+        "Notes and changes from the CRM and its connected sources",
       latest_activity_error: "Error loading latest activity",
       latest_notes: "My Latest Notes",
       latest_notes_added_ago: "added %{timeAgo}",
@@ -672,6 +692,7 @@ export const englishCrmMessages = {
         progress: "%{step}/3 done",
         whats_next: "What's next?",
       },
+      all_tasks: "All tasks",
       upcoming_tasks: "Upcoming Tasks",
     },
     header: {
@@ -762,6 +783,24 @@ export const englishCrmMessages = {
     language: "Language",
     navigation: {
       label: "CRM navigation",
+      account: "Account and settings",
+      collapse: "Collapse",
+      expand: "Expand menu",
+      finance: "Finance",
+      group_overview: "Overview",
+      group_relations: "Relations",
+      integrations: "Integrations",
+      today: "Today",
+      updates: "Updates",
+    },
+    finance: {
+      meta: "%{smart_count} deal ready to invoice |||| %{smart_count} deals ready to invoice",
+    },
+    updates: {
+      meta: "Everything the team recorded recently",
+    },
+    integrations: {
+      meta: "Status of Gmail, Trello and Moneybird",
     },
     profile: {
       gmail: {

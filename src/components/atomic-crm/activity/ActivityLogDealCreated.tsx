@@ -3,7 +3,7 @@ import { Link } from "react-router";
 
 import { ReferenceField } from "@/components/admin/reference-field";
 import {
-  DASHBOARD_WORKBOARD_PATH,
+  BOARD_PATH,
   getDashboardDealDetailPath,
 } from "../deals/dashboardDealSelection";
 import { RelativeDate } from "../misc/RelativeDate";
@@ -49,9 +49,7 @@ export function ActivityLogDealCreated({
           {isMobile ? (
             deal.name
           ) : (
-            <Link
-              to={getDashboardDealDetailPath(DASHBOARD_WORKBOARD_PATH, deal.id)}
-            >
+            <Link to={getDashboardDealDetailPath(BOARD_PATH, deal.id)}>
               {deal.name}
             </Link>
           )}{" "}

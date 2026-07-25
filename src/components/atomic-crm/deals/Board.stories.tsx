@@ -2,11 +2,11 @@ import type { Meta } from "@storybook/react-vite";
 
 import { StoryWrapper } from "@/test/StoryWrapper";
 import { i18nProvider } from "../providers/commons/i18nProvider";
-import type { Deal, IntegrationRun, Task } from "../types";
-import { DashboardWorkspace } from "./DashboardWorkspace";
+import type { Company, Deal, IntegrationRun, Task } from "../types";
+import { Board } from "./BoardPage";
 
 const meta = {
-  title: "Atomic CRM/Dashboard/Trello workflow overview",
+  title: "Atomic CRM/Deals/Board",
   parameters: { layout: "fullscreen" },
 } satisfies Meta;
 
@@ -39,6 +39,31 @@ const card = (
   on_hold: stage === "on-hold",
   is_internal: false,
 });
+
+const companies: Company[] = [
+  {
+    id: 1,
+    name: "Hunting XL",
+    sector: "cyclische-consumentengoederen",
+    size: 10,
+    linkedin_url: null,
+    website: "https://huntingxl.nl",
+    phone_number: "0512 000 000",
+    address: "",
+    zipcode: "",
+    city: "Drachten",
+    stateAbbr: "",
+    nb_contacts: 2,
+    nb_deals: 3,
+    sales_id: 0,
+    created_at: "2026-01-05T09:00:00.000Z",
+    description: "",
+    revenue: "",
+    tax_identifier: "",
+    country: "Nederland",
+    context_links: [],
+  } as unknown as Company,
+];
 
 const deals: Deal[] = [
   card(
@@ -140,11 +165,11 @@ const run: IntegrationRun = {
 
 export const Desktop = () => (
   <StoryWrapper
-    data={{ deals, integration_runs: [run], tasks }}
+    data={{ companies, deals, integration_runs: [run], tasks }}
     i18nProvider={i18nProvider}
   >
-    <div className="min-h-screen bg-background p-6">
-      <DashboardWorkspace hasDeals />
+    <div className="flex h-screen flex-col bg-canvas px-6 pt-4">
+      <Board />
     </div>
   </StoryWrapper>
 );

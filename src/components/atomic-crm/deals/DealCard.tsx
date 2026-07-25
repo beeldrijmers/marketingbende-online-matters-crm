@@ -1,10 +1,9 @@
 import { Draggable } from "@hello-pangea/dnd";
 import { FileBarChart, PauseCircle, Receipt } from "lucide-react";
 import { useRedirect, useTranslate, RecordContextProvider } from "ra-core";
+import { Link } from "react-router";
 import { ReferenceField } from "@/components/admin/reference-field";
 import { SelectField } from "@/components/admin/select-field";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 import { CompanyAvatar } from "../companies/CompanyAvatar";
@@ -101,6 +100,15 @@ export const DealCard = ({
   );
 };
 
+/**
+ * A work ticket, read top to bottom: who it is for, what it is, what it is
+ * worth, and only then whether it needs a person.
+ *
+ * The card used to open with "Bedrijfsnaam - Dealnaam" glued into one
+ * paragraph, and closed with a full-width red bar that nearly every card
+ * carried. Now the client is the anchor, the left edge lights up only when
+ * something is genuinely late, and the state is one quiet line.
+ */
 export const DealCardContent = ({
   attentionPipeline = false,
   provided,
@@ -123,16 +131,17 @@ export const DealCardContent = ({
   const { dealCategories, currency } = useConfigurationContext();
   const translate = useTranslate();
   const redirect = useRedirect();
+  // Clicking opens the dialog over the board (context stays visible); the
+  // client name is a real link to the page, so Cmd-click and "open in new tab"
+  // do what they do everywhere else.
+  const dialogPath = detailBasePath
+    ? getDashboardDealDetailPath(detailBasePath, deal.id)
+    : `/deals/${deal.id}/show`;
+  const pagePath = `/deals/${deal.id}/show`;
   const handleClick = () => {
-    redirect(
-      detailBasePath
-        ? getDashboardDealDetailPath(detailBasePath, deal.id)
-        : `/deals/${deal.id}/show`,
-      undefined,
-      undefined,
-      undefined,
-      { _scrollToTop: false },
-    );
+    redirect(dialogPath, undefined, undefined, undefined, {
+      _scrollToTop: false,
+    });
   };
 
   const formattedAmount = deal.amount
@@ -142,159 +151,140 @@ export const DealCardContent = ({
   const moneybird = moneybirdLabel(deal);
   const seoReport = seoReportLabel(deal);
   const workflow = getDealWorkflow(deal, openTasks);
-  const attentionAccent =
+  // The left edge is the card's only alarm, and it earns its colour.
+  const edge =
     workflow.kind === "overdue"
-      ? "border-l-destructive"
+      ? "before:bg-late"
       : workflow.kind === "today"
-        ? "border-l-amber-500"
-        : workflow.kind === "overdue_closing"
-          ? "border-l-orange-500"
-          : "border-l-violet-500";
+        ? "before:bg-wait"
+        : deal.on_hold
+          ? "before:bg-wait/45"
+          : "before:bg-transparent";
 
   return (
-    <div
-      className="cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    <article
+      className={cn(
+        "group relative cursor-pointer overflow-hidden rounded-md border border-line-subtle bg-raised shadow-e1 transition-[transform,box-shadow,border-color] duration-1",
+        "before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:content-['']",
+        edge,
+        "hover:-translate-y-px hover:border-line hover:shadow-e2",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        snapshot?.isDragging && "rotate-[0.4deg] opacity-95 shadow-e3",
+      )}
       {...provided?.draggableProps}
       {...provided?.dragHandleProps}
       ref={provided?.innerRef}
       onClick={handleClick}
-      onKeyDown={(event) => {
-        if (event.target !== event.currentTarget) return;
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          handleClick();
-        }
-      }}
-      role="link"
-      tabIndex={0}
+      // No role/tabIndex/keydown of our own: the drag library owns the keyboard
+      // contract on this node (space lifts the card), and the client name below
+      // is a real link, so the keyboard and Cmd-click both work properly.
     >
       <RecordContextProvider value={deal}>
-        <Card
-          className={cn(
-            "py-2.5 transition-all duration-200",
-            attentionPipeline &&
-              "border-l-4 bg-card/95 py-3 shadow-sm hover:-translate-y-0.5",
-            attentionPipeline && attentionAccent,
-            snapshot?.isDragging
-              ? "opacity-90 transform rotate-1 shadow-lg"
-              : "shadow-sm hover:shadow-md",
-          )}
-        >
-          <CardContent className="px-3 flex flex-col gap-1">
-            <div className="flex items-start gap-2">
-              <p className="flex-1 text-sm font-medium leading-snug line-clamp-3">
-                <ReferenceField
-                  source="company_id"
-                  reference="companies"
-                  link={false}
-                />
-                {" - "}
-                {deal.name}
-              </p>
+        <div className="flex flex-col gap-1 pl-3 pr-2 py-2">
+          <div className="flex items-center gap-1.5">
+            <ReferenceField
+              source="company_id"
+              reference="companies"
+              link={false}
+            >
+              <CompanyAvatar width={16} height={16} />
+            </ReferenceField>
+            <Link
+              to={pagePath}
+              onClick={(event) => {
+                // A plain click keeps the board behind the dialog; modifier
+                // clicks fall through to the browser's own link handling.
+                if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+                event.preventDefault();
+                event.stopPropagation();
+                handleClick();
+              }}
+              className="min-w-0 flex-1 truncate text-[0.8125rem] font-semibold leading-5 text-ink no-underline hover:underline"
+            >
               <ReferenceField
                 source="company_id"
                 reference="companies"
                 link={false}
-              >
-                <CompanyAvatar width={20} height={20} />
-              </ReferenceField>
-            </div>
-
-            {attentionPipeline ? (
-              <DealWorkflowIndicator
-                deal={deal}
-                openTasks={openTasks}
-                className="my-1.5 py-1.5"
-                onPlanTask={onPlanTask ? () => onPlanTask(deal) : undefined}
               />
-            ) : null}
+            </Link>
+            <AssigneesField
+              ids={deal.assignee_ids}
+              size={16}
+              showParties={false}
+            />
+          </div>
 
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              {formattedAmount ? (
-                <span className="text-sm font-bold text-foreground">
-                  {formattedAmount}
-                  {recurring && (
-                    <span className="ml-0.5 text-xs font-medium text-muted-foreground">
-                      {translate("resources.deals.per_month_suffix")}
-                    </span>
-                  )}
-                </span>
-              ) : (
-                <span className="text-xs text-muted-foreground">
-                  {translate("resources.deals.no_amount")}
-                </span>
-              )}
-              {deal.category && (
-                <Badge
-                  variant="secondary"
-                  className="shrink-0 px-1.5 py-0 text-[11px]"
-                >
-                  <SelectField
-                    source="category"
-                    choices={dealCategories}
-                    optionText="label"
-                    optionValue="value"
-                    empty={deal.category}
-                  />
-                </Badge>
-              )}
-              {deal.on_hold && (
-                <Badge
-                  variant="outline"
-                  className="shrink-0 gap-1 px-1.5 py-0 text-[11px] border-amber-500/50 text-amber-600 dark:text-amber-400"
-                >
-                  <PauseCircle className="size-3 shrink-0" />
-                  {translate("resources.deals.fields.on_hold")}
-                </Badge>
-              )}
-              <div className="ml-auto flex items-center gap-1.5">
-                {seoReport && (
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "shrink-0 gap-1 px-1.5 py-0 text-[11px] font-normal",
-                      deal.latest_seo_report?.status === "final"
-                        ? "border-emerald-500/40 text-emerald-600"
-                        : "border-amber-500/40 text-amber-600",
-                    )}
-                  >
-                    <FileBarChart className="size-3 shrink-0" />
-                    {seoReport}
-                  </Badge>
+          <p className="line-clamp-2 text-meta leading-[1.15rem] text-ink-2">
+            {deal.name}
+          </p>
+
+          <div className="flex items-center gap-1.5">
+            {formattedAmount ? (
+              <span className="num text-[0.8125rem] font-semibold text-ink">
+                {formattedAmount}
+                {recurring && (
+                  <span className="ml-0.5 text-meta font-normal text-ink-3">
+                    {translate("resources.deals.per_month_suffix")}
+                  </span>
                 )}
-                {moneybird && (
-                  <Badge
-                    variant="outline"
-                    className="shrink-0 gap-1 px-1.5 py-0 text-[11px] font-normal"
-                  >
-                    <Receipt className="size-3 shrink-0" />
-                    {moneybird}
-                  </Badge>
-                )}
-                <AssigneesField
-                  ids={deal.assignee_ids}
-                  size={16}
-                  showParties={false}
+              </span>
+            ) : (
+              <span className="text-meta text-ink-3">
+                {translate("resources.deals.no_amount")}
+              </span>
+            )}
+            {deal.category ? (
+              <span className="min-w-0 truncate text-meta text-ink-3">
+                <span aria-hidden>· </span>
+                <SelectField
+                  source="category"
+                  choices={dealCategories}
+                  optionText="label"
+                  optionValue="value"
+                  empty={deal.category}
                 />
-              </div>
-            </div>
-            {!attentionPipeline ? (
-              <DealWorkflowIndicator
-                deal={deal}
-                openTasks={openTasks}
-                onPlanTask={onPlanTask ? () => onPlanTask(deal) : undefined}
-              />
+              </span>
             ) : null}
-            {attentionPipeline && onMoveToStage && onPlanTask ? (
-              <AttentionDealActions
-                deal={deal}
-                onMoveToStage={onMoveToStage}
-                onPlanTask={onPlanTask}
-              />
-            ) : null}
-          </CardContent>
-        </Card>
+            <span className="ml-auto flex shrink-0 items-center gap-1.5 text-ink-3">
+              {deal.on_hold ? (
+                <PauseCircle
+                  className="size-3.5 text-wait"
+                  aria-label={translate("resources.deals.fields.on_hold")}
+                />
+              ) : null}
+              {seoReport ? (
+                <FileBarChart
+                  className={cn(
+                    "size-3.5",
+                    deal.latest_seo_report?.status === "final"
+                      ? "text-live"
+                      : "text-wait",
+                  )}
+                  aria-label={seoReport}
+                />
+              ) : null}
+              {moneybird ? (
+                <Receipt className="size-3.5" aria-label={moneybird} />
+              ) : null}
+            </span>
+          </div>
+
+          <DealWorkflowIndicator
+            dense={!attentionPipeline}
+            deal={deal}
+            openTasks={openTasks}
+            onPlanTask={onPlanTask ? () => onPlanTask(deal) : undefined}
+          />
+
+          {attentionPipeline && onMoveToStage && onPlanTask ? (
+            <AttentionDealActions
+              deal={deal}
+              onMoveToStage={onMoveToStage}
+              onPlanTask={onPlanTask}
+            />
+          ) : null}
+        </div>
       </RecordContextProvider>
-    </div>
+    </article>
   );
 };

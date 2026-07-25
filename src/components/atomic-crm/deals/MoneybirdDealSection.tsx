@@ -92,9 +92,7 @@ const DocumentStatusBadge = ({
   <Badge
     variant="secondary"
     className={
-      check?.linked
-        ? "gap-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-        : "gap-1 text-[10px]"
+      check?.linked ? "gap-1 bg-live-tint text-live" : "gap-1 text-[10px]"
     }
   >
     {icon}
@@ -119,8 +117,8 @@ const Candidate = ({
   busy: boolean;
   onLink: () => void;
 }) => (
-  <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2 text-xs">
-    <AlertTriangle className="size-4 shrink-0 text-amber-600" />
+  <div className="flex flex-wrap items-center gap-2 rounded-md border border-wait/35 bg-wait-tint px-3 py-2 text-meta">
+    <AlertTriangle className="size-4 shrink-0 text-wait" />
     <div className="min-w-48 flex-1">
       <div className="font-medium">
         Mogelijke {kind === "estimate" ? "offerte" : "factuur"}:{" "}
@@ -223,12 +221,9 @@ export const MoneybirdDealSection = ({ record }: { record: Deal }) => {
     !ignoredCandidates && (liveStatus?.invoice.candidates.length || 0) > 0;
 
   return (
-    <section
-      aria-label="Offerte en facturatie"
-      className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] p-4"
-    >
+    <section aria-label="Offerte en facturatie" className="panel p-4">
       <div className="flex flex-wrap items-center gap-4">
-        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600">
+        <div className="grid size-8 shrink-0 place-items-center rounded-md bg-live-tint text-live">
           <CircleDollarSign className="size-5" />
         </div>
 
@@ -241,8 +236,8 @@ export const MoneybirdDealSection = ({ record }: { record: Deal }) => {
               variant="outline"
               className={
                 amountKnown
-                  ? "border-emerald-500/40 text-emerald-600"
-                  : "border-amber-500/40 text-amber-600"
+                  ? "border-live/40 text-live"
+                  : "border-wait/40 text-wait"
               }
             >
               {amountLabel ?? "NTB"}
@@ -364,7 +359,7 @@ export const MoneybirdDealSection = ({ record }: { record: Deal }) => {
       </div>
 
       {statusError && connection ? (
-        <div className="mt-3 rounded-lg border border-rose-500/25 bg-rose-500/[0.06] px-3 py-2 text-xs text-rose-700 dark:text-rose-400">
+        <div className="mt-3 rounded-md border border-late/35 bg-late-tint px-3 py-2 text-meta text-late">
           De live Moneybird-controle is niet gelukt. Uit veiligheid maken we pas
           een nieuw document aan nadat de controle slaagt.
         </div>

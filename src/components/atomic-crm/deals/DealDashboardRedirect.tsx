@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from "react-router";
 
-import { DASHBOARD_WORKBOARD_PATH } from "./dashboardDealSelection";
+import { BOARD_PATH } from "./dashboardDealSelection";
 import { getDealDashboardRedirectPath } from "./dealDashboardRedirectPath";
 
 /**
@@ -9,7 +9,7 @@ import { getDealDashboardRedirectPath } from "./dealDashboardRedirectPath";
  * dialog instead of a removed standalone page.
  */
 export const DealDashboardRedirect = ({
-  basePath = DASHBOARD_WORKBOARD_PATH,
+  basePath = BOARD_PATH,
 }: {
   basePath?: string;
 }) => {

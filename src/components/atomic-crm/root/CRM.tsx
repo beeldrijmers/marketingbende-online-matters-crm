@@ -18,7 +18,13 @@ import { OAuthConsentPage } from "@/components/supabase/oauth-consent-page";
 import companies from "../companies";
 import contacts from "../contacts";
 import { Dashboard } from "../dashboard/Dashboard";
+import { FinancePage, MobileFinancePage } from "../dashboard/FinancePage";
+import {
+  IntegrationsPage,
+  MobileIntegrationsPage,
+} from "../dashboard/IntegrationsPage";
 import { MobileDashboard } from "../dashboard/MobileDashboard";
+import { MobileUpdatesPage, UpdatesPage } from "../dashboard/UpdatesPage";
 import deals from "../deals";
 import { Layout } from "../layout/Layout";
 import { MobileLayout } from "../layout/MobileLayout";
@@ -55,14 +61,18 @@ import { i18nProvider as defaulti18nProvider } from "../providers/commons/i18nPr
 import { StartPage } from "../login/StartPage.tsx";
 import { useIsMobile } from "@/hooks/use-mobile.ts";
 import { MobileTasksList } from "../tasks/MobileTasksList.tsx";
+import { TasksPage } from "../tasks/TasksPage.tsx";
 import { ContactListMobile } from "../contacts/ContactList.tsx";
 import { DealDashboardRedirect } from "../deals/DealDashboardRedirect.tsx";
+import { MobileBoardPage } from "../deals/DashboardDealKanbanPage.tsx";
 import {
   DEAL_ATTENTION_PATH,
-  DEAL_BILLING_PATH,
+  FINANCE_PATH,
+  INTEGRATIONS_PATH,
   LEGACY_DEAL_ATTENTION_PATH,
   LEGACY_DEAL_BILLING_PATH,
-} from "../deals/dashboardDealSelection.ts";
+  UPDATES_PATH,
+} from "./routes.ts";
 import { MobileCompaniesList } from "../companies/MobileCompaniesList.tsx";
 import { ContactShow } from "../contacts/ContactShow.tsx";
 import { CompanyShow } from "../companies/CompanyShow.tsx";
@@ -311,13 +321,16 @@ const DesktopAdmin = (
         <Route path={SettingsPage.path} element={<SettingsPage />} />
         <Route path={ImportPage.path} element={<ImportPage />} />
         <Route path={ChangelogPage.path} element={<ChangelogPage />} />
+        <Route path={FINANCE_PATH} element={<FinancePage />} />
+        <Route path={UPDATES_PATH} element={<UpdatesPage />} />
+        <Route path={INTEGRATIONS_PATH} element={<IntegrationsPage />} />
         <Route
           path={LEGACY_DEAL_ATTENTION_PATH}
           element={<DealDashboardRedirect basePath={DEAL_ATTENTION_PATH} />}
         />
         <Route
           path={LEGACY_DEAL_BILLING_PATH}
-          element={<DealDashboardRedirect basePath={DEAL_BILLING_PATH} />}
+          element={<Navigate to={FINANCE_PATH} replace />}
         />
       </CustomRoutes>
       <Resource name="deals" {...deals} />
@@ -329,12 +342,7 @@ const DesktopAdmin = (
       <Resource name="companies" {...companies} />
       <Resource name="contact_notes" />
       <Resource name="deal_notes" />
-      <Resource name="tasks">
-        {/* No standalone desktop tasks page: send /tasks (e.g. reached by
-            crossing the mobile breakpoint) to the dashboard instead of a blank
-            page. */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Resource>
+      <Resource name="tasks" list={TasksPage} />
       <Resource name="sales" {...sales} />
       <Resource name="tags" />
     </Admin>
@@ -408,19 +416,28 @@ const MobileAdmin = (
           />
           <Route path={ImportPage.path} element={<ImportPage />} />
           <Route path={ChangelogPage.path} element={<ChangelogPage />} />
+          <Route path={FINANCE_PATH} element={<MobileFinancePage />} />
+          <Route path={UPDATES_PATH} element={<MobileUpdatesPage />} />
+          <Route
+            path={INTEGRATIONS_PATH}
+            element={<MobileIntegrationsPage />}
+          />
           <Route
             path={LEGACY_DEAL_ATTENTION_PATH}
             element={<DealDashboardRedirect basePath={DEAL_ATTENTION_PATH} />}
           />
           <Route
             path={LEGACY_DEAL_BILLING_PATH}
-            element={<DealDashboardRedirect basePath={DEAL_BILLING_PATH} />}
+            element={<Navigate to={FINANCE_PATH} replace />}
           />
         </CustomRoutes>
         <Resource
           name="contacts"
           list={ContactListMobile}
           show={ContactShow}
+          // Without a create route, /contacts/create fell through to the show
+          // route and asked the API for a record with id "create".
+          create={contacts.create}
           recordRepresentation={contacts.recordRepresentation}
         >
           <Route path=":id/notes/:noteId" element={<NoteShowPage />} />
@@ -430,7 +447,7 @@ const MobileAdmin = (
           list={MobileCompaniesList}
           show={CompanyShow}
         />
-        <Resource name="deals" list={DealDashboardRedirect} />
+        <Resource name="deals" list={MobileBoardPage} />
         <Resource name="tasks" list={MobileTasksList} />
         {/* Sales team management has no mobile-specific screens, but the
             resource must be registered so /sales deeplinks (and crossing the

@@ -1,0 +1,373 @@
+/**
+ * BANKAI CRM — design tokens ("Werkbank")
+ *
+ * One palette, two modes, both fully worked out. Dark is the default because
+ * that is how the team works; light is not an afterthought.
+ *
+ * Layers, in order of precedence for anyone adding a colour:
+ *   1. surfaces  — canvas / sunken / raised / raised-hi
+ *   2. ink       — ink / ink-2 / ink-3 (never gray-on-colour, always a tint of
+ *                  the surface it sits on)
+ *   3. accent    — exactly one, from the BANKAI mark. Actions, active nav, focus.
+ *   4. status    — late / wait / live / info. Rare on purpose, so it means
+ *                  something when it shows up.
+ *   5. party     — which agency owns the work (Marketingbende / Online Matters /
+ *                  Groeien met Ads); identity, never status.
+ *   6. series    — chart series, derived from accent + status hues.
+ *
+ * Neutrals are tinted towards hue 275 (the mark's indigo) so grey never reads
+ * as cold system chrome.
+ *
+ * The shadcn/ra-admin variable names (--background, --card, --primary, …) are
+ * kept as *aliases* onto this palette, so every existing component inherits the
+ * new look without being rewritten.
+ */
+
+:root {
+  /* Geometry ------------------------------------------------------------- */
+  --radius: 0.5rem;
+
+  /* Shell measurements. One source of truth: the phone header, the bottom bar
+     and the padding that keeps content clear of both used to disagree
+     (56 / 64 / 72px), which is why the board's title sat under the app bar. */
+  --app-bar-h: 3.5rem;
+  --bottom-nav-h: 3.5rem;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+
+  /* Surfaces — light mode ------------------------------------------------ */
+  --canvas: oklch(0.985 0.003 275);
+  --sunken: oklch(0.958 0.006 275);
+  --raised: oklch(1 0 0);
+  --raised-hi: oklch(0.966 0.005 275);
+
+  --line-subtle: oklch(0.28 0.02 275 / 8%);
+  --line: oklch(0.28 0.02 275 / 14%);
+  --line-strong: oklch(0.28 0.02 275 / 26%);
+
+  /* Ink — light mode ----------------------------------------------------- */
+  --ink: oklch(0.235 0.014 275);
+  --ink-2: oklch(0.455 0.014 275);
+  --ink-3: oklch(0.508 0.014 275);
+
+  /* Accent — the only brand colour that acts ---------------------------- */
+  --accent-base: oklch(0.5 0.185 274);
+  --accent-hover: oklch(0.44 0.19 274);
+  --accent-ink: oklch(0.99 0.005 274);
+  --accent-quiet: color-mix(in oklab, var(--accent-base) 10%, var(--canvas));
+  --accent-line: color-mix(in oklab, var(--accent-base) 32%, var(--line));
+  --focus: oklch(0.55 0.18 274);
+
+  /* Status — light mode -------------------------------------------------- */
+  --late: oklch(0.52 0.19 25);
+  --wait: oklch(0.52 0.12 68);
+  --live: oklch(0.47 0.12 158);
+  --info: oklch(0.5 0.14 245);
+  --late-tint: color-mix(in oklab, var(--late) 11%, var(--raised));
+  --wait-tint: color-mix(in oklab, var(--wait) 12%, var(--raised));
+  --live-tint: color-mix(in oklab, var(--live) 11%, var(--raised));
+  --info-tint: color-mix(in oklab, var(--info) 11%, var(--raised));
+
+  /* Party — who owns the work ------------------------------------------- */
+  --party-mb: oklch(0.47 0.17 296);
+  --party-om: oklch(0.47 0.13 238);
+  --party-gma: oklch(0.46 0.1 192);
+
+  /* Chart series --------------------------------------------------------- */
+  --series-1: oklch(0.52 0.17 274);
+  --series-2: oklch(0.56 0.12 232);
+  --series-3: oklch(0.55 0.11 178);
+  --series-4: oklch(0.62 0.13 82);
+  --series-5: oklch(0.55 0.16 330);
+
+  /* Elevation — light mode ---------------------------------------------- */
+  --elev-1:
+    0 1px 2px oklch(0.24 0.02 275 / 0.07), 0 0 0 1px oklch(0.24 0.02 275 / 0.04);
+  --elev-2:
+    0 2px 8px -2px oklch(0.24 0.02 275 / 0.11),
+    0 1px 2px oklch(0.24 0.02 275 / 0.06);
+  --elev-3:
+    0 18px 44px -14px oklch(0.24 0.02 275 / 0.24),
+    0 2px 6px oklch(0.24 0.02 275 / 0.06);
+
+  /* Motion — one deceleration curve, three speeds ------------------------ */
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-1: 110ms;
+  --dur-2: 180ms;
+  --dur-3: 280ms;
+
+  /* Avatar palette — muted, tinted, readable behind white initials ------- */
+  --avatar-0: oklch(0.55 0.13 274);
+  --avatar-1: oklch(0.54 0.13 328);
+  --avatar-2: oklch(0.52 0.11 196);
+  --avatar-3: oklch(0.55 0.12 52);
+  --avatar-4: oklch(0.54 0.14 300);
+  --avatar-5: oklch(0.52 0.11 158);
+  --avatar-6: oklch(0.53 0.12 232);
+  --avatar-7: oklch(0.54 0.14 18);
+  --avatar-8: oklch(0.55 0.11 96);
+  --avatar-9: oklch(0.53 0.13 256);
+
+  /* shadcn / ra-admin aliases ------------------------------------------- */
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--raised);
+  --card-foreground: var(--ink);
+  --popover: var(--raised);
+  --popover-foreground: var(--ink);
+  --primary: var(--accent-base);
+  --primary-foreground: var(--accent-ink);
+  --secondary: var(--raised-hi);
+  --secondary-foreground: var(--ink);
+  --muted: var(--sunken);
+  --muted-foreground: var(--ink-2);
+  --accent: var(--raised-hi);
+  --accent-foreground: var(--ink);
+  --destructive: var(--late);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--focus);
+  --chart-1: var(--series-1);
+  --chart-2: var(--series-2);
+  --chart-3: var(--series-3);
+  --chart-4: var(--series-4);
+  --chart-5: var(--series-5);
+  --sidebar: var(--sunken);
+  --sidebar-foreground: var(--ink-2);
+  --sidebar-primary: var(--accent-base);
+  --sidebar-primary-foreground: var(--accent-ink);
+  --sidebar-accent: var(--raised);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--line-subtle);
+  --sidebar-ring: var(--focus);
+}
+
+.dark {
+  /* Surfaces — dark mode ------------------------------------------------- */
+  --canvas: oklch(0.158 0.008 275);
+  --sunken: oklch(0.132 0.008 275);
+  --raised: oklch(0.202 0.01 275);
+  --raised-hi: oklch(0.242 0.012 275);
+
+  --line-subtle: oklch(0.97 0.01 275 / 7%);
+  --line: oklch(0.97 0.01 275 / 13%);
+  --line-strong: oklch(0.97 0.01 275 / 26%);
+
+  /* Ink — dark mode ------------------------------------------------------ */
+  --ink: oklch(0.965 0.004 275);
+  --ink-2: oklch(0.775 0.011 275);
+  --ink-3: oklch(0.645 0.013 275);
+
+  /* Accent — deep enough for white text to pass AA ---------------------- */
+  --accent-base: oklch(0.53 0.18 274);
+  --accent-hover: oklch(0.585 0.18 274);
+  --accent-ink: oklch(0.99 0.005 274);
+  --accent-quiet: color-mix(in oklab, var(--accent-base) 26%, var(--canvas));
+  --accent-line: color-mix(in oklab, var(--accent-base) 52%, var(--line));
+  --focus: oklch(0.72 0.15 274);
+
+  /* Status — dark mode -------------------------------------------------- */
+  --late: oklch(0.7 0.175 25);
+  --wait: oklch(0.79 0.13 76);
+  --live: oklch(0.74 0.14 158);
+  --info: oklch(0.75 0.11 240);
+  --late-tint: color-mix(in oklab, var(--late) 17%, var(--raised));
+  --wait-tint: color-mix(in oklab, var(--wait) 15%, var(--raised));
+  --live-tint: color-mix(in oklab, var(--live) 15%, var(--raised));
+  --info-tint: color-mix(in oklab, var(--info) 15%, var(--raised));
+
+  /* Party --------------------------------------------------------------- */
+  --party-mb: oklch(0.72 0.145 296);
+  --party-om: oklch(0.73 0.115 238);
+  --party-gma: oklch(0.73 0.095 192);
+
+  /* Chart series -------------------------------------------------------- */
+  --series-1: oklch(0.66 0.16 274);
+  --series-2: oklch(0.72 0.11 232);
+  --series-3: oklch(0.74 0.1 178);
+  --series-4: oklch(0.79 0.12 82);
+  --series-5: oklch(0.7 0.15 330);
+
+  /* Elevation — dark mode carries depth with a hairline, not a blur ----- */
+  --elev-1: 0 1px 2px oklch(0 0 0 / 0.32), inset 0 0 0 1px oklch(1 0 0 / 0.035);
+  --elev-2:
+    0 3px 10px -2px oklch(0 0 0 / 0.42), inset 0 0 0 1px oklch(1 0 0 / 0.045);
+  --elev-3:
+    0 22px 48px -16px oklch(0 0 0 / 0.62), inset 0 0 0 1px oklch(1 0 0 / 0.06);
+
+  /* Avatar palette ------------------------------------------------------ */
+  --avatar-0: oklch(0.42 0.13 274);
+  --avatar-1: oklch(0.41 0.13 328);
+  --avatar-2: oklch(0.4 0.1 196);
+  --avatar-3: oklch(0.42 0.11 52);
+  --avatar-4: oklch(0.41 0.13 300);
+  --avatar-5: oklch(0.4 0.1 158);
+  --avatar-6: oklch(0.41 0.11 232);
+  --avatar-7: oklch(0.42 0.13 18);
+  --avatar-8: oklch(0.42 0.1 96);
+  --avatar-9: oklch(0.41 0.12 256);
+
+  /* Aliases that differ from light mode --------------------------------- */
+  --popover: var(--raised-hi);
+  --sidebar: var(--sunken);
+  --sidebar-accent: var(--raised);
+}
+
+@theme inline {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-xs: calc(var(--radius) - 4px);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
+  --radius-2xl: calc(var(--radius) + 16px);
+
+  /* Type scale — sizes carry their own line-height, weight and tracking so
+     a single utility (text-title, text-eyebrow, …) is enough. */
+  --text-eyebrow: 0.6875rem;
+  --text-eyebrow--line-height: 1rem;
+  --text-eyebrow--letter-spacing: 0.08em;
+  --text-eyebrow--font-weight: 600;
+
+  --text-meta: 0.75rem;
+  --text-meta--line-height: 1.125rem;
+  --text-meta--font-weight: 450;
+
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.375rem;
+  --text-body--font-weight: 400;
+
+  --text-lead: 0.9375rem;
+  --text-lead--line-height: 1.5rem;
+  --text-lead--font-weight: 400;
+
+  --text-section: 0.9375rem;
+  --text-section--line-height: 1.375rem;
+  --text-section--letter-spacing: -0.006em;
+  --text-section--font-weight: 600;
+
+  --text-figure: 1.375rem;
+  --text-figure--line-height: 1.75rem;
+  --text-figure--letter-spacing: -0.012em;
+  --text-figure--font-weight: 620;
+
+  --text-title: 1.1875rem;
+  --text-title--line-height: 1.625rem;
+  --text-title--letter-spacing: -0.014em;
+  --text-title--font-weight: 620;
+
+  --text-display: 1.625rem;
+  --text-display--line-height: 2rem;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 650;
+
+  /* Semantic colours ---------------------------------------------------- */
+  --color-canvas: var(--canvas);
+  --color-sunken: var(--sunken);
+  --color-raised: var(--raised);
+  --color-raised-hi: var(--raised-hi);
+  --color-line: var(--line);
+  --color-line-subtle: var(--line-subtle);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent-base: var(--accent-base);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-quiet: var(--accent-quiet);
+  --color-accent-line: var(--accent-line);
+  --color-late: var(--late);
+  --color-late-tint: var(--late-tint);
+  --color-wait: var(--wait);
+  --color-wait-tint: var(--wait-tint);
+  --color-live: var(--live);
+  --color-live-tint: var(--live-tint);
+  --color-info: var(--info);
+  --color-info-tint: var(--info-tint);
+  --color-party-mb: var(--party-mb);
+  --color-party-om: var(--party-om);
+  --color-party-gma: var(--party-gma);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-series-4: var(--series-4);
+  --color-series-5: var(--series-5);
+
+  /* shadcn aliases ------------------------------------------------------ */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Elevation ----------------------------------------------------------- */
+  --shadow-e1: var(--elev-1);
+  --shadow-e2: var(--elev-2);
+  --shadow-e3: var(--elev-3);
+
+  /* Motion — every transition in the app decelerates the same way ------- */
+  --ease-precise: var(--motion-ease);
+  --ease-through: var(--motion-ease-inout);
+  --default-transition-duration: var(--dur-2);
+  --default-transition-timing-function: var(--motion-ease);
+}
+
+/* Composite utilities ---------------------------------------------------- */
+
+/* Money, counts and dates line up in columns. */
+@utility num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Small structural label above a group: "FASE", "VOLGENDE STAP". */
+@utility eyebrow {
+  font-size: var(--text-eyebrow);
+  line-height: var(--text-eyebrow--line-height);
+  font-weight: var(--text-eyebrow--font-weight);
+  letter-spacing: var(--text-eyebrow--letter-spacing);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* The one hairline that separates a panel from the canvas without a shadow. */
+@utility panel {
+  background-color: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+/* A recessed well: the board floor, table stripes, empty column bodies. */
+@utility well {
+  background-color: var(--sunken);
+  border: 1px solid var(--line-subtle);
+  border-radius: var(--radius-lg);
+}

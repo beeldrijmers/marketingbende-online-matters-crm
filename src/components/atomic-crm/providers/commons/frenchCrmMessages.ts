@@ -184,6 +184,8 @@ export const frenchCrmMessages = {
         managed_by_me: "Géré par moi",
         search: "Rechercher nom, entreprise...",
         this_week: "Cette semaine",
+        board: "Affaires",
+        board_short: "Tableau",
         today: "Aujourd'hui",
         tags: "Étiquettes",
         tasks: "Tâches",
@@ -227,6 +229,21 @@ export const frenchCrmMessages = {
       completion_scope: {
         active: "Travail ouvert",
         all: "Toutes les étapes",
+      },
+      board: {
+        count: "%{smart_count} affaire |||| %{smart_count} affaires",
+        error_body:
+          "Les affaires n'ont pas pu être chargées. Rechargez la page.",
+        error_title: "Tableau indisponible",
+        focus_all: "Tout",
+        search: "Rechercher une affaire ou un client",
+        focus_attention: "Attention",
+        focus_billing: "Facturation",
+        focus_label: "Affichage du tableau",
+        last_sync: "mis à jour %{moment}",
+        recurring_total: "%{amount} par mois",
+        unmapped:
+          "%{smart_count} affaire a une étape inconnue et n'apparaît dans aucune colonne. |||| %{smart_count} affaires ont une étape inconnue et n'apparaissent dans aucune colonne.",
       },
       steps: {
         title: "Étapes",
@@ -491,6 +508,8 @@ export const frenchCrmMessages = {
     tasks: {
       name: "Tâche |||| Tâches",
       forcedCaseName: "Tâche",
+      page_meta:
+        "Vos tâches par échéance, plus les étapes ouvertes à reprendre",
       trello_text_readonly:
         "Cette étape provient de Trello. Modifiez la description dans Trello ; les modifications ici seront écrasées à la prochaine synchronisation.",
       fields: {
@@ -536,7 +555,7 @@ export const frenchCrmMessages = {
         team: "Équipe",
       },
       regarding_contact: "(Concernant : %{name})",
-      regarding_deal: "— %{name}",
+      regarding_deal: "· %{name}",
       trello_step: "Trello",
       to_claim: "À prendre en charge",
       updated: "Tâche mise à jour",
@@ -596,6 +615,7 @@ export const frenchCrmMessages = {
       retry: "Réessayer",
       show_less: "Afficher moins",
       task_count: "%{smart_count} tâche |||| %{smart_count} tâches",
+      record_count: "%{smart_count} résultat |||| %{smart_count} résultats",
       copied: "Copié !",
       copy: "Copier",
       open_gmail_with_bcc: "Ouvrir Gmail avec l’adresse CRM en Cci",
@@ -675,6 +695,8 @@ export const frenchCrmMessages = {
           "Pas encore de données de revenus. Renseignez un montant et un type (mensuel/ponctuel) sur vos affaires.",
       },
       latest_activity: "Dernière activité",
+      latest_activity_meta:
+        "Notes et modifications du CRM et de ses sources connectées",
       latest_activity_error:
         "Erreur lors du chargement de la dernière activité",
       latest_notes: "Mes dernières notes",
@@ -684,6 +706,7 @@ export const frenchCrmMessages = {
         progress: "%{step}/3 terminé",
         whats_next: "Et ensuite ?",
       },
+      all_tasks: "Toutes les tâches",
       upcoming_tasks: "Tâches à venir",
     },
     header: {
@@ -774,6 +797,24 @@ export const frenchCrmMessages = {
     language: "Langue",
     navigation: {
       label: "Navigation CRM",
+      account: "Compte et réglages",
+      collapse: "Replier",
+      expand: "Déplier le menu",
+      finance: "Finances",
+      group_overview: "Vue d'ensemble",
+      group_relations: "Relations",
+      integrations: "Intégrations",
+      today: "Aujourd'hui",
+      updates: "Activité",
+    },
+    finance: {
+      meta: "%{smart_count} mission prête à facturer |||| %{smart_count} missions prêtes à facturer",
+    },
+    updates: {
+      meta: "Tout ce que l'équipe a enregistré récemment",
+    },
+    integrations: {
+      meta: "Statut de Gmail, Trello et Moneybird",
     },
     profile: {
       gmail: {

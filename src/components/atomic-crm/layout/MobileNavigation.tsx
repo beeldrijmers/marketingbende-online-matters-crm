@@ -1,3 +1,8 @@
+import { Plus } from "lucide-react";
+import { useRedirect, useTranslate } from "ra-core";
+import { useState } from "react";
+import { Link, useLocation, useMatch } from "react-router";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -6,76 +11,44 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { Building2, Home, ListTodo, Plus, Settings, Users } from "lucide-react";
-import { useTranslate } from "ra-core";
-import { Link, matchPath, useLocation, useMatch } from "react-router";
+
 import { ContactCreateSheet } from "../contacts/ContactCreateSheet";
-import { useState } from "react";
 import { NoteCreateSheet } from "../notes/NoteCreateSheet";
 import { TaskCreateSheet } from "../tasks/TaskCreateSheet";
+import { getDashboardDealCreatePath } from "../deals/dashboardDealSelection";
+import { BOARD_PATH } from "../root/routes";
+import { isNavItemActive, MOBILE_NAVIGATION, type NavItem } from "./navigation";
+import { useNavigationCounts } from "./useNavigationCounts";
 
+/**
+ * The phone's bottom bar, built from the same navigation model as the desktop
+ * rail — the two used to disagree about which screens even existed (the board
+ * was unreachable on desktop, settings only existed on the phone).
+ */
 export const MobileNavigation = () => {
   const location = useLocation();
   const translate = useTranslate();
-
-  const currentPath: string | boolean = matchPath("/", location.pathname)
-    ? "/"
-    : matchPath("/contacts/*", location.pathname)
-      ? "/contacts"
-      : matchPath("/companies/*", location.pathname)
-        ? "/companies"
-        : matchPath("/tasks/*", location.pathname)
-          ? "/tasks"
-          : false;
-
-  // Check if the app is running as a PWA (standalone mode)
-  const isPwa = window.matchMedia("(display-mode: standalone)").matches;
-  // Check if it's iOS on the web
-  const isWebiOS = /iPad|iPod|iPhone/.test(window.navigator.userAgent);
+  const counts = useNavigationCounts();
 
   return (
     <>
-      {/* Floating create button, above the bottom nav bar */}
       <CreateButton />
       <nav
-        aria-label={translate("crm.navigation.label")}
-        className="fixed bottom-0 left-0 right-0 z-50 bg-secondary h-14"
-        style={{
-          // iOS bug: even though viewport is set correctly, the bottom safe area inset is not accounted for
-          // So we manually add some padding to avoid the navigation being too close to the home bar
-          paddingBottom: isPwa && isWebiOS ? 15 : undefined,
-          // We use box-sizing: border-box, so the height contains the padding.
-          // To actually increase the padding, we need to increase the height as well
-          height:
-            "calc(var(--spacing)) * 6" + (isPwa && isWebiOS ? " + 15px" : ""),
-        }}
+        aria-label={translate("crm.navigation.label", { _: "Hoofdnavigatie" })}
+        // The home-indicator inset comes from the viewport now (index.html sets
+        // viewport-fit=cover), instead of being guessed from the user agent.
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-line-subtle bg-sidebar"
+        style={{ paddingBottom: "var(--safe-b)" }}
       >
-        <div className="flex h-full items-center justify-around px-1">
-          <NavigationButton
-            href="/"
-            Icon={Home}
-            label={translate("ra.page.dashboard")}
-            isActive={currentPath === "/"}
-          />
-          <NavigationButton
-            href="/contacts"
-            Icon={Users}
-            label={translate("resources.contacts.name", { smart_count: 2 })}
-            isActive={currentPath === "/contacts"}
-          />
-          <NavigationButton
-            href="/companies"
-            Icon={Building2}
-            label={translate("resources.companies.name", { smart_count: 2 })}
-            isActive={currentPath === "/companies"}
-          />
-          <NavigationButton
-            href="/tasks"
-            Icon={ListTodo}
-            label={translate("resources.tasks.name", { smart_count: 2 })}
-            isActive={currentPath === "/tasks"}
-          />
-          <SettingsButton />
+        <div className="flex items-stretch justify-around px-1">
+          {MOBILE_NAVIGATION.map((item) => (
+            <NavigationButton
+              key={item.to}
+              item={item}
+              active={isNavItemActive(item, location.pathname)}
+              count={item.badge ? counts[item.badge] : undefined}
+            />
+          ))}
         </div>
       </nav>
     </>
@@ -83,37 +56,68 @@ export const MobileNavigation = () => {
 };
 
 const NavigationButton = ({
-  href,
-  Icon,
-  label,
-  isActive,
+  active,
+  count,
+  item,
 }: {
-  href: string;
-  Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  label: string;
-  isActive: boolean;
-}) => (
-  <Button
-    asChild
-    variant="ghost"
-    className={cn(
-      "flex-col gap-1 h-auto py-2 px-0.5 rounded-md w-14 transition-transform active:scale-90 active:bg-muted",
-      isActive ? "text-primary" : "text-muted-foreground",
-    )}
-  >
-    <Link to={href}>
-      <Icon className="size-6" />
-      <span className="text-[0.6rem] font-medium">{label}</span>
+  active: boolean;
+  count?: number;
+  item: NavItem;
+}) => {
+  const translate = useTranslate();
+  const Icon = item.icon;
+  const label = item.shortLabelKey
+    ? translate(item.shortLabelKey, { _: item.shortFallback ?? item.fallback })
+    : translate(item.labelKey, { smart_count: 2, _: item.fallback });
+  const showCount = count != null && count > 0;
+
+  return (
+    <Link
+      to={item.to}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        // 56px tall, 60px wide: a comfortable thumb target on every phone.
+        "flex min-h-14 w-[3.75rem] flex-col items-center justify-center gap-1 rounded-md no-underline transition-transform duration-1 active:scale-95",
+        active ? "text-ink" : "text-ink-3",
+      )}
+    >
+      <span className="relative flex items-center">
+        <Icon
+          className={cn("size-5", active && "text-accent-base dark:text-focus")}
+        />
+        {showCount ? (
+          <span
+            className={cn(
+              "absolute -right-2 -top-1 size-2 rounded-full ring-2 ring-sidebar",
+              item.badge === "to-invoice" ? "bg-ink-3" : "bg-late",
+            )}
+          />
+        ) : null}
+      </span>
+      <span
+        className={cn(
+          "max-w-full truncate text-[0.6875rem] leading-none",
+          active ? "font-semibold" : "font-medium",
+        )}
+      >
+        {label}
+      </span>
     </Link>
-  </Button>
-);
+  );
+};
 
 const CreateButton = () => {
   const translate = useTranslate();
+  const location = useLocation();
+  const redirect = useRedirect();
   const contact_id = useMatch("/contacts/:id/*")?.params.id;
   const [contactCreateOpen, setContactCreateOpen] = useState(false);
   const [noteCreateOpen, setNoteCreateOpen] = useState(false);
   const [taskCreateOpen, setTaskCreateOpen] = useState(false);
+
+  // The button used to offer the same three options everywhere and could not
+  // create the one record the board is made of.
+  const onBoard = location.pathname.startsWith(BOARD_PATH);
 
   return (
     <>
@@ -136,54 +140,46 @@ const CreateButton = () => {
           <Button
             variant="default"
             size="icon"
-            className="fixed bottom-20 right-4 z-50 h-14 w-14 rounded-full shadow-lg"
+            className="fixed right-4 z-50 size-12 rounded-full shadow-e3"
+            style={{
+              bottom: "calc(var(--bottom-nav-h) + var(--safe-b) + 0.75rem)",
+            }}
             aria-label={translate("ra.action.create")}
           >
-            <Plus className="size-7" />
+            <Plus className="size-6" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent>
+        <DropdownMenuContent align="end" side="top">
+          {onBoard ? (
+            <DropdownMenuItem
+              className="h-11 px-4 text-body"
+              onSelect={() => redirect(getDashboardDealCreatePath(BOARD_PATH))}
+            >
+              {translate("resources.deals.forcedCaseName", {
+                _: "Opdracht",
+              })}
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem
-            className="h-12 px-4 text-base"
-            onSelect={() => {
-              setContactCreateOpen(true);
-            }}
+            className="h-11 px-4 text-body"
+            onSelect={() => setContactCreateOpen(true)}
           >
             {translate("resources.contacts.forcedCaseName")}
           </DropdownMenuItem>
           <DropdownMenuItem
-            className="h-12 px-4 text-base"
-            onSelect={() => {
-              setNoteCreateOpen(true);
-            }}
+            className="h-11 px-4 text-body"
+            onSelect={() => setNoteCreateOpen(true)}
           >
             {translate("resources.notes.forcedCaseName")}
           </DropdownMenuItem>
           <DropdownMenuItem
-            className="h-12 px-4 text-base"
-            onSelect={() => {
-              setTaskCreateOpen(true);
-            }}
+            className="h-11 px-4 text-body"
+            onSelect={() => setTaskCreateOpen(true)}
           >
             {translate("resources.tasks.forcedCaseName")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </>
-  );
-};
-
-const SettingsButton = () => {
-  const translate = useTranslate();
-  const location = useLocation();
-  const isActive = !!matchPath("/settings", location.pathname);
-
-  return (
-    <NavigationButton
-      href="/settings"
-      Icon={Settings}
-      label={translate("crm.settings.title")}
-      isActive={isActive}
-    />
   );
 };

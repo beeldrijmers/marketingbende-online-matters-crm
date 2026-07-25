@@ -1,10 +1,16 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { EditBase, Form, useEditContext, type MutationMode } from "ra-core";
+import {
+  EditBase,
+  Form,
+  useEditContext,
+  useTranslate,
+  type MutationMode,
+} from "ra-core";
 
 import type { Contact } from "../types";
 import { ContactAside } from "./ContactAside";
 import { ContactInputs } from "./ContactInputs";
 import { FormToolbar } from "../layout/FormToolbar";
+import { RecordFormShell } from "../layout/RecordFormShell";
 import {
   cleanupContactForEdit,
   defaultEmailJsonb,
@@ -38,23 +44,26 @@ const normalizeContactArrayFields = (record: Contact) => ({
 });
 
 const ContactEditContent = () => {
+  const translate = useTranslate();
   const { isPending, record } = useEditContext<Contact>();
   if (isPending || !record) return null;
   return (
-    <div className="mt-2 flex gap-8">
+    <RecordFormShell
+      title={`${record.first_name ?? ""} ${record.last_name ?? ""}`.trim()}
+      meta={translate("resources.contacts.action.edit", {
+        _: "Contact bewerken",
+      })}
+      backTo={`/contacts/${record.id}/show`}
+      backLabel={translate("ra.action.cancel", { _: "Terug" })}
+      aside={<ContactAside link="show" />}
+    >
       <Form
-        className="flex flex-1 flex-col gap-4"
+        className="panel px-4 py-4"
         record={normalizeContactArrayFields(record)}
       >
-        <Card>
-          <CardContent>
-            <ContactInputs />
-            <FormToolbar />
-          </CardContent>
-        </Card>
+        <ContactInputs />
+        <FormToolbar />
       </Form>
-
-      <ContactAside link="show" />
-    </div>
+    </RecordFormShell>
   );
 };

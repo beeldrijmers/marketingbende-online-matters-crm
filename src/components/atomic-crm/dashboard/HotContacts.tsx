@@ -1,22 +1,20 @@
-import { ArrowRight, Flame, Link2Off } from "lucide-react";
+import { Flame, Link2Off } from "lucide-react";
 import { RecordContextProvider, useGetList, useTranslate } from "ra-core";
 import { useMemo } from "react";
 import { Link } from "react-router";
 
 import { ReferenceField } from "@/components/admin/reference-field";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 import { CompanyAvatar } from "../companies/CompanyAvatar";
 import { DealWorkflowBadge } from "../deals/DealWorkflowIndicator";
 import {
-  DASHBOARD_WORKBOARD_PATH,
+  BOARD_PATH,
   getDashboardDealDetailPath,
 } from "../deals/dashboardDealSelection";
 import { buildOpenTasksByDeal } from "../deals/dealWorkflow";
+import { SectionHeader } from "../layout/SectionHeader";
 import type { Contact, Deal, Task } from "../types";
 import { rankHotLeads } from "./hotLeads";
 
@@ -60,26 +58,15 @@ export const HotContacts = () => {
   const isPending = dealsPending || tasksPending || contactsPending;
 
   return (
-    <section className="flex min-w-0 flex-col gap-3">
-      <div className="flex items-start gap-3">
-        <Flame className="mt-0.5 size-6 shrink-0 text-orange-500" />
-        <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-semibold text-foreground">
-            {translate("resources.contacts.hot.title")}
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            {translate("resources.contacts.hot.subtitle")}
-          </p>
-        </div>
-        <Button asChild variant="ghost" size="sm" className="shrink-0">
-          <Link to={DASHBOARD_WORKBOARD_PATH}>
-            {translate("resources.contacts.hot.open_board")}
-            <ArrowRight className="size-4" />
-          </Link>
-        </Button>
-      </div>
+    <section className="flex min-w-0 flex-col gap-2.5">
+      <SectionHeader
+        title={translate("resources.contacts.hot.title")}
+        meta={translate("resources.contacts.hot.subtitle")}
+        to={BOARD_PATH}
+        toLabel={translate("resources.contacts.hot.open_board")}
+      />
 
-      <Card className="divide-y overflow-hidden py-0">
+      <div className="panel divide-y divide-line-subtle overflow-hidden">
         {isPending ? (
           <div className="flex flex-col gap-3 p-4">
             {Array.from({ length: 4 }).map((_, index) => (
@@ -88,12 +75,12 @@ export const HotContacts = () => {
           </div>
         ) : hotLeads.length === 0 ? (
           <div className="flex items-start gap-3 p-5">
-            <Flame className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+            <Flame className="mt-0.5 size-4 shrink-0 text-ink-3" />
             <div>
-              <p className="text-sm font-semibold text-foreground">
+              <p className="text-body font-medium text-ink">
                 {translate("resources.contacts.hot.empty_title")}
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-meta text-ink-3">
                 {translate("resources.contacts.hot.empty_hint")}
               </p>
             </div>
@@ -109,66 +96,61 @@ export const HotContacts = () => {
                 key={lead.primaryDeal.id}
                 value={lead.primaryDeal}
               >
-                <div className="flex min-w-0 items-start gap-3 p-3.5">
+                <div className="flex min-w-0 items-start gap-2.5 p-3">
                   <ReferenceField
                     source="company_id"
                     reference="companies"
                     link={false}
                   >
-                    <CompanyAvatar />
+                    <CompanyAvatar width={20} height={20} />
                   </ReferenceField>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 items-start gap-2">
                       <Link
                         to={getDashboardDealDetailPath(
-                          DASHBOARD_WORKBOARD_PATH,
+                          BOARD_PATH,
                           lead.primaryDeal.id,
                         )}
                         className="min-w-0 flex-1 no-underline hover:underline"
                       >
-                        <span className="block truncate text-sm font-semibold text-foreground">
+                        <span className="block truncate text-body font-semibold text-ink">
                           <ReferenceField
                             source="company_id"
                             reference="companies"
                             link={false}
                           />
                         </span>
-                        <span className="block truncate text-xs text-muted-foreground">
+                        <span className="block truncate text-meta text-ink-3">
                           {lead.primaryDeal.name}
                         </span>
                       </Link>
-                      <Badge
-                        variant="outline"
+                      <span
                         className={cn(
-                          "shrink-0 tabular-nums",
-                          lead.tier === "hot" &&
-                            "border-orange-500/30 bg-orange-500/10 text-orange-700 dark:text-orange-300",
-                          lead.tier === "warm" &&
-                            "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-                          lead.tier === "watch" &&
-                            "border-border bg-muted/40 text-muted-foreground",
+                          "num inline-flex shrink-0 items-center gap-1 rounded-sm px-1.5 py-0.5 text-eyebrow tracking-normal",
+                          lead.tier === "hot" && "bg-late-tint text-late",
+                          lead.tier === "warm" && "bg-wait-tint text-wait",
+                          lead.tier === "watch" && "bg-sunken text-ink-3",
                         )}
                       >
-                        {lead.tier === "hot" ? <Flame /> : null}
-                        {translate(
-                          `resources.contacts.hot.tiers.${lead.tier}`,
-                        )}{" "}
-                        · {lead.score}
-                      </Badge>
+                        {lead.tier === "hot" ? (
+                          <Flame className="size-3" />
+                        ) : null}
+                        {translate(`resources.contacts.hot.tiers.${lead.tier}`)}
+                      </span>
                     </div>
 
-                    <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-meta text-ink-3">
                       {lead.contact ? (
                         <Link
                           to={`/contacts/${lead.contact.id}/show`}
-                          className="font-medium text-foreground no-underline hover:underline"
+                          className="font-medium text-ink-2 no-underline hover:text-ink hover:underline"
                         >
                           {contactName ||
                             translate("resources.contacts.hot.unnamed_contact")}
                         </Link>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300">
+                        <span className="inline-flex items-center gap-1 text-wait">
                           <Link2Off className="size-3.5" />
                           {translate("resources.contacts.hot.missing_contact")}
                         </span>
@@ -193,11 +175,11 @@ export const HotContacts = () => {
                       ) : null}
                     </div>
 
-                    <div className="mt-2">
+                    <div className="mt-1.5 flex items-center gap-2">
                       <DealWorkflowBadge workflow={lead.workflow} />
                     </div>
 
-                    <p className="mt-1.5 truncate text-xs text-muted-foreground">
+                    <p className="mt-1 truncate text-meta text-ink-3">
                       {lead.reasons
                         .slice(0, 2)
                         .map((reason) =>
@@ -211,14 +193,17 @@ export const HotContacts = () => {
             );
           })
         )}
-      </Card>
+      </div>
 
       {!isPending && hotLeads.length > PAGE_SIZE ? (
-        <p className="text-right text-xs text-muted-foreground">
+        <Link
+          to={BOARD_PATH}
+          className="self-end text-meta text-ink-3 no-underline hover:text-ink"
+        >
           {translate("resources.contacts.hot.more", {
             count: hotLeads.length - PAGE_SIZE,
           })}
-        </p>
+        </Link>
       ) : null}
     </section>
   );

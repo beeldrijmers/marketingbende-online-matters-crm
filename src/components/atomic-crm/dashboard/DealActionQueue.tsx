@@ -1,6 +1,4 @@
 import {
-  ArrowRight,
-  BriefcaseBusiness,
   CalendarClock,
   CheckCircle2,
   CircleAlert,
@@ -11,8 +9,6 @@ import { useMemo } from "react";
 import { Link } from "react-router";
 
 import { ReferenceField } from "@/components/admin/reference-field";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { CompanyAvatar } from "../companies/CompanyAvatar";
@@ -21,16 +17,16 @@ import {
   DEAL_ATTENTION_PATH,
   getDashboardDealDetailPath,
 } from "../deals/dashboardDealSelection";
+import { SectionHeader } from "../layout/SectionHeader";
 import {
   buildOpenTasksByDeal,
   rankDealsForAttention,
   summarizeDealAttention,
   type DealAttentionCounts,
 } from "../deals/dealWorkflow";
-import { Task } from "../tasks/Task";
 import type { Deal, Task as TaskRecord } from "../types";
 
-const PAGE_SIZE = 3;
+const PAGE_SIZE = 6;
 
 export const DealActionQueue = () => {
   const translate = useTranslate();
@@ -63,36 +59,26 @@ export const DealActionQueue = () => {
   );
 
   return (
-    <section className="flex min-w-0 flex-col gap-3">
-      <div className="flex items-center gap-3">
-        <BriefcaseBusiness className="size-6 shrink-0 text-muted-foreground" />
-        <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-semibold text-foreground">
-            {translate("crm.dashboard.deal_actions.title", {
-              _: "Dit heeft je aandacht nodig",
-            })}
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            {translate("crm.dashboard.deal_actions.subtitle", {
-              _: "Alleen afwijkingen: te laat, vandaag, verlopen of nog niet gepland.",
-            })}
-          </p>
-        </div>
-        <Button asChild variant="ghost" size="sm" className="shrink-0">
-          <Link to={DEAL_ATTENTION_PATH}>
-            {translate("crm.dashboard.deal_actions.open_board", {
-              _: "Werkbord",
-            })}
-            <ArrowRight className="size-4" />
-          </Link>
-        </Button>
-      </div>
+    <section className="flex min-w-0 flex-col gap-2.5">
+      <SectionHeader
+        title={translate("crm.dashboard.deal_actions.title", {
+          _: "Dit heeft uw aandacht nodig",
+        })}
+        count={attentionCounts.total || undefined}
+        meta={translate("crm.dashboard.deal_actions.subtitle", {
+          _: "Alleen afwijkingen: te laat, vandaag, verlopen of nog niet gepland.",
+        })}
+        to={DEAL_ATTENTION_PATH}
+        toLabel={translate("crm.dashboard.deal_actions.open_board", {
+          _: "Alles bekijken",
+        })}
+      />
 
       {!dealsPending && !tasksPending && attentionCounts.total > 0 ? (
         <AttentionSummary counts={attentionCounts} />
       ) : null}
 
-      <Card className="divide-y overflow-hidden py-0">
+      <div className="panel divide-y divide-line-subtle overflow-hidden">
         {dealsPending || tasksPending ? (
           <div className="flex flex-col gap-3 p-4">
             {Array.from({ length: 4 }).map((_, index) => (
@@ -100,15 +86,15 @@ export const DealActionQueue = () => {
             ))}
           </div>
         ) : visibleDeals.length === 0 ? (
-          <div className="flex items-start gap-3 bg-emerald-500/5 p-5">
-            <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+          <div className="flex items-start gap-3 p-5">
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-live" />
             <div>
-              <p className="text-sm font-semibold text-foreground">
+              <p className="text-body font-medium text-ink">
                 {translate("crm.dashboard.deal_actions.empty_title", {
                   _: "Alles onder controle",
                 })}
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-meta text-ink-3">
                 {translate("crm.dashboard.deal_actions.empty", {
                   _: "Er zijn geen achterstallige of ongeplande opdrachten.",
                 })}
@@ -120,12 +106,12 @@ export const DealActionQueue = () => {
             <RecordContextProvider key={deal.id} value={deal}>
               <div
                 className={cn(
-                  "flex flex-col gap-2.5 border-l-2 border-l-transparent p-3.5",
-                  workflow.kind === "overdue" && "border-l-destructive",
-                  workflow.kind === "today" && "border-l-amber-500",
+                  "flex flex-col gap-1 border-l-2 border-l-transparent px-3 py-2",
+                  workflow.kind === "overdue" && "border-l-late",
+                  workflow.kind === "today" && "border-l-wait",
                 )}
               >
-                <div className="flex min-w-0 items-start gap-3">
+                <div className="flex min-w-0 items-center gap-2.5">
                   <ReferenceField
                     source="company_id"
                     reference="companies"
@@ -140,64 +126,50 @@ export const DealActionQueue = () => {
                     )}
                     className="min-w-0 flex-1 no-underline hover:underline"
                   >
-                    <span className="block truncate text-sm font-semibold">
+                    <span className="block truncate text-body font-semibold text-ink">
                       <ReferenceField
                         source="company_id"
                         reference="companies"
                         link={false}
                       />
-                      {" - "}
+                    </span>
+                    <span className="block truncate text-meta text-ink-3">
                       {deal.name}
                     </span>
                   </Link>
                   <DealWorkflowBadge workflow={workflow} />
                 </div>
 
-                {workflow.nextTask ? (
-                  <div className="rounded-md bg-muted/35 px-3 py-2">
-                    <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                      {translate("crm.dashboard.deal_actions.next_task", {
-                        _: "Volgende taak",
-                      })}
-                    </p>
-                    <Task task={workflow.nextTask} showContact={false} />
-                  </div>
-                ) : (
-                  <div className="flex items-start gap-2 rounded-md bg-muted/35 px-3 py-2">
-                    <ListTodo className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                    <div>
-                      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                        {translate(
-                          "crm.dashboard.deal_actions.recommended_action",
-                          { _: "Aanbevolen volgende stap" },
-                        )}
-                      </p>
-                      <p className="text-sm text-foreground">
-                        {translate(
-                          `resources.deals.next_action.${deal.stage}`,
-                          {
-                            _: translate("resources.deals.workflow.plan_next", {
-                              _: "Plan volgende stap",
-                            }),
-                          },
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                )}
+                {/* One line for the next step: the boxed "AANBEVOLEN VOLGENDE
+                    STAP" panel tripled every row's height for one sentence. */}
+                <p className="flex min-w-0 items-center gap-1.5 pl-[1.9rem] text-meta text-ink-2">
+                  <ListTodo className="size-3.5 shrink-0 text-ink-3" />
+                  <span className="min-w-0 truncate">
+                    {workflow.nextTask
+                      ? workflow.nextTask.text
+                      : translate(`resources.deals.next_action.${deal.stage}`, {
+                          _: translate("resources.deals.workflow.plan_next", {
+                            _: "Plan volgende stap",
+                          }),
+                        })}
+                  </span>
+                </p>
               </div>
             </RecordContextProvider>
           ))
         )}
-      </Card>
+      </div>
 
       {!dealsPending && rankedDeals.length > PAGE_SIZE ? (
-        <p className="text-right text-xs text-muted-foreground">
+        <Link
+          to={DEAL_ATTENTION_PATH}
+          className="self-end text-meta text-ink-3 no-underline hover:text-ink"
+        >
           {translate("crm.dashboard.deal_actions.more", {
             count: rankedDeals.length - PAGE_SIZE,
-            _: `Nog ${rankedDeals.length - PAGE_SIZE} aandachtspunten op het kanbanbord`,
+            _: `Nog ${rankedDeals.length - PAGE_SIZE} aandachtspunten`,
           })}
-        </p>
+        </Link>
       ) : null}
     </section>
   );
@@ -208,7 +180,7 @@ const AttentionSummary = ({ counts }: { counts: DealAttentionCounts }) => {
   const items = [
     counts.overdue
       ? {
-          className: "border-destructive/30 bg-destructive/5 text-destructive",
+          className: "border-late/35 bg-late-tint text-late",
           icon: CircleAlert,
           key: "overdue",
           label: translate("crm.dashboard.deal_actions.counts.overdue", {
@@ -219,8 +191,7 @@ const AttentionSummary = ({ counts }: { counts: DealAttentionCounts }) => {
       : null,
     counts.today
       ? {
-          className:
-            "border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300",
+          className: "border-wait/35 bg-wait-tint text-wait",
           icon: CalendarClock,
           key: "today",
           label: translate("crm.dashboard.deal_actions.counts.today", {
@@ -231,8 +202,7 @@ const AttentionSummary = ({ counts }: { counts: DealAttentionCounts }) => {
       : null,
     counts.planning
       ? {
-          className:
-            "border-orange-500/30 bg-orange-500/5 text-orange-700 dark:text-orange-300",
+          className: "border-line text-ink-2",
           icon: CalendarClock,
           key: "planning",
           label: translate("crm.dashboard.deal_actions.counts.planning", {
@@ -243,7 +213,7 @@ const AttentionSummary = ({ counts }: { counts: DealAttentionCounts }) => {
       : null,
     counts.unplanned
       ? {
-          className: "border-border bg-muted/30 text-muted-foreground",
+          className: "border-line text-ink-3",
           icon: ListTodo,
           key: "unplanned",
           label: translate("crm.dashboard.deal_actions.counts.unplanned", {
@@ -267,7 +237,7 @@ const AttentionSummary = ({ counts }: { counts: DealAttentionCounts }) => {
           <span
             key={item.key}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
+              "num inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-meta font-medium",
               item.className,
             )}
           >

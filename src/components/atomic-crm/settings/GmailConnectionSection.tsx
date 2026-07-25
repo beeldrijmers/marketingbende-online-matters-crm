@@ -180,7 +180,7 @@ export const GmailConnectionContent = () => {
             })}
           </p>
         ) : (
-          <p className="text-amber-700 dark:text-amber-400">
+          <p className="text-wait">
             {translate("crm.profile.gmail.sync_label_required")}
           </p>
         )}

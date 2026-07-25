@@ -1,34 +1,42 @@
-import { useGetList, useTimeout } from "ra-core";
+import { Settings } from "lucide-react";
+import { useGetList, useTimeout, useTranslate } from "ra-core";
 import { useState } from "react";
+import { Link } from "react-router";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import type { Company, Contact, ContactNote, Deal } from "../types";
 import { ContactCreateSheet } from "../contacts/ContactCreateSheet";
 import { NoteCreateSheet } from "../notes/NoteCreateSheet";
 import { DashboardStepper } from "./DashboardStepper";
-import { DashboardWorkspace } from "./DashboardWorkspace";
+import { DealActionQueue } from "./DealActionQueue";
+import { HotContacts } from "./HotContacts";
+import { TasksList } from "./TasksList";
 import MobileHeader from "../layout/MobileHeader";
 import { MobileContent } from "../layout/MobileContent";
-import { useConfigurationContext } from "../root/ConfigurationContext";
+import { Wordmark } from "../layout/Wordmark";
+import { SettingsPageMobile } from "../settings/SettingsPageMobile";
 
 const Wrapper = ({ children }: { children: React.ReactNode }) => {
-  const { darkModeLogo, lightModeLogo, title } = useConfigurationContext();
+  const translate = useTranslate();
   return (
     <>
       <MobileHeader>
-        <div className="flex items-center gap-2 text-secondary-foreground no-underline py-3">
-          <img
-            className="[.light_&]:hidden h-6"
-            src={darkModeLogo}
-            alt={title}
-          />
-          <img
-            className="[.dark_&]:hidden h-6"
-            src={lightModeLogo}
-            alt={title}
-          />
-          <h1 className="text-xl font-semibold">{title}</h1>
+        <div className="flex items-center py-2.5">
+          <Wordmark />
         </div>
+        {/* Settings is no longer one of the five bottom-bar destinations, so it
+            lives here — one tap from the screen the app opens on. */}
+        <Button asChild variant="ghost" size="icon" className="size-9">
+          <Link
+            to={SettingsPageMobile.path}
+            aria-label={translate("crm.settings.title", {
+              _: "Instellingen",
+            })}
+          >
+            <Settings className="size-5 text-ink-2" />
+          </Link>
+        </Button>
       </MobileHeader>
       <MobileContent>{children}</MobileContent>
     </>
@@ -116,8 +124,13 @@ export const MobileDashboard = () => {
           onNewNote={() => setNoteCreateOpen(true)}
         />
       ) : (
-        <div className="mt-1 min-w-0">
-          <DashboardWorkspace hasDeals={Boolean(totalDeal)} mobile />
+        // Phone "Vandaag": deviations first, then my tasks, then openings.
+        // The board itself is one tap away in the bottom bar, so it is not
+        // squeezed into this column.
+        <div className="flex min-w-0 flex-col gap-6">
+          <DealActionQueue />
+          <TasksList />
+          <HotContacts />
         </div>
       )}
     </Wrapper>

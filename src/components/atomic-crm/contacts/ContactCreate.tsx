@@ -1,8 +1,15 @@
-import { CreateBase, Form, useGetIdentity, type MutationMode } from "ra-core";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  CreateBase,
+  Form,
+  useGetIdentity,
+  useTranslate,
+  type MutationMode,
+} from "ra-core";
 
+import { RecordFormShell } from "../layout/RecordFormShell";
 import { ContactInputs } from "./ContactInputs";
 import { FormToolbar } from "../layout/FormToolbar";
+import { CONTACTS_PATH } from "../root/routes";
 import {
   cleanupContactForCreate,
   defaultEmailJsonb,
@@ -15,6 +22,7 @@ export const ContactCreate = ({
   mutationMode?: MutationMode;
 }) => {
   const { identity } = useGetIdentity();
+  const translate = useTranslate();
 
   return (
     <CreateBase
@@ -22,24 +30,25 @@ export const ContactCreate = ({
       transform={cleanupContactForCreate}
       mutationMode={mutationMode}
     >
-      <div className="mt-2 flex lg:mr-72">
-        <div className="flex-1">
-          <Form
-            defaultValues={{
-              sales_id: identity?.id,
-              email_jsonb: defaultEmailJsonb,
-              phone_jsonb: defaultPhoneJsonb,
-            }}
-          >
-            <Card>
-              <CardContent>
-                <ContactInputs />
-                <FormToolbar />
-              </CardContent>
-            </Card>
-          </Form>
-        </div>
-      </div>
+      <RecordFormShell
+        title={translate("resources.contacts.action.new", {
+          _: "Nieuw contact",
+        })}
+        backTo={CONTACTS_PATH}
+        backLabel={translate("resources.contacts.name", { smart_count: 2 })}
+      >
+        <Form
+          className="panel px-4 py-4"
+          defaultValues={{
+            sales_id: identity?.id,
+            email_jsonb: defaultEmailJsonb,
+            phone_jsonb: defaultPhoneJsonb,
+          }}
+        >
+          <ContactInputs />
+          <FormToolbar />
+        </Form>
+      </RecordFormShell>
     </CreateBase>
   );
 };

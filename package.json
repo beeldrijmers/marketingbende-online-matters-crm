@@ -9,6 +9,7 @@
     "dev": "vite --force",
     "dev:remote": "vite --force --mode remote",
     "dev:demo": "vite --config vite.demo.config --force",
+    "dev:preview": "vite --config vite.preview.config.ts --force",
     "build": "tsc && vite build",
     "build:e2e": "vite build --mode e2e",
     "build:demo": "tsc && vite build --config vite.demo.config",

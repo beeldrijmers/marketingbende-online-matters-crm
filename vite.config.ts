@@ -103,6 +103,13 @@ export default defineConfig({
         manualChunks: {
           "react-vendor": ["react", "react-dom", "react-router"],
           "supabase-vendor": ["@supabase/supabase-js"],
+          // Heavy, single-purpose libraries: the board's drag-and-drop, the
+          // note renderer, the CSV/vCard exporters and the avatar cropper are
+          // each used by one screen, so they no longer ship with the shell.
+          "dnd-vendor": ["@hello-pangea/dnd"],
+          "markdown-vendor": ["marked", "dompurify"],
+          "import-export-vendor": ["papaparse", "jsonexport/dist"],
+          "image-vendor": ["react-cropper"],
         },
       },
     },

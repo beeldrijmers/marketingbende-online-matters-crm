@@ -72,7 +72,7 @@ export const TasksToClaim = ({ limit }: { limit?: number }) => {
                     link="show"
                     className="inline text-sm text-muted-foreground"
                     render={({ referenceRecord }) =>
-                      referenceRecord ? <> — {referenceRecord.name}</> : null
+                      referenceRecord ? <> · {referenceRecord.name}</> : null
                     }
                   />
                 )}

@@ -27,15 +27,14 @@ test("authenticated CRM dashboard and core routes stay operational", async ({
   await expect(page).not.toHaveURL(/\/login/, { timeout: 15_000 });
   await expect(page.locator("#main-content")).toBeVisible();
 
-  // The former standalone assignments route deliberately lands on the
-  // Dashboard workboard; old bookmarks must keep working after consolidation.
+  // The board has its own page again.
   await page.goto("/#/deals", { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(/#\/\?tab=workboard$/);
+  await expect(page).toHaveURL(/#\/deals$/);
   await expect(
-    page.getByRole("heading", { name: "Opdrachtenbord · van begin tot eind" }),
+    page.getByRole("heading", { level: 1, name: "Opdrachten" }),
   ).toBeVisible();
 
-  for (const route of ["contacts", "companies"]) {
+  for (const route of ["contacts", "companies", "tasks", "financieel"]) {
     await page.goto(`/#/${route}`, { waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(new RegExp(`#/${route}`));
     await expect(page.locator("#main-content")).toBeVisible();
@@ -47,26 +46,15 @@ test("authenticated CRM dashboard and core routes stay operational", async ({
   await expect(page).toHaveURL(/#\/(?:settings|access-denied)$/);
   await expect(page.locator("#main-content")).toBeVisible();
 
+  // The dashboard is "Vandaag": deviations first.
   await page.goto("/#/", { waitUntil: "domcontentloaded" });
   await expect(
-    page.getByRole("heading", { name: "Opdrachtenbord · van begin tot eind" }),
+    page.getByRole("heading", { level: 1, name: "Vandaag" }),
   ).toBeVisible();
-  await page.getByRole("tab", { name: "Vandaag", exact: true }).click();
-  const attentionHeading = page.getByRole("heading", {
-    name: "Dit heeft je aandacht nodig",
+
+  await page.goto("/#/deals?focus=attention", {
+    waitUntil: "domcontentloaded",
   });
-  const attentionSection = page
-    .locator("section")
-    .filter({ has: attentionHeading })
-    .first();
-  await expect(attentionHeading).toBeVisible();
-  await attentionSection
-    .getByRole("link", { name: "Werkbord", exact: true })
-    .click();
-  await expect(page).toHaveURL(/#\/\?tab=workboard&focus=attention$/);
-  await expect(
-    page.getByRole("heading", { name: "Aandacht-pipeline" }),
-  ).toBeVisible();
   await expect(page.getByRole("button", { name: /te laat/i })).toBeVisible();
   await expect(page.getByRole("button", { name: /vandaag/i })).toBeVisible();
   await expect(
@@ -76,16 +64,16 @@ test("authenticated CRM dashboard and core routes stay operational", async ({
     page.getByRole("searchbox", { name: "Zoek in aandachtspipeline" }),
   ).toBeVisible();
 
-  for (const [route, focus, label] of [
-    ["deals/aandacht", "attention", "Aandacht-pipeline"],
-    ["deals/facturatie", "billing", "Facturatie afhandelen"],
+  // Bookmarks from the previous information architecture keep working.
+  for (const [route, expectedUrl] of [
+    ["deals/aandacht", /#\/deals\?focus=attention$/],
+    ["deals/facturatie", /#\/financieel$/],
+    ["?tab=workboard", /#\/deals$/],
+    ["?tab=updates", /#\/updates$/],
   ] as const) {
     await page.goto(`/#/${route}`, { waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(
-      new RegExp(`#/\\?tab=workboard&focus=${focus}$`),
-    );
+    await expect(page).toHaveURL(expectedUrl);
     await expect(page.locator("#main-content")).toBeVisible();
-    await expect(page.getByText(label, { exact: false }).first()).toBeVisible();
   }
 
   expect(pageErrors, "uncaught browser errors").toEqual([]);

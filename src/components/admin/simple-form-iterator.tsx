@@ -449,12 +449,15 @@ export const RemoveItemButton = (props: React.ComponentProps<"button">) => {
             onClick={() => remove()}
             className={cn(
               "button-remove",
+              // Quiet until you reach for it: a red icon on every array row
+              // shouted louder than the fields themselves.
+              "text-ink-3 hover:text-destructive",
               `button-remove-${source}-${index}`,
               className,
             )}
             {...rest}
           >
-            <XCircle className="h-5 w-5 text-destructive" />
+            <XCircle className="size-4" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>{translate("ra.action.remove")}</TooltipContent>

@@ -68,9 +68,45 @@ export const PartyBadge = ({
   if (!party) return null;
   const meta = PARTY_META[party];
   return (
-    <Badge variant="outline" className={cn(meta.className, className)}>
+    <Badge
+      variant="outline"
+      className={cn("font-normal", meta.className, className)}
+    >
       {translate(meta.labelKey, { _: meta.fallback })}
     </Badge>
+  );
+};
+
+/**
+ * The party as a coloured dot with an accessible name.
+ *
+ * Rows repeat the owner on every line, and a full outlined "Marketingbende"
+ * pill on all of them turned into wallpaper. The dot keeps the identity signal
+ * at a fraction of the ink.
+ */
+export const PartyDot = ({
+  sale,
+  className,
+}: {
+  sale?: Partial<Sale> | null;
+  className?: string;
+}) => {
+  const translate = useTranslate();
+  const party = getSaleParty(sale);
+  if (!party) return null;
+  const meta = PARTY_META[party];
+  const label = translate(meta.labelKey, { _: meta.fallback });
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className={cn(
+        "inline-block size-1.5 shrink-0 rounded-full",
+        meta.dotClassName,
+        className,
+      )}
+    />
   );
 };
 
@@ -81,12 +117,14 @@ export const OwnerChip = ({
   sale,
   size = 20,
   showParty = true,
+  partyStyle = "dot",
   isCurrentUser,
   className,
 }: {
   sale?: Partial<Sale> | null;
   size?: number;
   showParty?: boolean;
+  partyStyle?: "dot" | "badge";
   isCurrentUser?: boolean;
   className?: string;
 }) => {
@@ -103,8 +141,16 @@ export const OwnerChip = ({
   return (
     <span className={cn("inline-flex items-center gap-1.5", className)}>
       <SaleAvatar sale={sale} size={size} />
-      <span className="text-sm">{name}</span>
-      {showParty ? <PartyBadge sale={sale} /> : null}
+      <span className="truncate">{name}</span>
+      {/* A dot by default: rows repeat the owner on every line, and a full
+          outlined party pill on each of them reads as wallpaper. */}
+      {showParty ? (
+        partyStyle === "badge" ? (
+          <PartyBadge sale={sale} />
+        ) : (
+          <PartyDot sale={sale} />
+        )
+      ) : null}
     </span>
   );
 };
@@ -118,12 +164,14 @@ export const OwnerChipField = ({
   record,
   size,
   showParty,
+  partyStyle,
   className,
 }: {
   source?: string;
   record?: RaRecord;
   size?: number;
   showParty?: boolean;
+  partyStyle?: "dot" | "badge";
   className?: string;
 }) => (
   <ReferenceField<RaRecord, Sale>
@@ -137,6 +185,7 @@ export const OwnerChipField = ({
           sale={referenceRecord}
           size={size}
           showParty={showParty}
+          partyStyle={partyStyle}
           className={className}
         />
       ) : null

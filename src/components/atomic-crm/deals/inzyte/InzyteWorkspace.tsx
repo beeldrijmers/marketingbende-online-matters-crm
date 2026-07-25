@@ -1,4 +1,4 @@
-import type { SyntheticEvent } from "react";
+import { lazy, Suspense, type SyntheticEvent } from "react";
 import {
   BarChart3,
   CheckCircle2,
@@ -19,7 +19,13 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { Deal } from "../../types";
-import { InzyteWorkspaceContent } from "./InzyteWorkspaceContent";
+// The workspace body (charts, month report, exports) is the single largest
+// screen in the app and is only opened on demand, so it loads on demand too.
+const InzyteWorkspaceContent = lazy(() =>
+  import("./InzyteWorkspaceContent").then((module) => ({
+    default: module.InzyteWorkspaceContent,
+  })),
+);
 import {
   getInzyteConnectionSummary,
   getInzyteSourceStates,
@@ -27,6 +33,12 @@ import {
 import { useInzyteWorkspaceController } from "./useInzyteWorkspaceController";
 
 const stopCardEvent = (event: SyntheticEvent) => event.stopPropagation();
+
+const WorkspaceFallback = () => (
+  <div className="grid flex-1 place-items-center p-8">
+    <Loader2 className="size-6 animate-spin text-ink-3" />
+  </div>
+);
 
 export const InzyteWorkspace = ({ record }: { record: Deal }) => {
   const controller = useInzyteWorkspaceController(record);
@@ -44,7 +56,7 @@ export const InzyteWorkspace = ({ record }: { record: Deal }) => {
           onClick={stopCardEvent}
           onPointerDown={stopCardEvent}
         >
-          <BarChart3 className="size-3.5 text-sky-500" />
+          <BarChart3 className="size-3.5 text-info" />
           Open
         </Button>
       </DialogTrigger>
@@ -55,7 +67,7 @@ export const InzyteWorkspace = ({ record }: { record: Deal }) => {
       >
         <DialogHeader className="shrink-0 border-b px-5 py-4 pr-14">
           <div className="flex flex-wrap items-start gap-3">
-            <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-sky-500/10 text-sky-500">
+            <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-info-tint text-info">
               <BarChart3 className="size-6" />
             </div>
             <div className="min-w-0 flex-1">
@@ -70,7 +82,7 @@ export const InzyteWorkspace = ({ record }: { record: Deal }) => {
             </div>
             <div className="flex flex-wrap items-center gap-2 pr-4">
               {connection.tone === "success" ? (
-                <Badge className="gap-1 bg-emerald-600 text-white">
+                <Badge className="gap-1 bg-live text-raised">
                   <CheckCircle2 className="size-3.5" /> {connection.label}
                 </Badge>
               ) : (
@@ -78,8 +90,8 @@ export const InzyteWorkspace = ({ record }: { record: Deal }) => {
                   variant="outline"
                   className={cn(
                     connection.tone === "error"
-                      ? "border-rose-500/40 text-rose-600"
-                      : "border-amber-500/40 text-amber-600",
+                      ? "border-late/40 text-late"
+                      : "border-wait/40 text-wait",
                   )}
                 >
                   <Link2 className="size-3.5" /> {connection.label}
@@ -97,14 +109,16 @@ export const InzyteWorkspace = ({ record }: { record: Deal }) => {
         {controller.loadingBootstrap && !controller.bootstrap ? (
           <div className="grid flex-1 place-items-center">
             <div className="text-center">
-              <Loader2 className="mx-auto size-8 animate-spin text-sky-500" />
+              <Loader2 className="mx-auto size-8 animate-spin text-info" />
               <p className="mt-3 text-sm text-muted-foreground">
                 Klantgegevens en historie laden…
               </p>
             </div>
           </div>
         ) : controller.bootstrap ? (
-          <InzyteWorkspaceContent record={record} controller={controller} />
+          <Suspense fallback={<WorkspaceFallback />}>
+            <InzyteWorkspaceContent record={record} controller={controller} />
+          </Suspense>
         ) : (
           <div className="grid flex-1 place-items-center p-8 text-center">
             <div>
@@ -141,16 +155,16 @@ export const InzyteCardActions = ({ record }: { record: Deal }) => {
     >
       <div className="min-w-0">
         <span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
-          <BarChart3 className="size-3.5 text-sky-500" />
+          <BarChart3 className="size-3.5 text-info" />
           Klantinzichten
           <span
             className={cn(
               "ml-0.5",
               connection.tone === "error"
-                ? "text-rose-600"
+                ? "text-late"
                 : connection.tone === "success"
-                  ? "text-emerald-600"
-                  : "text-amber-600",
+                  ? "text-live"
+                  : "text-wait",
             )}
           >
             · {connection.label.toLowerCase()}
@@ -163,9 +177,9 @@ export const InzyteCardActions = ({ record }: { record: Deal }) => {
                 key={source.key}
                 className={
                   source.verified
-                    ? "text-emerald-600"
+                    ? "text-live"
                     : source.configured
-                      ? "text-amber-600"
+                      ? "text-wait"
                       : "text-muted-foreground/45"
                 }
               >

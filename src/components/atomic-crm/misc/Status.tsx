@@ -1,7 +1,19 @@
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
 
+/**
+ * The relationship temperature (koud / warm / heet / in contract).
+ *
+ * The colour used to be the only carrier of meaning — a bare 10px dot with a
+ * hand-rolled tooltip. It now has an accessible name and a real tooltip, so the
+ * status survives both screen readers and colour-blind readers.
+ */
 export const Status = ({
   status,
   className,
@@ -11,18 +23,25 @@ export const Status = ({
 }) => {
   const { noteStatuses } = useConfigurationContext();
   if (!status || !noteStatuses) return null;
-  const statusObject = noteStatuses.find((s: any) => s.value === status);
-
+  const statusObject = noteStatuses.find((option) => option.value === status);
   if (!statusObject) return null;
+
   return (
-    <div className={cn("group relative inline-block mr-2", className)}>
-      <span
-        className="inline-block w-2.5 h-2.5 rounded-full"
-        style={{ backgroundColor: statusObject.color }}
-      />
-      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-        {statusObject.label}
-      </div>
-    </div>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className={cn("inline-flex shrink-0 items-center", className)}
+          role="img"
+          aria-label={statusObject.label}
+        >
+          <span
+            aria-hidden
+            className="size-2 rounded-full ring-1 ring-inset ring-black/10"
+            style={{ backgroundColor: statusObject.color }}
+          />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{statusObject.label}</TooltipContent>
+    </Tooltip>
   );
 };

@@ -79,7 +79,7 @@ export const validateItemsInUse = (
     const duplicatesList = [...duplicates];
     return (
       messages?.duplicate?.(displayName, duplicatesList) ??
-      `Dubbele ${displayName}: ${duplicatesList.join(", ")}`
+      `Dubbele ${displayName}: ${duplicatesList.join(",")}`
     );
   }
   // Check that no in-use value was removed (skip if deals haven't loaded)
@@ -97,7 +97,7 @@ export const validateItemsInUse = (
   if (inUse.length > 0) {
     return (
       messages?.inUse?.(displayName, inUse) ??
-      `Kan ${displayName} die nog worden gebruikt door deals niet verwijderen: ${inUse.join(", ")}`
+      `Kan ${displayName} die nog worden gebruikt door deals niet verwijderen: ${inUse.join(",")}`
     );
   }
   return undefined;
@@ -214,12 +214,12 @@ const SettingsFormFields = () => {
         duplicate: (displayName, duplicates) =>
           translate("crm.settings.validation.duplicate", {
             display_name: displayName,
-            items: duplicates.join(", "),
+            items: duplicates.join(","),
           }),
         inUse: (displayName, inUse) =>
           translate("crm.settings.validation.in_use", {
             display_name: displayName,
-            items: inUse.join(", "),
+            items: inUse.join(","),
           }),
         validating: translate("crm.settings.validation.validating"),
       }),
@@ -232,12 +232,12 @@ const SettingsFormFields = () => {
         duplicate: (displayName, duplicates) =>
           translate("crm.settings.validation.duplicate", {
             display_name: displayName,
-            items: duplicates.join(", "),
+            items: duplicates.join(","),
           }),
         inUse: (displayName, inUse) =>
           translate("crm.settings.validation.in_use", {
             display_name: displayName,
-            items: inUse.join(", "),
+            items: inUse.join(","),
           }),
         validating: translate("crm.settings.validation.validating"),
       }),

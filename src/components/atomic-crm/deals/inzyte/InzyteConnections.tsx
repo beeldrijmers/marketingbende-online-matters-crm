@@ -180,9 +180,9 @@ const ProviderCard = ({
         variant="outline"
         className={
           state.needsReauth
-            ? "border-amber-500/40 text-amber-600"
+            ? "border-wait/40 text-wait"
             : state.connected
-              ? "border-emerald-500/40 text-emerald-600"
+              ? "border-live/40 text-live"
               : ""
         }
       >
@@ -265,8 +265,8 @@ export const InzyteConnections = ({
   return (
     <div className="space-y-6 pb-10">
       {bootstrap.suggestedLink && !bootstrap.link ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-sky-500/30 bg-sky-500/5 p-4">
-          <Link2 className="size-5 text-sky-600" />
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-info/30 bg-info-tint p-4">
+          <Link2 className="size-5 text-info" />
           <div className="min-w-0 flex-1">
             <div className="font-medium">
               Koppeling van dezelfde klant gevonden
@@ -295,10 +295,7 @@ export const InzyteConnections = ({
               <ShieldCheck className="size-3.5" /> Meetbronnen gecontroleerd
             </Badge>
           ) : bootstrap.link ? (
-            <Badge
-              variant="outline"
-              className="border-amber-500/40 text-amber-600"
-            >
+            <Badge variant="outline" className="border-wait/40 text-wait">
               Brongegevens niet bevestigd
             </Badge>
           ) : (
@@ -351,7 +348,7 @@ export const InzyteConnections = ({
       </section>
 
       {bootstrap.link && connectionSummary.tone !== "success" ? (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-4 text-sm text-amber-700 dark:text-amber-400">
+        <div className="rounded-xl border border-wait/30 bg-wait-tint p-4 text-sm text-wait ">
           Er staan brongegevens opgeslagen, maar die zijn niet live bevestigd en
           vormen dus geen actieve koppeling. Haal de beschikbare bronnen live
           op, controleer de klantnaam/property en sla de juiste bron op.

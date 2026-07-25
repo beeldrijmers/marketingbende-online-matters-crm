@@ -133,78 +133,83 @@ const ContactItemContent = ({
     ? formatRelativeDate(contact.last_seen, locale)
     : null;
 
+  // Two lines per row instead of three, and the words "laatste activiteit" no
+  // longer repeat on every single row: the column position says what the date
+  // means.
   return (
     <div
       className={cn(
-        "flex flex-row items-center pl-2 pr-4 py-2 transition-colors first:rounded-t-xl last:rounded-b-xl",
-        isSelected ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted",
+        "flex flex-row items-center gap-2 pl-2 pr-3 transition-colors duration-1",
+        isSelected ? "bg-accent-quiet" : "hover:bg-sunken",
       )}
     >
       <div
-        className="px-4 py-3 flex items-center cursor-pointer"
+        className="flex cursor-pointer items-center px-2 py-3"
         onClick={(e) => handleToggleItem(contact.id, e)}
       >
         <Checkbox
           className="cursor-pointer"
           checked={selectedIds.includes(contact.id)}
+          aria-label={`${contact.first_name} ${contact.last_name ?? ""}`}
         />
       </div>
       <Link
         to={`/contacts/${contact.id}/show`}
-        className="flex-1 flex flex-row gap-4 items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex min-w-0 flex-1 flex-row items-center gap-3 rounded-md py-2 no-underline focus-visible:outline-none"
       >
-        <Avatar />
-        <div className="flex-1 min-w-0">
-          <div className="font-medium">
-            {`${contact.first_name} ${contact.last_name ?? ""}`}
+        <Avatar width={32} height={32} />
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-body font-semibold text-ink">
+              {`${contact.first_name} ${contact.last_name ?? ""}`}
+            </span>
+            <TagsList />
           </div>
           {contact.title || contact.company_id != null || contact.nb_tasks ? (
-            <div className="text-sm text-muted-foreground">
-              {contact.title && contact.company_id != null
-                ? `${translate("resources.contacts.position_at", {
-                    title: contact.title,
-                  })} `
-                : contact.title}
-              {contact.company_id != null && (
-                <ReferenceField
-                  source="company_id"
-                  reference="companies"
-                  link={false}
-                >
-                  <TextField source="name" />
-                </ReferenceField>
-              )}
-              {contact.nb_tasks
-                ? ` - ${translate("crm.common.task_count", {
+            <div className="flex min-w-0 items-center gap-1.5 text-meta text-ink-3">
+              <span className="min-w-0 truncate">
+                {contact.title && contact.company_id != null
+                  ? `${translate("resources.contacts.position_at", {
+                      title: contact.title,
+                    })} `
+                  : contact.title}
+                {contact.company_id != null && (
+                  <ReferenceField
+                    source="company_id"
+                    reference="companies"
+                    link={false}
+                  >
+                    <TextField source="name" />
+                  </ReferenceField>
+                )}
+              </span>
+              {contact.nb_tasks ? (
+                <span className="num shrink-0 text-ink-3">
+                  ·{" "}
+                  {translate("crm.common.task_count", {
                     smart_count: contact.nb_tasks,
-                  })}`
-                : ""}
-              &nbsp;&nbsp;
-              <TagsList />
+                  })}
+                </span>
+              ) : null}
             </div>
           ) : null}
-          <div className="mt-0.5">
-            <OwnerChipField
-              source="sales_id"
-              record={contact}
-              size={16}
-              className="text-xs text-muted-foreground"
-            />
-          </div>
         </div>
-        {contact.last_seen && (
-          <div className="text-right ml-4">
-            <div
-              className="text-sm text-muted-foreground"
-              title={contact.last_seen}
-            >
-              {translate("crm.common.last_activity_with_date", {
-                date: lastActivity,
-              })}{" "}
-              <Status status={contact.status} />
-            </div>
-          </div>
-        )}
+        <OwnerChipField
+          source="sales_id"
+          record={contact}
+          size={20}
+          className="hidden shrink-0 text-meta text-ink-3 lg:flex"
+        />
+        {contact.last_seen ? (
+          <time
+            className="hidden w-28 shrink-0 text-right text-meta text-ink-3 sm:block"
+            dateTime={contact.last_seen}
+            title={contact.last_seen}
+          >
+            {lastActivity}
+          </time>
+        ) : null}
+        <Status status={contact.status} className="shrink-0" />
       </Link>
     </div>
   );

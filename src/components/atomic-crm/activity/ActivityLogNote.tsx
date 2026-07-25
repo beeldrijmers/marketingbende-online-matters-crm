@@ -46,7 +46,7 @@ export function ActivityLogNote({
             <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
               <Badge
                 variant="outline"
-                className="gap-1 border-sky-500/40 bg-sky-500/5 px-1.5 py-0 text-[11px] text-sky-700 dark:text-sky-300"
+                className="gap-1 border-info/40 bg-info-tint px-1.5 py-0 text-[11px] text-info "
               >
                 {note.isAttachment ? (
                   <Paperclip className="size-3" />
