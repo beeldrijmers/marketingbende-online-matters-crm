@@ -1,11 +1,10 @@
 /**
- * BANKAI CRM — base element styles.
+ * Kompas CRM — base element styles.
  *
- * Typography: Inter Variable is loaded with its optical-size axis, so the
- * browser reshapes the letterforms for large text on its own
- * (`font-optical-sizing: auto`). Headings therefore get Inter Display's tighter
- * apertures without a second font file. `cv05`/`cv08` disambiguate l / I / 1,
- * which matters in a screen full of amounts and reference codes.
+ * Typography: Geist Variable, one file for every weight. It is drawn for
+ * interfaces rather than for reading — narrower than Inter, with flat terminals
+ * and an unambiguous 1 / l / I — so a dense screen of amounts, company names
+ * and reference codes stays legible without character-variant tweaks.
  */
 
 @layer base {
@@ -19,11 +18,6 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-optical-sizing: auto;
-    font-feature-settings:
-      "cv05" 1,
-      "cv08" 1;
-    letter-spacing: -0.004em;
   }
 
   /* Amounts, counts and dates always line up. */
