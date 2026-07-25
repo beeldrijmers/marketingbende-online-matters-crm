@@ -16,24 +16,31 @@ export interface PartyMeta {
   className: string;
 }
 
-export const PARTY_META: Record<PartyKey, PartyMeta> = {
+export interface PartyMetaColours {
+  /** Text colour for the party name. */
+  className: string;
+  /** Background for the identity dot. */
+  dotClassName: string;
+}
+
+export const PARTY_META: Record<PartyKey, PartyMeta & PartyMetaColours> = {
   online_matters: {
     labelKey: "crm.ownership.party.online_matters",
     fallback: "Online Matters",
-    className:
-      "border-sky-300 dark:border-sky-700 text-sky-700 dark:text-sky-300",
+    className: "text-party-om border-party-om/35",
+    dotClassName: "bg-party-om",
   },
   marketingbende: {
     labelKey: "crm.ownership.party.marketingbende",
     fallback: "Marketingbende",
-    className:
-      "border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-300",
+    className: "text-party-mb border-party-mb/35",
+    dotClassName: "bg-party-mb",
   },
   groeien_met_ads: {
     labelKey: "crm.ownership.party.groeien_met_ads",
     fallback: "Groeien met Ads",
-    className:
-      "border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300",
+    className: "text-party-gma border-party-gma/35",
+    dotClassName: "bg-party-gma",
   },
 };
 

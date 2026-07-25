@@ -4,9 +4,9 @@ import { useStore } from "ra-core";
 import type { DealStage, LabeledValue, NoteStatus } from "../types";
 import { defaultConfiguration } from "./defaultConfiguration";
 
-// v4: force browsers to pick up the numbered Trello-aligned production line.
+// v6: the app is called Kompas and carries a new mark.
 // Bump this key whenever seeded stages, categories or branding change.
-export const CONFIGURATION_STORE_KEY = "app.configuration.v4";
+export const CONFIGURATION_STORE_KEY = "app.configuration.v6";
 
 export interface ConfigurationContextValue {
   companySectors: LabeledValue[];

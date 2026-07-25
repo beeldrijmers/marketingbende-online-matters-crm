@@ -1,5 +1,10 @@
 import type { HTMLAttributes } from "react";
-import { genericMemo, useFieldValue, useTranslate } from "ra-core";
+import {
+  genericMemo,
+  useFieldValue,
+  useLocaleState,
+  useTranslate,
+} from "ra-core";
 
 import type { FieldProps } from "@/lib/field.type";
 
@@ -22,6 +27,10 @@ const DateFieldImpl = <
     ...rest
   } = inProps;
   const translate = useTranslate();
+  // Without this the browser locale decides, so a Dutch interface rendered
+  // "Sep 8, 2024" on every task for anyone whose browser is set to English.
+  const [appLocale] = useLocaleState();
+  const resolvedLocales = locales ?? appLocale;
 
   if (!showTime && !showDate) {
     throw new Error(
@@ -48,7 +57,7 @@ const DateFieldImpl = <
   if (date) {
     if (showTime && showDate) {
       dateString = toLocaleStringSupportsLocales
-        ? date.toLocaleString(locales, options)
+        ? date.toLocaleString(resolvedLocales, options)
         : date.toLocaleString();
     } else if (showDate) {
       // If input is a date string (e.g. '2022-02-15') without time and time zone,
@@ -60,11 +69,11 @@ const DateFieldImpl = <
           ? { timeZone: "UTC" }
           : undefined);
       dateString = toLocaleStringSupportsLocales
-        ? date.toLocaleDateString(locales, dateOptions)
+        ? date.toLocaleDateString(resolvedLocales, dateOptions)
         : date.toLocaleDateString();
     } else if (showTime) {
       dateString = toLocaleStringSupportsLocales
-        ? date.toLocaleTimeString(locales, options)
+        ? date.toLocaleTimeString(resolvedLocales, options)
         : date.toLocaleTimeString();
     }
   }

@@ -42,17 +42,24 @@ export const ToggleFilterButton = ({
   const handleClick = () => setFilters(toggleFilter(value, filterValues));
   return (
     <Button
-      variant={isSelected ? "secondary" : "ghost"}
+      variant="ghost"
       onClick={handleClick}
+      aria-pressed={isSelected}
+      // Filter rails are narrow: the label truncates instead of spilling out of
+      // its container, and the active state is a tint rather than a heavier row.
       className={cn(
-        "cursor-pointer",
-        "flex flex-row items-center justify-between gap-2 px-2.5 w-full",
+        "flex w-full flex-row items-center justify-between gap-2 px-2 font-normal",
+        isSelected
+          ? "bg-accent-quiet font-medium text-ink hover:bg-accent-quiet"
+          : "text-ink-2 hover:text-ink",
         className,
       )}
       size={size}
     >
-      {typeof label === "string" ? translate(label, { _: label }) : label}
-      {isSelected && <CircleX className="opacity-50" />}
+      <span className="min-w-0 truncate text-left">
+        {typeof label === "string" ? translate(label, { _: label }) : label}
+      </span>
+      {isSelected && <CircleX className="size-3.5 shrink-0 opacity-60" />}
     </Button>
   );
 };

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import {
+  FilterLiveForm,
   InfiniteListBase,
   RecordContextProvider,
   useDataProvider,
@@ -11,6 +12,7 @@ import {
 } from "ra-core";
 import { Link, matchPath, useLocation } from "react-router";
 import { NumberField } from "@/components/admin/number-field";
+import { SearchInput } from "@/components/admin/search-input";
 import { ReferenceField } from "@/components/admin/reference-field";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -244,19 +246,30 @@ const DealsLayoutMobile = ({
             })}
           </p>
         ) : (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-5">
+            {/* The phone had no way to search the board at all: with 50 cards
+                the only option was scrolling through eight stage sections. */}
+            <FilterLiveForm>
+              <SearchInput
+                source="q"
+                placeholder={translate("resources.deals.board.search", {
+                  _: "Zoek opdracht of klant",
+                })}
+              />
+            </FilterLiveForm>
             {!dashboardSelection && !attentionPipeline ? (
               <CompletionScopeInput className="self-start" />
             ) : null}
             <nav
-              aria-label="Spring naar dealfase"
-              className="sticky top-14 z-10 -mx-4 flex gap-2 overflow-x-auto border-y bg-background/95 px-4 py-2 backdrop-blur"
+              aria-label="Spring naar fase"
+              className="sticky z-10 -mx-4 flex gap-2 overflow-x-auto border-y border-line-subtle bg-canvas px-4 py-2"
+              style={{ top: "var(--app-bar-h)" }}
             >
               {groups.map((group) => (
                 <button
                   key={group.key}
                   type="button"
-                  className="shrink-0 rounded-full border bg-background px-3 py-1.5 text-xs font-medium"
+                  className="num shrink-0 rounded-md border border-line px-3 py-1.5 text-meta font-medium text-ink-2"
                   onClick={() =>
                     document
                       .getElementById(`deal-stage-${group.key}`)
@@ -273,11 +286,9 @@ const DealsLayoutMobile = ({
                 key={group.key}
                 className="flex scroll-mt-28 flex-col gap-2"
               >
-                <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <h2 className="eyebrow flex items-center gap-2">
                   {group.label}
-                  <span className="text-muted-foreground/70">
-                    {group.deals.length}
-                  </span>
+                  <span className="num text-ink-3">{group.deals.length}</span>
                 </h2>
                 {group.deals.map((deal) => (
                   <RecordContextProvider key={deal.id} value={deal}>
@@ -332,14 +343,14 @@ const MobileDealRow = ({
 }) => {
   const { currency } = useConfigurationContext();
   const workflow = getDealWorkflow(deal, openTasks);
+  // Same rationing as the desktop card: only a late or due-today step colours
+  // the edge, so the colour keeps meaning something.
   const attentionAccent =
     workflow.kind === "overdue"
-      ? "border-l-destructive"
+      ? "border-l-late"
       : workflow.kind === "today"
-        ? "border-l-amber-500"
-        : workflow.kind === "overdue_closing"
-          ? "border-l-orange-500"
-          : "border-l-violet-500";
+        ? "border-l-wait"
+        : "border-l-transparent";
   return (
     <Card
       className={cn(
@@ -393,11 +404,13 @@ const MobileDealRow = ({
           <AssigneesField
             ids={deal.assignee_ids}
             size={16}
-            className="text-xs text-muted-foreground"
+            showParties={false}
+            className="text-meta text-ink-3"
           />
         </div>
       </Link>
       <DealWorkflowIndicator
+        dense
         deal={deal}
         openTasks={openTasks}
         onPlanTask={onPlanTask ? () => onPlanTask(deal) : undefined}

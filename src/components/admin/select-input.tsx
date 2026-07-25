@@ -145,7 +145,7 @@ export const SelectInput = (props: SelectInputProps) => {
     createHintValue,
   });
   const labelId = useId();
-  const { id, field, isRequired } = useInput({
+  const { id, field, fieldState, isRequired } = useInput({
     alwaysOn,
     defaultValue,
     format,
@@ -272,9 +272,15 @@ export const SelectInput = (props: SelectInputProps) => {
             onValueChange={handleChangeWithCreateSupport}
           >
             <SelectTrigger
-              className={cn("w-full transition-all hover:bg-accent")}
+              className={cn(
+                "w-full transition-all hover:bg-accent",
+                fieldState.invalid &&
+                  "border-destructive focus-visible:ring-destructive/40",
+              )}
               disabled={field.disabled}
               aria-labelledby={labelId}
+              aria-invalid={fieldState.invalid || undefined}
+              ref={field.ref}
             >
               <SelectValue placeholder={renderEmptyItemOption()} />
 
@@ -312,6 +318,10 @@ export const SelectInput = (props: SelectInputProps) => {
           </Select>
         </div>
         <InputHelperText helperText={helperText} />
+        {/* Without this the required-field error was rendered only in the
+            loading skeleton branch, so a missing Fase or Accountmanager blocked
+            the save with no visible reason. */}
+        <FormError />
       </FormField>
       {createElement}
     </>

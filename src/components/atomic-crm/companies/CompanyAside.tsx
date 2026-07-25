@@ -202,7 +202,7 @@ export const AdditionalInfo = ({ record }: { record: Company }) => {
       title={translate("resources.companies.field_categories.additional_info")}
     >
       {record.description && (
-        <p className="text-sm  mb-1">{record.description}</p>
+        <p className="text-sm mb-1">{record.description}</p>
       )}
       {record.context_links && (
         <div className="flex flex-col">

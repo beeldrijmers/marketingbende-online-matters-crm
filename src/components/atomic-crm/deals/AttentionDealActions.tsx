@@ -30,7 +30,8 @@ export const AttentionDealActions = ({
   return (
     <div
       className={cn(
-        "flex items-center gap-1 border-t pt-2",
+        "flex items-center gap-1",
+        !compact && "border-t border-line-subtle pt-2",
         compact && "justify-end",
       )}
       onClick={(event) => event.stopPropagation()}
@@ -42,7 +43,7 @@ export const AttentionDealActions = ({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8 px-2 text-xs"
+            className="h-8 px-2 text-meta"
             aria-label={`Fase wijzigen voor ${deal.name}`}
           >
             <Columns3 className="size-3.5" />
@@ -73,7 +74,7 @@ export const AttentionDealActions = ({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-8 px-2 text-xs"
+        className="h-8 px-2 text-meta"
         aria-label={`Volgende taak plannen voor ${deal.name}`}
         onClick={() => onPlanTask(deal)}
       >

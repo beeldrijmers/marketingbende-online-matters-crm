@@ -1,15 +1,15 @@
 import { test, expect } from "./fixtures";
 
-test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
+test("user onboarding", async ({ page, isMobile, dismissToast }) => {
   await page.goto("http://localhost:5175/?initial-setup=true", {
     waitUntil: "networkidle",
   });
 
   // The isolated Supabase stack can need a few extra seconds on a cold CI boot.
-  await expect(page).toHaveTitle(/BANKAI CRM/);
+  await expect(page).toHaveTitle(/Kompas CRM/);
   await expect(
     page.getByRole("heading", {
-      name: "Welkom bij BANKAI CRM",
+      name: "Welkom bij Kompas CRM",
       exact: true,
     }),
   ).toBeVisible({ timeout: 15_000 });
@@ -21,7 +21,7 @@ test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
   await page.getByRole("button", { name: "Account aanmaken" }).click();
 
   await expect(page.getByText("Wat nu?")).toBeVisible();
-  await expect(page.getByText("BANKAI CRM installeren")).toBeVisible();
+  await expect(page.getByText("Kompas CRM installeren")).toBeVisible();
   await expect(page.getByText("Voeg uw eerste contact toe")).toBeVisible();
   await expect(page.getByText("Voeg uw eerste notitie toe")).toBeVisible();
 
@@ -91,16 +91,14 @@ test("user onboarding", async ({ page, isMobile, menu, dismissToast }) => {
 
   await expect(page.getByText("This is a note about Jane.")).toBeVisible();
 
-  await menu.goToDashboard();
-
+  // Updates moved out of the dashboard's tab strip into its own page.
+  await page.getByRole("link", { name: "Updates" }).first().click();
   await page.waitForLoadState("networkidle");
 
-  await page.getByRole("tab", { name: "Updates", exact: true }).click();
-  const activitySection = page.getByRole("tabpanel", {
-    name: "Updates",
-    exact: true,
-  });
-  await expect(activitySection).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Updates" }),
+  ).toBeVisible();
+  const activitySection = page.getByRole("main");
   await expect(activitySection).toContainText(
     /U heeft een bedrijf toegevoegd Smith Corp vandaag om/,
   );

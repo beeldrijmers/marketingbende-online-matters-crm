@@ -1,4 +1,3 @@
-import { getBillingState } from "../dashboard/billingQueueModel";
 import type { Deal, Task } from "../types";
 import {
   buildOpenTasksByDeal,
@@ -88,16 +87,6 @@ export const selectAttentionDealIds = (
   for (const rankedDeal of selectAttentionDeals(deals, tasks, now)) {
     if (matchesAttentionPipelineFilter(rankedDeal, filter)) {
       ids.push(rankedDeal.deal.id);
-    }
-  }
-  return ids;
-};
-
-export const selectBillingDealIds = (deals: Deal[]) => {
-  const ids: Deal["id"][] = [];
-  for (const deal of deals) {
-    if (deal.stage === "facturatie-live" && getBillingState(deal) != null) {
-      ids.push(deal.id);
     }
   }
   return ids;

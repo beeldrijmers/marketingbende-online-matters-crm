@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { CrmDataProvider } from "../providers/types";
 import type { Deal, Task } from "../types";
+import { AttentionList } from "./AttentionList";
 import { persistDealStageMove, updateDealStageLocal } from "./dealStageMove";
 import { DealColumn } from "./DealColumn";
 import { buildOpenTasksByDeal, rankDealsForAttention } from "./dealWorkflow";
@@ -20,13 +21,11 @@ import { getDealsByStage } from "./stages";
 export const DealListContent = ({
   attentionPipeline = false,
   detailBasePath,
-  embedded = false,
   onDealStageChange,
   onPlanTask,
 }: {
   attentionPipeline?: boolean;
   detailBasePath?: string;
-  embedded?: boolean;
   onDealStageChange?: (deal: Deal, destinationStage: string) => void;
   onPlanTask?: (deal: Deal) => void;
 } = {}) => {
@@ -45,6 +44,13 @@ export const DealListContent = ({
     filter: {},
   });
   const tasksByDeal = useMemo(() => buildOpenTasksByDeal(tasks), [tasks]);
+  const rankedDeals = useMemo(
+    () =>
+      attentionPipeline
+        ? rankDealsForAttention(unorderedDeals ?? [], tasksByDeal)
+        : [],
+    [attentionPipeline, tasksByDeal, unorderedDeals],
+  );
   const visibleDealStages = useMemo(
     () =>
       filterValues?.["stage@neq"] === "won"
@@ -59,13 +65,8 @@ export const DealListContent = ({
 
   useEffect(() => {
     if (unorderedDeals) {
-      const orderedDeals = attentionPipeline
-        ? rankDealsForAttention(unorderedDeals, tasksByDeal).map(
-            ({ deal }) => deal,
-          )
-        : unorderedDeals;
       const newDealsByStage = getDealsByStage(
-        orderedDeals,
+        unorderedDeals,
         visibleDealStages,
         attentionPipeline,
       );
@@ -75,7 +76,7 @@ export const DealListContent = ({
           : newDealsByStage,
       );
     }
-  }, [attentionPipeline, tasksByDeal, unorderedDeals, visibleDealStages]);
+  }, [attentionPipeline, unorderedDeals, visibleDealStages]);
 
   if (isPending) return null;
 
@@ -176,35 +177,50 @@ export const DealListContent = ({
       });
   };
 
+  // The attention scope is a ranked queue: showing it as eight stage columns
+  // threw the ranking away, so it renders as one list instead.
+  if (attentionPipeline) {
+    return (
+      <AttentionList
+        detailBasePath={detailBasePath}
+        onMoveToStage={moveDealToStage}
+        onPlanTask={onPlanTask}
+        rankedDeals={rankedDeals}
+      />
+    );
+  }
+
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div
-        className={
-          embedded
-            ? attentionPipeline
-              ? "h-[calc(100svh-31rem)] min-h-[30rem] overflow-x-auto overscroll-contain pb-2"
-              : "h-[calc(100svh-22rem)] min-h-[34rem] overflow-x-auto overscroll-contain pb-2"
-            : attentionPipeline
-              ? "h-[calc(100dvh-23rem)] min-h-96 overflow-x-auto overscroll-contain pb-2"
-              : "h-[calc(100dvh-11rem)] min-h-80 overflow-x-auto overscroll-contain pb-2"
-        }
-      >
-        <div className="flex h-full gap-4">
-          {visibleDealStages.map((stage) => (
-            <DealColumn
-              attentionPipeline={attentionPipeline}
-              detailBasePath={detailBasePath}
-              stage={stage.value}
-              // A filter toggle can reveal a column one render before the
-              // grouped state effect has populated its key. Render it empty
-              // during that transition instead of crashing DealColumn.
-              deals={dealsByStage[stage.value] ?? []}
-              tasksByDeal={tasksByDeal}
-              onMoveToStage={attentionPipeline ? moveDealToStage : undefined}
-              onPlanTask={onPlanTask}
-              key={stage.value}
-            />
-          ))}
+      {/* The shell owns the viewport height, so the board simply takes the
+          remaining space instead of guessing at calc() offsets that broke
+          whenever a toolbar row was added or removed. The fade on the right
+          edge is the only hint that the line continues past the viewport. */}
+      <div className="relative flex min-h-0 flex-1">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-canvas to-transparent"
+        />
+        <div className="flex min-h-0 flex-1 overflow-x-auto overscroll-contain pb-1">
+          <div className="flex min-h-0 gap-3">
+            {visibleDealStages.map((stage, index) => (
+              <DealColumn
+                attentionPipeline={attentionPipeline}
+                detailBasePath={detailBasePath}
+                lastPosition={visibleDealStages.length - 1}
+                position={index}
+                stage={stage.value}
+                // A filter toggle can reveal a column one render before the
+                // grouped state effect has populated its key. Render it empty
+                // during that transition instead of crashing DealColumn.
+                deals={dealsByStage[stage.value] ?? []}
+                tasksByDeal={tasksByDeal}
+                onMoveToStage={attentionPipeline ? moveDealToStage : undefined}
+                onPlanTask={onPlanTask}
+                key={stage.value}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </DragDropContext>

@@ -55,8 +55,8 @@ const KpiGrid = ({
             <div
               className={
                 metric.delta >= 0
-                  ? "mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600"
-                  : "mt-2 flex items-center gap-1 text-xs font-medium text-rose-600"
+                  ? "mt-2 flex items-center gap-1 text-xs font-medium text-live"
+                  : "mt-2 flex items-center gap-1 text-xs font-medium text-late"
               }
             >
               {metric.delta >= 0 ? (
@@ -138,10 +138,10 @@ export const InzyteDataView = ({ data }: { data: unknown }) => {
       {presentation.narratives.map((narrative) => (
         <section
           key={`${narrative.title}-${narrative.text.slice(0, 80)}`}
-          className="overflow-hidden rounded-xl border border-sky-500/20 bg-linear-to-br from-sky-500/[0.08] to-card shadow-sm"
+          className="overflow-hidden rounded-xl border border-info/20 bg-linear-to-br from-sky-500/[0.08] to-card shadow-sm"
         >
-          <div className="flex items-center gap-2 border-b border-sky-500/15 px-5 py-3">
-            <FileText className="size-4 text-sky-500" />
+          <div className="flex items-center gap-2 border-b border-info/15 px-5 py-3">
+            <FileText className="size-4 text-info" />
             <h3 className="font-semibold">{narrative.title}</h3>
           </div>
           <Markdown className="px-5 py-4 text-sm leading-6">

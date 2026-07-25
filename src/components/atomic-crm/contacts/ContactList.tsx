@@ -4,6 +4,7 @@ import {
   InfiniteListBase,
   useGetIdentity,
   useListContext,
+  useTranslate,
   type Exporter,
 } from "ra-core";
 import { BulkActionsToolbar } from "@/components/admin/bulk-actions-toolbar";
@@ -12,9 +13,9 @@ import { BulkExportButton } from "@/components/admin/bulk-export-button";
 import { CreateButton } from "@/components/admin/create-button";
 import { ExportButton } from "@/components/admin/export-button";
 import { List } from "@/components/admin/list";
+import { ListPagination } from "@/components/admin/list-pagination";
 import { SelectAllButton } from "@/components/admin/select-all-button";
 import { SortButton } from "@/components/admin/sort-button";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import type { Company, Contact, Sale, Tag } from "../types";
@@ -29,6 +30,8 @@ import {
   ContactListFilterSummary,
   ContactListFilter,
 } from "./ContactListFilter";
+import { PageBody } from "../layout/PageBody";
+import { PageHeader } from "../layout/PageHeader";
 import { TopToolbar } from "../layout/TopToolbar";
 import { InfinitePagination } from "../misc/InfinitePagination";
 import MobileHeader from "../layout/MobileHeader";
@@ -42,7 +45,10 @@ export const ContactList = () => {
   return (
     <List
       title={false}
-      actions={<ContactListActions />}
+      // The page identity lives in <PageHeader> inside the layout, so the list's
+      // own floating toolbar row is switched off: one band, not two.
+      disableHeader
+      disableBreadcrumb
       perPage={25}
       sort={{ field: "last_seen", order: "DESC" }}
       exporter={exporter}
@@ -53,7 +59,8 @@ export const ContactList = () => {
 };
 
 const ContactListLayoutDesktop = () => {
-  const { data, isPending, filterValues } = useListContext();
+  const translate = useTranslate();
+  const { data, isPending, filterValues, total } = useListContext();
 
   const hasFilters = filterValues && Object.keys(filterValues).length > 0;
 
@@ -65,39 +72,57 @@ const ContactListLayoutDesktop = () => {
   if (!data?.length && !hasFilters) return <ContactEmpty />;
 
   return (
-    <div className="flex flex-row gap-8">
-      <ContactListFilter />
-      <div className="w-full flex flex-col gap-4">
-        <Card className="py-0 overflow-hidden">
-          <ContactListContent />
-        </Card>
-      </div>
-      <BulkActionsToolbar>
-        <ContactBulkActionButtons />
-      </BulkActionsToolbar>
-    </div>
+    <>
+      <PageHeader
+        title={translate("resources.contacts.name", { smart_count: 2 })}
+        meta={
+          total != null
+            ? translate("crm.common.record_count", {
+                smart_count: total,
+                _: `${total} contacten`,
+              })
+            : null
+        }
+        actions={<ContactListActions />}
+      />
+      <PageBody className="flex flex-row gap-6">
+        <ContactListFilter />
+        <div className="flex min-w-0 flex-1 flex-col gap-4">
+          <div className="panel divide-y divide-line-subtle overflow-hidden">
+            <ContactListContent />
+          </div>
+          <ListPagination />
+        </div>
+        <BulkActionsToolbar>
+          <ContactBulkActionButtons />
+        </BulkActionsToolbar>
+      </PageBody>
+    </>
   );
 };
 
 const ContactListSkeleton = () => (
-  <div className="flex flex-row gap-8">
-    {/* Same width as the ContactListFilter sidebar so nothing shifts. */}
-    <div className="w-52 min-w-52 flex-col gap-6 hidden sm:flex">
-      {Array.from({ length: 4 }, (_, section) => (
-        <div key={section} className="flex flex-col gap-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-3 w-36" />
-          <Skeleton className="h-3 w-32" />
-          <Skeleton className="h-3 w-28" />
+  <>
+    <PageHeader title={<Skeleton className="h-6 w-40" />} />
+    <div className="flex flex-row gap-6">
+      {/* Same width as the ContactListFilter rail so nothing shifts. */}
+      <div className="hidden w-[13.5rem] min-w-[13.5rem] flex-col gap-6 sm:flex">
+        {Array.from({ length: 4 }, (_, section) => (
+          <div key={section} className="flex flex-col gap-2">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-3 w-28" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        ))}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-4">
+        <div className="panel overflow-hidden">
+          <ContactListContent />
         </div>
-      ))}
+      </div>
     </div>
-    <div className="w-full flex flex-col gap-4">
-      <Card className="py-0 overflow-hidden">
-        <ContactListContent />
-      </Card>
-    </div>
-  </div>
+  </>
 );
 
 const ContactBulkActionButtons = () => (

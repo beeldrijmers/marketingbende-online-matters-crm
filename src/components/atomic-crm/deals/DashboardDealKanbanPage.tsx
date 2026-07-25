@@ -12,13 +12,11 @@ import {
   filterAttentionDealsBySearch,
   parseAttentionPipelineFilter,
   selectAttentionDeals,
-  selectBillingDealIds,
   type AttentionPipelineFilter,
 } from "./dashboardDealKanbanModel";
 import {
   createDashboardDealSelection,
   getDashboardDealSelectionPath,
-  type DashboardDealSelection,
 } from "./dashboardDealSelection";
 import { summarizeDealAttention } from "./dealWorkflow";
 
@@ -127,52 +125,6 @@ const useAttentionDealSelection = () => {
   };
 };
 
-const useBillingDealSelection = () => {
-  const { data: deals = [], isPending } = useGetList<Deal>("deals", {
-    pagination: { page: 1, perPage: 1000 },
-    sort: { field: "updated_at", order: "ASC" },
-    filter: { stage: "facturatie-live", "archived_at@is": null },
-  });
-  const selection = useMemo(
-    () =>
-      createDashboardDealSelection(
-        selectBillingDealIds(deals),
-        "billing",
-        "Facturatie afhandelen",
-      ),
-    [deals],
-  );
-  return { isPending, selection };
-};
-
-const DashboardDealKanban = ({
-  embedded = false,
-  isPending,
-  mobile,
-  selection,
-}: {
-  embedded?: boolean;
-  isPending: boolean;
-  mobile: boolean;
-  selection: DashboardDealSelection;
-}) => {
-  if (isPending) return <DashboardDealKanbanSkeleton />;
-
-  return (
-    <ResourceContextProvider value="deals">
-      {mobile && !embedded ? (
-        <MobileDealsList dashboardSelection={selection} />
-      ) : (
-        <DealList
-          dashboardSelection={selection}
-          detailBasePath={getDashboardDealSelectionPath(selection.kind)}
-          embedded={embedded}
-        />
-      )}
-    </ResourceContextProvider>
-  );
-};
-
 const AttentionDealsPage = ({
   embedded = false,
   mobile = false,
@@ -194,67 +146,63 @@ const AttentionDealsPage = ({
 
   return (
     <ResourceContextProvider value="deals">
-      <AttentionPipelineHeader
-        counts={counts}
-        embedded={embedded}
-        filter={filter}
-        mobile={mobile}
-        onFilterChange={setFilter}
-        onSearchChange={setSearch}
-        search={search}
-        visibleCount={visibleCount}
-      />
-      {mobile && !embedded ? (
-        <MobileDealsList
-          attentionPipeline
-          dashboardSelection={selection}
-          hideHeader
-        />
-      ) : (
-        <DealList
-          dashboardSelection={selection}
-          detailBasePath={getDashboardDealSelectionPath(selection.kind)}
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <AttentionPipelineHeader
+          counts={counts}
           embedded={embedded}
+          filter={filter}
+          mobile={mobile}
+          onFilterChange={setFilter}
+          onSearchChange={setSearch}
+          search={search}
+          visibleCount={visibleCount}
         />
-      )}
+        {mobile && !embedded ? (
+          <MobileDealsList
+            attentionPipeline
+            dashboardSelection={selection}
+            hideHeader
+          />
+        ) : (
+          <DealList
+            dashboardSelection={selection}
+            detailBasePath={getDashboardDealSelectionPath(selection.kind)}
+            embedded={embedded}
+          />
+        )}
+      </div>
     </ResourceContextProvider>
   );
 };
 
-const BillingDealsPage = ({
-  embedded = false,
-  mobile = false,
-}: {
-  embedded?: boolean;
-  mobile?: boolean;
-}) => {
-  const { isPending, selection } = useBillingDealSelection();
-  return (
-    <DashboardDealKanban
-      embedded={embedded}
-      isPending={isPending}
-      mobile={mobile}
-      selection={selection}
-    />
-  );
+/**
+ * The phone's board: one ranked, tappable list per focus.
+ *
+ * The attention focus deliberately drops the desktop filter chips — the list is
+ * already ordered by urgency, and on 390px every extra control row pushes the
+ * first card off screen.
+ */
+export const MobileBoardPage = () => {
+  const [searchParams] = useSearchParams();
+  const focus = searchParams.get("focus");
+  if (focus === "attention") return <MobileAttentionBoard />;
+  return <MobileDealsList />;
 };
 
-export const AttentionDealsKanbanPage = () => <AttentionDealsPage />;
-export const BillingDealsKanbanPage = () => <BillingDealsPage />;
-export const MobileAttentionDealsKanbanPage = () => (
-  <AttentionDealsPage mobile />
-);
-export const MobileBillingDealsKanbanPage = () => <BillingDealsPage mobile />;
+const MobileAttentionBoard = () => {
+  const { isPending, selection } = useAttentionDealSelection();
+  if (isPending) return <DashboardDealKanbanSkeleton />;
+  return (
+    <ResourceContextProvider value="deals">
+      <MobileDealsList attentionPipeline dashboardSelection={selection} />
+    </ResourceContextProvider>
+  );
+};
 export const AttentionDealsDashboard = ({
   mobile = false,
 }: {
   mobile?: boolean;
 }) => <AttentionDealsPage embedded mobile={mobile} />;
-export const BillingDealsDashboard = ({
-  mobile = false,
-}: {
-  mobile?: boolean;
-}) => <BillingDealsPage embedded mobile={mobile} />;
 
 const DashboardDealKanbanSkeleton = () => (
   <div className="flex flex-col gap-4 py-2">

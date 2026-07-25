@@ -15,8 +15,8 @@ import {
 // seed is missing (e.g. right after logout, which clears the stored config).
 // Before this, an empty store fell back to the generic Atomic CRM stages
 // ("opportunity"/"won"), breaking the kanban grouping and chart labels.
-export const defaultDarkModeLogo = "./logos/bankai_dark.svg";
-export const defaultLightModeLogo = "./logos/bankai_light.svg";
+export const defaultDarkModeLogo = "./logos/kompas_dark.svg";
+export const defaultLightModeLogo = "./logos/kompas_light.svg";
 
 export const defaultCurrency = currency;
 

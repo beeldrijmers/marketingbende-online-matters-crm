@@ -1,11 +1,34 @@
 import { CalendarClock, CircleAlert, Clock3, ListTodo } from "lucide-react";
 import { useTranslate } from "ra-core";
 
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { Deal, Task } from "../types";
 import { formatISODateString } from "./dealUtils";
 import { getDealWorkflow, type DealWorkflow } from "./dealWorkflow";
+
+/**
+ * How a deal's next step is doing.
+ *
+ * Colour is rationed here on purpose: a red banner on nine cards out of ten
+ * (which is what the old full-width bar produced) trains people to ignore red.
+ * Only a genuinely late step gets a tinted chip; everything else is quiet text.
+ */
+type WorkflowTone = "late" | "wait" | "quiet";
+
+const toneOf = (workflow: DealWorkflow): WorkflowTone => {
+  // Only a task that is actually past due is "late". A passed expected closing
+  // date ("planning verlopen") is the normal state of roughly half the board,
+  // so it stays quiet — otherwise red would mean "a deal exists".
+  if (workflow.kind === "overdue") return "late";
+  if (workflow.kind === "today") return "wait";
+  return "quiet";
+};
+
+const chipTone: Record<WorkflowTone, string> = {
+  late: "bg-late-tint text-late",
+  wait: "text-wait",
+  quiet: "text-ink-3",
+};
 
 const useWorkflowLabel = (workflow: DealWorkflow): string => {
   const translate = useTranslate();
@@ -47,36 +70,43 @@ const WorkflowIcon = ({ workflow }: { workflow: DealWorkflow }) => {
   return <ListTodo className="size-3.5 shrink-0" />;
 };
 
+/** Compact state chip, used on cards and in the attention queue. */
 export const DealWorkflowBadge = ({ workflow }: { workflow: DealWorkflow }) => {
   const label = useWorkflowLabel(workflow);
-  const urgent =
-    workflow.kind === "overdue" || workflow.kind === "overdue_closing";
+  const tone = toneOf(workflow);
 
   return (
-    <Badge
-      variant={urgent ? "destructive" : "outline"}
+    <span
       className={cn(
-        "gap-1 px-1.5 py-0 text-[11px] font-medium",
-        workflow.kind === "today" &&
-          "border-amber-500/60 text-amber-700 dark:text-amber-300",
-        workflow.kind === "missing" && "border-dashed text-muted-foreground",
+        "inline-flex shrink-0 items-center gap-1 rounded-sm px-1 py-0.5 text-eyebrow tracking-normal",
+        chipTone[tone],
       )}
     >
       <WorkflowIcon workflow={workflow} />
-      {label}
-    </Badge>
+      {/* On a 390px row the state label competes with the client name, so it
+          collapses to its icon and keeps the name for screen readers. */}
+      <span className="sr-only sm:not-sr-only">{label}</span>
+    </span>
   );
 };
 
+/**
+ * The next-step line under a card: state chip plus the task itself.
+ *
+ * `dense` (the board) shows one truncated line; the attention view uses the
+ * roomier variant with the plan-a-task affordance.
+ */
 export const DealWorkflowIndicator = ({
   deal,
   openTasks = [],
   className,
+  dense = false,
   onPlanTask,
 }: {
   deal: Deal;
   openTasks?: Task[];
   className?: string;
+  dense?: boolean;
   onPlanTask?: () => void;
 }) => {
   const translate = useTranslate();
@@ -94,23 +124,30 @@ export const DealWorkflowIndicator = ({
     ? formatISODateString(nextTask.due_date.slice(0, 10))
     : null;
   const remaining = Math.max(0, workflow.openTaskCount - 1);
-  const urgent =
-    workflow.kind === "overdue" || workflow.kind === "overdue_closing";
+  const tone = toneOf(workflow);
   const canPlanTask =
     onPlanTask != null &&
     nextTask == null &&
     workflow.kind === "overdue_closing";
+
+  // On the dense board a scheduled, on-time step is not news: the card stays
+  // silent so the eye only stops at the ones that need a person.
+  if (dense && tone === "quiet" && workflow.kind === "scheduled") return null;
+
   const content = (
     <>
       <DealWorkflowBadge workflow={workflow} />
       {nextTask ? (
-        <span className="min-w-0 flex-1 truncate" title={nextTask.text}>
+        <span
+          className={cn("min-w-0 flex-1 truncate text-ink-3")}
+          title={nextTask.text}
+        >
           {nextTask.text}
-          {dueLabel ? ` · ${dueLabel}` : ""}
+          {dueLabel && !dense ? ` · ${dueLabel}` : ""}
         </span>
       ) : null}
-      {remaining > 0 ? (
-        <span className="shrink-0 tabular-nums">
+      {remaining > 0 && !dense ? (
+        <span className="num shrink-0 text-ink-3">
           {translate("resources.deals.workflow.more", {
             count: remaining,
             _: `+${remaining}`,
@@ -119,13 +156,13 @@ export const DealWorkflowIndicator = ({
       ) : null}
     </>
   );
+
   const containerClassName = cn(
-    "mt-1 flex min-w-0 items-center gap-1.5 rounded-md bg-muted/60 px-2 py-1 text-[11px] text-muted-foreground",
-    urgent && "bg-destructive/10 text-destructive dark:bg-destructive/15",
-    workflow.kind === "today" &&
-      "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    "flex min-w-0 items-center gap-1.5 text-meta",
+    !dense && "rounded-md bg-sunken px-2 py-1",
+    !dense && tone === "late" && "bg-late-tint",
     canPlanTask &&
-      "w-full cursor-pointer text-left transition-colors hover:border-primary/60 hover:bg-primary/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      "w-full cursor-pointer text-left transition-colors duration-1 hover:bg-accent-quiet focus-visible:outline-none",
     className,
   );
 

@@ -250,7 +250,9 @@ async function createContact({
 
 const getMenuMethod = ({ page }: { page: Page; isMobile: boolean }) => ({
   goToDashboard: async () => {
-    await page.getByRole("link", { name: "Dashboard" }).click();
+    // "Vandaag" is the dashboard's name in the navigation (sidebar on desktop,
+    // bottom bar on the phone).
+    await page.getByRole("link", { name: "Vandaag" }).first().click();
     await page.waitForLoadState("networkidle");
   },
   goToContacts: async () => {

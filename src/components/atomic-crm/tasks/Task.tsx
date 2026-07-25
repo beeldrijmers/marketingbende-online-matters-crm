@@ -121,21 +121,22 @@ export const Task = ({
   return (
     <>
       <div className="flex items-start justify-between">
-        <div
-          className="flex items-start gap-2 flex-1"
-          onClick={isMobile ? handleCheck() : undefined}
-        >
-          <Checkbox
-            id={labelId}
-            checked={!!task.done_date}
-            onCheckedChange={handleCheck()}
-            disabled={isUpdatePending}
-            className="mt-1"
-            // Stop the click from bubbling to the surrounding row: on mobile the
-            // row itself also toggles the task, which would fire the update (and
-            // the Trello write-back) twice for a single tap on the checkbox.
-            onClick={(event) => event.stopPropagation()}
-          />
+        {/* Completing a task writes back to Trello and cannot be undone from
+            here, so only the checkbox completes it. Tapping the row used to
+            tick it off silently - including taps meant for the contact link. */}
+        <div className="flex items-start gap-2 flex-1">
+          <label
+            htmlFor={labelId}
+            className="-m-2 flex cursor-pointer items-start p-2"
+          >
+            <Checkbox
+              id={labelId}
+              checked={!!task.done_date}
+              onCheckedChange={handleCheck()}
+              disabled={isUpdatePending}
+              aria-label={task.text}
+            />
+          </label>
           <div className={`flex-grow ${task.done_date ? "line-through" : ""}`}>
             <div className="text-sm">
               {task.type && task.type !== "none" && (
@@ -219,7 +220,7 @@ export const Task = ({
                         {" "}
                         {translate("resources.tasks.regarding_deal", {
                           name: referenceRecord.name,
-                          _: `— ${referenceRecord.name}`,
+                          _: `· ${referenceRecord.name}`,
                         })}
                       </>
                     );

@@ -5,7 +5,6 @@ import {
   parseAttentionPipelineFilter,
   selectAttentionDeals,
   selectAttentionDealIds,
-  selectBillingDealIds,
 } from "./dashboardDealKanbanModel";
 
 const deal = (overrides: Partial<Deal> = {}): Deal => ({
@@ -114,20 +113,5 @@ describe("dedicated dashboard Kanban pages", () => {
       ),
     ).toEqual([2]);
     expect(filterAttentionDealsBySearch(ranked, "", companies)).toBe(ranked);
-  });
-
-  it("selects only unfinished deals in the billing stage", () => {
-    const deals = [
-      deal({ id: 1, stage: "facturatie-live" }),
-      deal({ id: 2, stage: "bezig" }),
-      deal({
-        id: 3,
-        moneybird_invoice_id: "invoice-3",
-        moneybird_invoice_status: "completed",
-        stage: "facturatie-live",
-      }),
-    ];
-
-    expect(selectBillingDealIds(deals)).toEqual([1]);
   });
 });

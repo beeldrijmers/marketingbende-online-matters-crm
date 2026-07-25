@@ -36,10 +36,10 @@ describe("getTrelloSyncNotification", () => {
         smart_count: 42,
         duration: "18 sec",
         stage_summary:
-          "Niet bevestigd 5 · Bevestigd 4 · Wacht 2 · Bezig 9 · Controle 3 · Factureren 6 · Afgerond 8 · Maandelijks 5",
+          "Onbevestigd 5 · Inplannen 4 · Wacht 2 · Bezig 9 · Controle 3 · Factureren 6 · Afgerond 8 · Maandelijks 5",
         _:
           "Trello gesynchroniseerd: 42 kaarten in 18 sec. " +
-          "Niet bevestigd 5 · Bevestigd 4 · Wacht 2 · Bezig 9 · Controle 3 · Factureren 6 · Afgerond 8 · Maandelijks 5",
+          "Onbevestigd 5 · Inplannen 4 · Wacht 2 · Bezig 9 · Controle 3 · Factureren 6 · Afgerond 8 · Maandelijks 5",
       },
     });
   });
@@ -63,10 +63,10 @@ describe("getTrelloSyncNotification", () => {
         failed_names: "Klant A, Klant B",
         duration: "18 sec",
         stage_summary:
-          "Niet bevestigd 5 · Bevestigd 4 · Wacht 2 · Bezig 9 · Controle 3 · Factureren 6 · Afgerond 8 · Maandelijks 5",
+          "Onbevestigd 5 · Inplannen 4 · Wacht 2 · Bezig 9 · Controle 3 · Factureren 6 · Afgerond 8 · Maandelijks 5",
         _:
           "Trello deels gesynchroniseerd in 18 sec: 40 actieve kaarten verwerkt. " +
-          "2 mislukt (Klant A, Klant B). Niet bevestigd 5 · Bevestigd 4 · " +
+          "2 mislukt (Klant A, Klant B). Onbevestigd 5 · Inplannen 4 · " +
           "Wacht 2 · Bezig 9 · Controle 3 · Factureren 6 · Afgerond 8 · Maandelijks 5",
       },
     });

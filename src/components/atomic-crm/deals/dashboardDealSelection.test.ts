@@ -1,8 +1,7 @@
 import {
+  BOARD_PATH,
   createDashboardDealSelection,
-  DASHBOARD_WORKBOARD_PATH,
   DEAL_ATTENTION_PATH,
-  DEAL_BILLING_PATH,
   getDashboardDealCreatePath,
   getDashboardDealDetailPath,
   getDashboardDealEditPath,
@@ -16,13 +15,13 @@ describe("dashboard deal selection", () => {
     const selection = createDashboardDealSelection(
       [12, 4, 12, "9", "not-an-id", -1],
       "attention",
-      "Dit heeft je aandacht nodig",
+      "Dit heeft uw aandacht nodig",
     );
 
     expect(selection).toEqual({
       ids: [12, 4, "9"],
       kind: "attention",
-      label: "Dit heeft je aandacht nodig",
+      label: "Dit heeft uw aandacht nodig",
     });
     expect(getDashboardDealSelectionFilter(selection)).toEqual({
       "id@in": "(12,4,9)",
@@ -32,8 +31,8 @@ describe("dashboard deal selection", () => {
   it("keeps an empty dedicated view empty instead of showing every deal", () => {
     const selection = createDashboardDealSelection(
       [],
-      "billing",
-      "Facturatie afhandelen",
+      "attention",
+      "Dit heeft uw aandacht nodig",
     );
 
     expect(getDashboardDealSelectionFilter(selection)).toEqual({
@@ -41,14 +40,12 @@ describe("dashboard deal selection", () => {
     });
   });
 
-  it("uses dedicated, refresh-safe routes for both dashboard boards", () => {
-    expect(DASHBOARD_WORKBOARD_PATH).toBe("/?tab=workboard");
-    expect(DEAL_ATTENTION_PATH).toBe("/?tab=workboard&focus=attention");
-    expect(DEAL_BILLING_PATH).toBe("/?tab=workboard&focus=billing");
+  it("puts the board on its own route, with attention as a scope", () => {
+    expect(BOARD_PATH).toBe("/deals");
+    expect(DEAL_ATTENTION_PATH).toBe("/deals?focus=attention");
     expect(getDashboardDealSelectionPath("attention")).toBe(
       DEAL_ATTENTION_PATH,
     );
-    expect(getDashboardDealSelectionPath("billing")).toBe(DEAL_BILLING_PATH);
   });
 
   it("keeps attention filters and search while opening and closing a deal", () => {
@@ -57,17 +54,15 @@ describe("dashboard deal selection", () => {
       "?filter=today&q=voodoo&deal=12",
     );
 
-    expect(returnPath).toBe(
-      "/?tab=workboard&focus=attention&filter=today&q=voodoo",
-    );
+    expect(returnPath).toBe("/deals?focus=attention&filter=today&q=voodoo");
     expect(getDashboardDealDetailPath(returnPath, 42)).toBe(
-      "/?tab=workboard&focus=attention&filter=today&q=voodoo&deal=42",
+      "/deals?focus=attention&filter=today&q=voodoo&deal=42",
     );
     expect(getDashboardDealEditPath(returnPath, 42)).toBe(
-      "/?tab=workboard&focus=attention&filter=today&q=voodoo&edit=42",
+      "/deals?focus=attention&filter=today&q=voodoo&edit=42",
     );
     expect(getDashboardDealCreatePath(returnPath)).toBe(
-      "/?tab=workboard&focus=attention&filter=today&q=voodoo&new=1",
+      "/deals?focus=attention&filter=today&q=voodoo&new=1",
     );
   });
 });

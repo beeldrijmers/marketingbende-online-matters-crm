@@ -1,22 +1,24 @@
 import type { Identifier } from "ra-core";
 
-export const DASHBOARD_WORKBOARD_PATH = "/?tab=workboard";
-export const DEAL_ATTENTION_PATH = "/?tab=workboard&focus=attention";
-export const DEAL_BILLING_PATH = "/?tab=workboard&focus=billing";
+import { BOARD_PATH, DEAL_ATTENTION_PATH } from "../root/routes";
 
-// Kept as redirects so bookmarks and links in older emails remain useful.
-export const LEGACY_DEAL_ATTENTION_PATH = "/deals/aandacht";
-export const LEGACY_DEAL_BILLING_PATH = "/deals/facturatie";
+export { BOARD_PATH, DEAL_ATTENTION_PATH };
 
+/**
+ * The board keeps its dialogs in the query string (`?deal=`, `?edit=`, `?new=`)
+ * because the list's own filters are stored per user rather than in the URL, and
+ * ra-core rewrites the whole query string when it syncs filters. These helpers
+ * add and remove those params without losing the rest.
+ */
 export type DashboardDealSelection = {
   ids: Identifier[];
-  kind: "attention" | "billing";
+  kind: "attention";
   label: string;
 };
 
 export const getDashboardDealSelectionPath = (
-  kind: DashboardDealSelection["kind"],
-) => (kind === "attention" ? DEAL_ATTENTION_PATH : DEAL_BILLING_PATH);
+  _kind: DashboardDealSelection["kind"],
+) => DEAL_ATTENTION_PATH;
 
 export const getDashboardDealReturnPath = (path: string, search: string) => {
   const [pathname, pathQuery = ""] = path.split("?", 2);

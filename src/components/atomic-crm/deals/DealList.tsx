@@ -30,7 +30,7 @@ import { OnlyMineInput } from "./OnlyMineInput";
 import { InternalExternalInput } from "./InternalExternalInput";
 import { SyncTrelloButton } from "./SyncTrelloButton";
 import {
-  DASHBOARD_WORKBOARD_PATH,
+  BOARD_PATH,
   type DashboardDealSelection,
   getDashboardDealCreatePath,
   getDashboardDealDetailPath,
@@ -108,7 +108,11 @@ export const DealList = ({
       disableSyncWithLocation={embedded}
       hideTitle={embedded}
       inlineFilters={embedded}
-      className={embedded ? "mt-[13px]" : undefined}
+      // The board fills the shell's work area: this wrapper has to pass the
+      // remaining height down to the columns.
+      className={
+        embedded ? "flex min-h-0 flex-1 flex-col !my-0" : "flex flex-col"
+      }
       title={attentionPipeline ? false : (dashboardSelection?.label ?? false)}
       sort={{ field: "index", order: "DESC" }}
       filters={attentionPipeline ? undefined : dealFilters}
@@ -118,8 +122,7 @@ export const DealList = ({
         ) : (
           <DealActions
             detailBasePath={
-              detailBasePath ??
-              (embedded ? DASHBOARD_WORKBOARD_PATH : undefined)
+              detailBasePath ?? (embedded ? BOARD_PATH : undefined)
             }
             embedded={embedded}
           />
@@ -164,7 +167,7 @@ const DealLayout = ({
     (dashboardSelection
       ? getDashboardDealSelectionPath(dashboardSelection.kind)
       : embedded
-        ? DASHBOARD_WORKBOARD_PATH
+        ? BOARD_PATH
         : undefined);
   const dashboardReturnPath = resolvedDetailBasePath
     ? getDashboardDealReturnPath(resolvedDetailBasePath, location.search)
@@ -207,7 +210,7 @@ const DealLayout = ({
           })}
         </p>
         <Button asChild variant="ghost" size="sm">
-          <Link to={DASHBOARD_WORKBOARD_PATH} replace>
+          <Link to={BOARD_PATH} replace>
             {translate("resources.deals.all_deals", {
               _: "Alle opdrachten",
             })}
@@ -242,7 +245,7 @@ const DealLayout = ({
     );
 
   return (
-    <div className="w-full">
+    <div className="flex min-h-0 w-full flex-1 flex-col">
       {dashboardSelectionBanner}
       {/* Safety net: should there ever be more deals than one page holds,
           say so instead of silently hiding them from the board. */}
@@ -257,7 +260,6 @@ const DealLayout = ({
       <DealListContent
         attentionPipeline={attentionPipeline}
         detailBasePath={dashboardReturnPath}
-        embedded={embedded}
         onDealStageChange={
           attentionPipeline
             ? (deal, destinationStage) =>

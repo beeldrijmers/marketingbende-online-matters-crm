@@ -1,9 +1,10 @@
-import { EditBase, Form } from "ra-core";
-import { Card, CardContent } from "@/components/ui/card";
+import { EditBase, Form, useEditContext, useTranslate } from "ra-core";
 
-import { CompanyInputs } from "./CompanyInputs";
-import { CompanyAside } from "./CompanyAside";
 import { FormToolbar } from "../layout/FormToolbar";
+import { RecordFormShell } from "../layout/RecordFormShell";
+import type { Company } from "../types";
+import { CompanyAside } from "./CompanyAside";
+import { CompanyInputs } from "./CompanyInputs";
 
 export const CompanyEdit = () => (
   <EditBase
@@ -17,17 +18,28 @@ export const CompanyEdit = () => (
       return values;
     }}
   >
-    <div className="mt-2 flex gap-8">
-      <Form className="flex flex-1 flex-col gap-4 pb-2">
-        <Card>
-          <CardContent>
-            <CompanyInputs />
-            <FormToolbar />
-          </CardContent>
-        </Card>
-      </Form>
-
-      <CompanyAside link="show" />
-    </div>
+    <CompanyEditContent />
   </EditBase>
 );
+
+const CompanyEditContent = () => {
+  const translate = useTranslate();
+  const { isPending, record } = useEditContext<Company>();
+  if (isPending || !record) return null;
+  return (
+    <RecordFormShell
+      title={record.name}
+      meta={translate("resources.companies.action.edit", {
+        _: "Bedrijf bewerken",
+      })}
+      backTo={`/companies/${record.id}/show`}
+      backLabel={translate("ra.action.cancel", { _: "Terug" })}
+      aside={<CompanyAside link="show" />}
+    >
+      <Form className="panel px-4 py-4">
+        <CompanyInputs />
+        <FormToolbar />
+      </Form>
+    </RecordFormShell>
+  );
+};

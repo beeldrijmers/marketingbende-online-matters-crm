@@ -7,10 +7,18 @@ import { useRecordContext } from "ra-core";
 
 import type { Contact } from "../types";
 
+/** 20 in dense rows, 25 in pickers, 32 in lists, 40 on detail pages. */
+const SIZE_CLASS = {
+  20: "size-5",
+  25: "size-[25px]",
+  32: "size-8",
+  40: "size-10",
+} as const;
+
 export const Avatar = (props: {
   record?: Contact;
-  width?: 20 | 25 | 40;
-  height?: 20 | 25 | 40;
+  width?: keyof typeof SIZE_CLASS;
+  height?: keyof typeof SIZE_CLASS;
   title?: string;
 }) => {
   const record = useRecordContext<Contact>(props);
@@ -20,18 +28,17 @@ export const Avatar = (props: {
     return null;
   }
 
-  const size = props.width || props.height;
-  const sizeClass =
-    props.width === 20
-      ? `w-[20px] h-[20px]`
-      : props.width === 25
-        ? "w-[25px] h-[25px]"
-        : "w-10 h-10";
+  const size = props.width ?? props.height ?? 40;
 
   return (
-    <ShadcnAvatar className={sizeClass} title={props.title}>
+    <ShadcnAvatar
+      className={`${SIZE_CLASS[size]} shrink-0`}
+      title={props.title}
+    >
       <AvatarImage src={record.avatar?.src ?? undefined} />
-      <AvatarFallback className={size && size < 40 ? "text-[10px]" : "text-sm"}>
+      <AvatarFallback
+        className={size < 40 ? "text-eyebrow tracking-normal" : "text-body"}
+      >
         {record.first_name?.charAt(0).toUpperCase()}
         {record.last_name?.charAt(0).toUpperCase()}
       </AvatarFallback>

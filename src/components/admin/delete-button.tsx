@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Confirm } from "@/components/admin/confirm";
 import { humanize, singularize } from "inflection";
 import type { UseDeleteOptions, RedirectionSideEffect } from "ra-core";
 import {
@@ -13,6 +14,12 @@ import {
 } from "ra-core";
 
 export type DeleteButtonProps = {
+  /**
+   * Ask first. Deleting is undoable through the toast, but for records that
+   * carry notes, tasks and attachments (a deal, a company) a mis-click is
+   * expensive enough to warrant a question.
+   */
+  confirm?: boolean;
   label?: string;
   size?: "default" | "sm" | "lg" | "icon";
   onClick?: React.ReactEventHandler<HTMLButtonElement>;
@@ -49,6 +56,7 @@ export type DeleteButtonProps = {
  */
 export const DeleteButton = (props: DeleteButtonProps) => {
   const {
+    confirm = false,
     label: labelProp,
     onClick,
     size,
@@ -96,18 +104,52 @@ export const DeleteButton = (props: DeleteButtonProps) => {
     userText: labelProp,
   });
 
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+
   return (
-    <Button
-      variant={variant}
-      type="button"
-      onClick={handleDelete}
-      disabled={isPending}
-      aria-label={typeof label === "string" ? label : undefined}
-      size={size}
-      className={className}
-    >
-      <Trash />
-      {label}
-    </Button>
+    <>
+      <Button
+        variant={variant}
+        type="button"
+        onClick={
+          confirm
+            ? (event) => {
+                event.preventDefault();
+                setConfirmOpen(true);
+              }
+            : handleDelete
+        }
+        disabled={isPending}
+        aria-label={typeof label === "string" ? label : undefined}
+        size={size}
+        className={className}
+      >
+        <Trash />
+        {label}
+      </Button>
+      {confirm ? (
+        <Confirm
+          isOpen={confirmOpen}
+          loading={isPending}
+          title="ra.message.delete_title"
+          content="ra.message.delete_content"
+          titleTranslateOptions={{
+            name: resourceName,
+            id: record?.id,
+            recordRepresentation,
+          }}
+          contentTranslateOptions={{
+            name: resourceName,
+            id: record?.id,
+            recordRepresentation,
+          }}
+          onConfirm={(event) => {
+            setConfirmOpen(false);
+            handleDelete(event);
+          }}
+          onClose={() => setConfirmOpen(false)}
+        />
+      ) : null}
+    </>
   );
 };

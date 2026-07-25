@@ -45,8 +45,9 @@ test.describe("user adding a task", () => {
     await page.getByRole("textbox", { name: "Wachtwoord" }).fill("password");
     await page.getByRole("button", { name: "Inloggen" }).click();
 
-    await expect(page).toHaveTitle(/BANKAI CRM/);
-    await page.getByRole("tab", { name: "Updates", exact: true }).click();
+    await expect(page).toHaveTitle(/Kompas CRM/);
+    // Updates is a page of its own now, reachable from the navigation.
+    await page.getByRole("link", { name: "Updates" }).first().click();
     await expect(
       page.getByRole("heading", { name: "Recente updates", exact: true }),
     ).toBeVisible();
@@ -90,7 +91,6 @@ test.describe("user adding a task", () => {
         /Follow up with Jane/,
       );
       await menu.goToDashboard();
-      await page.getByRole("tab", { name: "Vandaag", exact: true }).click();
 
       await expect(page.getByText("Aankomende taken")).toBeVisible();
       await expect(

@@ -1,26 +1,22 @@
 import { ResponsiveBar } from "@nivo/bar";
-import {
-  AlertTriangle,
-  Repeat,
-  Coins,
-  LineChart,
-  TrendingUp,
-} from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { useGetList, useTranslate } from "ra-core";
 import { memo, useMemo } from "react";
 import { Link } from "react-router";
-import { DASHBOARD_WORKBOARD_PATH } from "../deals/dashboardDealSelection";
+import { BOARD_PATH } from "../deals/dashboardDealSelection";
 
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SectionHeader } from "../layout/SectionHeader";
 import type { Deal } from "../types";
 import { buildRevenueModel } from "./revenueModel";
 
-const RECURRING_COLOR = "#0f8f80";
-const ONEOFF_COLOR = "#9bd7cf";
-// Forecast bars are rendered with a hatched pattern in this tint so they read
-// as "expected, not yet realized" at a glance.
-const PROGNOSE_COLOR = "#6f9d97";
+// The chart reads from the palette rather than its own teals, so it follows the
+// light/dark switch and sits in the same colour family as the rest of the app.
+const RECURRING_COLOR = "var(--series-1)";
+const ONEOFF_COLOR = "var(--series-3)";
+// Forecast bars are hatched in a quieter tint so they read as "expected, not
+// yet realised" at a glance.
+const PROGNOSE_COLOR = "var(--ink-3)";
 
 // Currency is always rendered with Dutch (nl-NL) conventions to stay
 // consistent with the deal cards, pipeline and column totals across the app.
@@ -33,26 +29,28 @@ const formatEuro = (amount: number) =>
   });
 
 const StatTile = ({
-  icon: Icon,
   label,
   value,
   sub,
   accent,
 }: {
-  icon: typeof Repeat;
   label: string;
   value: string;
   sub: string;
   accent: string;
 }) => (
-  <Card className="flex flex-col gap-1 p-5">
-    <div className="flex items-center gap-2 text-muted-foreground">
-      <Icon className="w-4 h-4" style={{ color: accent }} />
-      <span className="text-xs uppercase tracking-wide">{label}</span>
-    </div>
-    <span className="text-3xl font-semibold tabular-nums">{value}</span>
-    <span className="text-xs text-muted-foreground">{sub}</span>
-  </Card>
+  <div className="panel flex flex-col gap-0.5 p-4">
+    <span className="eyebrow flex items-center gap-1.5">
+      <span
+        aria-hidden
+        className="size-1.5 rounded-full"
+        style={{ backgroundColor: accent }}
+      />
+      {label}
+    </span>
+    <span className="num text-figure text-ink">{value}</span>
+    <span className="text-meta text-ink-3">{sub}</span>
+  </div>
 );
 
 const LegendDot = ({
@@ -112,14 +110,12 @@ export const RevenueDashboard = memo(() => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <div className="flex items-center">
-          <TrendingUp className="text-muted-foreground w-6 h-6 mr-3" />
-          <h2 className="text-xl font-semibold text-foreground">
-            {t("crm.dashboard.revenue.title", "Omzet per maand")}
-          </h2>
-        </div>
-        <div className="flex items-center gap-4 text-xs text-muted-foreground ml-auto">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+        <SectionHeader
+          className="min-w-0 flex-1"
+          title={t("crm.dashboard.revenue.title", "Omzet per maand")}
+        />
+        <div className="flex items-center gap-3 text-meta text-ink-3">
           <LegendDot color={RECURRING_COLOR} label={seriesLabel("recurring")} />
           <LegendDot color={ONEOFF_COLOR} label={seriesLabel("oneoff")} />
           <LegendDot
@@ -132,7 +128,6 @@ export const RevenueDashboard = memo(() => {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatTile
-          icon={Repeat}
           accent={RECURRING_COLOR}
           label={t(
             "crm.dashboard.revenue.mrr_label",
@@ -145,7 +140,6 @@ export const RevenueDashboard = memo(() => {
           )}
         />
         <StatTile
-          icon={Coins}
           accent={ONEOFF_COLOR}
           label={t("crm.dashboard.revenue.oneoff_label", "Eenmalige omzet")}
           value={formatEuro(model.oneOffThisYear)}
@@ -155,7 +149,6 @@ export const RevenueDashboard = memo(() => {
           )}
         />
         <StatTile
-          icon={LineChart}
           accent={PROGNOSE_COLOR}
           label={t("crm.dashboard.revenue.forecast_label", "Verwachte omzet")}
           value={formatEuro(model.openPipeline)}
@@ -168,22 +161,24 @@ export const RevenueDashboard = memo(() => {
 
       {model.unplannedDealCount > 0 ? (
         <Link
-          to={DASHBOARD_WORKBOARD_PATH}
-          className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm no-underline"
+          to={BOARD_PATH}
+          className="flex items-start gap-3 rounded-lg border border-wait/35 bg-wait-tint px-4 py-3 text-body no-underline"
         >
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
-          <span className="min-w-0 flex-1 text-foreground">
-            <strong>{model.unplannedDealCount} deals zonder planning</strong>
-            <span className="block text-xs text-muted-foreground">
-              {formatEuro(model.unplannedPipeline)} gewogen pipeline is bewust
-              niet in een maand geplaatst. Voeg een verwachte afsluitdatum toe.
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-wait" />
+          <span className="min-w-0 flex-1 text-ink">
+            <strong className="num font-semibold">
+              {model.unplannedDealCount} opdrachten zonder planning
+            </strong>
+            <span className="block text-meta text-ink-2">
+              {formatEuro(model.unplannedPipeline)} verwachte omzet staat in
+              geen enkele maand. Voeg een verwachte opleverdatum toe.
             </span>
           </span>
         </Link>
       ) : null}
 
-      <Card className="p-6">
-        <div className="h-[360px]">
+      <div className="panel p-4">
+        <div className="h-[340px]">
           {hasData ? (
             <ResponsiveBar
               data={model.months}
@@ -210,11 +205,9 @@ export const RevenueDashboard = memo(() => {
               valueScale={{ type: "linear" }}
               indexScale={{ type: "band", round: true }}
               tooltip={({ id, value, indexValue }) => (
-                <div className="min-w-48 rounded-md border bg-popover px-3 py-2 text-popover-foreground shadow-md">
-                  <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    {indexValue}
-                  </p>
-                  <div className="flex items-center gap-2 text-sm">
+                <div className="min-w-48 rounded-md border border-line bg-popover px-3 py-2 text-popover-foreground shadow-e2">
+                  <p className="eyebrow mb-1.5">{indexValue}</p>
+                  <div className="flex items-center gap-2 text-body">
                     <span
                       className="size-2.5 shrink-0 rounded-full"
                       style={{
@@ -226,10 +219,10 @@ export const RevenueDashboard = memo(() => {
                               : PROGNOSE_COLOR,
                       }}
                     />
-                    <span className="text-muted-foreground">
+                    <span className="text-ink-2">
                       {seriesLabel(String(id))}
                     </span>
-                    <span className="ml-auto pl-3 font-semibold tabular-nums">
+                    <span className="num ml-auto pl-3 font-semibold">
                       {formatEuro(value)}
                     </span>
                   </div>
@@ -247,25 +240,25 @@ export const RevenueDashboard = memo(() => {
                 tickSize: 0,
               }}
               theme={{
-                text: { fill: "var(--color-muted-foreground)" },
+                text: { fill: "var(--ink-3)" },
                 axis: {
-                  ticks: { text: { fill: "var(--color-muted-foreground)" } },
+                  ticks: { text: { fill: "var(--ink-3)" } },
                 },
                 grid: {
-                  line: { stroke: "var(--color-border)", strokeWidth: 1 },
+                  line: { stroke: "var(--line-subtle)", strokeWidth: 1 },
                 },
               }}
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+            <div className="flex h-full items-center justify-center text-body text-ink-3">
               {t(
                 "crm.dashboard.revenue.empty",
-                "Nog geen omzetgegevens. Zet een bedrag en type (maandelijks/eenmalig) op je deals.",
+                "Nog geen omzetgegevens. Zet een bedrag en type (maandelijks of eenmalig) op uw opdrachten.",
               )}
             </div>
           )}
         </div>
-      </Card>
+      </div>
     </div>
   );
 });

@@ -9,6 +9,8 @@ import { SortButton } from "@/components/admin/sort-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { PageBody } from "../layout/PageBody";
+import { PageHeader } from "../layout/PageHeader";
 import { TopToolbar } from "../layout/TopToolbar";
 import { CompanyEmpty } from "./CompanyEmpty";
 import { CompanyListFilter } from "./CompanyListFilter";
@@ -20,10 +22,13 @@ export const CompanyList = () => {
   return (
     <List
       title={false}
+      // Identity and actions live in <PageHeader> below, inside the list
+      // context, so the count can be live.
+      disableHeader
+      disableBreadcrumb
       perPage={25}
       sort={{ field: "name", order: "ASC" }}
-      actions={<CompanyListActions />}
-      pagination={<ListPagination rowsPerPageOptions={[10, 25, 50, 100]} />}
+      pagination={null}
     >
       <CompanyListLayout />
     </List>
@@ -31,7 +36,8 @@ export const CompanyList = () => {
 };
 
 const CompanyListLayout = () => {
-  const { data, isPending, filterValues } = useListContext();
+  const translate = useTranslate();
+  const { data, isPending, filterValues, total } = useListContext();
   const hasFilters = filterValues && Object.keys(filterValues).length > 0;
 
   // While loading, mirror the real layout with skeletons (sidebar + card
@@ -41,32 +47,50 @@ const CompanyListLayout = () => {
   if (!data?.length && !hasFilters) return <CompanyEmpty />;
 
   return (
-    <div className="w-full flex flex-row gap-8">
-      <CompanyListFilter />
-      <div className="flex flex-col flex-1 gap-4">
-        <ImageList />
-      </div>
-    </div>
+    <>
+      <PageHeader
+        title={translate("resources.companies.name", { smart_count: 2 })}
+        meta={
+          total != null
+            ? translate("crm.common.record_count", {
+                smart_count: total,
+                _: `${total} bedrijven`,
+              })
+            : null
+        }
+        actions={<CompanyListActions />}
+      />
+      <PageBody className="flex w-full flex-row gap-6">
+        <CompanyListFilter />
+        <div className="flex min-w-0 flex-1 flex-col gap-4">
+          <ImageList />
+          <ListPagination rowsPerPageOptions={[10, 25, 50, 100]} />
+        </div>
+      </PageBody>
+    </>
   );
 };
 
 const CompanyListSkeleton = () => (
-  <div className="w-full flex flex-row gap-8">
-    {/* Same width as the CompanyListFilter sidebar so nothing shifts. */}
-    <div className="w-52 min-w-52 flex-col gap-6 hidden sm:flex">
-      {Array.from({ length: 4 }, (_, section) => (
-        <div key={section} className="flex flex-col gap-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-3 w-36" />
-          <Skeleton className="h-3 w-32" />
-          <Skeleton className="h-3 w-28" />
-        </div>
-      ))}
+  <>
+    <PageHeader title={<Skeleton className="h-6 w-40" />} />
+    <div className="flex w-full flex-row gap-6">
+      {/* Same width as the CompanyListFilter rail so nothing shifts. */}
+      <div className="hidden w-[13.5rem] min-w-[13.5rem] flex-col gap-6 sm:flex">
+        {Array.from({ length: 4 }, (_, section) => (
+          <div key={section} className="flex flex-col gap-2">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-3 w-28" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        ))}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-4">
+        <ImageList />
+      </div>
     </div>
-    <div className="flex flex-col flex-1 gap-4">
-      <ImageList />
-    </div>
-  </div>
+  </>
 );
 
 const CompanyListActions = () => {

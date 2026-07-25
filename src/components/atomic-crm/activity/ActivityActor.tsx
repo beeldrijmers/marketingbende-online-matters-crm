@@ -50,7 +50,7 @@ export function ActivityActorAvatar({
     return (
       <span
         aria-label={title}
-        className="inline-flex shrink-0 items-center justify-center rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300"
+        className="inline-flex shrink-0 items-center justify-center rounded-full bg-info-tint text-info "
         style={{ width: size, height: size }}
         title={title}
       >

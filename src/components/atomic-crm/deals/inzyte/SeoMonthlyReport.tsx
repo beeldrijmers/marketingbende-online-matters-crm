@@ -116,9 +116,8 @@ const MetricCard = ({ metric }: { metric: SeoMonthlyHeadlineMetric }) => {
           variant="outline"
           className={cn(
             "gap-1",
-            metric.favourable === true &&
-              "border-emerald-500/40 text-emerald-600",
-            metric.favourable === false && "border-rose-500/40 text-rose-600",
+            metric.favourable === true && "border-live/40 text-live",
+            metric.favourable === false && "border-late/40 text-late",
           )}
         >
           <Icon className="size-3.5" /> {changeLabel(metric)}
@@ -240,7 +239,7 @@ const ReportEvidencePanel = ({ report }: { report: SeoMonthlyReport }) => {
           {(evidence?.allTime || []).slice(0, 30).map((item) => (
             <div
               key={item.id}
-              className="border-l-2 border-sky-500/30 pl-3 text-xs"
+              className="border-l-2 border-info/30 pl-3 text-xs"
             >
               <div className="font-medium">{item.title}</div>
               <div className="line-clamp-3 text-muted-foreground">
@@ -359,8 +358,8 @@ const ReportPreview = ({
               variant="outline"
               className={
                 report.status === "final"
-                  ? "border-emerald-500/40 text-emerald-600"
-                  : "border-amber-500/40 text-amber-600"
+                  ? "border-live/40 text-live"
+                  : "border-wait/40 text-wait"
               }
             >
               {report.status === "final" ? "Definitief" : "Concept"}
@@ -375,25 +374,25 @@ const ReportPreview = ({
         <div className="mt-4 flex flex-wrap gap-2 text-xs">
           <Badge
             variant="outline"
-            className={ga4.ok ? "text-emerald-600" : "text-amber-600"}
+            className={ga4.ok ? "text-live" : "text-wait"}
           >
             GA4 · {ga4.label}
           </Badge>
           <Badge
             variant="outline"
-            className={gsc.ok ? "text-emerald-600" : "text-amber-600"}
+            className={gsc.ok ? "text-live" : "text-wait"}
           >
             Search Console · {gsc.label}
           </Badge>
           <Badge
             variant="outline"
-            className={ads.ok ? "text-emerald-600" : "text-amber-600"}
+            className={ads.ok ? "text-live" : "text-wait"}
           >
             Google Ads · {ads.label}
           </Badge>
           <Badge
             variant="outline"
-            className={gbp.ok ? "text-emerald-600" : "text-amber-600"}
+            className={gbp.ok ? "text-live" : "text-wait"}
           >
             Bedrijfsprofiel · {gbp.label}
           </Badge>
@@ -443,7 +442,7 @@ const ReportPreview = ({
               ))}
             </div>
           ) : (
-            <div className="mt-3 rounded-xl border border-sky-500/20 bg-sky-500/[0.05] p-5 text-sm leading-6 text-muted-foreground">
+            <div className="mt-3 rounded-xl border border-info/20 bg-info-tint p-5 text-sm leading-6 text-muted-foreground">
               Dit rapport is opgebouwd uit de vastgelegde werkzaamheden,
               opdrachtinformatie, kaartnotities en relevante correspondentie. Er
               is geen volledige gecontroleerde meetreeks gebruikt. Daarom worden
@@ -453,7 +452,7 @@ const ReportPreview = ({
           )}
         </section>
 
-        <label className="block rounded-xl border border-sky-500/20 bg-sky-500/[0.04] p-4">
+        <label className="block rounded-xl border border-info/20 bg-info-tint p-4">
           <span className="text-sm font-semibold">
             {hasMeasurement
               ? "Wat deze ontwikkeling betekent"
@@ -621,8 +620,8 @@ const SeoMonthlyReportEditor = ({
             aria-label="Online Matters-huisstijl gebruiken"
           />
         </label>
-        <label className="flex h-9 items-center gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/[0.05] px-3 text-xs font-medium">
-          <CheckCircle2 className="size-4 text-emerald-600" />
+        <label className="flex h-9 items-center gap-2 rounded-lg border border-live/25 bg-emerald-500/[0.05] px-3 text-xs font-medium">
+          <CheckCircle2 className="size-4 text-live" />
           Tekst en bronnen gecontroleerd
           <Switch
             checked={reviewConfirmed}
@@ -677,7 +676,7 @@ const SeoMonthlyReportEditor = ({
         </Button>
       </div>
       {!readiness.ready ? (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+        <div className="flex items-start gap-3 rounded-xl border border-wait/30 bg-wait-tint px-4 py-3 text-sm text-amber-800 ">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           <div>
             <div className="font-semibold">Rapport nog niet deelbaar</div>
@@ -688,7 +687,7 @@ const SeoMonthlyReportEditor = ({
           </div>
         </div>
       ) : !reviewConfirmed ? (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+        <div className="flex items-start gap-3 rounded-xl border border-wait/30 bg-wait-tint px-4 py-3 text-sm text-amber-800 ">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           <div>
             <div className="font-semibold">
@@ -702,7 +701,7 @@ const SeoMonthlyReportEditor = ({
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] px-4 py-2.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+        <div className="flex items-center gap-2 rounded-xl border border-live/25 bg-emerald-500/[0.06] px-4 py-2.5 text-xs font-medium text-live ">
           <CheckCircle2 className="size-4" /> Klantversie en brongegevens zijn
           gecontroleerd en gereed om te delen.
         </div>
@@ -773,16 +772,13 @@ export const SeoMonthlyReportWorkspace = ({
 
   return (
     <section className="space-y-4">
-      <div className="overflow-hidden rounded-2xl border border-sky-500/25 bg-linear-to-br from-sky-500/[0.12] via-card to-card shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-info/25 bg-linear-to-br from-sky-500/[0.12] via-card to-card shadow-sm">
         <div className="flex flex-wrap items-center gap-5 p-5 md:p-7">
           <div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-sky-500 text-white shadow-lg shadow-sky-500/20">
             <CalendarRange className="size-7" />
           </div>
           <div className="min-w-64 flex-1">
-            <Badge
-              variant="outline"
-              className="mb-2 border-sky-500/30 text-sky-600"
-            >
+            <Badge variant="outline" className="mb-2 border-info/30 text-info">
               Vaste maandelijkse rapportageroute
             </Badge>
             <h2 className="text-2xl font-semibold tracking-tight">
@@ -825,7 +821,7 @@ export const SeoMonthlyReportWorkspace = ({
           </div>
         </div>
         {!hasVerifiedMeasurement ? (
-          <div className="border-t border-sky-500/20 bg-sky-500/[0.07] px-6 py-3 text-sm text-sky-700 dark:text-sky-400">
+          <div className="border-t border-info/20 bg-info-tint px-6 py-3 text-sm text-info ">
             Geen meetbron nodig: de rapportage wordt nu opgebouwd uit
             werkzaamheden, notities en correspondentie. Koppel alleen een
             meetbron wanneer u ook maand-op-maandcijfers wilt opnemen.
@@ -869,7 +865,7 @@ export const SeoMonthlyReportWorkspace = ({
         />
       ) : (
         <div className="rounded-2xl border border-dashed bg-card/40 p-10 text-center">
-          <FileBarChart className="mx-auto size-8 text-sky-500" />
+          <FileBarChart className="mx-auto size-8 text-info" />
           <h3 className="mt-3 font-semibold">
             Nog geen maandrapport voor deze opdracht
           </h3>

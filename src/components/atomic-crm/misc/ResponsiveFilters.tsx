@@ -114,12 +114,30 @@ export const ResponsiveFilters = ({
     );
   }
 
+  // Desktop rail: sticky, so filters stay reachable while a long list scrolls.
   return (
-    <div className="w-52 min-w-52 order-first pt-0.75 flex flex-col gap-4">
+    <div className="order-first flex w-[13.5rem] min-w-[13.5rem] flex-col gap-4 self-start md:sticky md:top-[5.25rem]">
       <FilterLiveForm>
         <SearchInput source={source} {...otherSearchInputProps} />
       </FilterLiveForm>
       {children}
+      {activeFiltersCount > 0 ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={handleClearFilters}
+          className="justify-start px-2 text-meta text-ink-3 hover:text-ink"
+        >
+          {translate("ra.navigation.clear_filters", { _: "Filters wissen" })}
+          <Badge
+            variant="secondary"
+            className="num ml-1 px-1.5 py-0 text-eyebrow tracking-normal"
+          >
+            {activeFiltersCount}
+          </Badge>
+        </Button>
+      ) : null}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 
-test.describe("attention pipeline", () => {
+test.describe("attention scope", () => {
   test.beforeEach(async ({ createCompany, createDeal, createSales }) => {
     const sales = await createSales({
       email: "pipeline@example.com",
@@ -10,8 +10,8 @@ test.describe("attention pipeline", () => {
     });
 
     // A completely empty CRM intentionally shows the onboarding checklist.
-    // Seed one overdue deal so this scenario exercises the real dashboard,
-    // its attention CTA, URL-stable filters and the quick phase action.
+    // Seed one overdue deal so this scenario exercises the real board, its
+    // attention scope, the stable filters and the quick phase action.
     const company = await createCompany({
       name: "Pipeline Test",
       salesId: sales.id,
@@ -24,7 +24,7 @@ test.describe("attention pipeline", () => {
     });
   });
 
-  test("opens its specialized pipeline from the dashboard", async ({
+  test("narrows the board to the work that needs a person", async ({
     isMobile,
     page,
   }) => {
@@ -32,40 +32,30 @@ test.describe("attention pipeline", () => {
     await page.getByLabel("E-mail").fill("pipeline@example.com");
     await page.getByRole("textbox", { name: "Wachtwoord" }).fill("password");
     await page.getByRole("button", { name: "Inloggen" }).click();
+
+    // The board is its own page again.
+    await page.goto("http://localhost:5175/#/deals");
+    await expect(page).toHaveURL(/#\/deals$/);
     await expect(
-      page.getByRole("tab", { name: "Vandaag", exact: true }),
+      page.getByRole("heading", { level: 1, name: "Opdrachten" }),
     ).toBeVisible();
 
-    // Historic assignment URLs remain useful but never reopen a separate
-    // assignments page: the Dashboard is now the single workspace.
-    await page.goto("http://localhost:5175/#/deals");
-    await expect(page).toHaveURL(/#\/\?tab=workboard$/);
+    if (isMobile) {
+      // The phone shows one ranked list; the desktop scope switch is not part
+      // of that screen.
+      await expect(
+        page.getByRole("searchbox", { name: /zoek/i }).first(),
+      ).toBeVisible();
+      return;
+    }
+
     await expect(
-      page.getByRole("heading", {
-        name: "Opdrachtenbord · van begin tot eind",
-      }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Alle opdrachten", exact: true }),
+      page.getByRole("button", { name: "Alles", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
 
-    await page.getByRole("tab", { name: "Vandaag", exact: true }).click();
-    const attentionHeading = page.getByRole("heading", {
-      name: "Dit heeft je aandacht nodig",
-    });
-    const attentionSection = page
-      .locator("section")
-      .filter({ has: attentionHeading })
-      .first();
-    await expect(attentionHeading).toBeVisible();
-    await attentionSection
-      .getByRole("link", { name: "Werkbord", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Aandacht", exact: true }).click();
+    await expect(page).toHaveURL(/#\/deals\?focus=attention$/);
 
-    await expect(page).toHaveURL(/#\/\?tab=workboard&focus=attention$/);
-    await expect(
-      page.getByRole("heading", { name: "Aandacht-pipeline" }),
-    ).toBeVisible();
     const filters = page.getByRole("group", {
       name: "Filter aandachtspipeline",
     });
@@ -78,6 +68,7 @@ test.describe("attention pipeline", () => {
     await expect(
       filters.getByRole("button", { name: /niet gepland/i }),
     ).toBeVisible();
+
     const search = page.getByRole("searchbox", {
       name: "Zoek in aandachtspipeline",
     });
@@ -99,18 +90,5 @@ test.describe("attention pipeline", () => {
       .click();
     await page.getByRole("menuitemradio", { name: "Bezig" }).click();
     await expect(page.getByText("Verplaatst naar")).toBeVisible();
-    await expect(
-      page.getByRole("button", {
-        name: "Volgende taak plannen voor Pipeline verbeterdeal",
-        exact: true,
-      }),
-    ).toBeVisible();
-    await expect(
-      page.getByText(
-        isMobile
-          ? /wijzig direct de fase of plan een taak/i
-          : /versleep een deal of gebruik fase/i,
-      ),
-    ).toBeVisible();
   });
 });

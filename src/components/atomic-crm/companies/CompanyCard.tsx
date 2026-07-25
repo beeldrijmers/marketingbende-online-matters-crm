@@ -1,13 +1,18 @@
-import { Handshake } from "lucide-react";
 import { Link } from "react-router";
 import { useCreatePath, useRecordContext, useTranslate } from "ra-core";
-import { Card } from "@/components/ui/card";
 
 import { Avatar as ContactAvatar } from "../contacts/Avatar";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Company, Contact } from "../types";
 import { CompanyAvatar } from "./CompanyAvatar";
 
+/**
+ * A client tile: identity on top, weight at the bottom.
+ *
+ * The old card centred everything in a fixed 200px box, which clipped both long
+ * company names and the deal label ("1 Opdra…"). Left-aligned text can wrap, and
+ * the deal count is a plain number next to its noun.
+ */
 export const CompanyCard = (props: {
   record?: Company;
   contacts?: Contact[];
@@ -19,47 +24,46 @@ export const CompanyCard = (props: {
   if (!record) return null;
 
   const contacts = props.contacts ?? [];
-
-  const sector = companySectors.find((s) => s.value === record.sector);
-  const sectorLabel = sector?.label;
+  const sectorLabel = companySectors.find(
+    (sector) => sector.value === record.sector,
+  )?.label;
 
   return (
     <Link
-      to={createPath({
-        resource: "companies",
-        id: record.id,
-        type: "show",
-      })}
-      className="no-underline rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      to={createPath({ resource: "companies", id: record.id, type: "show" })}
+      className="panel group flex min-h-[8.5rem] flex-col justify-between gap-3 p-3 no-underline transition-[background-color,border-color,box-shadow] duration-1 hover:border-line-strong hover:bg-raised-hi hover:shadow-e2 focus-visible:outline-none"
     >
-      <Card className="h-[200px] flex flex-col justify-between p-4 transition-shadow duration-200 hover:bg-muted/60 hover:shadow-md">
-        <div className="flex flex-col items-center gap-1">
-          <CompanyAvatar />
-          <div className="text-center mt-1">
-            <h6 className="text-sm font-medium">{record.name}</h6>
-            <p className="text-xs text-muted-foreground">{sectorLabel}</p>
-          </div>
-        </div>
-        <div className="flex flex-row w-full justify-between gap-2">
-          <div className="flex items-center">
-            {record.nb_contacts ? (
-              <AvatarGroup contacts={contacts} total={record.nb_contacts} />
-            ) : null}
-          </div>
-          {record.nb_deals ? (
-            <div className="flex items-center ml-2 gap-0.5">
-              <Handshake className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">{record.nb_deals}</span>
-              <span className="text-xs text-muted-foreground">
-                {translate("resources.deals.name", {
-                  smart_count: record.nb_deals ?? 0,
-                  _: "Deal |||| Deals",
-                })}
-              </span>
-            </div>
+      <div className="flex min-w-0 items-start gap-2.5">
+        <CompanyAvatar width={40} height={40} />
+        <div className="min-w-0 flex-1">
+          <h3 className="line-clamp-2 text-body font-semibold leading-5 text-ink">
+            {record.name}
+          </h3>
+          {sectorLabel ? (
+            <p className="mt-0.5 line-clamp-1 text-meta text-ink-3">
+              {sectorLabel}
+            </p>
           ) : null}
         </div>
-      </Card>
+      </div>
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        {record.nb_contacts ? (
+          <AvatarGroup contacts={contacts} total={record.nb_contacts} />
+        ) : (
+          <span className="text-meta text-ink-3">
+            {translate("resources.companies.no_contacts", {
+              _: "Geen contact",
+            })}
+          </span>
+        )}
+        {record.nb_deals ? (
+          <span className="num shrink-0 text-meta text-ink-2">
+            {translate("resources.companies.nb_deals", {
+              smart_count: record.nb_deals,
+            })}
+          </span>
+        ) : null}
+      </div>
     </Link>
   );
 };
@@ -73,7 +77,7 @@ const AvatarGroup = ({
 }) => {
   const MAX_AVATARS = 3;
   return (
-    <div className="*:data-[slot=avatar]:ring-background flex -space-x-0.5 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:grayscale-50">
+    <div className="flex -space-x-1 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-raised">
       {contacts.slice(0, MAX_AVATARS).map((record) => (
         <ContactAvatar
           key={record.id}
@@ -85,10 +89,10 @@ const AvatarGroup = ({
       ))}
       {total > MAX_AVATARS && (
         <span
-          className="relative flex size-8 shrink-0 overflow-hidden rounded-full w-[25px] h-[25px]"
+          className="relative flex size-[25px] shrink-0 overflow-hidden rounded-full"
           data-slot="avatar"
         >
-          <span className="bg-muted flex size-full items-center justify-center rounded-full text-[10px]">
+          <span className="num flex size-full items-center justify-center rounded-full bg-sunken text-eyebrow tracking-normal text-ink-2">
             +{total - MAX_AVATARS}
           </span>
         </span>

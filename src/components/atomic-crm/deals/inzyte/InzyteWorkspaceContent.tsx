@@ -213,7 +213,7 @@ const ResultToolbar = ({
   };
 
   return (
-    <div className="rounded-xl border border-sky-500/20 bg-sky-500/[0.04] p-3">
+    <div className="rounded-xl border border-info/20 bg-info-tint p-3">
       <div className="flex flex-wrap items-center gap-2">
         <div className="mr-auto min-w-52">
           <div className="text-sm font-semibold">Resultaat gebruiken</div>
@@ -312,12 +312,12 @@ const AnalysisCard = ({
     type="button"
     disabled={disabled}
     className={cn(
-      "group flex min-h-28 items-start gap-3 rounded-xl border bg-card p-4 text-left transition-all hover:border-sky-500/40 hover:bg-sky-500/[0.04] disabled:cursor-not-allowed disabled:opacity-45",
-      selected && "border-sky-500/50 bg-sky-500/[0.07] ring-1 ring-sky-500/20",
+      "group flex min-h-28 items-start gap-3 rounded-xl border bg-card p-4 text-left transition-all hover:border-info/40 hover:bg-info-tint disabled:cursor-not-allowed disabled:opacity-45",
+      selected && "border-info/50 bg-info-tint ring-1 ring-info/20",
     )}
     onClick={onClick}
   >
-    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground group-hover:bg-sky-500/10 group-hover:text-sky-500">
+    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground group-hover:bg-info-tint group-hover:text-info">
       {loading ? <Loader2 className="size-5 animate-spin" /> : icon}
     </span>
     <span className="min-w-0">
@@ -389,9 +389,7 @@ const DateBar = ({ controller }: { controller: InzyteWorkspaceController }) => {
         </Badge>
         <Badge
           variant={controller.hasGa4 ? "secondary" : "outline"}
-          className={
-            controller.hasGa4 ? "" : "border-amber-500/40 text-amber-600"
-          }
+          className={controller.hasGa4 ? "" : "border-wait/40 text-wait"}
         >
           {controller.hasGa4
             ? `GA4 · ${
@@ -740,9 +738,9 @@ const HistoryContent = ({
               variant="outline"
               className={
                 run.status === "success"
-                  ? "border-emerald-500/40 text-emerald-600"
+                  ? "border-live/40 text-live"
                   : run.status === "failed"
-                    ? "border-rose-500/40 text-rose-600"
+                    ? "border-late/40 text-late"
                     : ""
               }
             >
@@ -760,7 +758,7 @@ const HistoryContent = ({
               : ""}
           </div>
           {run.error ? (
-            <div className="mt-2 text-sm text-rose-600">{run.error}</div>
+            <div className="mt-2 text-sm text-late">{run.error}</div>
           ) : null}
         </button>
       ))}
@@ -781,7 +779,7 @@ const WorkspaceAccordion = ({
       <AccordionItem value="question">
         <AccordionTrigger className="hover:no-underline">
           <span className="flex items-center gap-3">
-            <Bot className="size-5 text-sky-500" />
+            <Bot className="size-5 text-info" />
             <span>
               <span className="block font-semibold">
                 Stel een vraag aan de klantdata
@@ -800,7 +798,7 @@ const WorkspaceAccordion = ({
       <AccordionItem value="more">
         <AccordionTrigger className="hover:no-underline">
           <span className="flex items-center gap-3">
-            <Braces className="size-5 text-violet-500" />
+            <Braces className="size-5 text-accent-base" />
             <span>
               <span className="block font-semibold">
                 Meer analyses en specialistische functies
@@ -819,7 +817,7 @@ const WorkspaceAccordion = ({
       <AccordionItem value="connections">
         <AccordionTrigger className="hover:no-underline">
           <span className="flex items-center gap-3">
-            <Settings2 className="size-5 text-emerald-500" />
+            <Settings2 className="size-5 text-live" />
             <span>
               <span className="block font-semibold">
                 Koppelingen en instellingen
@@ -847,7 +845,7 @@ const WorkspaceAccordion = ({
       <AccordionItem value="history">
         <AccordionTrigger className="hover:no-underline">
           <span className="flex items-center gap-3">
-            <History className="size-5 text-amber-500" />
+            <History className="size-5 text-wait" />
             <span>
               <span className="block font-semibold">Eerdere analyses</span>
               <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
@@ -875,9 +873,9 @@ const UnlinkedContent = ({
   if (!controller.bootstrap) return null;
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.07] p-5">
+      <div className="rounded-2xl border border-wait/30 bg-wait-tint p-5">
         <div className="flex items-start gap-3">
-          <Link2 className="mt-0.5 size-5 text-amber-600" />
+          <Link2 className="mt-0.5 size-5 text-wait" />
           <div>
             <h2 className="font-semibold">
               Meetgegevens toevoegen is optioneel

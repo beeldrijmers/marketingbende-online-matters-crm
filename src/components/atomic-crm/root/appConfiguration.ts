@@ -2,26 +2,43 @@
 // demo/FakeRest-app (demo/App.tsx), zodat beide dezelfde Nederlandse labels
 // en waarden tonen in plaats van de Engelse Atomic CRM-standaardwaarden.
 
-// BANKAI: knipoog naar het kanban-dealbord (en de ultieme vorm uit Bleach) —
-// de samenwerking Marketingbende × Online Matters op volle kracht.
-export const title = "BANKAI CRM";
+// Kompas: het CRM beantwoordt elke ochtend dezelfde vraag - waar staan we? De
+// naald in het merkteken wijst dezelfde kant op als de werkstroom op het bord.
+export const title = "Kompas CRM";
 
 export const currency = "EUR";
 
-// The kanban mirrors Trello's numbered left-to-right production line. Existing
-// internal values stay in place where billing/reporting relies on them; three
-// additional values represent the newly explicit planning, review and monthly
-// columns.
+// The board is one left-to-right production line. The internal values are the
+// contract (billing, reporting and the Trello sync rely on them) and never
+// change; the labels are what people read, so they carry no Trello list numbers
+// -- the column order already says what comes first.
 export const dealStages = [
-  { value: "informatie-pipeline", label: "00 · Nog niet bevestigd" },
-  { value: "bevestigd-inplannen", label: "10 · Bevestigd / inplannen" },
-  { value: "on-hold", label: "20 · Wacht op input / geblokkeerd" },
-  { value: "bezig", label: "30 · Bezig" },
-  { value: "controle-livegang", label: "40 · Controle / akkoord / livegang" },
-  { value: "facturatie-live", label: "50 · Klaar / te factureren" },
-  { value: "won", label: "60 · Gefactureerd / afgerond" },
-  { value: "maandelijks", label: "70 · Maandelijks / vaste klanten" },
+  {
+    value: "informatie-pipeline",
+    label: "Nog niet bevestigd",
+    shortLabel: "Onbevestigd",
+  },
+  { value: "bevestigd-inplannen", label: "Inplannen", shortLabel: "Inplannen" },
+  { value: "on-hold", label: "Wacht op input", shortLabel: "Wacht" },
+  { value: "bezig", label: "Bezig", shortLabel: "Bezig" },
+  {
+    value: "controle-livegang",
+    label: "Controle en livegang",
+    shortLabel: "Controle",
+  },
+  {
+    value: "facturatie-live",
+    label: "Te factureren",
+    shortLabel: "Factureren",
+  },
+  { value: "won", label: "Afgerond", shortLabel: "Afgerond" },
+  { value: "maandelijks", label: "Vaste klanten", shortLabel: "Maandelijks" },
 ];
+
+/** Compact labels keyed by stage value, for chips and one-line summaries. */
+export const dealStageShortLabels: Record<string, string> = Object.fromEntries(
+  dealStages.map((stage) => [stage.value, stage.shortLabel ?? stage.label]),
+);
 
 export const dealPipelineStatuses = ["won"];
 

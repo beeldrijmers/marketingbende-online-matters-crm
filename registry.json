@@ -54,6 +54,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/tasks/TasksPage.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/tasks/TasksListFilter.tsx",
           "type": "registry:component"
         },
@@ -134,26 +138,6 @@
           "type": "registry:component"
         },
         {
-          "path": "src/components/atomic-crm/simple-list/SimpleListLoading.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "src/components/atomic-crm/simple-list/SimpleListItem.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "src/components/atomic-crm/simple-list/SimpleList.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "src/components/atomic-crm/simple-list/ListPlaceholder.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "src/components/atomic-crm/simple-list/ListNoResults.tsx",
-          "type": "registry:component"
-        },
-        {
           "path": "src/components/atomic-crm/settings/SettingsPageMobile.tsx",
           "type": "registry:component"
         },
@@ -163,6 +147,10 @@
         },
         {
           "path": "src/components/atomic-crm/settings/ProfilePage.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/settings/PersonalConnectionNote.tsx",
           "type": "registry:component"
         },
         {
@@ -211,6 +199,10 @@
         },
         {
           "path": "src/components/atomic-crm/root/useConfigurationLoader.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/root/routes.ts",
           "type": "registry:component"
         },
         {
@@ -566,7 +558,43 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/layout/useNavigationCounts.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/layout/navigation.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/layout/Wordmark.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/layout/UserMenuItems.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/layout/TopToolbar.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/layout/SectionHeader.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/layout/RecordFormShell.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/layout/PageHeader.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/layout/PageBody.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/layout/MobilePage.tsx",
           "type": "registry:component"
         },
         {
@@ -590,11 +618,11 @@
           "type": "registry:component"
         },
         {
-          "path": "src/components/atomic-crm/layout/Header.tsx",
+          "path": "src/components/atomic-crm/layout/FormToolbar.tsx",
           "type": "registry:component"
         },
         {
-          "path": "src/components/atomic-crm/layout/FormToolbar.tsx",
+          "path": "src/components/atomic-crm/layout/AppSidebar.tsx",
           "type": "registry:component"
         },
         {
@@ -682,6 +710,14 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/DealShowPage.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/DealShowBody.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/DealShow.tsx",
           "type": "registry:component"
         },
@@ -746,11 +782,19 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/BoardPage.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/AttentionPipelineHeader.tsx",
           "type": "registry:component"
         },
         {
           "path": "src/components/atomic-crm/deals/AttentionMovePrompt.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/AttentionList.tsx",
           "type": "registry:component"
         },
         {
@@ -802,10 +846,6 @@
           "type": "registry:component"
         },
         {
-          "path": "src/components/atomic-crm/dashboard/trelloBoardModel.ts",
-          "type": "registry:component"
-        },
-        {
           "path": "src/components/atomic-crm/dashboard/revenueModel.ts",
           "type": "registry:component"
         },
@@ -826,15 +866,11 @@
           "type": "registry:component"
         },
         {
-          "path": "src/components/atomic-crm/dashboard/TrelloWorkflowOverview.tsx",
+          "path": "src/components/atomic-crm/dashboard/UpdatesPage.tsx",
           "type": "registry:component"
         },
         {
           "path": "src/components/atomic-crm/dashboard/TasksList.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "src/components/atomic-crm/dashboard/RevenueDisclosure.tsx",
           "type": "registry:component"
         },
         {
@@ -846,7 +882,7 @@
           "type": "registry:component"
         },
         {
-          "path": "src/components/atomic-crm/dashboard/LatestNotes.tsx",
+          "path": "src/components/atomic-crm/dashboard/IntegrationsPage.tsx",
           "type": "registry:component"
         },
         {
@@ -858,15 +894,11 @@
           "type": "registry:component"
         },
         {
-          "path": "src/components/atomic-crm/dashboard/DealsPipeline.tsx",
+          "path": "src/components/atomic-crm/dashboard/FinancePage.tsx",
           "type": "registry:component"
         },
         {
           "path": "src/components/atomic-crm/dashboard/DealActionQueue.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "src/components/atomic-crm/dashboard/DashboardWorkspace.tsx",
           "type": "registry:component"
         },
         {
@@ -1116,18 +1148,6 @@
         {
           "path": "src/components/supabase/forgot-password-page.tsx",
           "type": "registry:component"
-        },
-        {
-          "path": "src/hooks/user-menu-context.tsx",
-          "type": "registry:hook"
-        },
-        {
-          "path": "src/hooks/useBulkExport.tsx",
-          "type": "registry:hook"
-        },
-        {
-          "path": "src/hooks/simple-form-iterator-context.tsx",
-          "type": "registry:hook"
         },
         {
           "path": "src/lib/toSlug.ts",
