@@ -58,7 +58,7 @@ export const HotContacts = () => {
   const isPending = dealsPending || tasksPending || contactsPending;
 
   return (
-    <section className="flex min-w-0 flex-col gap-2.5">
+    <section className="flex min-w-0 flex-col gap-3.5">
       <SectionHeader
         title={translate("resources.contacts.hot.title")}
         meta={translate("resources.contacts.hot.subtitle")}

@@ -59,7 +59,7 @@ export const DealActionQueue = () => {
   );
 
   return (
-    <section className="flex min-w-0 flex-col gap-2.5">
+    <section className="flex min-w-0 flex-col gap-3.5">
       <SectionHeader
         title={translate("crm.dashboard.deal_actions.title", {
           _: "Dit heeft uw aandacht nodig",

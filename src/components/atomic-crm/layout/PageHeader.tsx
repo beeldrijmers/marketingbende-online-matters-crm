@@ -26,16 +26,14 @@ export const PageHeader = ({
 }) => (
   <header
     className={cn(
-      "sticky top-0 z-20 -mx-4 -mt-4 mb-4 border-b border-line-subtle bg-canvas px-4 pb-3 pt-4 lg:-mx-6 lg:px-6",
+      "sticky top-0 z-20 -mx-4 -mt-4 mb-6 border-b border-line-subtle bg-canvas px-4 pb-4 pt-5 lg:-mx-6 lg:px-6",
       className,
     )}
   >
     <div className="mx-auto flex w-full max-w-[--page-max] flex-wrap items-start justify-between gap-x-4 gap-y-2">
       <div className="min-w-0">
         <h1 className="text-title text-ink">{title}</h1>
-        {meta ? (
-          <p className="mt-0.5 text-meta text-ink-3 num">{meta}</p>
-        ) : null}
+        {meta ? <p className="num mt-1 text-meta text-ink-3">{meta}</p> : null}
       </div>
       {actions ? (
         <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -44,7 +42,7 @@ export const PageHeader = ({
       ) : null}
     </div>
     {children ? (
-      <div className="mx-auto mt-3 w-full max-w-[--page-max]">{children}</div>
+      <div className="mx-auto mt-4 w-full max-w-[--page-max]">{children}</div>
     ) : null}
   </header>
 );

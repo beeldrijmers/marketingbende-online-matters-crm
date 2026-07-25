@@ -89,6 +89,10 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ["@supabase/realtime-js"],
+    // The chart is loaded lazily, so in dev Vite only discovers it when the
+    // finance page opens - and then reloads the page mid-use. Pre-bundling it
+    // at startup keeps that page stable while developing.
+    include: ["@nivo/bar"],
   },
   build: {
     // GitHub Pages serves every file in dist publicly. Do not publish source

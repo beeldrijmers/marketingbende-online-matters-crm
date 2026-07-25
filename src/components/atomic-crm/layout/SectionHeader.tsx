@@ -38,7 +38,7 @@ export const SectionHeader = ({
           <span className="num text-meta font-normal text-ink-3">{count}</span>
         ) : null}
       </h2>
-      {meta ? <p className="mt-0.5 text-meta text-ink-3">{meta}</p> : null}
+      {meta ? <p className="mt-1 text-meta text-ink-3">{meta}</p> : null}
     </div>
     {action ??
       (to ? (

@@ -8,7 +8,7 @@ export function DashboardActivityLog() {
   const isMobile = useIsMobile();
   const translate = useTranslate();
   return (
-    <div className="flex min-w-0 flex-col gap-2.5">
+    <div className="flex min-w-0 flex-col gap-3.5">
       <SectionHeader
         title={translate("crm.dashboard.latest_activity", {
           _: "Recente updates",

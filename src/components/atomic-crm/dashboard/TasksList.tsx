@@ -9,7 +9,7 @@ import { TASKS_PATH } from "../root/routes";
 export const TasksList = () => {
   const translate = useTranslate();
   return (
-    <section className="flex min-w-0 flex-col gap-2.5">
+    <section className="flex min-w-0 flex-col gap-3.5">
       <SectionHeader
         title={translate("crm.dashboard.upcoming_tasks", {
           _: "Aankomende taken",

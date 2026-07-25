@@ -586,6 +586,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/layout/PageBody.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/layout/MobilePage.tsx",
           "type": "registry:component"
         },
