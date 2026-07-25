@@ -1,12 +1,10 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="bankai-bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#2563EB"/>
-      <stop offset="1" stop-color="#7C3AED"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="96" fill="url(#bankai-bg)"/>
-  <rect x="204.8" y="71.68" width="102.4" height="368.64" rx="51.2" fill="white" transform="rotate(45 256 256)"/>
-  <rect x="204.8" y="71.68" width="102.4" height="368.64" rx="51.2" fill="white" transform="rotate(-45 256 256)"/>
-  <circle cx="256" cy="256" r="37" fill="url(#bankai-bg)"/>
+  <!-- App icon: the Kompas needle on the app's own graphite tile. -->
+  <rect width="512" height="512" rx="112" fill="#1C2030"/>
+  <g transform="rotate(-20 256.0 256.0)">
+    <path d="M256.0 78 L340.0 239.0 L256.0 239.0 Z" fill="#8892FA"/>
+    <path d="M256.0 78 L172.0 239.0 L256.0 239.0 Z" fill="#5B67E0"/>
+    <path d="M256.0 434 L340.0 273.0 L256.0 273.0 Z" fill="#3B4152"/>
+    <path d="M256.0 434 L172.0 273.0 L256.0 273.0 Z" fill="#4C5468"/>
+  </g>
 </svg>

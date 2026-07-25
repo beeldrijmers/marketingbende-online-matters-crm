@@ -1,4 +1,5 @@
--- Stage labels lose their Trello list numbers.
+-- Branding and stage labels: the app is called Kompas, and the board's column
+-- names lose their Trello list numbers.
 --
 -- The board's column names are what people read all day; the numbers were an
 -- internal mapping detail that leaked into the interface ("00 · Nog niet
@@ -25,4 +26,11 @@ set config = jsonb_set(
   ]$json$::jsonb,
   true
 )
+where id = 1;
+
+-- The app's name is seeded into the same configuration row (the settings screen
+-- writes the whole object), so it would otherwise keep restoring "BANKAI CRM"
+-- at login.
+update public.configuration
+set config = jsonb_set(config, '{title}', '"Kompas CRM"'::jsonb, true)
 where id = 1;

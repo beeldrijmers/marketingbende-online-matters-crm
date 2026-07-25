@@ -150,6 +150,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/settings/PersonalConnectionNote.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/settings/MoneybirdConnectionSection.tsx",
           "type": "registry:component"
         },

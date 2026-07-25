@@ -1,4 +1,4 @@
-BANKAI CRM is het interne CRM van Marketingbende en Online Matters. Het is
+Kompas CRM is het interne CRM van Marketingbende en Online Matters. Het is
 gebouwd op de open-source basis van Atomic CRM (marmelab) en verder ontwikkeld
 voor onze eigen werkwijze.
 
@@ -6,7 +6,7 @@ voor onze eigen werkwijze.
 
 - Volledig Nederlandstalige interface met ondersteuning voor Nederlands, Engels
   en Frans; donker thema als standaard.
-- Herkenbare BANKAI-huisstijl (logo, kleuren en teksten).
+- Herkenbare Kompas-huisstijl (logo, kleuren en teksten).
 - Deal-pipeline (Kanban) met eigenaarschap per partij (Online Matters,
   Marketingbende, Groeien met Ads).
 - Omzet-dashboard met maandelijks terugkerende omzet (MRR), eenmalige omzet en

@@ -1,7 +1,7 @@
 import { useConfigurationContext } from "../root/ConfigurationContext";
 
 /**
- * The BANKAI lockup: the mark carries the colour, the word stays ink.
+ * The Kompas lockup: the mark carries the colour, the word stays ink.
  *
  * The wordmark used to be gradient-filled text, which fought the mark right
  * next to it and read as decoration. One coloured element per lockup is enough.
