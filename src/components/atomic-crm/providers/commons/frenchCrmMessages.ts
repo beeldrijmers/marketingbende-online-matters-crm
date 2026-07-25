@@ -190,38 +190,6 @@ export const frenchCrmMessages = {
         tags: "Étiquettes",
         tasks: "Tâches",
       },
-      hot: {
-        active_deals:
-          "%{smart_count} affaire active |||| %{smart_count} affaires actives",
-        empty_hint:
-          "Dès qu'une affaire client est active, la relation apparaît automatiquement ici.",
-        empty_title: "Aucun lead actif pour le moment",
-        hot_label: "Chaud",
-        missing_contact: "Associer un contact",
-        more: "Encore %{count} relations actives sur le tableau kanban",
-        open_board: "Tous les leads",
-        pipeline: "%{amount} de pipeline",
-        reasons: {
-          active_delivery: "Projet actif",
-          active_opportunity: "Opportunité ouverte",
-          closing_overdue: "Date de clôture dépassée",
-          high_value: "Valeur élevée",
-          hot_contact: "Contact marqué chaud",
-          multiple_deals: "Plusieurs affaires actives",
-          recent_activity: "Activité récente",
-          ready_to_invoice: "Prêt à facturer",
-          urgent_follow_up: "Suivi aujourd'hui ou en retard",
-        },
-        subtitle:
-          "Déterminé automatiquement à partir des affaires, du suivi et de l'activité.",
-        tiers: {
-          hot: "Chaud",
-          warm: "Tiède",
-          watch: "À suivre",
-        },
-        title: "Contacts & leads chauds",
-        unnamed_contact: "Contact sans nom",
-      },
     },
     deals: {
       name: "Affaire |||| Affaires",
@@ -235,6 +203,8 @@ export const frenchCrmMessages = {
         error_body:
           "Les affaires n'ont pas pu être chargées. Rechargez la page.",
         error_title: "Tableau indisponible",
+        owner_scope: "%{name} uniquement",
+        owner_scope_loading: "Personne",
         focus_all: "Tout",
         search: "Rechercher une affaire ou un client",
         focus_attention: "Attention",
@@ -662,6 +632,15 @@ export const frenchCrmMessages = {
     },
     dashboard: {
       deals_pipeline: "Pipeline des affaires",
+      workload: {
+        title: "Qui fait quoi",
+        subtitle:
+          "Travail ouvert par personne. Cliquez pour filtrer le tableau.",
+        unassigned: "Non attribué",
+        open: "%{smart_count} ouvert |||| %{smart_count} ouverts",
+        needs_action: "%{count} à faire",
+        empty: "Aucun travail ouvert sur le tableau.",
+      },
       deal_actions: {
         title: "Ceci requiert votre attention",
         subtitle:

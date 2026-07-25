@@ -27,6 +27,7 @@ import { DealEmpty } from "./DealEmpty";
 import { DealListContent } from "./DealListContent";
 import { DealShow } from "./DealShow";
 import { OnlyMineInput } from "./OnlyMineInput";
+import { ownerScopeFilter, type OwnerScope } from "./ownerScope";
 import { InternalExternalInput } from "./InternalExternalInput";
 import { SyncTrelloButton } from "./SyncTrelloButton";
 import {
@@ -45,12 +46,15 @@ type DealListProps = {
   dashboardSelection?: DashboardDealSelection;
   detailBasePath?: string;
   embedded?: boolean;
+  /** Scope every column to one owner (or to the unowned work). */
+  owner?: OwnerScope;
 };
 
 export const DealList = ({
   dashboardSelection,
   detailBasePath,
   embedded = false,
+  owner = null,
 }: DealListProps = {}) => {
   const { identity } = useGetIdentity();
   const { dealCategories } = useConfigurationContext();
@@ -101,6 +105,7 @@ export const DealList = ({
       perPage={1000}
       filter={{
         "archived_at@is": null,
+        ...ownerScopeFilter(owner),
         ...getDashboardDealSelectionFilter(dashboardSelection ?? null),
       }}
       disableBreadcrumb={embedded || attentionPipeline}

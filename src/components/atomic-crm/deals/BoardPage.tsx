@@ -1,4 +1,4 @@
-import { AlertTriangle, ListChecks, Radar } from "lucide-react";
+import { AlertTriangle, ListChecks, Radar, X } from "lucide-react";
 import { ResourceContextProvider, useGetList, useTranslate } from "ra-core";
 import { useMemo } from "react";
 import { Navigate, useLocation, useSearchParams } from "react-router";
@@ -14,6 +14,12 @@ import { AttentionDealsDashboard } from "./DashboardDealKanbanPage";
 import { BOARD_PATH } from "./dashboardDealSelection";
 import { DealList } from "./DealList";
 import { getDealDashboardRedirectPath } from "./dealDashboardRedirectPath";
+import {
+  filterByOwnerScope,
+  OWNER_UNASSIGNED,
+  parseOwnerScope,
+} from "./ownerScope";
+import { useGetSalesName } from "../sales/useGetSalesName";
 
 export type BoardFocus = "all" | "attention";
 
@@ -75,9 +81,22 @@ export const Board = () => {
   const { dealStages } = useConfigurationContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const focus = parseFocus(searchParams.get("focus"));
+  const owner = parseOwnerScope(searchParams.get("owner"));
+
+  const clearOwner = () => {
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete("owner");
+        next.delete("deal");
+        return next;
+      },
+      { replace: true },
+    );
+  };
 
   const {
-    data: deals = [],
+    data: allDeals = [],
     error: dealsError,
     isPending: dealsPending,
   } = useGetList<Deal>("deals", {
@@ -85,6 +104,12 @@ export const Board = () => {
     sort: { field: "updated_at", order: "DESC" },
     filter: { "archived_at@is": null },
   });
+  // The header counts what the columns below it actually show, so a scoped
+  // board cannot report the whole team's total.
+  const deals = useMemo(
+    () => filterByOwnerScope(allDeals, owner),
+    [allDeals, owner],
+  );
   const { data: runs = [] } = useGetList<IntegrationRun>(
     "integration_runs",
     {
@@ -161,30 +186,35 @@ export const Board = () => {
         })}
         meta={meta}
         actions={
-          <div
-            role="group"
-            aria-label={translate("resources.deals.board.focus_label", {
-              _: "Weergave van het bord",
-            })}
-            className="flex items-center gap-0.5 rounded-md border border-line bg-sunken p-0.5"
-          >
-            {focusViews.map(({ fallback, icon: Icon, labelKey, value }) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={focus === value}
-                onClick={() => setFocus(value)}
-                className={cn(
-                  "flex h-7 items-center gap-1.5 rounded-sm px-2.5 text-meta font-medium transition-colors duration-1",
-                  focus === value
-                    ? "bg-raised text-ink shadow-e1"
-                    : "text-ink-3 hover:text-ink",
-                )}
-              >
-                <Icon className="size-3.5" />
-                {translate(labelKey, { _: fallback })}
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            {owner ? (
+              <OwnerScopeChip owner={owner} onClear={clearOwner} />
+            ) : null}
+            <div
+              role="group"
+              aria-label={translate("resources.deals.board.focus_label", {
+                _: "Weergave van het bord",
+              })}
+              className="flex items-center gap-0.5 rounded-md border border-line bg-sunken p-0.5"
+            >
+              {focusViews.map(({ fallback, icon: Icon, labelKey, value }) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={focus === value}
+                  onClick={() => setFocus(value)}
+                  className={cn(
+                    "flex h-7 items-center gap-1.5 rounded-sm px-2.5 text-meta font-medium transition-colors duration-1",
+                    focus === value
+                      ? "bg-raised text-ink shadow-e1"
+                      : "text-ink-3 hover:text-ink",
+                  )}
+                >
+                  <Icon className="size-3.5" />
+                  {translate(labelKey, { _: fallback })}
+                </button>
+              ))}
+            </div>
           </div>
         }
       />
@@ -212,7 +242,7 @@ export const Board = () => {
           {focus === "attention" ? (
             <AttentionDealsDashboard />
           ) : (
-            <DealList detailBasePath={BOARD_PATH} embedded />
+            <DealList detailBasePath={BOARD_PATH} embedded owner={owner} />
           )}
         </ResourceContextProvider>
       )}
@@ -227,6 +257,42 @@ export const Board = () => {
         </p>
       ) : null}
     </div>
+  );
+};
+
+/**
+ * A board that silently hides most of its cards is a board that lies, so the
+ * owner scope names itself in the header and can be dropped from there.
+ */
+const OwnerScopeChip = ({
+  onClear,
+  owner,
+}: {
+  onClear: () => void;
+  owner: string;
+}) => {
+  const translate = useTranslate();
+  const unassigned = owner === OWNER_UNASSIGNED;
+  const name = useGetSalesName(unassigned ? undefined : owner, {
+    enabled: !unassigned,
+  });
+  const label = unassigned
+    ? translate("crm.dashboard.workload.unassigned", { _: "Niet toegewezen" })
+    : name ||
+      translate("resources.deals.board.owner_scope_loading", { _: "Persoon" });
+
+  return (
+    <button
+      type="button"
+      onClick={onClear}
+      className="flex h-7 items-center gap-1.5 rounded-md border border-accent-line bg-accent-quiet px-2.5 text-meta font-medium text-ink transition-colors duration-1 hover:bg-sunken"
+    >
+      {translate("resources.deals.board.owner_scope", {
+        name: label,
+        _: `Alleen ${label}`,
+      })}
+      <X className="size-3.5 text-ink-3" />
+    </button>
   );
 };
 
