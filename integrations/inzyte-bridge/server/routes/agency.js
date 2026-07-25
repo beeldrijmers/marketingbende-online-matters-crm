@@ -25,6 +25,54 @@ const router = express.Router();
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+const AGENCY_RATE_LIMIT_WINDOW_MS = 60_000;
+const configuredAgencyRateLimit = Number(
+  process.env.CRM_AGENCY_RATE_LIMIT_PER_MINUTE,
+);
+const AGENCY_RATE_LIMIT_MAX_REQUESTS =
+  Number.isFinite(configuredAgencyRateLimit) && configuredAgencyRateLimit >= 10
+    ? Math.min(Math.floor(configuredAgencyRateLimit), 1_000)
+    : 300;
+const agencyRateLimitBuckets = new Map();
+let lastAgencyRateLimitSweep = 0;
+
+function sweepAgencyRateLimitBuckets(now) {
+  if (now - lastAgencyRateLimitSweep < AGENCY_RATE_LIMIT_WINDOW_MS) return;
+
+  lastAgencyRateLimitSweep = now;
+  for (const [key, bucket] of agencyRateLimitBuckets.entries()) {
+    if (bucket.resetAt <= now) agencyRateLimitBuckets.delete(key);
+  }
+}
+
+function rateLimitAgencyRequests(req, res, next) {
+  const now = Date.now();
+  sweepAgencyRateLimitBuckets(now);
+
+  const key = String(req.ip || req.socket?.remoteAddress || "unknown");
+  let bucket = agencyRateLimitBuckets.get(key);
+  if (!bucket || bucket.resetAt <= now) {
+    bucket = { count: 0, resetAt: now + AGENCY_RATE_LIMIT_WINDOW_MS };
+    agencyRateLimitBuckets.set(key, bucket);
+  }
+
+  bucket.count += 1;
+  const remaining = Math.max(0, AGENCY_RATE_LIMIT_MAX_REQUESTS - bucket.count);
+  res.set({
+    "RateLimit-Limit": String(AGENCY_RATE_LIMIT_MAX_REQUESTS),
+    "RateLimit-Remaining": String(remaining),
+    "RateLimit-Reset": String(Math.ceil(bucket.resetAt / 1_000)),
+  });
+
+  if (bucket.count > AGENCY_RATE_LIMIT_MAX_REQUESTS) {
+    return res.status(429).json({
+      error: "Too many agency requests. Please try again shortly.",
+    });
+  }
+
+  return next();
+}
+
 function timingSafeEqual(a, b) {
   const left = Buffer.from(String(a || ""));
   const right = Buffer.from(String(b || ""));
@@ -118,6 +166,7 @@ function safeIntegration(integration) {
   };
 }
 
+router.use(rateLimitAgencyRequests);
 router.use(requireAgencySecret);
 
 router.get("/health", (_req, res) => {

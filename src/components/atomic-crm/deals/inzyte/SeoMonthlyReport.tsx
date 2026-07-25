@@ -581,22 +581,23 @@ const SeoMonthlyReportEditor = ({
 
   const openPrintPreview = () => {
     if (!readiness.ready) return;
-    const popup = window.open("", "_blank");
-    if (!popup) return;
-    popup.opener = null;
-    popup.document.write(
-      buildSeoMonthlyReportDocument({
-        report,
-        companyName,
-        clientSummary,
-        interpretation,
-        workSummary,
-        caveats,
-        nextSteps,
-        brand,
-      }),
+
+    const reportHtml = buildSeoMonthlyReportDocument({
+      report,
+      companyName,
+      clientSummary,
+      interpretation,
+      workSummary,
+      caveats,
+      nextSteps,
+      brand,
+    });
+    const reportUrl = URL.createObjectURL(
+      new Blob([reportHtml], { type: "text/html;charset=utf-8" }),
     );
-    popup.document.close();
+
+    window.open(reportUrl, "_blank", "noopener,noreferrer");
+    window.setTimeout(() => URL.revokeObjectURL(reportUrl), 60_000);
   };
 
   return (

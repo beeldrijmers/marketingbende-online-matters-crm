@@ -39,7 +39,10 @@ const handler = async (req: Request, userId?: string): Promise<Response> => {
     .eq("user_id", userId)
     .eq("disabled", false)
     .maybeSingle();
-  if (saleError) return createErrorResponse(500, saleError.message);
+  if (saleError) {
+    console.error("CRM user lookup failed", saleError.code);
+    return createErrorResponse(500, "CRM-gebruiker kon niet worden geladen.");
+  }
   if (!sale) return createErrorResponse(403, "CRM user is not active");
 
   // Match the normal deal RLS rule before using service_role data: callers may
@@ -50,7 +53,13 @@ const handler = async (req: Request, userId?: string): Promise<Response> => {
     .eq("id", dealId)
     .contains("assignee_ids", [sale.id])
     .maybeSingle();
-  if (dealError) return createErrorResponse(500, dealError.message);
+  if (dealError) {
+    console.error("Trello deal lookup failed", dealError.code);
+    return createErrorResponse(
+      500,
+      "Opdrachtgegevens konden niet worden geladen.",
+    );
+  }
   if (!deal) return createErrorResponse(404, "Deal not found");
   if (!deal.trello_card_id) {
     return createErrorResponse(422, "Deal has no linked Trello card");
@@ -84,7 +93,11 @@ const handler = async (req: Request, userId?: string): Promise<Response> => {
       });
     }
   } catch (error) {
-    return createErrorResponse(502, (error as Error).message);
+    console.error(
+      "Trello card update failed",
+      error instanceof Error ? error.name : "UnknownError",
+    );
+    return createErrorResponse(502, "Trello kon niet worden bijgewerkt.");
   }
 
   return new Response(JSON.stringify({ ok: true, listId, deadline }), {

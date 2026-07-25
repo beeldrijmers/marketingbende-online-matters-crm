@@ -120,8 +120,11 @@ async function inviteUser(req: Request, currentUserSale: any) {
   let hourlyRate: number | null | undefined;
   try {
     hourlyRate = normalizeHourlyRate(hourly_rate);
-  } catch (error) {
-    return createErrorResponse(400, (error as Error).message);
+  } catch {
+    return createErrorResponse(
+      400,
+      "Het uurtarief moet nul of hoger zijn, of leeg blijven.",
+    );
   }
 
   if (!currentUserSale.administrator) {
@@ -151,15 +154,22 @@ async function inviteUser(req: Request, currentUserSale: any) {
     }
 
     user = data[0];
+    if (!user) {
+      console.error("Error inviting user: existing user id not found");
+      return createErrorResponse(500, "Internal Server Error");
+    }
+
     try {
       const { data: existingSale, error: salesError } = await supabaseAdmin
         .from("sales")
         .select("*")
         .eq("user_id", user.id);
       if (salesError) {
-        return createErrorResponse(salesError.status, salesError.message, {
-          code: salesError.code,
-        });
+        return createErrorResponse(
+          500,
+          "Gebruikersgegevens konden niet worden gecontroleerd.",
+          { code: salesError.code },
+        );
       }
       if (existingSale.length > 0) {
         return createErrorResponse(
@@ -189,19 +199,29 @@ async function inviteUser(req: Request, currentUserSale: any) {
       );
     } catch (error) {
       return createErrorResponse(
-        (error as any).status ?? 500,
-        (error as Error).message,
+        typeof (error as { status?: unknown }).status === "number" &&
+          (error as { status: number }).status >= 400 &&
+          (error as { status: number }).status < 500
+          ? (error as { status: number }).status
+          : 500,
+        "Gebruiker kon niet worden aangemaakt.",
         {
-          code: (error as any).code,
+          code: (error as { code?: unknown }).code,
         },
       );
     }
   } else {
     if (userError) {
       console.error(`Error inviting user: user_error=${userError}`);
-      return createErrorResponse(userError.status, userError.message, {
-        code: userError.code,
-      });
+      return createErrorResponse(
+        typeof userError.status === "number" &&
+          userError.status >= 400 &&
+          userError.status < 500
+          ? userError.status
+          : 500,
+        "Gebruiker kon niet worden uitgenodigd.",
+        { code: userError.code },
+      );
     }
     if (!data?.user) {
       console.error("Error inviting user: undefined user");
@@ -214,6 +234,11 @@ async function inviteUser(req: Request, currentUserSale: any) {
       console.error(`Error inviting user, email_error=${emailError}`);
       return createErrorResponse(500, "Failed to send invitation mail");
     }
+  }
+
+  if (!user) {
+    console.error("Error inviting user: undefined user after invitation");
+    return createErrorResponse(500, "Internal Server Error");
   }
 
   try {
@@ -270,8 +295,11 @@ async function patchUser(req: Request, currentUserSale: any) {
   let hourlyRate: number | null | undefined;
   try {
     hourlyRate = normalizeHourlyRate(hourly_rate);
-  } catch (error) {
-    return createErrorResponse(400, (error as Error).message);
+  } catch {
+    return createErrorResponse(
+      400,
+      "Het uurtarief moet nul of hoger zijn, of leeg blijven.",
+    );
   }
 
   const { data, error: userError } =
@@ -343,6 +371,10 @@ Deno.serve(async (req: Request) =>
   OptionsMiddleware(req, async (req) =>
     AuthMiddleware(req, async (req) =>
       UserMiddleware(req, async (req, user) => {
+        if (!user) {
+          return createErrorResponse(401, "Unauthorized");
+        }
+
         const currentUserSale = await getUserSale(user);
         if (!currentUserSale) {
           return createErrorResponse(401, "Unauthorized");
