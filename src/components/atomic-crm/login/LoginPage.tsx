@@ -8,6 +8,7 @@ import { TextInput } from "@/components/admin/text-input";
 import { Notification } from "@/components/admin/notification";
 import { Spinner } from "@/components/ui/spinner";
 import { useConfigurationContext } from "@/components/atomic-crm/root/ConfigurationContext.tsx";
+import { Wordmark } from "../layout/Wordmark";
 import { SSOAuthButton } from "./SSOAuthButton";
 
 /**
@@ -20,13 +21,8 @@ import { SSOAuthButton } from "./SSOAuthButton";
  * @see {@link https://marmelab.com/shadcn-admin-kit/docs/security Security documentation}
  */
 export const LoginPage = (props: { redirectTo?: string }) => {
-  const {
-    darkModeLogo,
-    lightModeLogo,
-    title,
-    googleWorkplaceDomain,
-    disableEmailPasswordAuthentication,
-  } = useConfigurationContext();
+  const { googleWorkplaceDomain, disableEmailPasswordAuthentication } =
+    useConfigurationContext();
   const { redirectTo } = props;
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -99,25 +95,14 @@ export const LoginPage = (props: { redirectTo?: string }) => {
         <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
           <div className="absolute inset-0 bg-black" />
           <div className="absolute inset-0 bg-linear-to-br from-primary/90 via-primary/40 to-transparent" />
-          <div className="relative z-20 flex items-center text-lg font-medium">
-            <img className="h-6 mr-2" src={darkModeLogo} alt={title} />
-            {title}
+          <div className="relative z-20">
+            <Wordmark size="lg" tone="invert" />
           </div>
         </div>
         <div className="flex flex-col justify-center w-full p-4 lg:p-8">
           <div className="w-full space-y-6 lg:mx-auto lg:max-w-sm">
-            <div className="flex items-center justify-center gap-2 lg:hidden">
-              <img
-                className="[.light_&]:hidden h-6"
-                src={darkModeLogo}
-                alt=""
-              />
-              <img
-                className="[.dark_&]:hidden h-6"
-                src={lightModeLogo}
-                alt=""
-              />
-              <span className="text-lg font-medium">{title}</span>
+            <div className="flex items-center justify-center lg:hidden">
+              <Wordmark size="lg" />
             </div>
             <div className="text-center">
               <h1 className="text-2xl font-semibold tracking-tight">
