@@ -91,7 +91,13 @@ test("user onboarding", async ({ page, isMobile, dismissToast }) => {
 
   await expect(page.getByText("This is a note about Jane.")).toBeVisible();
 
-  // Updates moved out of the dashboard's tab strip into its own page.
+  // Updates moved out of the dashboard's tab strip into its own page. The
+  // desktop rail links to it directly; the phone's five-slot bar cannot, so it
+  // is listed on "Vandaag".
+  if (isMobile) {
+    await page.getByRole("link", { name: "Vandaag" }).click();
+    await page.waitForLoadState("networkidle");
+  }
   await page.getByRole("link", { name: "Updates" }).first().click();
   await page.waitForLoadState("networkidle");
 

@@ -85,9 +85,12 @@ test.describe("user adding a task", () => {
       await expect(mobileTaskRow).toContainText("verloopt");
       await expect(mobileTaskRow).toContainText("2026");
     } else {
-      await expect(page.getByText("Taken")).toBeVisible();
+      // "Taken" is also the sidebar's link to the tasks page now, so scope the
+      // assertion to the heading on the contact.
+      const tasksHeading = page.getByRole("heading", { name: "Taken" });
+      await expect(tasksHeading).toBeVisible();
 
-      await expect(page.getByText("Taken").locator("..")).toHaveText(
+      await expect(tasksHeading.locator("..")).toHaveText(
         /Follow up with Jane/,
       );
       await menu.goToDashboard();

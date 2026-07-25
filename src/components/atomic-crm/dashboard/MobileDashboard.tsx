@@ -1,8 +1,16 @@
-import { Settings } from "lucide-react";
+import { ChevronRight, Settings } from "lucide-react";
 import { useGetList, useTimeout, useTranslate } from "ra-core";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemGroup,
+  ItemSeparator,
+  ItemTitle,
+} from "@/components/ui/item";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import type { Company, Contact, ContactNote, Deal } from "../types";
@@ -10,10 +18,12 @@ import { ContactCreateSheet } from "../contacts/ContactCreateSheet";
 import { NoteCreateSheet } from "../notes/NoteCreateSheet";
 import { DashboardStepper } from "./DashboardStepper";
 import { DealActionQueue } from "./DealActionQueue";
-import { HotContacts } from "./HotContacts";
+import { TeamWorkload } from "./TeamWorkload";
 import { TasksList } from "./TasksList";
 import MobileHeader from "../layout/MobileHeader";
 import { MobileContent } from "../layout/MobileContent";
+import { NAVIGATION } from "../layout/navigation";
+import { useNavigationCounts } from "../layout/useNavigationCounts";
 import { Wordmark } from "../layout/Wordmark";
 import { SettingsPageMobile } from "../settings/SettingsPageMobile";
 
@@ -39,6 +49,70 @@ const Wrapper = ({ children }: { children: React.ReactNode }) => {
         </Button>
       </MobileHeader>
       <MobileContent>{children}</MobileContent>
+    </>
+  );
+};
+
+/**
+ * The destinations the phone's five-slot bottom bar cannot hold.
+ *
+ * Derived from the same NAVIGATION model as the rail and the bar, so a screen
+ * added there can never become unreachable on a phone — which is exactly what
+ * happened to Financieel, Updates and Koppelingen.
+ */
+const OtherDestinations = () => {
+  const translate = useTranslate();
+  const counts = useNavigationCounts();
+
+  return (
+    <>
+      {NAVIGATION.map((group) => {
+        const items = group.items.filter((item) => !item.mobile);
+        if (items.length === 0) return null;
+
+        return (
+          <section key={group.fallback ?? group.items[0].to}>
+            {group.labelKey ? (
+              <h2 className="mb-1.5 px-1 text-meta font-medium uppercase tracking-wide text-ink-3">
+                {translate(group.labelKey, { _: group.fallback ?? "" })}
+              </h2>
+            ) : null}
+            <ItemGroup className="overflow-hidden rounded-lg border">
+              {items.map((item, index) => {
+                const count = item.badge ? counts[item.badge] : undefined;
+                const Icon = item.icon;
+
+                return (
+                  <Fragment key={item.to}>
+                    {index > 0 ? <ItemSeparator /> : null}
+                    <Item asChild size="sm">
+                      <Link to={item.to}>
+                        <Icon className="size-4 shrink-0 text-ink-3" />
+                        <ItemContent>
+                          <ItemTitle className="font-normal">
+                            {translate(item.labelKey, {
+                              smart_count: 2,
+                              _: item.fallback,
+                            })}
+                          </ItemTitle>
+                        </ItemContent>
+                        <ItemActions>
+                          {count ? (
+                            <span className="text-meta font-medium text-ink-2">
+                              {count}
+                            </span>
+                          ) : null}
+                          <ChevronRight className="size-4 text-ink-3" />
+                        </ItemActions>
+                      </Link>
+                    </Item>
+                  </Fragment>
+                );
+              })}
+            </ItemGroup>
+          </section>
+        );
+      })}
     </>
   );
 };
@@ -117,12 +191,16 @@ export const MobileDashboard = () => {
         // Real progress + first contact id: the stepper stays mounted while a
         // create sheet is open, so after the first contact is created the
         // checklist ticks off step 2 instead of showing a stale state.
-        <DashboardStepper
-          step={!totalContact ? 1 : !totalContactNotes ? 2 : 3}
-          contactId={contacts?.[0]?.id}
-          onNewContact={() => setContactCreateOpen(true)}
-          onNewNote={() => setNoteCreateOpen(true)}
-        />
+        <div className="flex min-w-0 flex-col gap-6">
+          <DashboardStepper
+            step={!totalContact ? 1 : !totalContactNotes ? 2 : 3}
+            contactId={contacts?.[0]?.id}
+            onNewContact={() => setContactCreateOpen(true)}
+            onNewNote={() => setNoteCreateOpen(true)}
+          />
+          {/* An empty CRM is exactly when Koppelingen matters most. */}
+          <OtherDestinations />
+        </div>
       ) : (
         // Phone "Vandaag": deviations first, then my tasks, then openings.
         // The board itself is one tap away in the bottom bar, so it is not
@@ -130,7 +208,8 @@ export const MobileDashboard = () => {
         <div className="flex min-w-0 flex-col gap-6">
           <DealActionQueue />
           <TasksList />
-          <HotContacts />
+          <TeamWorkload />
+          <OtherDestinations />
         </div>
       )}
     </Wrapper>
