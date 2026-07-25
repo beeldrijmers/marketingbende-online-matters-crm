@@ -33,10 +33,17 @@
     <title>Kompas CRM</title>
 
     <style>
+      /*
+        These rules are not in a cascade layer, so they beat everything the
+        stylesheet puts in @layer base no matter what order it loads in. A bare
+        `font-family: sans-serif` here therefore silently overrode the app's
+        typeface for the whole UI — the interface ran on the system font while
+        the font it shipped sat unused in the bundle. Name the real stack.
+      */
       body {
         margin: 0;
         padding: 0;
-        font-family: sans-serif;
+        font-family: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
       }
 
       /* Prevent accidental double-tap zoom on interactive elements */
