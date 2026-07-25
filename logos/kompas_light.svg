@@ -1,0 +1,15 @@
+<svg width="800" height="800" viewBox="0 0 800 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    Kompas: one needle, two halves meeting at a pivot. North carries the accent
+    (where the work is heading), south stays graphite (where it came from). The
+    gap between the halves is the pivot, so the mark carries no background of
+    its own. Broad on purpose: a slender needle disappears at the 16px it has to
+    survive in the sidebar and the browser tab.
+  -->
+  <g transform="rotate(-20 400.0 400.0)">
+    <path d="M400.0 104 L532.0 374.0 L400.0 374.0 Z" fill="#4149D6"/>
+    <path d="M400.0 104 L268.0 374.0 L400.0 374.0 Z" fill="#2E35A8"/>
+    <path d="M400.0 696 L532.0 426.0 L400.0 426.0 Z" fill="#AEB4C4"/>
+    <path d="M400.0 696 L268.0 426.0 L400.0 426.0 Z" fill="#8D94A8"/>
+  </g>
+</svg>
