@@ -3,6 +3,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
+import { isExpectedAbortError } from "./lib/sentryFiltering";
 
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 if (sentryDsn) {
@@ -10,6 +11,9 @@ if (sentryDsn) {
     dsn: sentryDsn,
     environment: import.meta.env.MODE,
     integrations: [Sentry.browserTracingIntegration()],
+    beforeSend(event, hint) {
+      return isExpectedAbortError(hint.originalException) ? null : event;
+    },
     sendDefaultPii: false,
     tracesSampleRate: 0.1,
   });
