@@ -15,14 +15,11 @@ const Header = () => {
   const location = useLocation();
   const translate = useTranslate();
 
-  let currentPath: string | boolean = "/";
-  if (matchPath("/", location.pathname)) {
-    currentPath = "/";
-  } else if (matchPath("/companies/*", location.pathname)) {
-    currentPath = "/companies";
-  } else {
-    currentPath = false;
-  }
+  const currentPath: string | boolean = matchPath("/", location.pathname)
+    ? "/"
+    : matchPath("/companies/*", location.pathname)
+      ? "/companies"
+      : false;
 
   return (
     <>

@@ -18,18 +18,15 @@ export const MobileNavigation = () => {
   const location = useLocation();
   const translate = useTranslate();
 
-  let currentPath: string | boolean = "/";
-  if (matchPath("/", location.pathname)) {
-    currentPath = "/";
-  } else if (matchPath("/contacts/*", location.pathname)) {
-    currentPath = "/contacts";
-  } else if (matchPath("/companies/*", location.pathname)) {
-    currentPath = "/companies";
-  } else if (matchPath("/tasks/*", location.pathname)) {
-    currentPath = "/tasks";
-  } else {
-    currentPath = false;
-  }
+  const currentPath: string | boolean = matchPath("/", location.pathname)
+    ? "/"
+    : matchPath("/contacts/*", location.pathname)
+      ? "/contacts"
+      : matchPath("/companies/*", location.pathname)
+        ? "/companies"
+        : matchPath("/tasks/*", location.pathname)
+          ? "/tasks"
+          : false;
 
   // Check if the app is running as a PWA (standalone mode)
   const isPwa = window.matchMedia("(display-mode: standalone)").matches;

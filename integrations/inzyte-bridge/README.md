@@ -23,3 +23,7 @@ The production Inzyte service also contains small integration points:
 
 `CRM_AGENCY_SECRET` is configured only in the Inzyte server environment and the
 CRM Supabase function secret store. It must never be committed.
+
+The bridge limits each source IP to 300 requests per minute by default. Set
+`CRM_AGENCY_RATE_LIMIT_PER_MINUTE` to a value from 10 through 1,000 when the
+production traffic profile requires a different ceiling.

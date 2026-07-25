@@ -45,8 +45,12 @@ export const AuthMiddleware = async (
     if (isValidJWT) return await next(req);
 
     return createErrorResponse(401, "Invalid authentication");
-  } catch (e) {
-    return createErrorResponse(401, e?.toString() || "Unauthorized");
+  } catch (error) {
+    console.warn(
+      "JWT authentication failed:",
+      error instanceof Error ? error.name : "UnknownError",
+    );
+    return createErrorResponse(401, "Unauthorized");
   }
 };
 
@@ -74,7 +78,11 @@ export const UserMiddleware = async (
     }
 
     return next(req, data.user);
-  } catch (err) {
-    return createErrorResponse(401, err?.toString() || "Unauthorized");
+  } catch (error) {
+    console.warn(
+      "Supabase user lookup failed:",
+      error instanceof Error ? error.name : "UnknownError",
+    );
+    return createErrorResponse(401, "Unauthorized");
   }
 };

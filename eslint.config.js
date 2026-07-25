@@ -17,6 +17,7 @@ export default tseslint.config(
       "**/lib/**",
       "**/.astro/**",
       "**/.github/**",
+      "**/.supabase-e2e/**",
       "**/prism.js",
       "packages/create-react-admin/templates/**",
     ],
@@ -33,7 +34,8 @@ export default tseslint.config(
       "react-refresh": reactRefresh,
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
       "react-refresh/only-export-components": [
         "warn",
         { allowConstantExport: true },
@@ -76,6 +78,7 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/consistent-type-imports": "off",
+      "react-refresh/only-export-components": "off",
     },
   },
   {

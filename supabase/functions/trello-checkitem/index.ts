@@ -33,7 +33,8 @@ const handler = async (req: Request): Promise<Response> => {
     .eq("id", taskId)
     .maybeSingle();
   if (taskError) {
-    return createErrorResponse(500, taskError.message);
+    console.error("Trello checkitem task lookup failed", taskError.code);
+    return createErrorResponse(500, "Taakgegevens konden niet worden geladen.");
   }
   if (
     !task ||
@@ -50,7 +51,11 @@ const handler = async (req: Request): Promise<Response> => {
     .eq("id", task.deal_id)
     .maybeSingle();
   if (dealError) {
-    return createErrorResponse(500, dealError.message);
+    console.error("Trello checkitem deal lookup failed", dealError.code);
+    return createErrorResponse(
+      500,
+      "Opdrachtgegevens konden niet worden geladen.",
+    );
   }
   if (!deal?.trello_card_id) {
     return createErrorResponse(422, "Deal has no linked Trello card");
@@ -65,7 +70,11 @@ const handler = async (req: Request): Promise<Response> => {
       token,
     });
   } catch (error) {
-    return createErrorResponse(502, (error as Error).message);
+    console.error(
+      "Trello checkitem update failed",
+      error instanceof Error ? error.name : "UnknownError",
+    );
+    return createErrorResponse(502, "Trello kon niet worden bijgewerkt.");
   }
 
   return new Response(JSON.stringify({ ok: true }), {

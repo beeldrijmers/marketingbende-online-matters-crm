@@ -179,6 +179,7 @@ export const findDocumentByReference = async (
         `Could not verify whether an earlier ${kind} already exists (reference ${reference}): ${
           error instanceof Error ? error.message : String(error)
         }`,
+        { cause: error },
       );
     }
     console.error(

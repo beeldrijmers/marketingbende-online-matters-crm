@@ -601,7 +601,7 @@ const runRemoteAction = async (
         })
         .eq("id", link.id);
     }
-    throw new Error(message);
+    throw new Error(message, { cause: error });
   }
 };
 
