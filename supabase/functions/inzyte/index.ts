@@ -262,7 +262,7 @@ const safeRunError = (error: unknown, action?: InzyteAction): string => {
       "De meetbron is correct gekoppeld, maar de AI-vraagfunctie",
     )
   ) {
-    return message;
+    return "De meetbron is correct gekoppeld, maar de AI-vraagfunctie kon niet worden uitgevoerd. Controleer de AI-toegang en probeer opnieuw.";
   }
   if (message.includes("abort")) {
     return "Inzyte had te lang nodig om te antwoorden.";
@@ -282,6 +282,47 @@ const safeRunError = (error: unknown, action?: InzyteAction): string => {
     return "De meetbron is correct gekoppeld, maar de AI-vraagfunctie heeft geen geldige AI-toegang. Vernieuw de AI-sleutel van het analyseplatform en probeer daarna opnieuw.";
   }
   return "Inzyte kon deze opdracht nu niet uitvoeren. Controleer de koppelingen en probeer opnieuw.";
+};
+
+const safeUserErrorMessage = (error: InzyteUserError): string => {
+  switch (error.message) {
+    case "Kies eerst een geldig Inzyte-account.":
+      return "Kies eerst een geldig Inzyte-account.";
+    case "Dit Inzyte-account is niet beschikbaar.":
+      return "Dit Inzyte-account is niet beschikbaar.";
+    case "De gekozen GA4-koppeling hoort niet bij dit Inzyte-account.":
+      return "De gekozen GA4-koppeling hoort niet bij dit Inzyte-account.";
+    case "Kies een geldige GA4-property.":
+      return "Kies een geldige GA4-property.";
+    case "Koppel eerst een GA4-account en property aan deze opdracht.":
+      return "Koppel eerst een GA4-account en property aan deze opdracht.";
+    case "Deze meetbron is nog niet live gecontroleerd voor deze opdracht. Open Koppelingen en sla de bron opnieuw op.":
+      return "Deze meetbron is nog niet live gecontroleerd voor deze opdracht. Open Koppelingen en sla de bron opnieuw op.";
+    case "Kies eerst een maandrapport.":
+      return "Kies eerst een maandrapport.";
+    case "Dit maandrapport is niet gevonden.":
+      return "Dit maandrapport is niet gevonden.";
+    case "Schrijf eerst een bruikbare samenvatting voor de klant.":
+      return "Schrijf eerst een bruikbare samenvatting voor de klant.";
+    case "Leg eerst de concrete werkzaamheden uit deze rapportagemaand vast.":
+      return "Leg eerst de concrete werkzaamheden uit deze rapportagemaand vast.";
+    case "Leg eerst uit wat de voortgang praktisch voor de klant betekent.":
+      return "Leg eerst uit wat de voortgang praktisch voor de klant betekent.";
+    case "Leg eerst de eerlijke aandachtspunten voor de klant vast.":
+      return "Leg eerst de eerlijke aandachtspunten voor de klant vast.";
+    case "Leg eerst de concrete focus voor komende maand vast.":
+      return "Leg eerst de concrete focus voor komende maand vast.";
+    case "Dit Inzyte-resultaat is niet gevonden.":
+      return "Dit Inzyte-resultaat is niet gevonden.";
+    case "Kies eerst een Inzyte-account.":
+      return "Kies eerst een Inzyte-account.";
+    case "Kies een account en gegevensbron.":
+      return "Kies een account en gegevensbron.";
+    case "Kies eerst een opgeslagen resultaat.":
+      return "Kies eerst een opgeslagen resultaat.";
+    default:
+      return "De aanvraag kon niet worden verwerkt. Controleer de invoer en probeer opnieuw.";
+  }
 };
 
 const settledSource = async (
@@ -1495,7 +1536,9 @@ const handleRequest = async (
     }
   } catch (error) {
     const isUserError = error instanceof InzyteUserError;
-    const message = isUserError ? error.message : safeRunError(error);
+    const message = isUserError
+      ? safeUserErrorMessage(error)
+      : "Inzyte kon deze opdracht nu niet uitvoeren. Controleer de koppelingen en probeer opnieuw.";
     console.error(
       `inzyte action ${action} failed for deal ${dealId}:`,
       error instanceof Error ? error.name : "UnknownError",
