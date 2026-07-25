@@ -85,9 +85,9 @@ jobs:
                   jq -n \
                       --arg site_url "https://crm.marketingbende.nl" \
                       --arg uri_allow_list "https://crm.marketingbende.nl/**,https://beeldrijmers.github.io/marketingbende-online-matters-crm/**" \
-                      --arg invite_subject "You've been invited to Marketingbende x Online Matters CRM" \
+                      --arg invite_subject "U bent uitgenodigd voor Kompas CRM" \
                       --rawfile invite_content supabase/templates/invite.html \
-                      --arg recovery_subject "Reset your Marketingbende x Online Matters CRM Password" \
+                      --arg recovery_subject "Stel uw Kompas CRM-wachtwoord opnieuw in" \
                       --rawfile recovery_content supabase/templates/recovery.html \
                       '{
                           site_url: $site_url,

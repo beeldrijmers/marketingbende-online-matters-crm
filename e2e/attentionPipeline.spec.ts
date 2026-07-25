@@ -33,6 +33,11 @@ test.describe("attention scope", () => {
     await page.getByRole("textbox", { name: "Wachtwoord" }).fill("password");
     await page.getByRole("button", { name: "Inloggen" }).click();
 
+    // Wait for the login redirect to land before navigating: it replaces the
+    // hash with "/" a beat after the click, which would otherwise undo the
+    // goto below.
+    await expect(page).toHaveURL(/#\/$/);
+
     // The board is its own page again.
     await page.goto("http://localhost:5175/#/deals");
     await expect(page).toHaveURL(/#\/deals$/);
@@ -44,7 +49,7 @@ test.describe("attention scope", () => {
       // The phone shows one ranked list; the desktop scope switch is not part
       // of that screen.
       await expect(
-        page.getByRole("searchbox", { name: /zoek/i }).first(),
+        page.getByRole("textbox", { name: /zoek/i }).first(),
       ).toBeVisible();
       return;
     }

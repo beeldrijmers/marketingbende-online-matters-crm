@@ -185,38 +185,6 @@ export const englishCrmMessages = {
         tags: "Tags",
         tasks: "Tasks",
       },
-      hot: {
-        active_deals:
-          "%{smart_count} active deal |||| %{smart_count} active deals",
-        empty_hint:
-          "As soon as there is an active client deal, the relationship appears here automatically.",
-        empty_title: "No active leads yet",
-        hot_label: "Hot",
-        missing_contact: "Link a contact",
-        more: "%{count} more active relationships on the kanban board",
-        open_board: "All leads",
-        pipeline: "%{amount} pipeline",
-        reasons: {
-          active_delivery: "Active project",
-          active_opportunity: "Open opportunity",
-          closing_overdue: "Expected closing date passed",
-          high_value: "High deal value",
-          hot_contact: "Contact marked hot",
-          multiple_deals: "Multiple active deals",
-          recent_activity: "Recent activity",
-          ready_to_invoice: "Ready to invoice",
-          urgent_follow_up: "Follow-up today or overdue",
-        },
-        subtitle:
-          "Automatically determined from deals, follow-up and activity.",
-        tiers: {
-          hot: "Hot",
-          warm: "Warm",
-          watch: "Watch",
-        },
-        title: "Hot contacts & leads",
-        unnamed_contact: "Unnamed contact",
-      },
     },
     deals: {
       name: "Deal |||| Deals",
@@ -229,6 +197,8 @@ export const englishCrmMessages = {
         count: "%{smart_count} deal |||| %{smart_count} deals",
         error_body: "The deals could not be loaded. Try reloading the page.",
         error_title: "Board unavailable",
+        owner_scope: "%{name} only",
+        owner_scope_loading: "Person",
         focus_all: "All",
         search: "Search deal or client",
         focus_attention: "Attention",
@@ -649,6 +619,14 @@ export const englishCrmMessages = {
     },
     dashboard: {
       deals_pipeline: "Deals Pipeline",
+      workload: {
+        title: "Who is doing what",
+        subtitle: "Open work per person. Click to scope the board to them.",
+        unassigned: "Unassigned",
+        open: "%{smart_count} open |||| %{smart_count} open",
+        needs_action: "%{count} to do",
+        empty: "There is no open work on the board.",
+      },
       deal_actions: {
         title: "This needs your attention",
         subtitle:

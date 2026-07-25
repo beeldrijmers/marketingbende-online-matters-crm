@@ -18,6 +18,7 @@ import {
   createDashboardDealSelection,
   getDashboardDealSelectionPath,
 } from "./dashboardDealSelection";
+import { filterByOwnerScope, parseOwnerScope } from "./ownerScope";
 import { summarizeDealAttention } from "./dealWorkflow";
 
 const useAttentionDealSelection = () => {
@@ -50,9 +51,12 @@ const useAttentionDealSelection = () => {
   const label = translate("crm.dashboard.deal_actions.title", {
     _: "Dit heeft je aandacht nodig",
   });
+  // The board can be scoped to one person from "Wie doet wat"; the attention
+  // view ranks in memory, so it applies that scope itself.
+  const owner = parseOwnerScope(searchParams.get("owner"));
   const rankedDeals = useMemo(
-    () => selectAttentionDeals(deals, tasks),
-    [deals, tasks],
+    () => selectAttentionDeals(filterByOwnerScope(deals, owner), tasks),
+    [deals, owner, tasks],
   );
   const counts = useMemo(
     () => summarizeDealAttention(rankedDeals),

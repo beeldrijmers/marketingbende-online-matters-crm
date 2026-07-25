@@ -650,6 +650,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/ownerScope.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/index.ts",
           "type": "registry:component"
         },
@@ -846,15 +850,15 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/dashboard/teamWorkloadModel.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/dashboard/revenueModel.ts",
           "type": "registry:component"
         },
         {
           "path": "src/components/atomic-crm/dashboard/integrationStatusModel.ts",
-          "type": "registry:component"
-        },
-        {
-          "path": "src/components/atomic-crm/dashboard/hotLeads.ts",
           "type": "registry:component"
         },
         {
@@ -867,6 +871,10 @@
         },
         {
           "path": "src/components/atomic-crm/dashboard/UpdatesPage.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/dashboard/TeamWorkload.tsx",
           "type": "registry:component"
         },
         {
@@ -887,10 +895,6 @@
         },
         {
           "path": "src/components/atomic-crm/dashboard/IntegrationStatus.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "src/components/atomic-crm/dashboard/HotContacts.tsx",
           "type": "registry:component"
         },
         {

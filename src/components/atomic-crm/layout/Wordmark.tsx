@@ -31,7 +31,9 @@ export const Wordmark = ({ compact = false }: { compact?: boolean }) => {
         <span className="sr-only">{title}</span>
       ) : (
         <span className="flex items-baseline gap-1.5 whitespace-nowrap">
-          <span className="text-[0.9375rem] font-bold leading-none tracking-[0.02em] text-ink">
+          {/* Set in caps: six short letters read as a mark this way, and the
+              wide tracking keeps them from clotting into one shape. */}
+          <span className="text-[0.875rem] font-semibold uppercase leading-none tracking-[0.16em] text-ink">
             {mainText}
           </span>
           {hasCrmSuffix ? (

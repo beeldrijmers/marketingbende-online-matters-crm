@@ -85,17 +85,20 @@ test.describe("user adding a task", () => {
       await expect(mobileTaskRow).toContainText("verloopt");
       await expect(mobileTaskRow).toContainText("2026");
     } else {
-      await expect(page.getByText("Taken")).toBeVisible();
+      // "Taken" is also the sidebar's link to the tasks page now, so scope the
+      // assertion to the heading on the contact.
+      const tasksHeading = page.getByRole("heading", { name: "Taken" });
+      await expect(tasksHeading).toBeVisible();
 
-      await expect(page.getByText("Taken").locator("..")).toHaveText(
+      await expect(tasksHeading.locator("..")).toHaveText(
         /Follow up with Jane/,
       );
       await menu.goToDashboard();
 
+      // The panel is a sibling of its heading, not a descendant, so assert the
+      // task is on the dashboard instead of walking up two levels of markup.
       await expect(page.getByText("Aankomende taken")).toBeVisible();
-      await expect(
-        page.getByText("Aankomende taken").locator("../.."),
-      ).toHaveText(/Follow up with Jane/);
+      await expect(page.getByText("Follow up with Jane")).toBeVisible();
       // The task row also renders the assignee avatar + party badge (from the
       // collaboration layer) between the due date and the "(Betreft: ...)"
       // suffix, which the browser exposes as separate text nodes. Assert the

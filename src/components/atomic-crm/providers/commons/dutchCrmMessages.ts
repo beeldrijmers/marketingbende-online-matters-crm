@@ -190,38 +190,6 @@ export const dutchCrmMessages = {
         tags: "Labels",
         tasks: "Taken",
       },
-      hot: {
-        active_deals:
-          "%{smart_count} actieve opdracht |||| %{smart_count} actieve opdrachten",
-        empty_hint:
-          "Zodra er een actieve klantopdracht is, verschijnt de relatie hier automatisch.",
-        empty_title: "Nog geen actieve kansen",
-        hot_label: "Heet",
-        missing_contact: "Contact nog koppelen",
-        more: "Nog %{count} actieve relaties",
-        open_board: "Alle kansen",
-        pipeline: "%{amount} in werkstroom",
-        reasons: {
-          active_delivery: "Actief project",
-          active_opportunity: "Open kans",
-          closing_overdue: "Verwachte sluitdatum verlopen",
-          high_value: "Hoge opdrachtwaarde",
-          hot_contact: "Contact heeft status Heet",
-          multiple_deals: "Meerdere actieve opdrachten",
-          recent_activity: "Recent contact",
-          ready_to_invoice: "Klaar voor facturatie",
-          urgent_follow_up: "Opvolging vandaag of te laat",
-        },
-        subtitle:
-          "Automatisch bepaald uit opdrachten, opvolging en activiteit.",
-        tiers: {
-          hot: "Heet",
-          warm: "Warm",
-          watch: "Volgen",
-        },
-        title: "Warme contacten en kansen",
-        unnamed_contact: "Naamloos contact",
-      },
     },
     deals: {
       name: "Opdracht |||| Opdrachten",
@@ -235,6 +203,8 @@ export const dutchCrmMessages = {
         error_body:
           "De opdrachten konden niet worden geladen. Probeer de pagina opnieuw te laden.",
         error_title: "Bord niet beschikbaar",
+        owner_scope: "Alleen %{name}",
+        owner_scope_loading: "Persoon",
         focus_all: "Alles",
         search: "Zoek opdracht of klant",
         focus_attention: "Aandacht",
@@ -659,6 +629,14 @@ export const dutchCrmMessages = {
     },
     dashboard: {
       deals_pipeline: "Opdrachtenbord",
+      workload: {
+        title: "Wie doet wat",
+        subtitle: "Open werk per persoon. Klik om het bord daarop te zetten.",
+        unassigned: "Niet toegewezen",
+        open: "%{smart_count} open |||| %{smart_count} open",
+        needs_action: "%{count} te doen",
+        empty: "Er staat geen open werk op het bord.",
+      },
       deal_actions: {
         title: "Dit heeft uw aandacht nodig",
         subtitle:

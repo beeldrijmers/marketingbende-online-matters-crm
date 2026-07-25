@@ -101,11 +101,11 @@ double_confirm_changes = true
 enable_confirmations = false
 
 [auth.email.template.invite]
-subject = "U bent uitgenodigd voor BANKAI CRM"
+subject = "U bent uitgenodigd voor Kompas CRM"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.recovery]
-subject = "Stel uw BANKAI CRM-wachtwoord opnieuw in"
+subject = "Stel uw Kompas CRM-wachtwoord opnieuw in"
 content_path = "./supabase/templates/recovery.html"
 
 [auth.sms]

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-/* Inter with the optical-size axis: large text is reshaped automatically. */
-@import "@fontsource-variable/inter/opsz.css";
+/* Geist Variable, weights only — the italic file is never used by this UI. */
+@import "@fontsource-variable/geist/wght.css";
 @import "./styles/theme.css";
 @import "./styles/base.css";
 
