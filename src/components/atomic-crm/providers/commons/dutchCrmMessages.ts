@@ -813,6 +813,8 @@ export const dutchCrmMessages = {
       meta: "Status van Gmail, Trello en Moneybird",
     },
     profile: {
+      personal_connection:
+        "Alleen op dit account (%{name}). Collega's koppelen hun eigen account; niemand anders kan deze koppeling zien of gebruiken.",
       gmail: {
         title: "Gmail",
         description:

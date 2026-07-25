@@ -17,6 +17,7 @@ import {
   useGmailConnection,
 } from "../misc/useGmailConnection";
 import type { CrmDataProvider } from "../providers/types";
+import { PersonalConnectionNote } from "./PersonalConnectionNote";
 
 export const GmailConnectionSection = () => {
   const translate = useTranslate();
@@ -170,6 +171,7 @@ export const GmailConnectionContent = () => {
             email: connection.email,
           })}
         </p>
+        <PersonalConnectionNote />
         <p className="text-muted-foreground">
           {translate("crm.profile.gmail.last_sync", { date: lastSync })}
         </p>

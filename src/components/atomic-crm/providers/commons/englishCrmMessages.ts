@@ -803,6 +803,8 @@ export const englishCrmMessages = {
       meta: "Status of Gmail, Trello and Moneybird",
     },
     profile: {
+      personal_connection:
+        "This account only (%{name}). Colleagues connect their own account; nobody else can see or use this connection.",
       gmail: {
         title: "Gmail",
         description:

@@ -20,6 +20,7 @@ import {
   useMoneybirdConnection,
 } from "../misc/useMoneybirdConnection";
 import type { CrmDataProvider } from "../providers/types";
+import { PersonalConnectionNote } from "./PersonalConnectionNote";
 
 type AdministrationOption = { id: string; name: string };
 
@@ -122,12 +123,13 @@ export const MoneybirdConnectionContent = () => {
     <div className="space-y-4">
       {statusLoading ? null : connection ? (
         <>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-ink">
             {translate("crm.profile.moneybird.connected", {
               administration:
                 connection.administrationName || connection.administrationId,
             })}
           </p>
+          <PersonalConnectionNote />
           <div className="flex flex-row justify-end gap-2">
             {confirmingDisconnect ? (
               <>
