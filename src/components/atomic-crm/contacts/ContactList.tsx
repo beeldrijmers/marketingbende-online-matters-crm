@@ -30,6 +30,7 @@ import {
   ContactListFilterSummary,
   ContactListFilter,
 } from "./ContactListFilter";
+import { PageBody } from "../layout/PageBody";
 import { PageHeader } from "../layout/PageHeader";
 import { TopToolbar } from "../layout/TopToolbar";
 import { InfinitePagination } from "../misc/InfinitePagination";
@@ -84,7 +85,7 @@ const ContactListLayoutDesktop = () => {
         }
         actions={<ContactListActions />}
       />
-      <div className="flex flex-row gap-6">
+      <PageBody className="flex flex-row gap-6">
         <ContactListFilter />
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <div className="panel divide-y divide-line-subtle overflow-hidden">
@@ -95,7 +96,7 @@ const ContactListLayoutDesktop = () => {
         <BulkActionsToolbar>
           <ContactBulkActionButtons />
         </BulkActionsToolbar>
-      </div>
+      </PageBody>
     </>
   );
 };

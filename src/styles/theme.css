@@ -30,6 +30,10 @@
   /* Shell measurements. One source of truth: the phone header, the bottom bar
      and the padding that keeps content clear of both used to disagree
      (56 / 64 / 72px), which is why the board's title sat under the app bar. */
+  /* Maximum measure for a page's content. Rows wider than this pin their
+     first and last element to opposite ends of the screen with a hole in
+     between; the board opts out because its columns use every pixel. */
+  --page-max: 100rem;
   --app-bar-h: 3.5rem;
   --bottom-nav-h: 3.5rem;
   --safe-b: env(safe-area-inset-bottom, 0px);

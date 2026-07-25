@@ -9,6 +9,7 @@ import { SortButton } from "@/components/admin/sort-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { PageBody } from "../layout/PageBody";
 import { PageHeader } from "../layout/PageHeader";
 import { TopToolbar } from "../layout/TopToolbar";
 import { CompanyEmpty } from "./CompanyEmpty";
@@ -59,13 +60,13 @@ const CompanyListLayout = () => {
         }
         actions={<CompanyListActions />}
       />
-      <div className="flex w-full flex-row gap-6">
+      <PageBody className="flex w-full flex-row gap-6">
         <CompanyListFilter />
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <ImageList />
           <ListPagination rowsPerPageOptions={[10, 25, 50, 100]} />
         </div>
-      </div>
+      </PageBody>
     </>
   );
 };

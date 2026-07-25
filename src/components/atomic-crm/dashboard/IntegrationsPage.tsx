@@ -1,6 +1,7 @@
 import { useTranslate } from "ra-core";
 
 import { MobilePage } from "../layout/MobilePage";
+import { PageBody } from "../layout/PageBody";
 import { PageHeader } from "../layout/PageHeader";
 import { IntegrationStatus } from "./IntegrationStatus";
 
@@ -15,9 +16,9 @@ export const IntegrationsPage = () => {
           _: "Status van Gmail, Trello en Moneybird",
         })}
       />
-      <div className="max-w-3xl">
+      <PageBody className="max-w-3xl">
         <IntegrationStatus />
-      </div>
+      </PageBody>
     </>
   );
 };

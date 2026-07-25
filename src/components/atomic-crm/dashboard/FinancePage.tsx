@@ -4,6 +4,7 @@ import { lazy, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { MobilePage } from "../layout/MobilePage";
+import { PageBody } from "../layout/PageBody";
 import { PageHeader } from "../layout/PageHeader";
 import type { Deal } from "../types";
 import { BillingQueue } from "./BillingQueue";
@@ -57,7 +58,7 @@ export const FinancePage = () => {
         title={translate("crm.navigation.finance", { _: "Financieel" })}
         meta={meta}
       />
-      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-12">
+      <PageBody className="grid grid-cols-1 items-start gap-5 xl:grid-cols-12">
         <div className="min-w-0 xl:col-span-7">
           <RevenueChart />
         </div>
@@ -66,7 +67,7 @@ export const FinancePage = () => {
         <div className="min-w-0 xl:col-span-5">
           <BillingQueue />
         </div>
-      </div>
+      </PageBody>
     </>
   );
 };

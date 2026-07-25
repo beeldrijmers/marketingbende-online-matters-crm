@@ -11,6 +11,7 @@ import {
   INTEGRATIONS_PATH,
   UPDATES_PATH,
 } from "../root/routes";
+import { PageBody } from "../layout/PageBody";
 import { PageHeader } from "../layout/PageHeader";
 import type { Company, Contact, ContactNote, Deal, Task } from "../types";
 import { selectAttentionDeals } from "../deals/dashboardDealKanbanModel";
@@ -140,11 +141,11 @@ const Today = () => {
         meta={meta.join(" · ")}
       />
       {isDemo ? (
-        <div className="mb-5">
+        <PageBody className="mb-5">
           <Welcome />
-        </div>
+        </PageBody>
       ) : null}
-      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-12">
+      <PageBody className="grid grid-cols-1 items-start gap-5 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-5 xl:col-span-8">
           <DealActionQueue />
         </div>
@@ -152,7 +153,7 @@ const Today = () => {
           <TasksList />
           <HotContacts />
         </div>
-      </div>
+      </PageBody>
     </>
   );
 };

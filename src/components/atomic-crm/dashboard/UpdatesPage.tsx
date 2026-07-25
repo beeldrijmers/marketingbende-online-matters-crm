@@ -1,6 +1,7 @@
 import { useTranslate } from "ra-core";
 
 import { MobilePage } from "../layout/MobilePage";
+import { PageBody } from "../layout/PageBody";
 import { PageHeader } from "../layout/PageHeader";
 import { DashboardActivityLog } from "./DashboardActivityLog";
 
@@ -15,9 +16,9 @@ export const UpdatesPage = () => {
           _: "Alles wat het team recent heeft vastgelegd",
         })}
       />
-      <div className="max-w-3xl">
+      <PageBody className="max-w-3xl">
         <DashboardActivityLog />
-      </div>
+      </PageBody>
     </>
   );
 };

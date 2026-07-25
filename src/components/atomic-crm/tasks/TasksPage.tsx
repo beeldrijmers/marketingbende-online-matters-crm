@@ -1,5 +1,6 @@
 import { useTranslate } from "ra-core";
 
+import { PageBody } from "../layout/PageBody";
 import { PageHeader } from "../layout/PageHeader";
 import { AddTask } from "./AddTask";
 import { TasksListContent } from "./TasksListContent";
@@ -24,9 +25,9 @@ export const TasksPage = () => {
         })}
         actions={<AddTask selectContact />}
       />
-      <div className="max-w-3xl">
+      <PageBody className="max-w-3xl">
         <TasksListContent />
-      </div>
+      </PageBody>
     </>
   );
 };

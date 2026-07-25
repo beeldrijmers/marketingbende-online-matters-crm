@@ -30,7 +30,7 @@ export const PageHeader = ({
       className,
     )}
   >
-    <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+    <div className="mx-auto flex w-full max-w-[--page-max] flex-wrap items-start justify-between gap-x-4 gap-y-2">
       <div className="min-w-0">
         <h1 className="text-title text-ink">{title}</h1>
         {meta ? (
@@ -43,6 +43,8 @@ export const PageHeader = ({
         </div>
       ) : null}
     </div>
-    {children ? <div className="mt-3">{children}</div> : null}
+    {children ? (
+      <div className="mx-auto mt-3 w-full max-w-[--page-max]">{children}</div>
+    ) : null}
   </header>
 );

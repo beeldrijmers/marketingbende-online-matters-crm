@@ -26,7 +26,7 @@ import {
 } from "../deals/dealWorkflow";
 import type { Deal, Task as TaskRecord } from "../types";
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 8;
 
 export const DealActionQueue = () => {
   const translate = useTranslate();
@@ -104,45 +104,39 @@ export const DealActionQueue = () => {
         ) : (
           visibleDeals.map(({ deal, workflow }) => (
             <RecordContextProvider key={deal.id} value={deal}>
+              {/* Three zones on one line: who it is for, what the next step is,
+                  and what state it is in. Stacking the step underneath left a
+                  hole in the middle of the row on a wide screen. */}
               <div
                 className={cn(
-                  "flex flex-col gap-1 border-l-2 border-l-transparent px-3 py-2",
+                  "flex min-w-0 items-center gap-3 border-l-2 border-l-transparent px-3 py-2",
                   workflow.kind === "overdue" && "border-l-late",
                   workflow.kind === "today" && "border-l-wait",
                 )}
               >
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <ReferenceField
-                    source="company_id"
-                    reference="companies"
-                    link={false}
-                  >
-                    <CompanyAvatar width={20} height={20} />
-                  </ReferenceField>
-                  <Link
-                    to={getDashboardDealDetailPath(
-                      DEAL_ATTENTION_PATH,
-                      deal.id,
-                    )}
-                    className="min-w-0 flex-1 no-underline hover:underline"
-                  >
-                    <span className="block truncate text-body font-semibold text-ink">
-                      <ReferenceField
-                        source="company_id"
-                        reference="companies"
-                        link={false}
-                      />
-                    </span>
-                    <span className="block truncate text-meta text-ink-3">
-                      {deal.name}
-                    </span>
-                  </Link>
-                  <DealWorkflowBadge workflow={workflow} />
-                </div>
-
-                {/* One line for the next step: the boxed "AANBEVOLEN VOLGENDE
-                    STAP" panel tripled every row's height for one sentence. */}
-                <p className="flex min-w-0 items-center gap-1.5 pl-[1.9rem] text-meta text-ink-2">
+                <ReferenceField
+                  source="company_id"
+                  reference="companies"
+                  link={false}
+                >
+                  <CompanyAvatar width={20} height={20} />
+                </ReferenceField>
+                <Link
+                  to={getDashboardDealDetailPath(DEAL_ATTENTION_PATH, deal.id)}
+                  className="min-w-0 flex-[3] no-underline hover:underline"
+                >
+                  <span className="block truncate text-body font-semibold text-ink">
+                    <ReferenceField
+                      source="company_id"
+                      reference="companies"
+                      link={false}
+                    />
+                  </span>
+                  <span className="block truncate text-meta text-ink-3">
+                    {deal.name}
+                  </span>
+                </Link>
+                <p className="hidden min-w-0 flex-[4] items-center gap-1.5 text-meta text-ink-2 sm:flex">
                   <ListTodo className="size-3.5 shrink-0 text-ink-3" />
                   <span className="min-w-0 truncate">
                     {workflow.nextTask
@@ -154,6 +148,7 @@ export const DealActionQueue = () => {
                         })}
                   </span>
                 </p>
+                <DealWorkflowBadge workflow={workflow} />
               </div>
             </RecordContextProvider>
           ))
