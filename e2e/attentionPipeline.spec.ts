@@ -54,11 +54,19 @@ test.describe("attention scope", () => {
       return;
     }
 
+    // Scoped to the board's own view switch: the list's intern/extern filter
+    // below it offers an "Alles" of its own, so an unscoped lookup is ambiguous
+    // as soon as both have rendered.
+    const boardView = page.getByRole("group", {
+      name: "Weergave van het bord",
+    });
     await expect(
-      page.getByRole("button", { name: "Alles", exact: true }),
+      boardView.getByRole("button", { name: "Alles", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
 
-    await page.getByRole("button", { name: "Aandacht", exact: true }).click();
+    await boardView
+      .getByRole("button", { name: "Aandacht", exact: true })
+      .click();
     await expect(page).toHaveURL(/#\/deals\?focus=attention$/);
 
     const filters = page.getByRole("group", {
