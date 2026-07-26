@@ -811,7 +811,7 @@ export const dutchCrmMessages = {
         connect: "Gmail koppelen",
         connecting: "Naar Google…",
         connect_success:
-          "Gmail is gekoppeld. Kies eerst een Gmail-label voordat import actief wordt.",
+          "Google-koppeling is bijgewerkt. Zonder gekozen Gmail-label importeert het CRM niets.",
         oauth_error:
           "Gmail koppelen is niet afgerond. Probeer het opnieuw of controleer de toestemming bij Google.",
         connected: "Gekoppeld met %{email}.",
@@ -836,6 +836,10 @@ export const dutchCrmMessages = {
         sync_label_active: "Importlabel: %{label}.",
         sync_label_required:
           "Import staat gepauzeerd totdat u een Gmail-label kiest.",
+        refresh_access: "Toegang tot je agenda",
+        refresh_access_hint:
+          "Om een taak als afspraak in je eigen Google-agenda te zetten is eenmalig extra toestemming nodig. Je importlabel en synchronisatie blijven bij het vernieuwen staan.",
+        refresh_access_action: "Google-toegang vernieuwen",
         disconnect: "Loskoppelen",
         disconnect_confirm: "Ja, Gmail loskoppelen",
         disconnect_success: "Gmail losgekoppeld",

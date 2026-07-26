@@ -22,6 +22,7 @@ import {
   encryptGmailToken,
   gmailConnectionAad,
 } from "../_shared/gmail/tokenCrypto.ts";
+import { connectionFieldsAfterConsent } from "./connectionFields.ts";
 
 const GOOGLE_AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
@@ -296,20 +297,24 @@ const handleCallback = async (req: Request): Promise<Response> => {
       encKey,
       gmailConnectionAad(oauthState.sales_id),
     );
+    const { data: existing } = await supabaseAdmin
+      .from("gmail_connections")
+      .select(
+        "email, sync_label_id, sync_label_name, sync_status, history_id, last_synced_at",
+      )
+      .eq("sales_id", oauthState.sales_id)
+      .maybeSingle();
+
     const { error } = await supabaseAdmin.from("gmail_connections").upsert(
       {
         sales_id: oauthState.sales_id,
-        email: profile.emailAddress.toLowerCase(),
-        refresh_token_encrypted: encrypted,
-        // A connection does not import anything until the user deliberately
-        // selects a Gmail label in CRM settings.
-        history_id: profile.historyId,
-        sync_label_id: null,
-        sync_label_name: null,
-        sync_status: "needs_label",
-        last_synced_at: null,
-        last_error: null,
-        updated_at: new Date().toISOString(),
+        ...connectionFieldsAfterConsent({
+          existing,
+          email: profile.emailAddress,
+          historyId: profile.historyId,
+          refreshTokenEncrypted: encrypted,
+          now: new Date().toISOString(),
+        }),
       },
       { onConflict: "sales_id" },
     );
