@@ -137,6 +137,38 @@ describe("resolveDealName", () => {
   it("leaves titles without the noise prefix unchanged", () => {
     expect(resolveDealName("MB Roofing - SEO")).toBe("MB Roofing - SEO");
   });
+
+  it("drops the tags and the client the CRM already shows above the name", () => {
+    expect(
+      resolveDealName(
+        "[WEBSITE] ASP Noard: staging klaar, wacht op content en klantakkoord",
+        "ASP Noard",
+      ),
+    ).toBe("Staging klaar, wacht op content en klantakkoord");
+    expect(
+      resolveDealName(
+        "[SEO] MB Roofing - maandelijkse optimalisatie",
+        "MB Roofing",
+      ),
+    ).toBe("Maandelijkse optimalisatie");
+  });
+
+  it("keeps a client mentioned later in the title", () => {
+    expect(resolveDealName("Scrape Hunting XL", "Hunting XL")).toBe(
+      "Scrape Hunting XL",
+    );
+  });
+
+  it("never leaves a deal nameless", () => {
+    expect(resolveDealName("[LEAD] DJ Supply", "DJ Supply")).toBe("DJ Supply");
+    expect(resolveDealName("Bouwiva:", "Bouwiva")).toBe("Bouwiva:");
+  });
+
+  it("matches the client case-insensitively", () => {
+    expect(resolveDealName("hunting xl: import klaar", "Hunting XL")).toBe(
+      "Import klaar",
+    );
+  });
 });
 
 describe("resolveRevenuePeriod", () => {

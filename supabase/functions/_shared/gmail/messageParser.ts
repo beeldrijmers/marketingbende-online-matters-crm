@@ -88,5 +88,8 @@ export const normalizeGmailMessage = async (
     subject: header(message.payload, "Subject"),
     text,
     html,
+    // Gmail already hands over the full header list; passing it on lets the
+    // pipeline recognise a newsletter without a second lookup.
+    headers: message.payload?.headers ?? [],
   };
 };

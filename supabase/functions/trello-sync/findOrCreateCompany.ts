@@ -3,8 +3,17 @@ import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 const normalizedCompanyName = (name: string): string =>
   name.trim().toLowerCase();
 
-// Looks up a company by exact name match, creating it when it doesn't exist
+// PostgREST treats % and _ in an ilike pattern as wildcards, so a company
+// whose name contains one would otherwise match the wrong record.
+const escapeLikePattern = (value: string): string =>
+  value.replace(/[\\%_]/g, (character) => `\\${character}`);
+
+// Looks up a company by name (case- and whitespace-insensitive, matching the
+// partial unique index on imported names), creating it when it doesn't exist
 // yet. Returns the company id.
+//
+// Case matters here: a card saying "hunting xl" used to create a second company
+// next to "Hunting XL", splitting one client's deals over two records.
 //
 // Website resolution (for the logo/favicon, derived by the company_saved
 // trigger): the `website` argument (taken from the Trello card) wins; when it is
@@ -32,7 +41,7 @@ export const findOrCreateCompany = async ({
   const { data: existing, error: fetchError } = await supabaseAdmin
     .from("companies")
     .select("id, website")
-    .eq("name", name)
+    .ilike("name", escapeLikePattern(name.trim()))
     .order("id", { ascending: true })
     .limit(1)
     .maybeSingle();

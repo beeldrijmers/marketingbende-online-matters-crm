@@ -52,6 +52,31 @@ describe("extractCompanyName", () => {
       "Autobedrijf vd Vegt migreren",
     );
   });
+
+  it("splits on a colon, the board's status-style title format", () => {
+    expect(
+      extractCompanyName(
+        "[WEBSITE] ASP Noard: staging klaar, wacht op content en klantakkoord",
+      ),
+    ).toBe("ASP Noard");
+    expect(
+      extractCompanyName("voodoo.software: voorstel ligt er, wacht op reactie"),
+    ).toBe("voodoo.software");
+    expect(
+      extractCompanyName("Kleine Woningen / Mosana: Rick belt voor intake"),
+    ).toBe("Kleine Woningen / Mosana");
+  });
+
+  it("takes whichever separator comes first", () => {
+    expect(extractCompanyName("Hunting XL: Jack Pyke-import, 755 euro")).toBe(
+      "Hunting XL",
+    );
+    expect(extractCompanyName("MB Roofing - SEO: augustus")).toBe("MB Roofing");
+  });
+
+  it("does not split on a colon with nothing after it", () => {
+    expect(extractCompanyName("Bouwiva:")).toBe("Bouwiva:");
+  });
 });
 
 describe("resolveCompanyName", () => {
@@ -75,5 +100,26 @@ describe("resolveCompanyName", () => {
         name: "image.png",
       }),
     ).toBe(INTERNAL_COMPANY_NAME);
+  });
+
+  it("treats a planning bucket as internal instead of as a client", () => {
+    expect(
+      resolveCompanyName({
+        id: "unknown-card-id",
+        name: "[SEO MAAND] Augustus 2026: bevestigd, klaar om in te plannen",
+      }),
+    ).toBe(INTERNAL_COMPANY_NAME);
+    expect(
+      resolveCompanyName({ id: "unknown-card-id", name: "MAAND JUNI - taken" }),
+    ).toBe(INTERNAL_COMPANY_NAME);
+    expect(
+      resolveCompanyName({ id: "unknown-card-id", name: "Q3 2026: planning" }),
+    ).toBe(INTERNAL_COMPANY_NAME);
+  });
+
+  it("does not mistake a client whose name merely contains a year", () => {
+    expect(
+      resolveCompanyName({ id: "unknown-card-id", name: "Expo 2026 BV: site" }),
+    ).toBe("Expo 2026 BV");
   });
 });

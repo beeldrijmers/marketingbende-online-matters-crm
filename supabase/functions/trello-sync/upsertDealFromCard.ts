@@ -62,13 +62,15 @@ export const upsertDealFromCard = async (
     sourceText,
   );
   const category = categoryResolution.category;
-  const name = resolveDealName(card.name);
+  const name = resolveDealName(card.name, companyName);
   const startDate = card.start ? card.start.slice(0, 10) : null;
   const deliveryDate = card.due ? card.due.slice(0, 10) : null;
-  const website = extractCompanyWebsite(card.desc, card.attachmentUrls, [
-    card.name,
-    ...commentTexts,
-  ]);
+  const website = extractCompanyWebsite(
+    card.desc,
+    card.attachmentUrls,
+    [card.name, ...commentTexts],
+    companyName,
+  );
   const description = buildDealDescription(card);
   // Happr is Marketingbende's own product: its cards are internal work, never
   // client revenue, so no amount is ever attached to them.

@@ -11,21 +11,59 @@ vi.mock("../_shared/supabaseAdmin.ts", () => ({
   },
 }));
 
+// The lookup matches case-insensitively (ilike), so one client written two ways
+// on two cards resolves to a single company.
 const lookup = (result: { data: unknown; error: unknown }) => ({
   select: () => ({
-    eq: () => ({
-      order: () => ({
-        limit: () => ({
-          maybeSingle: () => Promise.resolve(result),
+    ilike: (_column: string, pattern: string) => {
+      lookupPatterns.push(pattern);
+      return {
+        order: () => ({
+          limit: () => ({
+            maybeSingle: () => Promise.resolve(result),
+          }),
         }),
-      }),
-    }),
+      };
+    },
   }),
 });
+
+const lookupPatterns: string[] = [];
 
 describe("findOrCreateCompany", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    lookupPatterns.length = 0;
+  });
+
+  it("finds a client written in a different case instead of duplicating it", async () => {
+    mockFrom.mockReturnValueOnce(
+      lookup({
+        data: { id: 27, website: "https://huntingxl.nl" },
+        error: null,
+      }),
+    );
+
+    await expect(
+      findOrCreateCompany({ name: "hunting xl", salesId: 1 }),
+    ).resolves.toBe(27);
+    expect(lookupPatterns).toEqual(["hunting xl"]);
+    expect(mockFrom).toHaveBeenCalledTimes(1);
+  });
+
+  it("escapes wildcards so a name cannot match a different client", async () => {
+    mockFrom
+      .mockReturnValueOnce(lookup({ data: null, error: null }))
+      .mockReturnValueOnce({
+        insert: () => ({
+          select: () => ({
+            single: () => Promise.resolve({ data: { id: 5 }, error: null }),
+          }),
+        }),
+      });
+
+    await findOrCreateCompany({ name: "100% Groen_BV", salesId: 1 });
+    expect(lookupPatterns).toEqual(["100\\% Groen\\_BV"]);
   });
 
   it("returns the concurrent winner when the Trello-name index rejects a duplicate", async () => {

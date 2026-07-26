@@ -2,23 +2,34 @@ import { INTERNAL_COMPANY_NAME } from "./trelloListMaps.ts";
 
 // Strips the old "GO - " noise prefix and the board's standardized leading
 // tags (e.g. [LEAD][SEO]), then takes the substring before the first remaining
-// spaced dash as the company name. Trello titles use a hyphen, en dash and em
-// dash interchangeably. Falls back to the cleaned title when no separator
-// exists.
+// separator as the company name. Trello titles use a hyphen, en dash and em
+// dash interchangeably, and the board also writes "Client: what is going on".
+// Falls back to the cleaned title when no separator exists.
 //
-// Examples:
-//   "GO - Auto Siero - WhatsApp automation" -> "Auto Siero"
-//   "MB Roofing - SEO"                      -> "MB Roofing"
-//   "DJ Supply"                             -> "DJ Supply"
+// The colon matters: without it every status-style card title became a company
+// of its own, which is how the CRM ended up with a client called
+// "ASP Noard: staging klaar, wacht op content en klantakkoord" next to the real
+// ASP Noard. A hyphen inside a word ("Jack Pyke-import") is not a separator —
+// only a spaced dash is — and a colon only separates when text follows it.
+export const CARD_TITLE_SEPARATOR = /\s[-–—]\s|:\s/;
+
 export const extractCompanyName = (cardName: string): string => {
   const withoutNoisePrefixes = cardName
     .replace(/^go\s*-\s*/i, "")
     .replace(/^(?:\s*\[[^\]]+\])+\s*/, "");
-  const separator = /\s[-–—]\s/.exec(withoutNoisePrefixes);
+  const separator = CARD_TITLE_SEPARATOR.exec(withoutNoisePrefixes);
   return !separator
     ? withoutNoisePrefixes.trim()
     : withoutNoisePrefixes.slice(0, separator.index).trim();
 };
+
+// A card whose "company" is a month, a quarter or a year is a planning bucket,
+// not a client ("Augustus 2026: bevestigd, klaar om in te plannen").
+const PERIOD_NAME =
+  /^(?:maand\s+)?(?:januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december|q[1-4]|kwartaal\s*[1-4])(?:\s+\d{4})?$|^\d{4}$/i;
+
+export const isPeriodBucketName = (name: string): boolean =>
+  PERIOD_NAME.test(name.trim());
 
 // Hand-curated overrides for existing cards whose title doesn't follow the
 // "Company - description" convention closely enough for extractCompanyName
@@ -51,4 +62,10 @@ export const COMPANY_NAME_OVERRIDES: Record<string, string> = {
 export const resolveCompanyName = (card: {
   id: string;
   name: string;
-}): string => COMPANY_NAME_OVERRIDES[card.id] ?? extractCompanyName(card.name);
+}): string => {
+  const override = COMPANY_NAME_OVERRIDES[card.id];
+  if (override) return override;
+
+  const extracted = extractCompanyName(card.name);
+  return isPeriodBucketName(extracted) ? INTERNAL_COMPANY_NAME : extracted;
+};
