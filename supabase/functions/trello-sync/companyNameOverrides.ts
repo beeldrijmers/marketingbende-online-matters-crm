@@ -48,7 +48,7 @@ export const COMPANY_NAME_OVERRIDES: Record<string, string> = {
   "6a1fe27c15c0a3b7e5749c5c": INTERNAL_COMPANY_NAME, // MAAND JUNI
   "69bd46b0a98d96f6238bc6de": "Unitouch", // Unitouch koppeling
   "69d4229a5751eadcc0a3f4b9": INTERNAL_COMPANY_NAME, // V.O.F. overweging voor Happr
-  "69a71bde32065874a0b347b1": "Google Reserve", // Google Reserve partner-aanvraag indienen
+  "69a71bde32065874a0b347b1": "Happr.nl", // Google Reserve partner-aanvraag indienen
   "69ddf73eb318c57182beac8d": "Happr.nl", // Logo Happr.nl
   "6a43de9e1263dc26cb1686b6": INTERNAL_COMPANY_NAME, // image.png
   "69f44ec8d8709826133972ee": "MB Roofing", // Tips & tricks - MB Roofing: extra geld verdienen?
@@ -63,6 +63,25 @@ export const COMPANY_NAME_OVERRIDES: Record<string, string> = {
   "6a4fa5b0d4f0faf77a68f216": "Houtenbouwmaterialen", // Houtenbouw: websitechat
   "69828be24593f712171a90a4": "Happr.nl", // Stripe / Mollie toevoegen
   "69ac4b206f99c8494f80da5d": "Happr.nl", // Productontwikkeling: backlog en releases
+  // Shell-opschoning (26 jul): deze kaarttitels leverden een "bedrijf" op dat
+  // in werkelijkheid een bestaande klant of intern werk is. Een override is hier
+  // geen luxe: fase 2 van de backfill haalt GESLOTEN kaarten met bijlagen door
+  // findOrCreateCompany zonder de negeerlijst te filteren, dus zonder deze
+  // regels maakt de eerstvolgende ronde het net opgeruimde record opnieuw aan.
+  "69ca6f487459e362ecc59f43": "Happr.nl", // [DUBBEL][HAPPR] Google Reserve
+  "6998297c40bad0a258ac8000": "Happr.nl", // puntje google reserve
+  "6981fc44f725533690b2e08e": "Happr.nl", // Feedback eerste klanten
+  "698baf3a0b8f0b401535a389": "Happr.nl", // Tracking mbt Meta / Tag
+  "6980a0a559d6ef54e0ec9f90": "Happr.nl", // Thessa - ontwikkeling huisstijl
+  "69c0f80b624281e798c6e901": "IJntema", // Zoekwoorden onderzoek pagina's - ijntema-bv.nl
+  "6981fa924142384cd7d51659": "Little Stitchies", // Little Stitchies aanpassingen website
+  "69c63cabed699aad7b5334e5": "Zadelmakerij van den Bosch", // Website support (bounce zadelmakerij-bosch.nl)
+  "6979f9c98f56cc0be3a8a0ca": "Online Matters", // [NASLAG][HAPPR] Supportmail
+  // Defensief: geen enkel pad upsert deze twee vandaag (open, maar in de
+  // negeerlijst). Een sleep uit die lijst zou "Werkwijze" en "Nieuwe opdracht"
+  // als klant aanmaken.
+  "6a5f5157fdbc2443e45932d5": INTERNAL_COMPANY_NAME, // [START HIER] Werkwijze
+  "6a5f64e9ddc129b2a8bba70a": INTERNAL_COMPANY_NAME, // [TEMPLATE] Nieuwe opdracht
 };
 
 export const resolveCompanyName = (card: {
