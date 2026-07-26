@@ -122,4 +122,58 @@ describe("resolveCompanyName", () => {
       resolveCompanyName({ id: "unknown-card-id", name: "Expo 2026 BV: site" }),
     ).toBe("Expo 2026 BV");
   });
+  // De negen shell-bedrijven van 26 juli. Deze kaarten leverden allemaal hun
+  // eigen "klant" op; de override stuurt ze naar het echte dossier. Zonder deze
+  // regels maakt fase 2 van de backfill (gesloten kaarten met bijlagen) het
+  // opgeruimde record binnen enkele uren opnieuw aan.
+  it("stuurt de opgeruimde shell-kaarten naar het echte bedrijf", () => {
+    const verwacht: Record<string, string> = {
+      "69a71bde32065874a0b347b1": "Happr.nl",
+      "69ca6f487459e362ecc59f43": "Happr.nl",
+      "6998297c40bad0a258ac8000": "Happr.nl",
+      "6981fc44f725533690b2e08e": "Happr.nl",
+      "698baf3a0b8f0b401535a389": "Happr.nl",
+      "6980a0a559d6ef54e0ec9f90": "Happr.nl",
+      "69c0f80b624281e798c6e901": "IJntema",
+      "6981fa924142384cd7d51659": "Little Stitchies",
+      "69c63cabed699aad7b5334e5": "Zadelmakerij van den Bosch",
+      "6979f9c98f56cc0be3a8a0ca": "Online Matters",
+    };
+    for (const [id, bedrijf] of Object.entries(verwacht)) {
+      expect(resolveCompanyName({ id, name: "titel doet hier niet mee" })).toBe(
+        bedrijf,
+      );
+    }
+  });
+
+  it("laat de bordeigen naslag- en templatekaarten intern", () => {
+    for (const id of ["6a5f5157fdbc2443e45932d5", "6a5f64e9ddc129b2a8bba70a"]) {
+      expect(resolveCompanyName({ id, name: "[START HIER] Werkwijze" })).toBe(
+        INTERNAL_COMPANY_NAME,
+      );
+    }
+  });
+
+  // De regressie die deze ronde aanleiding gaf: de override voor de open Google
+  // Reserve-kaart wees naar de shell-naam zelf, dus die maakte het bedrijf dat
+  // net was opgeruimd meteen opnieuw aan.
+  it("verwijst geen enkele override nog naar een opgeruimde shell-naam", () => {
+    const opgeruimd = [
+      "Google Reserve",
+      "puntje google reserve",
+      "Thessa",
+      "Feedback eerste klanten",
+      "Tracking mbt Meta / Tag",
+      "Website support",
+      "Supportmail",
+      "Zoekwoorden onderzoek pagina's",
+      "Little Stitchies aanpassingen website",
+      "Nieuwe eenmalige opdracht",
+    ];
+    expect(
+      Object.values(COMPANY_NAME_OVERRIDES).filter((naam) =>
+        opgeruimd.includes(naam),
+      ),
+    ).toEqual([]);
+  });
 });
