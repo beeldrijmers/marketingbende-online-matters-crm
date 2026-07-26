@@ -25,4 +25,17 @@ describe("Trello contact enrichment", () => {
       lastName: "",
     });
   });
+  // Een geplakte bounce in de kaartomschrijving leverde "Mailer Daemon" op als
+  // contactpersoon bij een echte klant, en de sync zette hem er elke ronde
+  // opnieuw bij. De mens uit diezelfde bounce moet wel blijven staan.
+  it("laat automatische afzenders uit een geplakte bounce buiten de contacten", () => {
+    expect(
+      extractTrelloContactEmails(`
+        Bericht kon niet worden bezorgd.
+        From: mailer-daemon@gw3.mail.uniserver.nl
+        Aan: offeringaj@gmail.com
+        Cc: no-reply@notificaties.example.com, bounce@example.org
+      `),
+    ).toEqual(["offeringaj@gmail.com"]);
+  });
 });
