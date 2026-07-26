@@ -535,6 +535,12 @@ export type Tag = {
 export type TaskSource = "manual" | "trello" | "auto";
 
 export type Task = {
+  /** A task with a start time is an appointment in its owner's calendar. */
+  starts_at?: string | null;
+  ends_at?: string | null;
+  calendar_event_id?: string | null;
+  calendar_html_link?: string | null;
+  calendar_synced_at?: string | null;
   // A task is anchored to a contact, a deal, or both. Trello-synced deal steps
   // carry a deal_id and no contact_id.
   contact_id?: Identifier | null;

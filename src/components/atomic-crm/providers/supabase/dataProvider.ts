@@ -405,6 +405,67 @@ const getDataProviderWithCustomMethods = () => {
       }
       return data.data;
     },
+    /**
+     * Put a task in the caller's own Google Calendar (or move it there).
+     *
+     * The function owns the appointment columns on the task, so the browser gets
+     * back what Google actually created instead of assuming it worked.
+     */
+    async planAppointment(params: {
+      taskId: Identifier;
+      startsAt: string;
+      endsAt?: string;
+      durationMinutes?: number;
+      inviteClient?: boolean;
+      inviteEmail?: string;
+    }): Promise<{
+      eventId: string;
+      htmlLink: string;
+      startsAt: string;
+      endsAt: string;
+      invited: boolean;
+    }> {
+      const { data, error } = await getSupabaseClient().functions.invoke<{
+        data: {
+          eventId: string;
+          htmlLink: string;
+          startsAt: string;
+          endsAt: string;
+          invited: boolean;
+        };
+      }>("calendar", { method: "POST", body: params });
+      if (!data || error) {
+        const errorDetails = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(
+          errorDetails?.message || "De afspraak kon niet worden ingepland",
+        );
+      }
+      return data.data;
+    },
+    async removeAppointment(taskId: Identifier): Promise<void> {
+      const { error } = await getSupabaseClient().functions.invoke("calendar", {
+        method: "DELETE",
+        body: { taskId },
+      });
+      if (error) {
+        const errorDetails = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(
+          errorDetails?.message || "De afspraak kon niet worden verwijderd",
+        );
+      }
+    },
     async linkMoneybirdCandidate(params: {
       dealId: Identifier;
       kind: "estimate" | "invoice";

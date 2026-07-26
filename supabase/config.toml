@@ -196,5 +196,9 @@ verify_jwt = false
 # credential, and the function itself validates it before touching the database.
 [functions.status_update]
 verify_jwt = false
+# The calendar function checks the caller itself (JWT -> sales row -> deal
+# assignee) so it can give a Dutch error instead of a bare 401.
+[functions.calendar]
+verify_jwt = false
 [functions.gmail-sync]
 verify_jwt = false
