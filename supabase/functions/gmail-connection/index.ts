@@ -38,9 +38,14 @@ const oauthRedirectUri = (): string =>
   `${Deno.env.get("SUPABASE_URL")}/functions/v1/gmail-connection/callback`;
 
 const appReturnUrl = (result: "connected" | "error"): string => {
+  // Back to the page that actually shows the connection: on a wide screen the
+  // Gmail block lives on the profile, and /settings there is the configuration
+  // form, so returning to /settings meant landing next to the thing you just
+  // did, without the success or error message. On a phone /profile redirects to
+  // the mobile settings page, which does carry the block.
   const base =
     Deno.env.get("GMAIL_OAUTH_RETURN_URL") ??
-    "https://crm.marketingbende.nl/#/settings";
+    "https://crm.marketingbende.nl/#/profile";
   return `${base}${base.includes("?") ? "&" : "?"}gmail=${result}`;
 };
 

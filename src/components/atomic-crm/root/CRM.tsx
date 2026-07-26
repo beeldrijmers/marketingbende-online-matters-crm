@@ -6,7 +6,7 @@ import type {
 } from "ra-core";
 import { CustomRoutes, localStorageStore, Resource } from "ra-core";
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, Route, useParams } from "react-router";
+import { Navigate, Route, useLocation, useParams } from "react-router";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
@@ -90,6 +90,16 @@ export type CRMProps = {
   dashboard?: DashboardComponent;
   layout?: LayoutComponent;
 } & Partial<ConfigurationContextValue>;
+
+/**
+ * The phone has no separate profile page; the mobile settings page holds it.
+ * The query string travels along, because the OAuth callback returns with
+ * ?gmail=connected and dropping it would swallow the success message.
+ */
+const MobileProfileRedirect = () => {
+  const { search } = useLocation();
+  return <Navigate to={`${SettingsPageMobile.path}${search}`} replace />;
+};
 
 /**
  * CRM Component
@@ -414,11 +424,10 @@ const MobileAdmin = (
           />
           {/* Mobile edits the profile inline within the settings page, so a
               /profile deeplink (or crossing the desktop breakpoint) redirects
-              there instead of hitting the catch-all. */}
-          <Route
-            path={ProfilePage.path}
-            element={<Navigate to={SettingsPageMobile.path} replace />}
-          />
+              there instead of hitting the catch-all. The query string comes
+              along, because OAuth returns here with ?gmail=connected and that
+              is what raises the success message. */}
+          <Route path={ProfilePage.path} element={<MobileProfileRedirect />} />
           <Route path={ImportPage.path} element={<ImportPage />} />
           <Route path={ChangelogPage.path} element={<ChangelogPage />} />
           <Route path={FINANCE_PATH} element={<MobileFinancePage />} />
