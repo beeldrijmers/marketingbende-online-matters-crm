@@ -125,6 +125,10 @@ create table public.deals (
     -- team-lead notification is sent at most once even though Trello webhooks
     -- are delivered at-least-once and retried.
     won_notified_at timestamp with time zone,
+    -- When the client was last sent a status update from the CRM. Answers the
+    -- question a board cannot: not "what is the state" but "does the client
+    -- know". The shared text itself is kept as a deal note.
+    client_updated_at timestamp with time zone,
     moneybird_estimate_id text,
     moneybird_estimate_status text,
     moneybird_estimate_claimed_at timestamp with time zone,

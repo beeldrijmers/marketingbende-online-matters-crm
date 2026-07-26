@@ -245,6 +245,7 @@ export const dutchCrmMessages = {
         more: "+%{count}",
       },
       fields: {
+        client_updated_at: "Klant geïnformeerd",
         name: "Naam",
         description: "Omschrijving",
         company_id: "Bedrijf",
@@ -378,6 +379,7 @@ export const dutchCrmMessages = {
       },
       invalid_date: "Ongeldige datum",
       no_date: "Nog niet gepland",
+      client_update_never: "Nog niet",
       duration_days: "%{smart_count} dag |||| %{smart_count} dagen",
       no_amount: "NTB",
       per_month_suffix: "/mnd",

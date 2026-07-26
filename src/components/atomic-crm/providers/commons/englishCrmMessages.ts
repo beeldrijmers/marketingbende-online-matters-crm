@@ -237,6 +237,7 @@ export const englishCrmMessages = {
         more: "+%{count}",
       },
       fields: {
+        client_updated_at: "Client informed",
         name: "Name",
         description: "Description",
         company_id: "Company",
@@ -369,6 +370,7 @@ export const englishCrmMessages = {
       },
       invalid_date: "Invalid date",
       no_date: "Not scheduled yet",
+      client_update_never: "Not yet",
       duration_days: "%{smart_count} day |||| %{smart_count} days",
       no_amount: "TBD",
       per_month_suffix: "/mo",
