@@ -332,6 +332,50 @@ export const createDataProvider = ({
       estimate: { linked: false, checked: true, candidates: [] },
       invoice: { linked: false, checked: true, candidates: [] },
     }),
+    // The demo has no Google connection; the appointment lands on the task so the
+    // interface can be tried out, without a calendar behind it.
+    planAppointment: async (params: {
+      taskId: Identifier;
+      startsAt: string;
+      durationMinutes?: number;
+    }) => {
+      const startsAt = new Date(params.startsAt).toISOString();
+      const endsAt = new Date(
+        new Date(startsAt).getTime() + (params.durationMinutes ?? 60) * 60_000,
+      ).toISOString();
+      await baseDataProvider.update("tasks", {
+        id: params.taskId,
+        data: {
+          starts_at: startsAt,
+          ends_at: endsAt,
+          due_date: startsAt,
+          calendar_event_id: `demo-${params.taskId}`,
+          calendar_html_link: "https://calendar.google.com/",
+          calendar_synced_at: new Date().toISOString(),
+        },
+        previousData: { id: params.taskId },
+      });
+      return {
+        endsAt,
+        eventId: `demo-${params.taskId}`,
+        htmlLink: "https://calendar.google.com/",
+        invited: false,
+        startsAt,
+      };
+    },
+    removeAppointment: async (taskId: Identifier) => {
+      await baseDataProvider.update("tasks", {
+        id: taskId,
+        data: {
+          starts_at: null,
+          ends_at: null,
+          calendar_event_id: null,
+          calendar_html_link: null,
+          calendar_synced_at: null,
+        },
+        previousData: { id: taskId },
+      });
+    },
     linkMoneybirdCandidate: async () => {
       throw new Error(
         "De Moneybird-koppeling is niet beschikbaar in de demomodus.",

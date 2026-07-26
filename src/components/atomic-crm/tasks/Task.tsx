@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { MoreVertical } from "lucide-react";
+import { CalendarClock, MoreVertical } from "lucide-react";
 import {
   useDataProvider,
   useDeleteWithUndoController,
@@ -25,6 +25,7 @@ import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Contact, Deal, Task as TData } from "../types";
 import type { CrmDataProvider } from "../providers/types";
 import { OwnerChipField } from "../sales/SaleAvatar";
+import { AppointmentDialog } from "./AppointmentDialog";
 import { TaskEdit } from "./TaskEdit";
 import { TaskEditSheet } from "./TaskEditSheet";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -49,6 +50,7 @@ export const Task = ({
   const isTrelloStep = isTrelloTask && !!task.trello_checkitem_id;
 
   const [openEdit, setOpenEdit] = useState(false);
+  const [openAppointment, setOpenAppointment] = useState(false);
 
   const handleCloseEdit = () => {
     setOpenEdit(false);
@@ -169,16 +171,41 @@ export const Task = ({
                   {translate("resources.tasks.trello_step", { _: "Trello" })}
                 </Badge>
               )}
-              <span>
-                {translate("resources.tasks.fields.due_short")}
-                &nbsp;
-                <DateField
-                  source="due_date"
-                  record={task}
-                  showDate
-                  options={{ day: "numeric", month: "short", year: "numeric" }}
-                />
-              </span>
+              {task.starts_at ? (
+                // An appointment says what time it is, and links to the entry it
+                // came from: a date alone is exactly the thing the calendar was
+                // supposed to settle.
+                <a
+                  className="flex items-center gap-1 text-ink-2 no-underline hover:underline"
+                  href={task.calendar_html_link ?? undefined}
+                  onClick={(event) => event.stopPropagation()}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <CalendarClock className="size-3.5" />
+                  {new Intl.DateTimeFormat("nl-NL", {
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    month: "short",
+                  }).format(new Date(task.starts_at))}
+                </a>
+              ) : (
+                <span>
+                  {translate("resources.tasks.fields.due_short")}
+                  &nbsp;
+                  <DateField
+                    source="due_date"
+                    record={task}
+                    showDate
+                    options={{
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    }}
+                  />
+                </span>
+              )}
               {task.sales_id != null && (
                 <>
                   <span aria-hidden="true">·</span>
@@ -251,6 +278,18 @@ export const Task = ({
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               className="cursor-pointer h-12 md:h-8 px-4 md:px-2 text-base md:text-sm"
+              onClick={() => setOpenAppointment(true)}
+            >
+              {task.calendar_event_id
+                ? translate("resources.tasks.actions.edit_appointment", {
+                    _: "Afspraak aanpassen",
+                  })
+                : translate("resources.tasks.actions.plan_appointment", {
+                    _: "Zet in agenda",
+                  })}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer h-12 md:h-8 px-4 md:px-2 text-base md:text-sm"
               onClick={() => {
                 update("tasks", {
                   id: task.id,
@@ -308,6 +347,14 @@ export const Task = ({
       ) : (
         <TaskEdit taskId={task.id} open={openEdit} close={handleCloseEdit} />
       )}
+
+      {openAppointment ? (
+        <AppointmentDialog
+          onOpenChange={setOpenAppointment}
+          open={openAppointment}
+          task={task}
+        />
+      ) : null}
     </>
   );
 };

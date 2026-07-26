@@ -76,7 +76,16 @@ export const buildGmailAuthorizationUrl = ({
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: "code",
-    scope: "openid email https://www.googleapis.com/auth/gmail.readonly",
+    // calendar.events comes along so the CRM can put an appointment in the
+    // owner's own calendar. include_granted_scopes keeps an existing Gmail-only
+    // grant intact, so nothing breaks for someone who has not reconnected yet;
+    // the calendar function reports "not connected" until they do.
+    scope: [
+      "openid",
+      "email",
+      "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/calendar.events",
+    ].join(" "),
     access_type: "offline",
     prompt: "consent",
     include_granted_scopes: "true",

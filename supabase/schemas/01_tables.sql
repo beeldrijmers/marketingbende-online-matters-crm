@@ -216,7 +216,18 @@ create table public.tasks (
     -- The Trello checklist item this task mirrors (null for manual tasks). Used
     -- as the idempotency key for the sync and to write completions back.
     trello_checkitem_id text,
+    -- A task with a start time is an appointment. The times and the Google event
+    -- are written by the calendar edge function only (service_role): the browser
+    -- asks for an appointment, Google decides what it became, and the CRM stores
+    -- that answer. Null on both means it is a plain to-do.
+    starts_at timestamp with time zone,
+    ends_at timestamp with time zone,
+    calendar_event_id text,
+    calendar_html_link text,
+    calendar_synced_at timestamp with time zone,
     constraint tasks_source_check check (source in ('manual', 'trello', 'auto')),
+    constraint tasks_appointment_range_check
+        check (starts_at is null or ends_at is null or starts_at < ends_at),
     constraint tasks_contact_or_deal_check
         check (contact_id is not null or deal_id is not null)
 );
@@ -577,6 +588,8 @@ create index deals_company_activity_idx on public.deals using btree (company_id,
 create index contact_notes_contact_activity_idx on public.contact_notes using btree (contact_id, date desc);
 create index deal_notes_deal_activity_idx on public.deal_notes using btree (deal_id, date desc);
 create unique index uq__tasks__trello_checkitem_id on public.tasks using btree (trello_checkitem_id) where (trello_checkitem_id is not null);
+create unique index uq__tasks__calendar_event_id on public.tasks using btree (calendar_event_id) where (calendar_event_id is not null);
+create index tasks_appointment_start_idx on public.tasks using btree (starts_at) where (starts_at is not null);
 create unique index uq__deals__trello_card_id on public.deals using btree (trello_card_id) where (trello_card_id is not null);
 -- Parallel Trello webhooks may both observe a missing company before either
 -- inserts it. Only imported companies are constrained; users may still create
