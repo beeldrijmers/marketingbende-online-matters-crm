@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
+import { findContactByEmail } from "../_shared/inbound/findContactByEmail.ts";
 import { addNoteToDeal } from "../postmark/addNoteToDeal.ts";
 
 // A deal born from an inbound mail opens in the first pipeline stage with the
@@ -48,11 +49,10 @@ export const upsertDealFromMail = async ({
 }): Promise<number | null> => {
   try {
     // Resolve the just-created/matched contact and its company.
-    const { data: contact, error: contactError } = await supabaseAdmin
-      .from("contacts")
-      .select("id, company_id")
-      .contains("email_jsonb", JSON.stringify([{ email: contactEmail }]))
-      .maybeSingle();
+    const { contact, error: contactError } = await findContactByEmail(
+      contactEmail,
+      "id, company_id",
+    );
     if (contactError || !contact) return null;
 
     const companyId = contact.company_id as number | null;

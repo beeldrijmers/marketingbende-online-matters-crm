@@ -19,6 +19,7 @@ import { getNoteContent } from "../../postmark/getNoteContent.ts";
 import { linkMailToActiveDeals } from "../../postmark/linkMailToActiveDeals.ts";
 import { extractDealAmount } from "../../trello-sync/extractDealAmount.ts";
 import { supabaseAdmin } from "../supabaseAdmin.ts";
+import { findContactByEmail } from "./findContactByEmail.ts";
 import { attachMailToCompanyDeal } from "../../resend_inbound/attachMailToCompanyDeal.ts";
 import { extractDealDates } from "../../resend_inbound/extractDealDates.ts";
 import { htmlToText } from "../../resend_inbound/htmlToText.ts";
@@ -278,12 +279,8 @@ export const processInboundEmail = async ({
       if (!canCreateEntities) {
         // Do this lookup before addNoteToContact: that helper deliberately
         // creates contacts/companies for the explicit BCC/forwarding route.
-        const { data: existingContact, error: contactLookupError } =
-          await supabaseAdmin
-            .from("contacts")
-            .select("id")
-            .contains("email_jsonb", JSON.stringify([{ email: contactEmail }]))
-            .maybeSingle();
+        const { contact: existingContact, error: contactLookupError } =
+          await findContactByEmail(contactEmail);
         if (contactLookupError) {
           failedParticipants += 1;
           console.error(

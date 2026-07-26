@@ -10,10 +10,18 @@ vi.mock("../_shared/supabaseAdmin.ts", () => ({
   },
 }));
 
+// De contactlookup gaat via de gedeelde helper: contains, dan order op id, dan
+// limit(1), dus een lijst in plaats van maybeSingle.
 const contactQuery = (result: { data: unknown; error: unknown }) => ({
   select: () => ({
     contains: () => ({
-      maybeSingle: () => Promise.resolve(result),
+      order: () => ({
+        limit: () =>
+          Promise.resolve({
+            data: result.data == null ? [] : [result.data],
+            error: result.error,
+          }),
+      }),
     }),
   }),
 });
