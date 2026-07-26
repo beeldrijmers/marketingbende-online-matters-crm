@@ -192,5 +192,9 @@ verify_jwt = false
 verify_jwt = false
 [functions.gmail-connection]
 verify_jwt = false
+# The client-facing status page has no session: the token in the URL is the
+# credential, and the function itself validates it before touching the database.
+[functions.status_update]
+verify_jwt = false
 [functions.gmail-sync]
 verify_jwt = false

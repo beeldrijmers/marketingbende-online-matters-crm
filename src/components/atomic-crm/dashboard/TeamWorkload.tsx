@@ -171,10 +171,19 @@ const WorkloadRow = ({
             smart_count: row.open,
             _: `${row.open} open`,
           })}
-          {row.amount > 0 ? (
+          {/* Per maand and one-off stay separate: added together they would be
+              a number that means nothing. */}
+          {row.monthlyAmount > 0 ? (
             <span className="text-ink-3">
               {" · "}
-              {currencyFormatter.format(row.amount)}
+              {currencyFormatter.format(row.monthlyAmount)}
+              {translate("resources.deals.per_month_suffix", { _: "/mnd" })}
+            </span>
+          ) : null}
+          {row.oneOffAmount > 0 ? (
+            <span className="text-ink-3">
+              {" · "}
+              {currencyFormatter.format(row.oneOffAmount)}
             </span>
           ) : null}
         </span>

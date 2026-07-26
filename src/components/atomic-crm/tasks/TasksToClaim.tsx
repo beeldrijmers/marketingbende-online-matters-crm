@@ -35,7 +35,9 @@ export const TasksToClaim = ({ limit }: { limit?: number }) => {
   }
 
   const handleClaim = (task: Task) => {
-    if (!identity?.id) return;
+    // `== null`, not falsy: a sales id of 0 is a real user, and claiming would
+    // silently do nothing for them.
+    if (identity?.id == null) return;
     update("tasks", {
       id: task.id,
       data: { sales_id: identity.id },

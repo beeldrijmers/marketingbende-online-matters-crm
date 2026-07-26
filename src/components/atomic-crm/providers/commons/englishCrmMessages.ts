@@ -621,6 +621,14 @@ export const englishCrmMessages = {
     },
     dashboard: {
       deals_pipeline: "Deals Pipeline",
+      silent: {
+        title: "Client is waiting to hear",
+        subtitle:
+          "Open work the client has not heard about for %{days} days or more.",
+        never: "never informed",
+        days: "%{count} days quiet",
+        more: "%{count} more waiting to hear",
+      },
       workload: {
         title: "Who is doing what",
         subtitle: "Open work per person. Click to scope the board to them.",

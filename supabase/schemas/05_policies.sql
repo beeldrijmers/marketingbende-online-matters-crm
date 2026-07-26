@@ -22,6 +22,7 @@ alter table public.gmail_oauth_states enable row level security;
 -- the webhook (service_role, which bypasses RLS). RLS-on + no-policy means
 -- anon/authenticated can neither read nor write it.
 alter table public.inbound_email_events enable row level security;
+alter table public.deal_status_updates enable row level security;
 alter table public.integration_runs enable row level security;
 alter table public.inzyte_links enable row level security;
 alter table public.inzyte_runs enable row level security;
@@ -87,6 +88,19 @@ create policy "Deal Notes Update Policy" on public.deal_notes for update to auth
   using (deal_id in (select id from public.deals));
 create policy "Deal Notes Delete Policy" on public.deal_notes for delete to authenticated
   using (deal_id in (select id from public.deals));
+
+-- Shared status updates follow their deal's visibility for the team. The public
+-- page never reads this table directly: it goes through the status_update edge
+-- function, which runs as service_role and resolves exactly one row by token.
+-- So there is deliberately NO anonymous policy here - a leaked token opens one
+-- update, never the table.
+create policy "Enable read access for deal assignees" on public.deal_status_updates for select to authenticated
+  using (deal_id in (select id from public.deals));
+create policy "Enable insert for deal assignees" on public.deal_status_updates for insert to authenticated
+  with check (public.is_active_crm_user() and deal_id in (select id from public.deals));
+create policy "Enable revoke for deal assignees" on public.deal_status_updates for update to authenticated
+  using (deal_id in (select id from public.deals))
+  with check (deal_id in (select id from public.deals));
 
 -- Sales
 create policy "Enable read access for authenticated users" on public.sales for select to authenticated using (public.is_active_crm_user());

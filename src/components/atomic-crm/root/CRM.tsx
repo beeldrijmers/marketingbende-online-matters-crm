@@ -29,6 +29,7 @@ import deals from "../deals";
 import { Layout } from "../layout/Layout";
 import { MobileLayout } from "../layout/MobileLayout";
 import { SignupPage } from "../login/SignupPage";
+import { StatusUpdatePage } from "../deals/StatusUpdatePage";
 import { ConfirmationRequired } from "../login/ConfirmationRequired";
 import { ImportPage } from "../misc/ImportPage";
 import { ChangelogPage } from "../misc/ChangelogPage";
@@ -314,6 +315,8 @@ const DesktopAdmin = (
           element={<ForgotPasswordPage />}
         />
         <Route path={OAuthConsentPage.path} element={<OAuthConsentPage />} />
+        {/* The client's own page: no session, no CRM chrome. */}
+        <Route path={StatusUpdatePage.path} element={<StatusUpdatePage />} />
       </CustomRoutes>
 
       <CustomRoutes>
@@ -401,6 +404,8 @@ const MobileAdmin = (
             element={<ForgotPasswordPage />}
           />
           <Route path={OAuthConsentPage.path} element={<OAuthConsentPage />} />
+          {/* The client's own page: no session, no CRM chrome. */}
+          <Route path={StatusUpdatePage.path} element={<StatusUpdatePage />} />
         </CustomRoutes>
         <CustomRoutes>
           <Route

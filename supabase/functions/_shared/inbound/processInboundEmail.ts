@@ -135,9 +135,19 @@ export const processInboundEmail = async ({
 
   const { data: salesRows } = await supabaseAdmin
     .from("sales")
-    .select("id, email");
-  const sales = (salesRows ?? []) as { id: number; email: string }[];
+    .select("id, email, first_name, last_name");
+  const sales = (salesRows ?? []) as {
+    id: number;
+    email: string;
+    first_name: string | null;
+    last_name: string | null;
+  }[];
   const salesByEmail = new Map(sales.map((s) => [s.email.toLowerCase(), s.id]));
+  // Names as well as addresses: a colleague forwarding from a private mailbox
+  // is still our own side of the conversation.
+  const salesNames = sales
+    .map((s) => `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim())
+    .filter(Boolean);
   const excludedEmails = new Set(salesByEmail.keys());
   if (mailboxEmail) excludedEmails.add(mailboxEmail.toLowerCase());
 
@@ -174,6 +184,7 @@ export const processInboundEmail = async ({
   let participants = gatherClientParticipants({
     recipients: [...fromFull, ...toFull, ...ccFull],
     salesEmails: [...excludedEmails],
+    salesNames,
     inboundEmail: normalizedInboundEmail,
   });
   // A newsletter, receipt or platform notification is filed against whoever is
@@ -211,6 +222,7 @@ export const processInboundEmail = async ({
     participants = gatherClientParticipants({
       recipients: bodyEmails,
       salesEmails: [...excludedEmails],
+      salesNames,
       inboundEmail: normalizedInboundEmail,
     }).slice(0, 1);
     if (participants.length === 0) {

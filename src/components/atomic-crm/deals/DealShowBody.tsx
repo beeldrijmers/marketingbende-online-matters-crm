@@ -36,6 +36,7 @@ import { MoneybirdDealSection } from "./MoneybirdDealSection";
 import {
   findDealLabel,
   formatISODateString,
+  formatTimestampDate,
   getDealDurationDays,
   isBeforeToday,
 } from "./dealUtils";
@@ -73,9 +74,7 @@ export const DealShowBody = ({
   // "past" (new Date("YYYY-MM-DD") parses as UTC midnight, which incorrectly
   // flagged today's deals for almost the whole day).
   const closingIsPast = isBeforeToday(record.expected_closing_date);
-  const clientUpdateLabel = record.client_updated_at
-    ? formatISODateString(record.client_updated_at.slice(0, 10))
-    : null;
+  const clientUpdateLabel = formatTimestampDate(record.client_updated_at);
   // Three weeks of silence on live work is the thing a client complains about,
   // so it is marked like an overdue date rather than shown as a neutral fact.
   const clientUpdateIsStale =

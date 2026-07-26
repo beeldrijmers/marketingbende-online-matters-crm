@@ -4,6 +4,7 @@ import type {
   ContactNote,
   Deal,
   DealNote,
+  DealStatusUpdate,
   IntegrationRun,
   Sale,
   Tag,
@@ -17,6 +18,7 @@ export interface Db {
   contact_notes: ContactNote[];
   deals: Deal[];
   deal_notes: DealNote[];
+  deal_status_updates: DealStatusUpdate[];
   integration_runs: IntegrationRun[];
   sales: Sale[];
   tags: Tag[];

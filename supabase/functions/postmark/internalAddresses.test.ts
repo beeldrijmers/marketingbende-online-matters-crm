@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isInternalEmail } from "./internalAddresses";
+import { isInternalDisplayName, isInternalEmail } from "./internalAddresses";
 
 const ctx = {
   inboundEmail: "crm@inbound.marketingbende.nl",
@@ -38,5 +38,33 @@ describe("isInternalEmail", () => {
   it("treats an empty/garbage address as internal (never a client)", () => {
     expect(isInternalEmail("", ctx)).toBe(true);
     expect(isInternalEmail("not-an-email", ctx)).toBe(true);
+  });
+});
+
+describe("isInternalDisplayName", () => {
+  const team = ["John Plantenga", "Rick Maarssen"];
+
+  it("recognises a colleague writing from a private address", () => {
+    expect(isInternalDisplayName("John Plantenga", team)).toBe(true);
+    expect(isInternalDisplayName("  john   plantenga ", team)).toBe(true);
+    expect(isInternalDisplayName('"Rick Maarssen"', team)).toBe(true);
+  });
+
+  it("recognises one of the parties itself", () => {
+    expect(isInternalDisplayName("Groeien Met Ads", team)).toBe(true);
+    expect(isInternalDisplayName("Marketingbende", team)).toBe(true);
+    expect(isInternalDisplayName("Online Matters", team)).toBe(true);
+  });
+
+  it("leaves clients alone", () => {
+    expect(isInternalDisplayName("Wijnand Snijder", team)).toBe(false);
+    expect(isInternalDisplayName("Demi Ensing", team)).toBe(false);
+    expect(isInternalDisplayName("", team)).toBe(false);
+    expect(isInternalDisplayName("Jan", team)).toBe(false);
+  });
+
+  it("does not match on a partial name", () => {
+    expect(isInternalDisplayName("John Plantenga Jr", team)).toBe(false);
+    expect(isInternalDisplayName("John", team)).toBe(false);
   });
 });

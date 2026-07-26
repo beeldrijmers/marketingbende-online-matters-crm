@@ -31,8 +31,13 @@ const EMPTY_COUNTS: DealAttentionCounts = {
 };
 
 export type TeamWorkloadRow = {
-  /** Open pipeline value carried by this person. */
-  amount: number;
+  /**
+   * Recurring and one-off value are kept apart. A single "€ in werkstroom"
+   * figure added €300-per-month to a €5.000 project and produced a number that
+   * means nothing — the same mistake the board's column totals used to make.
+   */
+  monthlyAmount: number;
+  oneOffAmount: number;
   /** How much of their work is off-track, by kind. */
   attention: DealAttentionCounts;
   /** Open deals owned. */
@@ -71,19 +76,23 @@ export const buildTeamWorkload = (
   for (const deal of deals.filter(isOpenDeal)) {
     const key = deal.sales_id == null ? "" : String(deal.sales_id);
     const current = byOwner.get(key) ?? {
-      amount: 0,
       attention: EMPTY_COUNTS,
+      monthlyAmount: 0,
+      oneOffAmount: 0,
       open: 0,
       salesId: deal.sales_id ?? null,
     };
     const workflow = getDealWorkflow(deal, tasksByDeal.get(deal.id) ?? [], now);
+    const amount = deal.amount ?? 0;
+    const recurring = deal.revenue_period === "maandelijks";
 
     byOwner.set(key, {
       ...current,
-      amount: current.amount + (deal.amount ?? 0),
       attention: needsDealAttention(workflow)
         ? countWorkflow(current.attention, workflow.kind)
         : current.attention,
+      monthlyAmount: current.monthlyAmount + (recurring ? amount : 0),
+      oneOffAmount: current.oneOffAmount + (recurring ? 0 : amount),
       open: current.open + 1,
     });
   }
