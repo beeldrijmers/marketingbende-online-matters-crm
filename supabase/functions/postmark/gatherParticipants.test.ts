@@ -61,3 +61,21 @@ describe("gatherClientParticipants", () => {
     ).toEqual([]);
   });
 });
+
+describe("gatherClientParticipants and machine mail", () => {
+  it("does not turn a platform's noreply address into a client", () => {
+    const participants = gatherClientParticipants({
+      recipients: [
+        { Email: "noreply@supabase.com", Name: "Supabase" },
+        { Email: "ci_activity@noreply.github.com", Name: "Ci Activity" },
+        { Email: "klant@bouwiva.nl", Name: "Jan de Vries" },
+      ],
+      salesEmails: ["john@marketingbende.nl"],
+      inboundEmail: "crm@inbound.marketingbende.nl",
+    });
+
+    expect(participants.map((contact) => contact.email)).toEqual([
+      "klant@bouwiva.nl",
+    ]);
+  });
+});

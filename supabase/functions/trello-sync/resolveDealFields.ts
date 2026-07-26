@@ -97,11 +97,39 @@ export const resolveStage = (
   return "informatie-pipeline";
 };
 
-// The deal name is the full card title with only the "GO - " noise prefix
-// stripped, so the CRM keeps the full Trello context instead of collapsing
-// it down to the company name (which already gets its own record).
-export const resolveDealName = (cardName: string): string =>
-  cardName.replace(/^go\s*-\s*/i, "").trim();
+// The deal name describes the WORK. The board writes its titles as
+// "[TAG][TAG] Client: what is going on", and the CRM already shows the client
+// on the line above the deal name and turns the tags into a stage and a
+// category — so keeping them in the title printed the same words twice
+// ("ASP Noard" / "[WEBSITE] ASP Noard: staging klaar…").
+//
+// Only the leading company reference is dropped, never a mention further along,
+// and never the last remaining words: a card called just "DJ Supply" keeps its
+// name rather than ending up nameless.
+const escapeForRegExp = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+export const resolveDealName = (
+  cardName: string,
+  companyName?: string | null,
+): string => {
+  const withoutNoise = cardName
+    .replace(/^go\s*-\s*/i, "")
+    .replace(/^(?:\s*\[[^\]]+\])+\s*/, "")
+    .trim();
+  const company = companyName?.trim();
+  if (!company) return withoutNoise;
+
+  const withoutCompany = withoutNoise
+    .replace(
+      new RegExp(`^${escapeForRegExp(company)}\\s*(?::|\\s[-–—]\\s)\\s*`, "i"),
+      "",
+    )
+    .trim();
+  if (!withoutCompany) return withoutNoise;
+
+  return withoutCompany.charAt(0).toUpperCase() + withoutCompany.slice(1);
+};
 
 // Internal (non-billable own work) vs external client work, mirroring the
 // classification rule of migration 20260707020000_add_deal_is_internal: Happr

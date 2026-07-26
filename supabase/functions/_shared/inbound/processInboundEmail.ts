@@ -7,6 +7,7 @@
 
 import { addNoteToContact } from "../../postmark/addNoteToContact.ts";
 import { addNoteToDeal } from "../../postmark/addNoteToDeal.ts";
+import { isBulkMail } from "../../postmark/automatedSenders.ts";
 import {
   extractForwardedSender,
   getForwardedMailContent,
@@ -40,6 +41,14 @@ export interface NormalizedInboundEmail {
   subject?: string;
   text?: string | null;
   html?: string | null;
+  /**
+   * Raw message headers when the provider supplies them, as a map or as a
+   * name/value list. Only read to recognise bulk mail; a provider that omits
+   * them simply never triggers that check.
+   */
+  headers?:
+    | Record<string, string | string[] | undefined>
+    | { name?: string; value?: string }[];
 }
 
 export interface ProcessInboundEmailOptions {
@@ -167,7 +176,11 @@ export const processInboundEmail = async ({
     salesEmails: [...excludedEmails],
     inboundEmail: normalizedInboundEmail,
   });
-  const canCreateEntities = allowsAutomaticEntityCreation(source);
+  // A newsletter, receipt or platform notification is filed against whoever is
+  // already in the CRM, but it never introduces a new client: a mail that
+  // announces itself as bulk is not a conversation with a counterpart.
+  const canCreateEntities =
+    allowsAutomaticEntityCreation(source) && !isBulkMail(email.headers);
 
   if (participants.length === 0) {
     if (!canCreateEntities) {

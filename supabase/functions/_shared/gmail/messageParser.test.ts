@@ -32,6 +32,15 @@ describe("normalizeGmailMessage", () => {
       subject: "Nieuwe opdracht",
       text: "Hallo CRM",
       html: "<b>Hallo</b>",
+      // Passed through so the pipeline can tell a newsletter from a reply.
+      headers: [
+        { name: "From", value: "Klant <klant@example.nl>" },
+        {
+          name: "To",
+          value: '"Jansen, Jan" <jan@example.nl>, team@example.nl',
+        },
+        { name: "Subject", value: "Nieuwe opdracht" },
+      ],
     });
   });
 

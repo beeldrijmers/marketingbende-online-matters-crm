@@ -54,3 +54,60 @@ describe("extractCompanyWebsite", () => {
     ).toBe("https://voorbeeldklant.nl");
   });
 });
+
+describe("extractCompanyWebsite and the client's own name", () => {
+  it("rejects a tool link that has nothing to do with the client", () => {
+    expect(
+      extractCompanyWebsite(
+        "Voorbeeldshop staat klaar: https://themes.shopify.com/themes/dawn",
+        [],
+        [],
+        "Zorgbroeder",
+      ),
+    ).toBeNull();
+    expect(
+      extractCompanyWebsite(
+        "Zie https://chatgpt.com/c/123",
+        [],
+        [],
+        "Senso Care",
+      ),
+    ).toBeNull();
+    expect(
+      extractCompanyWebsite(
+        "https://app.timelines.ai/inbox",
+        [],
+        [],
+        "Auto Siero",
+      ),
+    ).toBeNull();
+  });
+
+  it("accepts the client's own domain, however it is written", () => {
+    expect(
+      extractCompanyWebsite(
+        "Live op https://event-radio.nl",
+        [],
+        [],
+        "Event Radio",
+      ),
+    ).toBe("https://event-radio.nl");
+    expect(
+      extractCompanyWebsite("https://ijntema-bv.nl", [], [], "IJntema"),
+    ).toBe("https://ijntema-bv.nl");
+    expect(
+      extractCompanyWebsite(
+        "https://huntingxl.myshopify.com/admin",
+        [],
+        [],
+        "Hunting XL",
+      ),
+    ).toBe("https://huntingxl.myshopify.com");
+  });
+
+  it("keeps working when no company name is available", () => {
+    expect(extractCompanyWebsite("https://bouwiva.nl", [], [])).toBe(
+      "https://bouwiva.nl",
+    );
+  });
+});
