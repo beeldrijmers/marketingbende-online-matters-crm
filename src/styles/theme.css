@@ -1,5 +1,5 @@
 /**
- * Kompas CRM — design tokens ("Werkbank")
+ * Kompas — design tokens ("Werkbank")
  *
  * One palette, two modes, both fully worked out. Dark is the default because
  * that is how the team works; light is not an afterthought.
@@ -219,6 +219,9 @@
 
 @theme inline {
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  /* Alleen voor het woordmerk. Zwaar en breed, dus nooit voor lopende tekst. */
+  --font-wordmark:
+    "Archivo Black", Impact, ui-sans-serif, system-ui, sans-serif;
 
   --radius-xs: calc(var(--radius) - 4px);
   --radius-sm: calc(var(--radius) - 2px);

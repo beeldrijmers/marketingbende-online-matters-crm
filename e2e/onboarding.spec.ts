@@ -6,10 +6,10 @@ test("user onboarding", async ({ page, isMobile, dismissToast }) => {
   });
 
   // The isolated Supabase stack can need a few extra seconds on a cold CI boot.
-  await expect(page).toHaveTitle(/Kompas CRM/);
+  await expect(page).toHaveTitle(/Kompas/);
   await expect(
     page.getByRole("heading", {
-      name: "Welkom bij Kompas CRM",
+      name: "Welkom bij Kompas",
       exact: true,
     }),
   ).toBeVisible({ timeout: 15_000 });
@@ -21,7 +21,7 @@ test("user onboarding", async ({ page, isMobile, dismissToast }) => {
   await page.getByRole("button", { name: "Account aanmaken" }).click();
 
   await expect(page.getByText("Wat nu?")).toBeVisible();
-  await expect(page.getByText("Kompas CRM installeren")).toBeVisible();
+  await expect(page.getByText("Kompas installeren")).toBeVisible();
   await expect(page.getByText("Voeg uw eerste contact toe")).toBeVisible();
   await expect(page.getByText("Voeg uw eerste notitie toe")).toBeVisible();
 

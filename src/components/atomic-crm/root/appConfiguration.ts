@@ -4,7 +4,7 @@
 
 // Kompas: het CRM beantwoordt elke ochtend dezelfde vraag - waar staan we? De
 // naald in het merkteken wijst dezelfde kant op als de werkstroom op het bord.
-export const title = "Kompas CRM";
+export const title = "Kompas";
 
 export const currency = "EUR";
 

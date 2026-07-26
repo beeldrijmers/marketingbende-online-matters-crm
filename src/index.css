@@ -2,6 +2,8 @@
 @import "tw-animate-css";
 /* Geist Variable, weights only — the italic file is never used by this UI. */
 @import "@fontsource-variable/geist/wght.css";
+/* Archivo Black, alleen latin: dit font zet uitsluitend het woordmerk. */
+@import "@fontsource/archivo-black/latin-400.css";
 @import "./styles/theme.css";
 @import "./styles/base.css";
 

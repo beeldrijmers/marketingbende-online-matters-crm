@@ -45,7 +45,7 @@ test.describe("user adding a task", () => {
     await page.getByRole("textbox", { name: "Wachtwoord" }).fill("password");
     await page.getByRole("button", { name: "Inloggen" }).click();
 
-    await expect(page).toHaveTitle(/Kompas CRM/);
+    await expect(page).toHaveTitle(/Kompas/);
     // Updates is a page of its own now, reachable from the navigation.
     await page.getByRole("link", { name: "Updates" }).first().click();
     await expect(
