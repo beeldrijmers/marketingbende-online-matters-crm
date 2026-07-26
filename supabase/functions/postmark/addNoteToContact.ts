@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
+import { findContactByEmail } from "../_shared/inbound/findContactByEmail.ts";
 import type { Attachment } from "./extractAndUploadAttachments.ts";
 import { MAIL_PROVIDERS } from "./mailProvider.const.ts";
 
@@ -77,12 +78,8 @@ export const getOrCreateContactFromEmailInfo = async ({
   createIfMissing?: boolean;
 }) => {
   // Check if the contact already exists
-  const { data: existingContact, error: fetchContactError } =
-    await supabaseAdmin
-      .from("contacts")
-      .select("*")
-      .contains("email_jsonb", JSON.stringify([{ email }]))
-      .maybeSingle();
+  const { contact: existingContact, error: fetchContactError } =
+    await findContactByEmail(email, "*");
   if (fetchContactError) {
     throw new Error(
       `Could not fetch contact from database, email: ${email}, error: ${fetchContactError.message}`,

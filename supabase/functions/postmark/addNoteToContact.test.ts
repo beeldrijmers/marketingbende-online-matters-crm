@@ -208,8 +208,10 @@ describe("addNoteToContact", () => {
       mockFrom.mockReturnValue({
         select: () => ({
           contains: () => ({
-            maybeSingle: () =>
-              Promise.resolve({ data: existingContact, error: null }),
+            order: () => ({
+              limit: () =>
+                Promise.resolve({ data: [existingContact], error: null }),
+            }),
           }),
         }),
       });
@@ -224,8 +226,10 @@ describe("addNoteToContact", () => {
       mockFrom.mockReturnValue({
         select: () => ({
           contains: () => ({
-            maybeSingle: () =>
-              Promise.resolve({ data: null, error: { message: "DB error" } }),
+            order: () => ({
+              limit: () =>
+                Promise.resolve({ data: null, error: { message: "DB error" } }),
+            }),
           }),
         }),
       });
@@ -256,7 +260,9 @@ describe("addNoteToContact", () => {
           // 1st call: fetch contact → not found
           select: () => ({
             contains: () => ({
-              maybeSingle: () => Promise.resolve({ data: null, error: null }),
+              order: () => ({
+                limit: () => Promise.resolve({ data: [], error: null }),
+              }),
             }),
           }),
         })
@@ -288,7 +294,9 @@ describe("addNoteToContact", () => {
       mockFrom.mockReturnValue({
         select: () => ({
           contains: () => ({
-            maybeSingle: () => Promise.resolve({ data: null, error: null }),
+            order: () => ({
+              limit: () => Promise.resolve({ data: [], error: null }),
+            }),
           }),
         }),
       });
@@ -315,7 +323,9 @@ describe("addNoteToContact", () => {
           // 1st call: fetch contact → not found
           select: () => ({
             contains: () => ({
-              maybeSingle: () => Promise.resolve({ data: null, error: null }),
+              order: () => ({
+                limit: () => Promise.resolve({ data: [], error: null }),
+              }),
             }),
           }),
         })
@@ -351,7 +361,9 @@ describe("addNoteToContact", () => {
         .mockReturnValueOnce({
           select: () => ({
             contains: () => ({
-              maybeSingle: () => Promise.resolve({ data: null, error: null }),
+              order: () => ({
+                limit: () => Promise.resolve({ data: [], error: null }),
+              }),
             }),
           }),
         })
@@ -421,8 +433,10 @@ describe("addNoteToContact", () => {
           // 2nd call: fetch contact → found
           select: () => ({
             contains: () => ({
-              maybeSingle: () =>
-                Promise.resolve({ data: existingContact, error: null }),
+              order: () => ({
+                limit: () =>
+                  Promise.resolve({ data: [existingContact], error: null }),
+              }),
             }),
           }),
         })
@@ -475,8 +489,10 @@ describe("addNoteToContact", () => {
           // 2nd call: fetch contact → found
           select: () => ({
             contains: () => ({
-              maybeSingle: () =>
-                Promise.resolve({ data: existingContact, error: null }),
+              order: () => ({
+                limit: () =>
+                  Promise.resolve({ data: [existingContact], error: null }),
+              }),
             }),
           }),
         })
@@ -518,8 +534,13 @@ describe("addNoteToContact", () => {
           // 2nd call: fetch contact → DB error, causes getOrCreateContactFromEmailInfo to throw
           select: () => ({
             contains: () => ({
-              maybeSingle: () =>
-                Promise.resolve({ data: null, error: { message: "DB error" } }),
+              order: () => ({
+                limit: () =>
+                  Promise.resolve({
+                    data: null,
+                    error: { message: "DB error" },
+                  }),
+              }),
             }),
           }),
         });

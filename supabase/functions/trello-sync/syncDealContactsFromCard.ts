@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
+import { findContactByEmail } from "../_shared/inbound/findContactByEmail.ts";
 import {
   contactNameFromEmail,
   extractTrelloContactEmails,
@@ -46,18 +47,17 @@ export const syncDealContactsFromCard = async ({
     sourceText ?? `${card.name}\n${card.desc}`,
   );
   for (const email of emails) {
-    const { data: matches, error: lookupError } = await supabaseAdmin
-      .from("contacts")
-      .select("id, company_id")
-      .contains("email_jsonb", JSON.stringify([{ email }]))
-      .limit(1);
+    const { contact: match, error: lookupError } = await findContactByEmail(
+      email,
+      "id, company_id",
+    );
     if (lookupError) {
       throw new Error(
         `Could not look up Trello contact ${email}: ${lookupError.message}`,
       );
     }
 
-    const existing = matches?.[0];
+    const existing = match;
     if (existing) {
       linkedIds.add(existing.id as number);
       if (existing.company_id == null) {

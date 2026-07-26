@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
+import { findContactByEmail } from "../_shared/inbound/findContactByEmail.ts";
 import type { Attachment } from "./extractAndUploadAttachments.ts";
 import { selectDealsForMail } from "./selectDealsForMail.ts";
 
@@ -29,11 +30,8 @@ export const linkMailToActiveDeals = async ({
   sourceEventId?: string;
 }): Promise<number> => {
   try {
-    const { data: contact, error: contactError } = await supabaseAdmin
-      .from("contacts")
-      .select("id")
-      .contains("email_jsonb", JSON.stringify([{ email: contactEmail }]))
-      .maybeSingle();
+    const { contact, error: contactError } =
+      await findContactByEmail(contactEmail);
     if (contactError || !contact) return 0;
 
     const { data: deals, error: dealsError } = await supabaseAdmin
