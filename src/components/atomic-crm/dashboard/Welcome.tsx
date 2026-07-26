@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export const Welcome = () => (
   <Card>
     <CardHeader>
-      <CardTitle>Welkom bij het CRM</CardTitle>
+      <CardTitle>Welkom bij Kompas</CardTitle>
     </CardHeader>
     <CardContent>
       <p className="text-sm text-muted-foreground mb-4">

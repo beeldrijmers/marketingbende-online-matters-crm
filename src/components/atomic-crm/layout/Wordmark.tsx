@@ -5,8 +5,10 @@ import { useConfigurationContext } from "../root/ConfigurationContext";
 /**
  * The Kompas lockup: the mark carries the colour, the word stays ink.
  *
- * The wordmark used to be gradient-filled text, which fought the mark right
- * next to it and read as decoration. One coloured element per lockup is enough.
+ * The word is set in Archivo Black, the only place in the app that uses a
+ * display face. A heavy, wide face wants the opposite of what the previous Geist
+ * setting did: the tracking comes almost all the way in, because at 0.16em
+ * letters this solid stop reading as one mark and fall apart into six shapes.
  *
  * `tone="invert"` is for the login panel, which is dark in both themes and
  * would otherwise put dark ink on a dark gradient for light-mode visitors.
@@ -21,10 +23,7 @@ export const Wordmark = ({
   tone?: "ink" | "invert";
 }) => {
   const { darkModeLogo, lightModeLogo, title } = useConfigurationContext();
-  const hasCrmSuffix = / CRM$/i.test(title.trim());
-  const mainText = hasCrmSuffix
-    ? title.trim().replace(/ CRM$/i, "")
-    : title.trim();
+  const word = title.trim();
 
   return (
     <span
@@ -52,30 +51,16 @@ export const Wordmark = ({
         />
       )}
       {compact ? (
-        <span className="sr-only">{title}</span>
+        <span className="sr-only">{word}</span>
       ) : (
-        <span className="flex items-baseline gap-1.5 whitespace-nowrap">
-          {/* Set in caps: six short letters read as a mark this way, and the
-              wide tracking keeps them from clotting into one shape. */}
-          <span
-            className={cn(
-              "font-semibold uppercase leading-none tracking-[0.16em]",
-              size === "lg" ? "text-lead" : "text-[0.875rem]",
-              tone === "invert" ? "text-white" : "text-ink",
-            )}
-          >
-            {mainText}
-          </span>
-          {hasCrmSuffix ? (
-            <span
-              className={cn(
-                "text-eyebrow leading-none",
-                tone === "invert" ? "text-white/65" : "text-ink-3",
-              )}
-            >
-              CRM
-            </span>
-          ) : null}
+        <span
+          className={cn(
+            "font-wordmark whitespace-nowrap uppercase leading-none tracking-[0.02em]",
+            size === "lg" ? "text-lead" : "text-[0.875rem]",
+            tone === "invert" ? "text-white" : "text-ink",
+          )}
+        >
+          {word}
         </span>
       )}
     </span>
