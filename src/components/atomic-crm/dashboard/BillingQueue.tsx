@@ -54,7 +54,13 @@ export const BillingQueue = () => {
   const { data: deals = [], isPending } = useGetList<Deal>("deals", {
     pagination: { page: 1, perPage: 1000 },
     sort: { field: "updated_at", order: "ASC" },
-    filter: { stage: "facturatie-live", "archived_at@is": null },
+    // Interne opdrachten worden per ontwerp nooit gefactureerd, dus ze horen
+    // niet in een rij die "wachtend op facturatie" heet.
+    filter: {
+      stage: "facturatie-live",
+      "archived_at@is": null,
+      "is_internal@not.is": true,
+    },
   });
   const queue = deals
     .map((deal) => ({ deal, state: getBillingState(deal) }))
