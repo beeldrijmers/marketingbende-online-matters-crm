@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link2, Link2Off, RefreshCw, Tag } from "lucide-react";
+import { CalendarPlus, Link2, Link2Off, RefreshCw, Tag } from "lucide-react";
 import { useDataProvider, useNotify, useTranslate } from "ra-core";
 import { useEffect, useState } from "react";
 
@@ -255,6 +255,28 @@ export const GmailConnectionContent = () => {
         <p className="text-xs text-muted-foreground">
           {translate("crm.profile.gmail.sync_label_hint")}
         </p>
+      </div>
+      <div className="space-y-1 rounded-md border border-dashed p-3">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <CalendarPlus className="size-4" />
+          {translate("crm.profile.gmail.refresh_access")}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {translate("crm.profile.gmail.refresh_access_hint")}
+        </p>
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={connecting}
+            onClick={() => connect()}
+          >
+            <Link2 />
+            {connecting
+              ? translate("crm.profile.gmail.connecting")
+              : translate("crm.profile.gmail.refresh_access_action")}
+          </Button>
+        </div>
       </div>
       <div className="flex flex-wrap justify-end gap-2">
         <Button

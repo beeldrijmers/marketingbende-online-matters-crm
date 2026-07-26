@@ -825,6 +825,10 @@ export const englishCrmMessages = {
         sync_label_success: "Gmail import is limited to label ‘%{label}’.",
         sync_label_active: "Import label: %{label}.",
         sync_label_required: "Import is paused until you choose a Gmail label.",
+        refresh_access: "Access to your calendar",
+        refresh_access_hint:
+          "Putting a task in your own Google Calendar needs one extra consent. Your import label and sync settings survive the refresh.",
+        refresh_access_action: "Refresh Google access",
         disconnect: "Disconnect",
         disconnect_confirm: "Yes, disconnect Gmail",
         disconnect_success: "Gmail disconnected",

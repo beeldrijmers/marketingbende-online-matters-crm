@@ -842,6 +842,10 @@ export const frenchCrmMessages = {
         sync_label_active: "Libellé d’import : %{label}.",
         sync_label_required:
           "L’import est en pause jusqu’à ce que vous choisissiez un libellé Gmail.",
+        refresh_access: "Acces a votre agenda",
+        refresh_access_hint:
+          "Placer une tache dans votre propre Google Agenda demande une autorisation supplementaire. Votre libelle d'import et la synchronisation sont conserves.",
+        refresh_access_action: "Actualiser l'acces Google",
         disconnect: "Déconnecter",
         disconnect_confirm: "Oui, déconnecter Gmail",
         disconnect_success: "Gmail déconnecté",
