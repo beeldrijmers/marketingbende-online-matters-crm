@@ -1,4 +1,4 @@
-Kompas CRM is het interne CRM van Marketingbende en Online Matters. Het is
+Kompas is het interne CRM van Marketingbende en Online Matters. Het is
 gebouwd op de open-source basis van Atomic CRM (marmelab) en verder ontwikkeld
 voor onze eigen werkwijze.
 
