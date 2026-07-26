@@ -160,6 +160,8 @@ export type Deal = {
   // Intern/Extern board filter.
   is_internal?: boolean;
   won_notified_at?: string | null;
+  /** When a status update was last shared with the client from the CRM. */
+  client_updated_at?: string | null;
   revenue_period?: "maandelijks" | "eenmalig" | null;
   moneybird_estimate_id?: string;
   moneybird_estimate_status?: "pending" | "completed" | "failed";

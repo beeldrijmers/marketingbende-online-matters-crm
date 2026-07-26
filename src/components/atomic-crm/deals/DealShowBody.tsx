@@ -29,6 +29,7 @@ import type { Deal } from "../types";
 import { ContactList } from "./ContactList";
 import { DealEditSheet } from "./DealEditSheet";
 import { DealInboundEmail } from "./DealInboundEmail";
+import { DealStatusUpdate } from "./DealStatusUpdate";
 import { DealSteps } from "./DealSteps";
 import { InzyteDealSection } from "./inzyte/InzyteDealSection";
 import { MoneybirdDealSection } from "./MoneybirdDealSection";
@@ -72,6 +73,16 @@ export const DealShowBody = ({
   // "past" (new Date("YYYY-MM-DD") parses as UTC midnight, which incorrectly
   // flagged today's deals for almost the whole day).
   const closingIsPast = isBeforeToday(record.expected_closing_date);
+  const clientUpdateLabel = record.client_updated_at
+    ? formatISODateString(record.client_updated_at.slice(0, 10))
+    : null;
+  // Three weeks of silence on live work is the thing a client complains about,
+  // so it is marked like an overdue date rather than shown as a neutral fact.
+  const clientUpdateIsStale =
+    !isFinished &&
+    (!record.client_updated_at ||
+      Date.now() - new Date(record.client_updated_at).getTime() >
+        21 * 86_400_000);
   const amountLabel =
     record.amount != null && record.amount > 0
       ? record.amount.toLocaleString("nl-NL", {
@@ -148,6 +159,8 @@ export const DealShowBody = ({
             <DealSteps />
           </section>
 
+          {record.archived_at ? null : <DealStatusUpdate />}
+
           <section className="min-w-0">
             <InfiniteListBase
               resource="deal_notes"
@@ -212,6 +225,22 @@ export const DealShowBody = ({
                 {deliveryLabel}
               </Fact>
             ) : null}
+            {/* Whether the client knows where things stand is a fact about the
+                deal, not a detail of the update panel below. */}
+            <Fact
+              label={translate("resources.deals.fields.client_updated_at", {
+                _: "Klant geïnformeerd",
+              })}
+              tone={clientUpdateIsStale ? "late" : undefined}
+            >
+              {clientUpdateLabel ?? (
+                <span className="text-ink-3">
+                  {translate("resources.deals.client_update_never", {
+                    _: "Nog niet",
+                  })}
+                </span>
+              )}
+            </Fact>
             {durationDays != null ? (
               <Fact
                 label={translate("resources.deals.fields.duration", {
