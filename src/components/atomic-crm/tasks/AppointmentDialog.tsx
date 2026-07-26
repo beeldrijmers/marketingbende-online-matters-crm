@@ -11,19 +11,34 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { convertDateToString } from "@/components/admin/date-time-input";
 
 import type { CrmDataProvider } from "../providers/types";
 import type { Task } from "../types";
 
 const DURATIONS = [15, 30, 45, 60, 90, 120];
+const DEFAULT_DURATION = 60;
 
 /** A datetime-local value for the next round half hour, in the local timezone. */
 const nextHalfHour = (): string => {
   const now = new Date();
   now.setSeconds(0, 0);
   now.setMinutes(now.getMinutes() > 30 ? 60 : 30);
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  return convertDateToString(now);
+};
+
+/**
+ * De duur zoals hij is opgeslagen, want de dialoog stuurt alleen een duur mee.
+ * Zonder dit werd elke afspraak van een kwartier of van twee uur bij het
+ * bijwerken stil een uur, omdat het veld op de standaardwaarde stond.
+ */
+const storedDurationMinutes = (task: Task): number => {
+  if (!task.starts_at || !task.ends_at) return DEFAULT_DURATION;
+  const minutes = Math.round(
+    (new Date(task.ends_at).getTime() - new Date(task.starts_at).getTime()) /
+      60_000,
+  );
+  return minutes > 0 ? minutes : DEFAULT_DURATION;
 };
 
 /**
@@ -51,12 +66,18 @@ export const AppointmentDialog = ({
   const dataProvider = useDataProvider<CrmDataProvider>();
   const notify = useNotify();
   const refresh = useRefresh();
+  // Het veld toont een wandklok zonder zone, dus die moet uit de LOKALE
+  // componenten komen. Met toISOString() stond hier UTC, en omdat het opslaan
+  // die string wel als lokale tijd terugleest schoof elke bijwerking de
+  // afspraak een of twee uur op in de echte agenda.
   const [startsAt, setStartsAt] = useState(() =>
     task.starts_at
-      ? new Date(task.starts_at).toISOString().slice(0, 16)
+      ? convertDateToString(new Date(task.starts_at))
       : nextHalfHour(),
   );
-  const [durationMinutes, setDurationMinutes] = useState(60);
+  const [durationMinutes, setDurationMinutes] = useState(() =>
+    storedDurationMinutes(task),
+  );
   const [inviteClient, setInviteClient] = useState(false);
   const [busy, setBusy] = useState<"save" | "remove" | null>(null);
 

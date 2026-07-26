@@ -216,8 +216,12 @@ const leftPad2 = leftPad(2);
 /**
  * @param {Date} value value to convert
  * @returns {String} A standardized datetime (yyyy-MM-ddThh:mm), to be passed to an <input type="datetime-local" />
+ *
+ * Exported because every datetime-local input needs exactly this: the wall clock
+ * in the viewer's own zone. Writing that by hand elsewhere is how an appointment
+ * ends up two hours off, since `toISOString()` looks close enough but is UTC.
  */
-const convertDateToString = (value: Date) => {
+export const convertDateToString = (value: Date) => {
   if (!(value instanceof Date) || isNaN(value.getDate())) return "";
   const yyyy = leftPad4(value.getFullYear());
   const MM = leftPad2(value.getMonth() + 1);
