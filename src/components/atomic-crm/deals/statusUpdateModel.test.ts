@@ -1,4 +1,3 @@
-import { dealStages } from "../root/appConfiguration";
 import type {
   Deal,
   SeoMonthlyHeadlineMetric,
@@ -39,7 +38,6 @@ const build = (input: Partial<Parameters<typeof buildStatusUpdate>[0]> = {}) =>
     companyName: "ASP Noard",
     deal: deal(),
     now,
-    stages: dealStages,
     steps: [],
     ...input,
   });
@@ -167,8 +165,6 @@ describe("buildStatusUpdate, short variant", () => {
 });
 
 describe("buildCompanyStatusUpdate", () => {
-  const stages = dealStages;
-
   it("bundles every open assignment under one greeting", () => {
     const update = buildCompanyStatusUpdate({
       companyName: "Hunting XL",
@@ -196,7 +192,6 @@ describe("buildCompanyStatusUpdate", () => {
       ],
       now,
       senderName: "John Plantenga",
-      stages,
     });
 
     expect(update.subject).toBe(
@@ -227,7 +222,6 @@ describe("buildCompanyStatusUpdate", () => {
       companyName: "ASP Noard",
       deals: [one],
       now,
-      stages,
     });
 
     expect(bundled.subject).toBe("Statusupdate ASP Noard - Uw website");
@@ -242,7 +236,6 @@ describe("buildCompanyStatusUpdate", () => {
         { deal: deal({ name: "SEO", stage: "maandelijks" }), steps: [] },
       ],
       now,
-      stages,
       variant: "short",
     });
 

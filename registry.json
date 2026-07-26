@@ -466,6 +466,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/misc/plainText.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/misc/isLinkedInUrl.ts",
           "type": "registry:component"
         },
@@ -646,6 +650,18 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/statusUpdateToken.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/statusUpdateModel.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/statusUpdateDocument.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/stages.ts",
           "type": "registry:component"
         },
@@ -682,7 +698,19 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/deals/clientSafeText.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/deals/SyncTrelloButton.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/StatusUpdatePage.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/StatusUpdateComposer.tsx",
           "type": "registry:component"
         },
         {
@@ -711,6 +739,10 @@
         },
         {
           "path": "src/components/atomic-crm/deals/DealSteps.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/deals/DealStatusUpdate.tsx",
           "type": "registry:component"
         },
         {
@@ -850,6 +882,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/dashboard/updateMomentsModel.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/dashboard/teamWorkloadModel.ts",
           "type": "registry:component"
         },
@@ -871,6 +907,10 @@
         },
         {
           "path": "src/components/atomic-crm/dashboard/UpdatesPage.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/components/atomic-crm/dashboard/UpdateMoments.tsx",
           "type": "registry:component"
         },
         {
@@ -1038,6 +1078,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/companies/CompanyStatusUpdate.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/companies/CompanyShow.tsx",
           "type": "registry:component"
         },
@@ -1152,6 +1196,10 @@
         {
           "path": "src/components/supabase/forgot-password-page.tsx",
           "type": "registry:component"
+        },
+        {
+          "path": "src/lib/utils.test.ts",
+          "type": "registry:lib"
         },
         {
           "path": "src/lib/toSlug.ts",

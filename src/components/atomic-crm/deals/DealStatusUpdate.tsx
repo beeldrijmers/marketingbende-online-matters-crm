@@ -7,7 +7,6 @@ import {
 } from "ra-core";
 import { useMemo, useState } from "react";
 
-import { useConfigurationContext } from "../root/ConfigurationContext";
 import { isAutomaticTask } from "../tasks/taskSource";
 import type { Company, Contact, Deal, Sale, Task } from "../types";
 import { StatusUpdateComposer } from "./StatusUpdateComposer";
@@ -36,7 +35,6 @@ const firstEmail = (contacts: Contact[]): string | undefined => {
  */
 export const DealStatusUpdate = () => {
   const record = useRecordContext<Deal>();
-  const { dealStages } = useConfigurationContext();
   const { identity } = useGetIdentity();
   const [variant, setVariant] = useState<StatusUpdateVariant>("full");
 
@@ -80,7 +78,6 @@ export const DealStatusUpdate = () => {
       // Search Console / GA4 figures when the assignment has a connection and a
       // report for the month being told about.
       results: selectStatusUpdateResults(record.latest_seo_report, new Date()),
-      stages: dealStages,
       // Automatic reminder rows are internal bookkeeping, never client-facing.
       steps: steps.filter((step) => !isAutomaticTask(step)),
       teamNames: team.map((sale) =>
@@ -88,7 +85,7 @@ export const DealStatusUpdate = () => {
       ),
       variant,
     });
-  }, [companyName, dealStages, record, senderName, steps, team, variant]);
+  }, [companyName, record, senderName, steps, team, variant]);
 
   if (!record || !composed) return null;
 

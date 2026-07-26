@@ -1,6 +1,5 @@
 import type {
   Deal,
-  DealStage,
   SeoMonthlyHeadlineMetric,
   SeoMonthlyReportSummary,
   Task,
@@ -39,8 +38,6 @@ export interface StatusUpdateInput {
    */
   teamNames?: string[];
   companyName: string;
-  /** Stage labels from the app configuration, so wording follows the board. */
-  stages: DealStage[];
   /** All steps on the deal, done and open. */
   steps: Pick<Task, "text" | "done_date" | "due_date">[];
   /** Who is sending it, for the sign-off. */
@@ -94,9 +91,6 @@ const parseDate = (value?: string | null): Date | null => {
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
-
-const stageLabel = (stages: DealStage[], stage: string): string =>
-  stages.find((candidate) => candidate.value === stage)?.label ?? stage;
 
 /**
  * What the phase means for the client, in their words rather than ours. The
@@ -224,13 +218,22 @@ export const selectStatusUpdateResults = (
   return { metrics, monthLabel: MONTHS[month.getMonth()] };
 };
 
-/** A step reads as a sentence, not as a checklist entry. */
+/**
+ * A step reads as a sentence, not as a checklist entry.
+ *
+ * Punctuation is left alone when the line already ends in it: a step written as
+ * a question came out as "Wanneer levert de klant content?." and a label as
+ * "Aanleveren:." — small artefacts, but they are what makes a letter read as
+ * machine output.
+ */
 const asSentence = (text: string): string => {
   const trimmed = text
     .trim()
     .replace(/\s+/g, " ")
     .replace(/[.;]+$/, "");
-  return trimmed ? `${sentenceCase(trimmed)}.` : "";
+  if (!trimmed) return "";
+  const sentence = sentenceCase(trimmed);
+  return /[?!:…]$/.test(sentence) ? sentence : `${sentence}.`;
 };
 
 export const buildStatusUpdate = ({
@@ -239,7 +242,6 @@ export const buildStatusUpdate = ({
   now,
   results,
   senderName,
-  stages,
   steps,
   teamNames = [],
   variant = "full",
@@ -264,8 +266,10 @@ export const buildStatusUpdate = ({
   const state = [
     deal.on_hold && deal.stage !== "on-hold"
       ? "De opdracht staat tijdelijk stil."
-      : (STAGE_SENTENCE[deal.stage] ??
-        `Status: ${stageLabel(stages, deal.stage)}.`),
+      : // Never the board's own label and never the raw stage value: those are
+        // written for the team, and an unmapped phase produced "Status: lost."
+        (STAGE_SENTENCE[deal.stage] ??
+        "We zijn met uw opdracht bezig; bij de volgende stap hoort u van ons."),
   ];
   sections.push({ heading: "Waar we staan", lines: state });
 
@@ -414,7 +418,6 @@ export const buildCompanyStatusUpdate = ({
   deals,
   now,
   senderName,
-  stages,
   teamNames = [],
   variant = "full",
 }: {
@@ -428,7 +431,6 @@ export const buildCompanyStatusUpdate = ({
     steps: StatusUpdateInput["steps"];
     results?: StatusUpdateResults;
   }[];
-  stages: DealStage[];
   senderName?: string;
   teamNames?: string[];
   variant?: StatusUpdateVariant;
@@ -441,7 +443,6 @@ export const buildCompanyStatusUpdate = ({
       now,
       results,
       senderName,
-      stages,
       steps,
       teamNames,
       variant,

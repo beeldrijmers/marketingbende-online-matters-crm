@@ -159,10 +159,26 @@ export const StatusUpdateComposer = ({
     window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
   };
 
-  const openMail = () => {
+  /**
+   * Browsers and mail clients cut a mailto: URL off somewhere around 2000
+   * characters, which a bundled update for a client with several assignments
+   * passes easily — the mail then opened half-written or empty. Past that point
+   * the text goes to the clipboard and the mail opens with the subject only.
+   */
+  const MAILTO_LIMIT = 1600;
+
+  const openMail = async () => {
+    const tooLong = text.length > MAILTO_LIMIT;
+    if (tooLong) {
+      await copyToClipboard(text, "text");
+      notify(
+        "De update staat op je klembord: te lang voor een mailvenster. Plak hem in de mail die nu opent.",
+        { type: "info", autoHideDuration: 10_000 },
+      );
+    }
     const query = new URLSearchParams({
       subject: composed.subject,
-      body: text,
+      ...(tooLong ? {} : { body: text }),
     });
     window.location.href = `mailto:${recipient ?? ""}?${query
       .toString()
@@ -239,7 +255,16 @@ export const StatusUpdateComposer = ({
           scope,
           title: composed.subject,
           body: text,
-          sections: composed.sections,
+          // The blocks are the composed text, rendered. The client's page gives
+          // them priority over the body, so shipping them alongside an edited
+          // body would publish the sentence the sender just deleted — the one
+          // human check in this whole path, undone. An empty list makes that page
+          // render the text as sent. Same for the short variant: its body is four
+          // chat lines while these blocks are the full letter.
+          sections:
+            variant === "full" && text === composed.body
+              ? composed.sections
+              : [],
           company_name: companyName,
           sender_name: senderName ?? null,
           shared_by: identity.id,
@@ -296,14 +321,18 @@ export const StatusUpdateComposer = ({
         </p>
       </div>
 
+      {/* One choice, so one radiogroup: as two toggle buttons a screen reader
+          announced two unrelated on/off controls and it cost two tab stops. */}
       <div
         aria-label="Lengte van de update"
         className="flex w-fit items-center gap-0.5 rounded-md border border-line bg-sunken p-0.5"
-        role="group"
+        role="radiogroup"
       >
         {VARIANTS.map((option) => (
           <button
-            aria-pressed={variant === option.value}
+            aria-checked={variant === option.value}
+            role="radio"
+            tabIndex={variant === option.value ? 0 : -1}
             className={cn(
               "flex h-7 items-center rounded-sm px-3 text-meta font-medium transition-colors duration-1",
               // The active half needs a visible edge: on the sunken group a bare
@@ -400,18 +429,23 @@ export const StatusUpdateComposer = ({
               <Link2 className="size-3.5 shrink-0" />
               <span className="num shrink-0">{formatDay(link.shared_at)}</span>
               <span className="truncate">{link.title}</span>
-              <span className="num ml-auto flex shrink-0 items-center gap-1">
+              <span
+                aria-label={`${link.view_count ?? 0} keer bekeken`}
+                className="num ml-auto flex shrink-0 items-center gap-1"
+                title="Aantal keer bekeken"
+              >
                 <Eye className="size-3.5" />
                 {link.view_count ?? 0}
               </span>
               <button
+                aria-label={`Link van ${formatDay(link.shared_at)} intrekken`}
                 className="flex shrink-0 items-center gap-1 text-ink-3 hover:text-late"
                 onClick={() => revokeLink(link)}
                 title="Link intrekken"
                 type="button"
               >
                 <Link2Off className="size-3.5" />
-                Intrekken
+                <span className="hidden sm:inline">Intrekken</span>
               </button>
             </li>
           ))}
