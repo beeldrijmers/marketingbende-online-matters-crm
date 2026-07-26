@@ -1,6 +1,9 @@
 import { dealStages } from "../root/appConfiguration";
 import type { Deal, Task } from "../types";
-import { buildStatusUpdate } from "./statusUpdateModel";
+import {
+  buildCompanyStatusUpdate,
+  buildStatusUpdate,
+} from "./statusUpdateModel";
 
 const now = new Date("2026-07-26T09:00:00.000Z");
 
@@ -117,5 +120,118 @@ describe("buildStatusUpdate", () => {
       (section) => section.heading === "Wat er is gedaan",
     );
     expect(doneSection?.lines).toHaveLength(6);
+  });
+});
+
+describe("buildStatusUpdate, short variant", () => {
+  it("fits a chat message: no greeting, no sign-off, one line per block", () => {
+    const update = build({
+      deal: deal({ stage: "bezig", delivery_date: "2026-08-14" }),
+      senderName: "John Plantenga",
+      steps: [
+        step("staging ingericht", { done_date: "2026-07-22T09:00:00.000Z" }),
+        step("content nakijken"),
+      ],
+      variant: "short",
+    });
+
+    expect(update.body).not.toContain("Beste,");
+    expect(update.body).not.toContain("Met vriendelijke groet");
+    expect(update.body.split("\n")).toHaveLength(5);
+    expect(update.body).toContain(
+      "Update Staging klaar, wacht op content (ASP Noard)",
+    );
+    expect(update.body).toContain("Waar we staan: We zijn aan het werk.");
+    expect(update.body).toContain("Wat er nu gebeurt: Content nakijken.");
+  });
+
+  it("reports the same facts as the full version", () => {
+    const input = {
+      deal: deal({ stage: "on-hold" }),
+      steps: [
+        step("staging ingericht", { done_date: "2026-07-22T09:00:00.000Z" }),
+      ],
+    };
+    const short = build({ ...input, variant: "short" });
+    const full = build({ ...input, variant: "full" });
+
+    expect(short.sections).toEqual(full.sections);
+    expect(short.subject).toBe(full.subject);
+  });
+});
+
+describe("buildCompanyStatusUpdate", () => {
+  const stages = dealStages;
+
+  it("bundles every open assignment under one greeting", () => {
+    const update = buildCompanyStatusUpdate({
+      companyName: "Hunting XL",
+      deals: [
+        {
+          deal: deal({
+            name: "Maandelijkse optimalisatie",
+            stage: "maandelijks",
+          }),
+          steps: [
+            step("teksten bijgewerkt", {
+              done_date: "2026-07-22T09:00:00.000Z",
+            }),
+          ],
+        },
+        {
+          deal: deal({
+            name: "Jack Pyke-import",
+            stage: "informatie-pipeline",
+          }),
+          steps: [step("prijzen controleren")],
+        },
+      ],
+      now,
+      senderName: "John Plantenga",
+      stages,
+    });
+
+    expect(update.subject).toBe(
+      "Statusupdate Hunting XL - 2 lopende opdrachten",
+    );
+    expect(update.body.match(/Beste,/g)).toHaveLength(1);
+    expect(update.body.match(/Met vriendelijke groet/g)).toHaveLength(1);
+    expect(update.body).toContain("Maandelijkse optimalisatie:");
+    expect(update.body).toContain("Jack Pyke-import:");
+    expect(update.body).toContain("- Het maandelijkse werk loopt.");
+    expect(update.body).toContain("Wat er nu gebeurt: Prijzen controleren.");
+    expect(update.completedSinceLastUpdate).toBe(1);
+  });
+
+  it("reads like a single-assignment update when there is only one", () => {
+    const one = {
+      deal: deal({ name: "Staging klaar", stage: "controle-livegang" }),
+      steps: [],
+    };
+    const bundled = buildCompanyStatusUpdate({
+      companyName: "ASP Noard",
+      deals: [one],
+      now,
+      stages,
+    });
+
+    expect(bundled.subject).toBe("Statusupdate ASP Noard - Staging klaar");
+    expect(bundled.body).toContain("Een korte update over Staging klaar.");
+  });
+
+  it("stays short when the short variant is asked for", () => {
+    const update = buildCompanyStatusUpdate({
+      companyName: "Hunting XL",
+      deals: [
+        { deal: deal({ name: "Webshop", stage: "bezig" }), steps: [] },
+        { deal: deal({ name: "SEO", stage: "maandelijks" }), steps: [] },
+      ],
+      now,
+      stages,
+      variant: "short",
+    });
+
+    expect(update.body.split("\n")).toHaveLength(3);
+    expect(update.body.startsWith("Update Hunting XL")).toBe(true);
   });
 });

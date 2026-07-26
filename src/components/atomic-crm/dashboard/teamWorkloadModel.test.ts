@@ -50,8 +50,8 @@ describe("buildTeamWorkload", () => {
 
     expect(rows).toHaveLength(2);
     expect(rows.map((row) => row.salesId)).toEqual([1, 2]);
-    expect(rows[0]).toMatchObject({ amount: 5_000, open: 2 });
-    expect(rows[1]).toMatchObject({ amount: 500, open: 1 });
+    expect(rows[0]).toMatchObject({ oneOffAmount: 5_000, open: 2 });
+    expect(rows[1]).toMatchObject({ oneOffAmount: 500, open: 1 });
   });
 
   it("counts what is off-track and ranks the busiest owner first", () => {
@@ -73,6 +73,26 @@ describe("buildTeamWorkload", () => {
     expect(rows[0].salesId).toBe(2);
     expect(rows[0].attention.overdue).toBe(2);
     expect(rows[1].attention.overdue).toBe(0);
+  });
+
+  it("keeps a monthly fee apart from a one-off project price", () => {
+    const rows = buildTeamWorkload(
+      [
+        deal({
+          id: 1,
+          sales_id: 1,
+          amount: 300,
+          revenue_period: "maandelijks",
+        }),
+        deal({ id: 2, sales_id: 1, amount: 5_000, revenue_period: "eenmalig" }),
+        deal({ id: 3, sales_id: 1, amount: 750 }),
+      ],
+      [],
+      now,
+    );
+
+    // 300 per month next to 5.750 once: adding them would be meaningless.
+    expect(rows[0]).toMatchObject({ monthlyAmount: 300, oneOffAmount: 5_750 });
   });
 
   it("keeps unclaimed work visible, and always last", () => {

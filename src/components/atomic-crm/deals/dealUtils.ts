@@ -55,6 +55,20 @@ export function parseISODateStringLocal(
   return new Date(year, month - 1, day);
 }
 
+// A timestamp column, rendered as the day it happened in the reader's own
+// timezone. Slicing the first ten characters off the stored value would read the
+// UTC day instead, so anything shared between midnight and 02:00 Dutch time
+// showed up as "yesterday".
+export function formatTimestampDate(
+  timestamp: string | null | undefined,
+): string | null {
+  if (!timestamp) return null;
+  const date = new Date(timestamp);
+  return Number.isNaN(date.getTime())
+    ? null
+    : format(date, "PP", { locale: nl });
+}
+
 // Date columns are nullable in the database, so a missing or malformed value
 // must render as "no date" instead of crashing the page.
 export function formatISODateString(

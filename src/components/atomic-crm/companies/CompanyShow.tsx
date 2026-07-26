@@ -44,6 +44,7 @@ import {
   CompanyInfo,
   ContextInfo,
 } from "./CompanyAside";
+import { CompanyStatusUpdate } from "./CompanyStatusUpdate";
 import { CompanyAvatar } from "./CompanyAvatar";
 
 export const CompanyShow = () => {
@@ -189,6 +190,10 @@ const CompanyShowContent = () => {
             </Tabs>
           </CardContent>
         </Card>
+
+        {/* One update for everything that runs for this client, next to their
+            own record: the client asks per relationship, not per assignment. */}
+        <CompanyStatusUpdate />
       </div>
       <CompanyAside />
     </div>

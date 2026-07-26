@@ -634,6 +634,14 @@ export const frenchCrmMessages = {
     },
     dashboard: {
       deals_pipeline: "Pipeline des affaires",
+      silent: {
+        title: "Le client attend des nouvelles",
+        subtitle:
+          "Travail ouvert dont le client n'a rien entendu depuis %{days} jours.",
+        never: "jamais informé",
+        days: "%{count} jours de silence",
+        more: "%{count} autres attendent des nouvelles",
+      },
       workload: {
         title: "Qui fait quoi",
         subtitle:

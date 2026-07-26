@@ -504,6 +504,28 @@ export type DealNote = {
   status?: string;
 } & Pick<RaRecord, "id">;
 
+/**
+ * A status update as it was shared with the client. The body and sections are a
+ * snapshot: the client's page must keep saying what it said when the link was
+ * sent, whatever happens to the deal afterwards.
+ */
+export type DealStatusUpdate = {
+  deal_id: Identifier;
+  company_id?: Identifier | null;
+  token: string;
+  scope: "deal" | "company";
+  title: string;
+  body: string;
+  sections: { heading: string; lines: string[] }[];
+  company_name?: string | null;
+  sender_name?: string | null;
+  shared_by?: Identifier | null;
+  shared_at: string;
+  revoked_at?: string | null;
+  view_count?: number;
+  last_viewed_at?: string | null;
+} & Pick<RaRecord, "id">;
+
 export type Tag = {
   id: number;
   name: string;

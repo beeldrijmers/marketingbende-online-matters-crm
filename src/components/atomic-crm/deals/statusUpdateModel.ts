@@ -30,8 +30,16 @@ export interface StatusUpdateInput {
   steps: Pick<Task, "text" | "done_date" | "due_date">[];
   /** Who is sending it, for the sign-off. */
   senderName?: string;
+  /**
+   * "full" is a letter for mail, a PDF or a shared page. "short" is the same
+   * facts in four lines, because half of these updates go out over WhatsApp and
+   * a letter pasted into a chat reads as a form mail.
+   */
+  variant?: StatusUpdateVariant;
   now: Date;
 }
+
+export type StatusUpdateVariant = "full" | "short";
 
 export interface StatusUpdate {
   subject: string;
@@ -101,6 +109,7 @@ export const buildStatusUpdate = ({
   senderName,
   stages,
   steps,
+  variant = "full",
 }: StatusUpdateInput): StatusUpdate => {
   const lastUpdate = parseDate(deal.client_updated_at);
   const done = steps
@@ -178,25 +187,137 @@ export const buildStatusUpdate = ({
     ? `Met vriendelijke groet,\n${senderName}`
     : "Met vriendelijke groet";
 
-  const body = [
-    greeting,
-    "",
-    `Een korte update over ${deal.name.toLowerCase().startsWith(companyName.toLowerCase()) ? deal.name : `${deal.name} (${companyName})`}.`,
-    "",
-    ...sections.flatMap((section) => [
-      `${section.heading}:`,
-      ...section.lines.map((line) => `- ${line}`),
-      "",
-    ]),
-    "Heeft u vragen of aanvullingen? Laat het weten, dan pakken we het op.",
-    "",
-    closing,
-  ].join("\n");
+  const subjectOfUpdate = deal.name
+    .toLowerCase()
+    .startsWith(companyName.toLowerCase())
+    ? deal.name
+    : `${deal.name} (${companyName})`;
+
+  const body =
+    variant === "short"
+      ? // A chat message: no greeting, no sign-off, one line per block. The
+        // recipient already knows who is writing.
+        [
+          `Update ${subjectOfUpdate}`,
+          ...sections.map(
+            (section) => `${section.heading}: ${section.lines.join(" ")}`,
+          ),
+        ].join("\n")
+      : [
+          greeting,
+          "",
+          `Een korte update over ${subjectOfUpdate}.`,
+          "",
+          ...sections.flatMap((section) => [
+            `${section.heading}:`,
+            ...section.lines.map((line) => `- ${line}`),
+            "",
+          ]),
+          "Heeft u vragen of aanvullingen? Laat het weten, dan pakken we het op.",
+          "",
+          closing,
+        ].join("\n");
 
   return {
     subject,
     body,
     sections,
     completedSinceLastUpdate: doneSince.length,
+  };
+};
+
+/**
+ * One update covering everything that runs for a client.
+ *
+ * Hunting XL has four open assignments; sending four separate updates about the
+ * same relationship reads as four unrelated projects and takes four times as
+ * long. This keeps one greeting and one sign-off, and gives each assignment its
+ * own block so the client can still see which is which.
+ */
+export const buildCompanyStatusUpdate = ({
+  companyName,
+  deals,
+  now,
+  senderName,
+  stages,
+  variant = "full",
+}: {
+  companyName: string;
+  /** Each open assignment with its own steps, in the order they should appear. */
+  deals: {
+    deal: StatusUpdateInput["deal"];
+    steps: StatusUpdateInput["steps"];
+  }[];
+  stages: DealStage[];
+  senderName?: string;
+  variant?: StatusUpdateVariant;
+  now: Date;
+}): StatusUpdate => {
+  const perDeal = deals.map(({ deal, steps }) =>
+    buildStatusUpdate({
+      companyName,
+      deal,
+      now,
+      senderName,
+      stages,
+      steps,
+      variant,
+    }),
+  );
+
+  // Each assignment becomes one block: its name as the heading, its own lines
+  // underneath. Lines that list work get their block name in front of them so
+  // "done" and "next" stay distinguishable inside one list; the state and the
+  // planning read as sentences already and keeping a label there ("Planning:
+  // Laat u weten of…") only made them clumsy.
+  const sections = deals.map(({ deal }, index) => ({
+    heading: deal.name,
+    lines: perDeal[index].sections.flatMap((section) =>
+      section.heading === "Waar we staan" || section.heading === "Planning"
+        ? section.lines
+        : section.lines.map((line) => `${section.heading}: ${line}`),
+    ),
+  }));
+
+  const subject =
+    deals.length === 1
+      ? perDeal[0].subject
+      : `Statusupdate ${companyName} - ${deals.length} lopende opdrachten`;
+
+  const body =
+    variant === "short"
+      ? [
+          `Update ${companyName}`,
+          ...sections.map(
+            (section) => `${section.heading}: ${section.lines.join(" ")}`,
+          ),
+        ].join("\n")
+      : [
+          "Beste,",
+          "",
+          deals.length === 1
+            ? `Een korte update over ${deals[0].deal.name}.`
+            : `Een korte update over het werk dat voor u loopt.`,
+          "",
+          ...sections.flatMap((section) => [
+            `${section.heading}:`,
+            ...section.lines.map((line) => `- ${line}`),
+            "",
+          ]),
+          "Heeft u vragen of aanvullingen? Laat het weten, dan pakken we het op.",
+          "",
+          senderName
+            ? `Met vriendelijke groet,\n${senderName}`
+            : "Met vriendelijke groet",
+        ].join("\n");
+
+  return {
+    subject,
+    body,
+    sections,
+    completedSinceLastUpdate: perDeal.reduce(
+      (total, update) => total + update.completedSinceLastUpdate,
+      0,
+    ),
   };
 };

@@ -215,6 +215,23 @@ grant all on table public.inzyte_runs to service_role;
 revoke all on table public.inzyte_runs from anon, authenticated;
 grant select on table public.inzyte_runs to authenticated;
 
+-- Shared status updates: the team creates and revokes them, the public page
+-- reads through the status_update edge function (service_role). anon gets
+-- nothing at all - the token must never be a way into the table itself.
+grant all on table public.deal_status_updates to service_role;
+revoke all on table public.deal_status_updates from anon, authenticated;
+grant select on table public.deal_status_updates to authenticated;
+grant insert (deal_id, company_id, token, scope, title, body, sections,
+              company_name, sender_name, shared_by, shared_at)
+    on table public.deal_status_updates to authenticated;
+-- Revoking a link is the only field the team may change afterwards; view
+-- counters belong to the function.
+grant update (revoked_at) on table public.deal_status_updates to authenticated;
+
+grant all on sequence public.deal_status_updates_id_seq to service_role;
+revoke all on sequence public.deal_status_updates_id_seq from anon, authenticated;
+grant usage on sequence public.deal_status_updates_id_seq to authenticated;
+
 -- View grants
 grant all on table public.activity_log to anon;
 grant all on table public.activity_log to authenticated;
