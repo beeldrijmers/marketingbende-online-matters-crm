@@ -24,7 +24,16 @@ describe("getBillingState", () => {
     expect(getBillingState(deal())).toMatchObject({ kind: "ready" });
     expect(getBillingState(deal({ amount: null, contact_ids: [] }))).toEqual({
       kind: "incomplete",
-      label: "Mist contact, bedrag",
+      label: "Mist bedrag",
+    });
+    // Een contactpersoon is geen voorwaarde: het factuurpad zoekt de
+    // Moneybird-relatie op bedrijfsnaam en leest contact_ids nergens.
+    expect(getBillingState(deal({ contact_ids: [] }))).toMatchObject({
+      kind: "ready",
+    });
+    expect(getBillingState(deal({ company_id: undefined }))).toEqual({
+      kind: "incomplete",
+      label: "Mist bedrijf",
     });
     expect(
       getBillingState(deal({ moneybird_invoice_status: "failed" })),

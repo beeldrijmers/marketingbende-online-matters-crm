@@ -20,9 +20,12 @@ export const getBillingState = (deal: Deal): BillingState | null => {
     return { kind: "pending", label: "Factuur wordt aangemaakt" };
   }
 
+  // Geen contact-eis: het factuurpad zoekt de Moneybird-relatie op bedrijfsnaam
+  // (_shared/moneybird/contact.ts) en leest contact_ids nergens. De knop op de
+  // opdracht zelf blokkeert dan ook alleen op bedrijf, bedrag en valuta, dus
+  // deze rij sprak de rest van de app tegen.
   const missing = [
     !deal.company_id ? "bedrijf" : null,
-    !deal.contact_ids?.length ? "contact" : null,
     !deal.amount || deal.amount <= 0 ? "bedrag" : null,
   ].filter(Boolean);
   if (missing.length > 0) {

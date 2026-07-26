@@ -457,6 +457,11 @@ const ViewMoneybirdDocumentButton = ({
 };
 
 // Renders the create-or-view control for one document kind on a deal.
+//
+// The internal guard lives here and not only on the card toolbar: internal work
+// is never invoiced, and every caller (the card, the details dialog, the billing
+// queue) has to inherit that. It used to sit one level up, so the billing queue
+// happily offered "Maak factuur" on Marketingbende's own internal card.
 export const MoneybirdDocumentControl = ({
   compact = false,
   record,
@@ -466,7 +471,7 @@ export const MoneybirdDocumentControl = ({
   record: Deal;
   kind: DocumentKind;
 }) =>
-  idOf(record, kind) ? (
+  record.is_internal ? null : idOf(record, kind) ? (
     <ViewMoneybirdDocumentButton
       compact={compact}
       record={record}
@@ -480,6 +485,8 @@ export const MoneybirdDocumentControl = ({
 // details dialog remains available, but creating or opening a document no
 // longer requires opening the assignment first.
 export const MoneybirdCardActions = ({ record }: { record: Deal }) => {
+  // Ook hier weren, want anders staat er een lege Moneybird-balk met alleen een
+  // kopje op een interne kaart.
   if (record.is_internal) return null;
 
   return (
