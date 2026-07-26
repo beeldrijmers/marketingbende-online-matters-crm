@@ -1,8 +1,14 @@
 import { dealStages } from "../root/appConfiguration";
-import type { Deal, Task } from "../types";
+import type {
+  Deal,
+  SeoMonthlyHeadlineMetric,
+  SeoMonthlyReportSummary,
+  Task,
+} from "../types";
 import {
   buildCompanyStatusUpdate,
   buildStatusUpdate,
+  selectStatusUpdateResults,
 } from "./statusUpdateModel";
 
 const now = new Date("2026-07-26T09:00:00.000Z");
@@ -233,5 +239,178 @@ describe("buildCompanyStatusUpdate", () => {
 
     expect(update.body.split("\n")).toHaveLength(3);
     expect(update.body.startsWith("Update Hunting XL")).toBe(true);
+  });
+});
+
+const metric = (
+  overrides: Partial<SeoMonthlyHeadlineMetric> = {},
+): SeoMonthlyHeadlineMetric => ({
+  change: 120,
+  changePercent: 18.4,
+  current: 1240,
+  definition: "Klikken uit Google",
+  favourable: true,
+  format: "number",
+  group: "seo",
+  key: "clicks",
+  label: "Klikken uit Google",
+  previous: 1048,
+  source: "Search Console",
+  ...overrides,
+});
+
+const report = (
+  overrides: Partial<SeoMonthlyReportSummary> = {},
+): SeoMonthlyReportSummary => ({
+  all_time_work_count: 40,
+  current_work_count: 6,
+  deal_id: 1,
+  finalized_at: null,
+  generated_at: "2026-07-01T09:00:00.000Z",
+  headline_metrics: [metric()],
+  id: 1,
+  reporting_month: "2026-07-01",
+  status: "final",
+  title: "SEO juli",
+  ...overrides,
+});
+
+describe("selectStatusUpdateResults", () => {
+  it("uses this month's report", () => {
+    const results = selectStatusUpdateResults(report(), now);
+
+    expect(results?.monthLabel).toBe("juli");
+    expect(results?.metrics).toHaveLength(1);
+  });
+
+  it("still uses last month's report, because that is what gets reported", () => {
+    const results = selectStatusUpdateResults(
+      report({ reporting_month: "2026-06-01" }),
+      now,
+    );
+
+    expect(results?.monthLabel).toBe("juni");
+  });
+
+  it("refuses a stale report rather than putting old numbers in a new update", () => {
+    expect(
+      selectStatusUpdateResults(report({ reporting_month: "2026-03-01" }), now),
+    ).toBeUndefined();
+    expect(
+      selectStatusUpdateResults(report({ reporting_month: "2026-09-01" }), now),
+    ).toBeUndefined();
+  });
+
+  it("keeps internal metrics out and returns nothing when only those remain", () => {
+    const results = selectStatusUpdateResults(
+      report({
+        headline_metrics: [
+          metric({ group: "seo", key: "clicks" }),
+          metric({ group: "ads", key: "adsClicks" }),
+          metric({ group: "local", key: "calls" }),
+        ],
+      }),
+      now,
+    );
+    expect(results?.metrics.map((m) => m.key)).toEqual(["clicks"]);
+
+    expect(
+      selectStatusUpdateResults(
+        report({ headline_metrics: [metric({ group: "ads" })] }),
+        now,
+      ),
+    ).toBeUndefined();
+  });
+
+  it("does nothing without a connection or a report", () => {
+    expect(selectStatusUpdateResults(null, now)).toBeUndefined();
+    expect(
+      selectStatusUpdateResults(report({ headline_metrics: [] }), now),
+    ).toBeUndefined();
+  });
+});
+
+describe("buildStatusUpdate with measured results", () => {
+  it("puts the figures in the client's update as sentences", () => {
+    const update = build({
+      deal: deal({ stage: "maandelijks", revenue_period: "maandelijks" }),
+      results: {
+        monthLabel: "juni",
+        metrics: [
+          metric(),
+          metric({
+            changePercent: null,
+            key: "position",
+            label: "Gemiddelde positie",
+            format: "decimal",
+            current: 12.4,
+          }),
+        ],
+      },
+    });
+
+    expect(update.body).toContain("Resultaten in juni:");
+    expect(update.body).toContain(
+      "- Klikken uit Google: 1.240 (+18,4% tegenover de vorige periode).",
+    );
+    expect(update.body).toContain(
+      "- Gemiddelde positie: 12,4 (eerste meting).",
+    );
+  });
+
+  it("has no results block at all without a connection", () => {
+    const update = build({ deal: deal({ stage: "bezig" }) });
+
+    expect(update.body).not.toContain("Resultaten");
+  });
+});
+
+describe("buildStatusUpdate and what happens next", () => {
+  it("tells a client with finished work that the invoice follows", () => {
+    const update = build({ deal: deal({ stage: "facturatie-live" }) });
+
+    expect(update.body).toContain("Hoe verder:");
+    expect(update.body).toContain(
+      "De factuur volgt; daarna sluiten we de opdracht af.",
+    );
+    // A delivery date is history once the work is done.
+    expect(update.body).not.toContain("Oplevering staat gepland");
+  });
+
+  it("does not leave a closing update as a dead end", () => {
+    const update = build({ deal: deal({ stage: "won" }) });
+
+    expect(update.body).toContain("Daarmee is deze opdracht afgerond.");
+  });
+
+  it("promises the next monthly update for recurring work", () => {
+    const update = build({
+      deal: deal({ stage: "maandelijks", revenue_period: "maandelijks" }),
+    });
+
+    expect(update.body).toContain(
+      "Begin augustus sturen we de volgende maandupdate.",
+    );
+  });
+
+  it("names the month a monthly report covers", () => {
+    const update = build({
+      deal: deal({
+        stage: "maandelijks",
+        revenue_period: "maandelijks",
+        client_updated_at: "2026-07-01T09:00:00.000Z",
+      }),
+      steps: [
+        step("teksten bijgewerkt", { done_date: "2026-07-20T09:00:00.000Z" }),
+      ],
+    });
+
+    expect(update.body).toContain("Wat we in juli hebben gedaan:");
+  });
+
+  it("still promises a next step for work that is simply running", () => {
+    const update = build({ deal: deal({ stage: "bezig" }) });
+
+    expect(update.body).toContain("Bij de volgende stap hoort u weer van ons.");
   });
 });

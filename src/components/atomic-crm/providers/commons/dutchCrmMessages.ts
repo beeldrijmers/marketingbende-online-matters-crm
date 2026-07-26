@@ -631,13 +631,14 @@ export const dutchCrmMessages = {
     },
     dashboard: {
       deals_pipeline: "Opdrachtenbord",
-      silent: {
-        title: "Klant wacht op nieuws",
-        subtitle:
-          "Open werk waarover de klant %{days} dagen of langer niets hoorde.",
-        never: "nooit geïnformeerd",
-        days: "%{count} dagen stil",
-        more: "Nog %{count} wachten op nieuws",
+      update_moments: {
+        title: "Klant bijpraten",
+        subtitle: "Bij oplevering van een project en bij de maandafsluiting.",
+        month: "maandupdate %{month}",
+        ready: "opgeleverd",
+        done: "afgerond",
+        waiting: "%{count} dagen",
+        more: "Nog %{count} bij te praten",
       },
       workload: {
         title: "Wie doet wat",

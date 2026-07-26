@@ -18,7 +18,7 @@ import { ContactCreateSheet } from "../contacts/ContactCreateSheet";
 import { NoteCreateSheet } from "../notes/NoteCreateSheet";
 import { DashboardStepper } from "./DashboardStepper";
 import { DealActionQueue } from "./DealActionQueue";
-import { SilentClients } from "./SilentClients";
+import { UpdateMoments } from "./UpdateMoments";
 import { TeamWorkload } from "./TeamWorkload";
 import { TasksList } from "./TasksList";
 import MobileHeader from "../layout/MobileHeader";
@@ -209,7 +209,7 @@ export const MobileDashboard = () => {
         <div className="flex min-w-0 flex-col gap-6">
           <DealActionQueue />
           <TasksList />
-          <SilentClients />
+          <UpdateMoments />
           <TeamWorkload />
           <OtherDestinations />
         </div>
