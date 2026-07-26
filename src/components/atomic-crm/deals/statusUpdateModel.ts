@@ -5,6 +5,7 @@ import type {
   SeoMonthlyReportSummary,
   Task,
 } from "../types";
+import { clientSafeLines, describeWork } from "./clientSafeText";
 import { changeLabel, metricValue } from "./inzyte/seoMonthlyReportDocument";
 
 /**
@@ -30,7 +31,13 @@ export interface StatusUpdateInput {
     | "expected_closing_date"
     | "client_updated_at"
     | "revenue_period"
+    | "category"
   >;
+  /**
+   * Full names of the team. A line naming a colleague is internal by definition,
+   * and that is how "Rick belt de heer … via +31 6 …" reached a client draft.
+   */
+  teamNames?: string[];
   companyName: string;
   /** Stage labels from the app configuration, so wording follows the board. */
   stages: DealStage[];
@@ -234,6 +241,7 @@ export const buildStatusUpdate = ({
   senderName,
   stages,
   steps,
+  teamNames = [],
   variant = "full",
 }: StatusUpdateInput): StatusUpdate => {
   const lastUpdate = parseDate(deal.client_updated_at);
@@ -263,15 +271,22 @@ export const buildStatusUpdate = ({
 
   // Only the recent work: a client does not need the full history back to
   // January, and a list of twenty ticks reads as noise.
-  const recent = (doneSince.length > 0 ? doneSince : done).slice(0, 6);
-  if (recent.length > 0) {
+  const maxWork = variant === "short" ? 2 : 6;
+  const doneLines = clientSafeLines(
+    (doneSince.length > 0 ? doneSince : done).map((step) => step.text),
+    teamNames,
+  )
+    .slice(0, maxWork)
+    .map(asSentence)
+    .filter(Boolean);
+  if (doneLines.length > 0) {
     sections.push({
       heading: workHeading({
         deal,
         lastUpdate,
         hasSince: doneSince.length > 0,
       }),
-      lines: recent.map((step) => asSentence(step.text)).filter(Boolean),
+      lines: doneLines,
     });
   }
 
@@ -287,14 +302,23 @@ export const buildStatusUpdate = ({
     });
   }
 
-  if (open.length > 0) {
-    sections.push({
-      heading: "Wat er nu gebeurt",
-      lines: open
-        .slice(0, 5)
-        .map((step) => asSentence(step.text))
-        .filter(Boolean),
-    });
+  // Open steps are only told to a client once the work is actually running.
+  // Before that they are our intake checklist ("doelaccounts bepalen",
+  // "beoordelen of het bij ons past"), which is nobody's business but ours.
+  const tellsAboutOpenWork =
+    deal.stage !== "informatie-pipeline" &&
+    deal.stage !== "bevestigd-inplannen";
+  const openLines = tellsAboutOpenWork
+    ? clientSafeLines(
+        open.map((step) => step.text),
+        teamNames,
+      )
+        .slice(0, variant === "short" ? 2 : 4)
+        .map(asSentence)
+        .filter(Boolean)
+    : [];
+  if (openLines.length > 0) {
+    sections.push({ heading: "Wat er nu gebeurt", lines: openLines });
   }
 
   const waiting =
@@ -328,24 +352,28 @@ export const buildStatusUpdate = ({
     });
   }
 
-  const subject = `Statusupdate ${companyName} - ${deal.name}`;
+  // The assignment's name is a Trello card title. Describing the work instead
+  // keeps a colleague's name and our shorthand out of the client's inbox.
+  const workPhrase = describeWork({
+    category: deal.category,
+    dealName: deal.name,
+    stage: deal.stage,
+    teamNames,
+  });
+  const subject = `Statusupdate ${companyName} - ${sentenceCase(workPhrase)}`;
   const greeting = "Beste,";
   const closing = senderName
     ? `Met vriendelijke groet,\n${senderName}`
     : "Met vriendelijke groet";
 
-  const subjectOfUpdate = deal.name
-    .toLowerCase()
-    .startsWith(companyName.toLowerCase())
-    ? deal.name
-    : `${deal.name} (${companyName})`;
+  const subjectOfUpdate = workPhrase;
 
   const body =
     variant === "short"
       ? // A chat message: no greeting, no sign-off, one line per block. The
         // recipient already knows who is writing.
         [
-          `Update ${subjectOfUpdate}`,
+          `Update ${companyName} - ${workPhrase}`,
           ...sections.map(
             (section) => `${section.heading}: ${section.lines.join(" ")}`,
           ),
@@ -387,6 +415,7 @@ export const buildCompanyStatusUpdate = ({
   now,
   senderName,
   stages,
+  teamNames = [],
   variant = "full",
 }: {
   companyName: string;
@@ -401,6 +430,7 @@ export const buildCompanyStatusUpdate = ({
   }[];
   stages: DealStage[];
   senderName?: string;
+  teamNames?: string[];
   variant?: StatusUpdateVariant;
   now: Date;
 }): StatusUpdate => {
@@ -413,6 +443,7 @@ export const buildCompanyStatusUpdate = ({
       senderName,
       stages,
       steps,
+      teamNames,
       variant,
     }),
   );
@@ -423,7 +454,15 @@ export const buildCompanyStatusUpdate = ({
   // planning read as sentences already and keeping a label there ("Planning:
   // Laat u weten of…") only made them clumsy.
   const sections = deals.map(({ deal }, index) => ({
-    heading: deal.name,
+    // The client's own words for the work, never our card title.
+    heading: sentenceCase(
+      describeWork({
+        category: deal.category,
+        dealName: deal.name,
+        stage: deal.stage,
+        teamNames,
+      }),
+    ),
     lines: perDeal[index].sections.flatMap((section) =>
       section.heading === "Waar we staan" || section.heading === "Planning"
         ? section.lines
@@ -448,8 +487,8 @@ export const buildCompanyStatusUpdate = ({
           "Beste,",
           "",
           deals.length === 1
-            ? `Een korte update over ${deals[0].deal.name}.`
-            : `Een korte update over het werk dat voor u loopt.`,
+            ? `Een korte update over ${sections[0].heading.toLowerCase()}.`
+            : "Een korte update over het werk dat voor u loopt.",
           "",
           ...sections.flatMap((section) => [
             `${section.heading}:`,

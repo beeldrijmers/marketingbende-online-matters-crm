@@ -222,14 +222,18 @@ export const MoneybirdDealSection = ({ record }: { record: Deal }) => {
 
   return (
     <section aria-label="Offerte en facturatie" className="panel p-4">
-      <div className="flex flex-wrap items-center gap-4">
+      {/* items-start, not items-center: the icon belongs next to the heading, and
+          centring it against a three-line paragraph floated it into the middle of
+          the block. min-w-56 forced the text to keep a width it does not have in
+          a narrow column, which pushed the icon onto its own line. */}
+      <div className="flex items-start gap-3">
         <div className="grid size-8 shrink-0 place-items-center rounded-md bg-live-tint text-live">
           <CircleDollarSign className="size-5" />
         </div>
 
-        <div className="min-w-56 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-semibold">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <h3 className="text-section text-ink">
               Moneybird · offerte en facturatie
             </h3>
             <Badge
@@ -244,7 +248,7 @@ export const MoneybirdDealSection = ({ record }: { record: Deal }) => {
             </Badge>
           </div>
 
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+          <p className="mt-1 text-meta leading-5 text-ink-3">
             {amountKnown
               ? "Maak de offerte of factuur rechtstreeks vanuit deze opdracht aan, of open een bestaand document."
               : "Het opdrachtbedrag is nog niet bevestigd. Vul eerst het bedrag in via Bewerken voordat je een document aanmaakt."}
@@ -311,51 +315,54 @@ export const MoneybirdDealSection = ({ record }: { record: Deal }) => {
             />
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-wrap gap-2">
-          {connectionPending || (connection && statusPending) ? (
-            <Button type="button" variant="outline" disabled>
-              <Loader2 className="size-4 animate-spin" /> Moneybird controleren
+      {/* The actions are their own row, aligned with the panel rather than
+          indented under the icon: as a third child of the header flex they
+          wrapped to a half-width column of stacked buttons. */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {connectionPending || (connection && statusPending) ? (
+          <Button type="button" variant="outline" disabled>
+            <Loader2 className="size-4 animate-spin" /> Moneybird controleren
+          </Button>
+        ) : statusError && connection ? (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void refetch()}
+            >
+              <RefreshCw className="size-4" /> Opnieuw controleren
             </Button>
-          ) : statusError && connection ? (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void refetch()}
-              >
-                <RefreshCw className="size-4" /> Opnieuw controleren
-              </Button>
-              {effectiveRecord.moneybird_estimate_id ? (
-                <MoneybirdDocumentControl
-                  record={effectiveRecord}
-                  kind="estimate"
-                />
-              ) : null}
-              {effectiveRecord.moneybird_invoice_id ? (
-                <MoneybirdDocumentControl
-                  record={effectiveRecord}
-                  kind="invoice"
-                />
-              ) : null}
-            </>
-          ) : (
-            <>
-              {!estimateNeedsReview ? (
-                <MoneybirdDocumentControl
-                  record={effectiveRecord}
-                  kind="estimate"
-                />
-              ) : null}
-              {!invoiceNeedsReview ? (
-                <MoneybirdDocumentControl
-                  record={effectiveRecord}
-                  kind="invoice"
-                />
-              ) : null}
-            </>
-          )}
-        </div>
+            {effectiveRecord.moneybird_estimate_id ? (
+              <MoneybirdDocumentControl
+                record={effectiveRecord}
+                kind="estimate"
+              />
+            ) : null}
+            {effectiveRecord.moneybird_invoice_id ? (
+              <MoneybirdDocumentControl
+                record={effectiveRecord}
+                kind="invoice"
+              />
+            ) : null}
+          </>
+        ) : (
+          <>
+            {!estimateNeedsReview ? (
+              <MoneybirdDocumentControl
+                record={effectiveRecord}
+                kind="estimate"
+              />
+            ) : null}
+            {!invoiceNeedsReview ? (
+              <MoneybirdDocumentControl
+                record={effectiveRecord}
+                kind="invoice"
+              />
+            ) : null}
+          </>
+        )}
       </div>
 
       {statusError && connection ? (

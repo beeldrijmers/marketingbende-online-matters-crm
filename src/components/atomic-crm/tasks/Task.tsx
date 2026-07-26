@@ -155,16 +155,18 @@ export const Task = ({
                 </>
               )}
               {task.text}
+            </div>
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-muted-foreground">
+              {/* Moved out of the title: a badge between the text and its own
+                  wrap point split long steps across two lines. */}
               {isTrelloStep && (
                 <Badge
                   variant="outline"
-                  className="ml-1.5 align-middle text-[10px] font-normal text-muted-foreground"
+                  className="text-[10px] font-normal text-muted-foreground"
                 >
                   {translate("resources.tasks.trello_step", { _: "Trello" })}
                 </Badge>
               )}
-            </div>
-            <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-sm text-muted-foreground">
               <span>
                 {translate("resources.tasks.fields.due_short")}
                 &nbsp;
@@ -178,11 +180,13 @@ export const Task = ({
               {task.sales_id != null && (
                 <>
                   <span aria-hidden="true">·</span>
+                  {/* No party dot here: in a list where every row has the same
+                      owner it is twelve identical dots and no information. */}
                   <OwnerChipField
                     source="sales_id"
                     record={task}
                     size={16}
-                    showParty
+                    showParty={false}
                   />
                 </>
               )}

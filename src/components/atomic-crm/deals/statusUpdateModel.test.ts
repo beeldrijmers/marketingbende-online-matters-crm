@@ -145,7 +145,7 @@ describe("buildStatusUpdate, short variant", () => {
     expect(update.body).not.toContain("Met vriendelijke groet");
     expect(update.body.split("\n")).toHaveLength(5);
     expect(update.body).toContain(
-      "Update Staging klaar, wacht op content (ASP Noard)",
+      "Update ASP Noard - Staging klaar, wacht op content",
     );
     expect(update.body).toContain("Waar we staan: We zijn aan het werk.");
     expect(update.body).toContain("Wat er nu gebeurt: Content nakijken.");
@@ -175,6 +175,7 @@ describe("buildCompanyStatusUpdate", () => {
       deals: [
         {
           deal: deal({
+            category: "seo",
             name: "Maandelijkse optimalisatie",
             stage: "maandelijks",
           }),
@@ -186,6 +187,7 @@ describe("buildCompanyStatusUpdate", () => {
         },
         {
           deal: deal({
+            category: "eenmalig",
             name: "Jack Pyke-import",
             stage: "informatie-pipeline",
           }),
@@ -202,16 +204,23 @@ describe("buildCompanyStatusUpdate", () => {
     );
     expect(update.body.match(/Beste,/g)).toHaveLength(1);
     expect(update.body.match(/Met vriendelijke groet/g)).toHaveLength(1);
-    expect(update.body).toContain("Maandelijkse optimalisatie:");
-    expect(update.body).toContain("Jack Pyke-import:");
+    // The blocks are named after the work as a client knows it, not after our
+    // card titles.
+    expect(update.body).toContain("Het SEO-werk:");
+    expect(update.body).toContain("Uw aanvraag:");
     expect(update.body).toContain("- Het maandelijkse werk loopt.");
-    expect(update.body).toContain("Wat er nu gebeurt: Prijzen controleren.");
+    // A lead's open steps are our intake checklist, so they stay internal.
+    expect(update.body).not.toContain("Prijzen controleren");
     expect(update.completedSinceLastUpdate).toBe(1);
   });
 
   it("reads like a single-assignment update when there is only one", () => {
     const one = {
-      deal: deal({ name: "Staging klaar", stage: "controle-livegang" }),
+      deal: deal({
+        category: "website-development",
+        name: "Staging klaar",
+        stage: "controle-livegang",
+      }),
       steps: [],
     };
     const bundled = buildCompanyStatusUpdate({
@@ -221,8 +230,8 @@ describe("buildCompanyStatusUpdate", () => {
       stages,
     });
 
-    expect(bundled.subject).toBe("Statusupdate ASP Noard - Staging klaar");
-    expect(bundled.body).toContain("Een korte update over Staging klaar.");
+    expect(bundled.subject).toBe("Statusupdate ASP Noard - Uw website");
+    expect(bundled.body).toContain("Een korte update over uw website.");
   });
 
   it("stays short when the short variant is asked for", () => {
@@ -412,5 +421,83 @@ describe("buildStatusUpdate and what happens next", () => {
     const update = build({ deal: deal({ stage: "bezig" }) });
 
     expect(update.body).toContain("Bij de volgende stap hoort u weer van ons.");
+  });
+});
+
+describe("buildStatusUpdate keeps internal work internal", () => {
+  const team = ["John Plantenga", "Rick Maarssen"];
+
+  it("does not send our intake checklist to the client", () => {
+    const update = build({
+      deal: deal({
+        category: "overig",
+        name: "Rick belt voor intake en B2B-fit",
+        stage: "informatie-pipeline",
+      }),
+      steps: [
+        step(
+          "Rick belt de heer Mohammed Nadi via +31 6 50610409 voor introductie",
+        ),
+        step(
+          "Doelaccounts en beslissers bepalen, waaronder Elkien en WoonFriesland",
+        ),
+        step("Rick beoordeelt of het bij hem/Online Matters past"),
+      ],
+      teamNames: team,
+    });
+
+    expect(update.body).not.toMatch(/Rick/);
+    expect(update.body).not.toMatch(/50610409/);
+    expect(update.body).not.toMatch(/Doelaccounts|beslissers|Online Matters/);
+    // And it still says something useful.
+    expect(update.body).toContain(
+      "We hebben het voorstel klaarliggen en wachten op uw akkoord.",
+    );
+    expect(update.subject).toBe("Statusupdate ASP Noard - Uw aanvraag");
+  });
+
+  it("filters an internal line out of running work but keeps the rest", () => {
+    const update = build({
+      deal: deal({ category: "website-development", stage: "bezig" }),
+      steps: [
+        step("Overleg met Rick over de planning"),
+        step("Staging ingericht en gevuld", {
+          done_date: "2026-07-22T09:00:00.000Z",
+        }),
+        step("**Teksten** geplaatst", {
+          done_date: "2026-07-23T09:00:00.000Z",
+        }),
+        step("Formulieren testen"),
+      ],
+      teamNames: team,
+    });
+
+    expect(update.body).toContain("- Teksten geplaatst.");
+    expect(update.body).toContain("- Staging ingericht en gevuld.");
+    expect(update.body).toContain("- Formulieren testen.");
+    expect(update.body).not.toContain("Rick");
+    // Markdown never reaches a client-facing text.
+    expect(update.body).not.toContain("**");
+  });
+
+  it("keeps the short variant genuinely short", () => {
+    const update = build({
+      deal: deal({ category: "seo", stage: "maandelijks" }),
+      steps: Array.from({ length: 6 }, (_, index) =>
+        step(`taak ${index} afgerond`, {
+          done_date: "2026-07-22T09:00:00.000Z",
+        }),
+      ),
+      variant: "short",
+    });
+
+    const workLine = update.body
+      .split("\n")
+      .find((line) => line.startsWith("Wat er is gedaan"));
+    // Two items at most, so it stays a message and not a report.
+    expect(workLine).toBe(
+      "Wat er is gedaan: Taak 0 afgerond. Taak 1 afgerond.",
+    );
+    expect(update.body.split("\n").length).toBeLessThanOrEqual(5);
   });
 });

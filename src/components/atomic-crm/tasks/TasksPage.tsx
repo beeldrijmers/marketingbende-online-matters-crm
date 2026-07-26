@@ -25,7 +25,10 @@ export const TasksPage = () => {
         })}
         actions={<AddTask selectContact />}
       />
-      <PageBody className="max-w-3xl">
+      {/* Held to the same measure as the header above it (--page-max). At
+          max-w-3xl the list sat centred in the middle of a wide screen while the
+          title stayed at the left edge, with a metre of nothing on both sides. */}
+      <PageBody>
         <TasksListContent />
       </PageBody>
     </>
