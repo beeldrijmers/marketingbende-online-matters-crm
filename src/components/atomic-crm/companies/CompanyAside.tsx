@@ -1,4 +1,4 @@
-import { Globe, Linkedin, Phone } from "lucide-react";
+import { Globe, KeyRound, Linkedin, Phone } from "lucide-react";
 import {
   useGetIdentity,
   useLocaleState,
@@ -17,6 +17,7 @@ import { AsideSection } from "../misc/AsideSection";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Company } from "../types";
 import { getTranslatedCompanySizeLabel } from "./getTranslatedCompanySizeLabel";
+import { parseVaultLink } from "./vaultLink";
 import { sizes } from "./sizes";
 import { useGetSalesName } from "../sales/useGetSalesName";
 
@@ -61,7 +62,13 @@ export const CompanyAside = ({ link = "edit" }: CompanyAsideProps) => {
 
 export const CompanyInfo = ({ record }: { record: Company }) => {
   const translate = useTranslate();
-  if (!record.website && !record.linkedin_url && !record.phone_number) {
+  const vault = parseVaultLink(record.vault_url);
+  if (
+    !record.website &&
+    !record.linkedin_url &&
+    !record.phone_number &&
+    !vault
+  ) {
     return null;
   }
 
@@ -100,6 +107,24 @@ export const CompanyInfo = ({ record }: { record: Company }) => {
         <div className="flex flex-row items-center gap-1 min-h-[24px]">
           <Phone className="w-4 h-4" />
           <TextField source="phone_number" />
+        </div>
+      )}
+      {/* Alleen een verwijzing: het CRM bewaart geen inloggegevens, dus dit is
+          een sprong naar de kluis en niet een plek om iets te lezen. */}
+      {vault && (
+        <div className="flex flex-row items-center gap-1 min-h-[24px]">
+          <KeyRound className="w-4 h-4" />
+          <a
+            className="underline hover:no-underline"
+            href={vault.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={translate("resources.companies.helpers.vault_open", {
+              _: "Open het item in de kluis",
+            })}
+          >
+            {vault.label}
+          </a>
         </div>
       )}
     </AsideSection>

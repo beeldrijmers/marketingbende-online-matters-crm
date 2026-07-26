@@ -13,6 +13,7 @@ import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { Company, Sale } from "../types";
 import { getTranslatedCompanySizeLabel } from "./getTranslatedCompanySizeLabel";
 import { sizes } from "./sizes";
+import { validateVaultLink } from "./vaultLink";
 
 const isUrl = (url: string) => {
   if (!url) return;
@@ -90,6 +91,18 @@ const CompanyContactInputs = () => {
         validate={isLinkedinUrl}
       />
       <TextInput source="phone_number" helperText={false} />
+      {/* Alleen de link naar het item in de kluis. Het wachtwoord zelf hoort
+          daar te blijven staan en niet in dit veld. */}
+      <TextInput
+        source="vault_url"
+        label={translate("resources.companies.fields.vault_url", {
+          _: "Kluislink",
+        })}
+        helperText={translate("resources.companies.helpers.vault_url", {
+          _: "Link naar het item in de wachtwoordkluis, niet het wachtwoord zelf.",
+        })}
+        validate={validateVaultLink}
+      />
     </div>
   );
 };
