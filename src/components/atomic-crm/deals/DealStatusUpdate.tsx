@@ -9,7 +9,7 @@ import { useMemo, useState } from "react";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import { isAutomaticTask } from "../tasks/taskSource";
-import type { Company, Contact, Deal, Task } from "../types";
+import type { Company, Contact, Deal, Sale, Task } from "../types";
 import { StatusUpdateComposer } from "./StatusUpdateComposer";
 import {
   buildStatusUpdate,
@@ -54,6 +54,13 @@ export const DealStatusUpdate = () => {
     },
     { enabled: record?.id != null },
   );
+  // Names of the team, so a step naming a colleague can be kept out of the
+  // client's text (see clientSafeText).
+  const { data: team = [] } = useGetList<Sale>("sales", {
+    pagination: { page: 1, perPage: 100 },
+    sort: { field: "first_name", order: "ASC" },
+    filter: {},
+  });
   const { data: contacts = [] } = useGetMany<Contact>(
     "contacts",
     { ids: (record?.contact_ids ?? []) as number[] },
@@ -76,9 +83,12 @@ export const DealStatusUpdate = () => {
       stages: dealStages,
       // Automatic reminder rows are internal bookkeeping, never client-facing.
       steps: steps.filter((step) => !isAutomaticTask(step)),
+      teamNames: team.map((sale) =>
+        `${sale.first_name ?? ""} ${sale.last_name ?? ""}`.trim(),
+      ),
       variant,
     });
-  }, [companyName, dealStages, record, senderName, steps, variant]);
+  }, [companyName, dealStages, record, senderName, steps, team, variant]);
 
   if (!record || !composed) return null;
 

@@ -1,4 +1,4 @@
-import { Archive, ArchiveRestore, Pencil } from "lucide-react";
+import { Archive, ArchiveRestore, Pencil, X } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   InfiniteListBase,
@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import { CompanyAvatar } from "../companies/CompanyAvatar";
+import { Markdown } from "../misc/Markdown";
 import { NoteCreate } from "../notes/NoteCreate";
 import { NotesIterator } from "../notes/NotesIterator";
 import { AssigneesField } from "../sales/AssigneesField";
@@ -52,9 +53,12 @@ import {
 export const DealShowBody = ({
   closeTo,
   editTo,
+  onClose,
 }: {
   closeTo: string;
   editTo?: string;
+  /** Set when this renders inside the dialog, which has no floating X. */
+  onClose?: () => void;
 }) => {
   const translate = useTranslate();
   const { dealStages, dealCategories, currency } = useConfigurationContext();
@@ -112,7 +116,7 @@ export const DealShowBody = ({
             <h2 className="text-title text-ink">{record.name}</h2>
           </div>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {record.archived_at ? (
             <>
               <UnarchiveButton record={record} redirectTo={closeTo} />
@@ -138,6 +142,17 @@ export const DealShowBody = ({
               )}
             </>
           )}
+          {onClose ? (
+            <Button
+              aria-label={translate("ra.action.close", { _: "Sluiten" })}
+              className="size-8"
+              onClick={onClose}
+              size="icon"
+              variant="ghost"
+            >
+              <X className="size-4" />
+            </Button>
+          ) : null}
         </div>
       </header>
 
@@ -145,12 +160,16 @@ export const DealShowBody = ({
         <div className="flex min-w-0 flex-col gap-5 lg:col-span-7">
           {record.description ? (
             <section>
-              <h3 className="eyebrow mb-1">
+              <h3 className="eyebrow mb-1.5">
                 {translate("resources.deals.fields.description")}
               </h3>
-              <p className="whitespace-pre-line text-body leading-6 text-ink-2">
+              {/* Trello descriptions and forwarded mail are markdown. Printing
+                  the source meant every card showed "## Nieuwe lead" and
+                  "**Telefoon:**" literally. Rendered here at the panel's own
+                  scale — the component's default headings are page-sized. */}
+              <Markdown className="text-body leading-6 text-ink-2 [&_a]:text-accent-base [&_h1]:mb-1 [&_h1]:mt-4 [&_h1]:text-section [&_h1]:text-ink [&_h2]:mb-1 [&_h2]:mt-4 [&_h2]:text-section [&_h2]:text-ink [&_h3]:mb-1 [&_h3]:mt-3 [&_h3]:text-body [&_h3]:text-ink [&_li]:my-0.5 [&_ol]:my-2 [&_p]:my-2 [&_strong]:text-ink [&_ul]:my-2">
                 {record.description}
-              </p>
+              </Markdown>
             </section>
           ) : null}
 

@@ -14,7 +14,7 @@ import {
 } from "../deals/statusUpdateModel";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import { isAutomaticTask } from "../tasks/taskSource";
-import type { Company, Contact, Deal, Task } from "../types";
+import type { Company, Contact, Deal, Sale, Task } from "../types";
 
 /** Finished work does not need explaining; on-hold work needs it most. */
 const isLive = (deal: Deal) =>
@@ -65,6 +65,11 @@ export const CompanyStatusUpdate = () => {
     },
     { enabled: liveDeals.length > 0 },
   );
+  const { data: team = [] } = useGetList<Sale>("sales", {
+    pagination: { page: 1, perPage: 100 },
+    sort: { field: "first_name", order: "ASC" },
+    filter: {},
+  });
   const { data: contacts = [] } = useGetMany<Contact>(
     "contacts",
     { ids: liveDeals.flatMap((deal) => (deal.contact_ids ?? []) as number[]) },
@@ -89,9 +94,21 @@ export const CompanyStatusUpdate = () => {
       now: new Date(),
       senderName,
       stages: dealStages,
+      teamNames: team.map((sale) =>
+        `${sale.first_name ?? ""} ${sale.last_name ?? ""}`.trim(),
+      ),
       variant,
     });
-  }, [companyName, dealStages, liveDeals, record, senderName, steps, variant]);
+  }, [
+    companyName,
+    dealStages,
+    liveDeals,
+    record,
+    senderName,
+    steps,
+    team,
+    variant,
+  ]);
 
   if (!record || !composed || liveDeals.length === 0) return null;
 

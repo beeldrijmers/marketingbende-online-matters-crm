@@ -305,10 +305,12 @@ export const StatusUpdateComposer = ({
           <button
             aria-pressed={variant === option.value}
             className={cn(
-              "flex h-7 items-center rounded-sm px-2.5 text-meta font-medium transition-colors duration-1",
+              "flex h-7 items-center rounded-sm px-3 text-meta font-medium transition-colors duration-1",
+              // The active half needs a visible edge: on the sunken group a bare
+              // background change was almost invisible against the inactive half.
               variant === option.value
-                ? "bg-raised text-ink shadow-e1"
-                : "text-ink-3 hover:text-ink",
+                ? "border border-line-strong bg-raised-hi text-ink shadow-e1"
+                : "border border-transparent text-ink-3 hover:text-ink",
             )}
             key={option.value}
             onClick={() => onVariantChange(option.value)}
@@ -330,48 +332,59 @@ export const StatusUpdateComposer = ({
         value={text}
       />
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          onClick={() => void copyToClipboard(text, "text")}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          {copied === "text" ? (
-            <Check className="size-4 text-live" />
-          ) : (
-            <Clipboard className="size-4" />
-          )}
-          {copied === "text" ? "Gekopieerd" : "Kopiëren"}
-        </Button>
-        <Button onClick={openMail} size="sm" type="button" variant="outline">
-          <Mail className="size-4" />
-          {recipient ? "Mail opstellen" : "Mail opstellen (geen adres)"}
-        </Button>
-        <Button onClick={openPdf} size="sm" type="button" variant="outline">
-          <FileDown className="size-4" />
-          PDF
-        </Button>
-        <Button
-          disabled={sharing}
-          onClick={shareLink}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          {copied === "link" ? (
-            <Check className="size-4 text-live" />
-          ) : (
-            <Link2 className="size-4" />
-          )}
-          {copied === "link" ? "Link gekopieerd" : "Deel als link"}
-        </Button>
-        <Button
-          className="ml-auto"
-          onClick={markShared}
-          size="sm"
-          type="button"
-        >
+      {/* Two groups instead of one wrapping row: the ways to take the text out,
+          and the one action that records it. ml-auto on a wrapping flex put
+          "Gedeeld" alone on a second line, right-aligned under nothing. */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            onClick={() => void copyToClipboard(text, "text")}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {copied === "text" ? (
+              <Check className="size-4 text-live" />
+            ) : (
+              <Clipboard className="size-4" />
+            )}
+            {copied === "text" ? "Gekopieerd" : "Kopiëren"}
+          </Button>
+          <Button
+            disabled={!recipient}
+            onClick={openMail}
+            size="sm"
+            title={
+              recipient
+                ? `Mail aan ${recipient}`
+                : "Deze opdracht heeft nog geen contact met e-mailadres"
+            }
+            type="button"
+            variant="outline"
+          >
+            <Mail className="size-4" />
+            Mail
+          </Button>
+          <Button onClick={openPdf} size="sm" type="button" variant="outline">
+            <FileDown className="size-4" />
+            PDF
+          </Button>
+          <Button
+            disabled={sharing}
+            onClick={shareLink}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {copied === "link" ? (
+              <Check className="size-4 text-live" />
+            ) : (
+              <Link2 className="size-4" />
+            )}
+            {copied === "link" ? "Link gekopieerd" : "Deel als link"}
+          </Button>
+        </div>
+        <Button onClick={markShared} size="sm" type="button">
           <MessageSquareShare className="size-4" />
           Gedeeld
         </Button>

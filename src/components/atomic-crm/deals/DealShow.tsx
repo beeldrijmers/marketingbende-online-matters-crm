@@ -36,12 +36,23 @@ export const DealShow = ({
     <Dialog open={open} onOpenChange={(next) => !next && handleClose()}>
       <DialogContent
         aria-describedby={undefined}
-        className="top-[4vh] max-h-[92vh] translate-y-0 overflow-y-auto p-5 lg:max-w-5xl"
+        // The header below owns the actions, including closing: the floating X
+        // landed on top of "Archiveren" and "Bewerken".
+        className="top-[4vh] max-h-[92vh] translate-y-0 overflow-y-auto p-5 lg:max-w-6xl"
+        showCloseButton={false}
+        // Radix focuses the first focusable child on open, which put a focus
+        // ring on "Archiveren" and made it read as the primary action. Focus
+        // stays on the dialog itself, which is what a screen reader announces.
+        onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <DealDialogTitle />
         {id ? (
           <ShowBase id={id}>
-            <DealShowBody closeTo={closeTo} editTo={editTo} />
+            <DealShowBody
+              closeTo={closeTo}
+              editTo={editTo}
+              onClose={handleClose}
+            />
           </ShowBase>
         ) : null}
       </DialogContent>

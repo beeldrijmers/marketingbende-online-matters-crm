@@ -57,6 +57,12 @@ export const COMPANY_NAME_OVERRIDES: Record<string, string> = {
   "6a195fbf2078912c7f1d695f": "Wierenga & de Graaf", // Voorstel Wierenga & de Graaf
   "6a084ac68a01af8a0157a414": "Autobedrijf vd Vegt", // Autobedrijf vd Vegt migreren
   "6a2b9774a857518553757cc5": "Grandcafe 't Stadhuys", // Stadshuys - benodigdheden Happr onboarding
+  // Merged duplicates (26 jul): these three cards derive a company name that is
+  // really an existing client or internal product work, so without an override
+  // the next sync recreates the record that was just merged away.
+  "6a4fa5b0d4f0faf77a68f216": "Houtenbouwmaterialen", // Houtenbouw: websitechat
+  "69828be24593f712171a90a4": "Happr.nl", // Stripe / Mollie toevoegen
+  "69ac4b206f99c8494f80da5d": "Happr.nl", // Productontwikkeling: backlog en releases
 };
 
 export const resolveCompanyName = (card: {
