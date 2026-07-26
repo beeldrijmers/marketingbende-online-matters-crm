@@ -32,8 +32,10 @@ describe("addNoteToContact", () => {
       mockFrom.mockReturnValue({
         select: () => ({
           or: () => ({
-            maybeSingle: () =>
-              Promise.resolve({ data: existingCompany, error: null }),
+            order: () => ({
+              limit: () =>
+                Promise.resolve({ data: [existingCompany], error: null }),
+            }),
           }),
         }),
       });
@@ -49,12 +51,43 @@ describe("addNoteToContact", () => {
       expect(mockFrom).toHaveBeenCalledWith("companies");
     });
 
+    it("takes the oldest match when two companies share a website", async () => {
+      // Twee bedrijven met dezelfde site is legitiem (een intern
+      // verzamelbedrijf naast het echte). maybeSingle() maakte daar een fout
+      // van, en dus een 500 op elke inkomende mail van dat domein.
+      const intern = {
+        id: 1,
+        name: "Marketingbende (intern)",
+        website: "https://happr.nl",
+      };
+      mockFrom.mockReturnValue({
+        select: () => ({
+          or: () => ({
+            order: () => ({
+              limit: () => Promise.resolve({ data: [intern], error: null }),
+            }),
+          }),
+        }),
+      });
+
+      await expect(
+        getOrCreateCompanyFromDomain({
+          domain: "happr.nl",
+          salesId: 42,
+          companyName: "Happr.nl",
+          website: "https://happr.nl",
+        }),
+      ).resolves.toEqual(intern);
+    });
+
     it("throws when fetching the company fails", async () => {
       mockFrom.mockReturnValue({
         select: () => ({
           or: () => ({
-            maybeSingle: () =>
-              Promise.resolve({ data: null, error: { message: "DB error" } }),
+            order: () => ({
+              limit: () =>
+                Promise.resolve({ data: null, error: { message: "DB error" } }),
+            }),
           }),
         }),
       });
@@ -96,7 +129,9 @@ describe("addNoteToContact", () => {
           // first call: fetch
           select: () => ({
             or: () => ({
-              maybeSingle: () => Promise.resolve({ data: null, error: null }),
+              order: () => ({
+                limit: () => Promise.resolve({ data: [], error: null }),
+              }),
             }),
           }),
         })
@@ -124,7 +159,9 @@ describe("addNoteToContact", () => {
         .mockReturnValueOnce({
           select: () => ({
             or: () => ({
-              maybeSingle: () => Promise.resolve({ data: null, error: null }),
+              order: () => ({
+                limit: () => Promise.resolve({ data: [], error: null }),
+              }),
             }),
           }),
         })
@@ -227,8 +264,10 @@ describe("addNoteToContact", () => {
           // 2nd call: fetch company → found
           select: () => ({
             or: () => ({
-              maybeSingle: () =>
-                Promise.resolve({ data: existingCompany, error: null }),
+              order: () => ({
+                limit: () =>
+                  Promise.resolve({ data: [existingCompany], error: null }),
+              }),
             }),
           }),
         })
@@ -319,8 +358,10 @@ describe("addNoteToContact", () => {
         .mockReturnValueOnce({
           select: () => ({
             or: () => ({
-              maybeSingle: () =>
-                Promise.resolve({ data: existingCompany, error: null }),
+              order: () => ({
+                limit: () =>
+                  Promise.resolve({ data: [existingCompany], error: null }),
+              }),
             }),
           }),
         })
