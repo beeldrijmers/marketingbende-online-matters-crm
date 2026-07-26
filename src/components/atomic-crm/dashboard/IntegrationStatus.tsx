@@ -5,6 +5,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useGetList } from "ra-core";
+import { Link } from "react-router";
 
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 import { SyncTrelloButton } from "../deals/SyncTrelloButton";
 import { formatTrelloSyncDuration } from "../deals/trelloSyncNotification";
+import { useMoneybirdConnection } from "../misc/useMoneybirdConnection";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import type { IntegrationRun } from "../types";
 import {
@@ -60,22 +62,28 @@ export const IntegrationStatus = () => {
               </p>
             </div>
           </div>
-        ) : trelloRun || gmailRun ? (
+        ) : (
+          // Moneybird staat hier altijd, ook zonder synchronisatiehistorie: die
+          // koppeling kent geen runs, dus hij zou anders precies verdwijnen op het
+          // moment dat de pagina nog niets anders te melden heeft.
           <div className="divide-y">
             {trelloRun ? <RunDetails run={trelloRun} label="Trello" /> : null}
             {gmailRun ? <RunDetails run={gmailRun} label="Gmail" /> : null}
-          </div>
-        ) : (
-          <div className="flex items-start gap-3 p-4">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-wait" />
-            <div>
-              <p className="text-body font-medium text-ink">
-                Nog niet gecontroleerd
-              </p>
-              <p className="text-meta text-ink-3">
-                Start een volledige synchronisatie om de status vast te leggen.
-              </p>
-            </div>
+            {!trelloRun && !gmailRun ? (
+              <div className="flex items-start gap-3 p-4">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-wait" />
+                <div>
+                  <p className="text-body font-medium text-ink">
+                    Trello en Gmail nog niet gecontroleerd
+                  </p>
+                  <p className="text-meta text-ink-3">
+                    Start een volledige synchronisatie om de status vast te
+                    leggen.
+                  </p>
+                </div>
+              </div>
+            ) : null}
+            <MoneybirdDetails />
           </div>
         )}
 
@@ -87,6 +95,66 @@ export const IntegrationStatus = () => {
         </div>
       </div>
     </section>
+  );
+};
+
+/**
+ * Moneybird hoort in dit lijstje, maar heeft geen synchronisatieruns: elk teamlid
+ * koppelt zijn eigen administratie met een persoonlijk token, en documenten
+ * worden op verzoek gemaakt. Wat hier telt is dus de koppeling zelf, en die is
+ * per gebruiker; vandaar "jouw administratie" en niet een teambrede status.
+ */
+const MoneybirdDetails = () => {
+  const { data: connection, isPending, error } = useMoneybirdConnection();
+  if (isPending) {
+    return (
+      <div className="space-y-2 p-4">
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-4 w-56" />
+      </div>
+    );
+  }
+
+  const health: IntegrationHealth = error
+    ? {
+        tone: "danger",
+        label: "Onbekend",
+        description: "De koppeling kon niet worden opgehaald.",
+      }
+    : connection
+      ? {
+          tone: "success",
+          label: "Gekoppeld",
+          description: `Jouw administratie: ${connection.administrationName}.`,
+        }
+      : {
+          tone: "warning",
+          label: "Niet gekoppeld",
+          description:
+            "Zonder koppeling kun je geen facturen of voorstellen maken.",
+        };
+
+  return (
+    <div className="p-4">
+      <div className="flex items-start gap-3">
+        <StatusIcon health={health} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold">Moneybird</p>
+            <StatusBadge health={health} />
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {health.description}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Per persoon, met een eigen token.{" "}
+            <Link className="underline" to="/profile">
+              {connection ? "Beheren" : "Koppelen"}
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
   );
 };
 
