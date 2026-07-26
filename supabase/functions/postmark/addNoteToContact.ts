@@ -18,18 +18,27 @@ export const getOrCreateCompanyFromDomain = async ({
     return null;
   }
 
-  // Check if the company already exists
-  const { data: existingCompany, error: fetchCompanyError } =
+  // Check if the company already exists.
+  //
+  // Deliberately the oldest match instead of maybeSingle(): two companies can
+  // legitimately share a website (an internal collector record next to the real
+  // one), and maybeSingle() turns that into an error, so a single duplicated
+  // website made every inbound mail from that domain fail with a 500. Picking
+  // the lowest id is also stable across runs, which matters because this decides
+  // where a note lands. findOrCreateCompany in the Trello sync already does this.
+  const { data: existingCompanies, error: fetchCompanyError } =
     await supabaseAdmin
       .from("companies")
       .select("*")
       .or(`website.eq.${website},name.eq.${companyName},name.eq.${domain}`)
-      .maybeSingle();
+      .order("id", { ascending: true })
+      .limit(1);
   if (fetchCompanyError) {
     throw new Error(
       `Could not fetch companies from database, name: ${domain}, error: ${fetchCompanyError.message}`,
     );
   }
+  const existingCompany = existingCompanies?.[0] ?? null;
 
   if (existingCompany) {
     return existingCompany;
