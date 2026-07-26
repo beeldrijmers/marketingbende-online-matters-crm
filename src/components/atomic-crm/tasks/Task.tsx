@@ -156,7 +156,9 @@ export const Task = ({
               )}
               {task.text}
             </div>
-            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-muted-foreground">
+            {/* Quieter than the step itself: at the same size twelve rows read
+                as one grey block. */}
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-meta text-ink-3">
               {/* Moved out of the title: a badge between the text and its own
                   wrap point split long steps across two lines. */}
               {isTrelloStep && (

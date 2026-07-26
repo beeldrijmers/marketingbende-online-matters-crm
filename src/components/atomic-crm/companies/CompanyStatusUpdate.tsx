@@ -12,13 +12,19 @@ import {
   selectStatusUpdateResults,
   type StatusUpdateVariant,
 } from "../deals/statusUpdateModel";
-import { useConfigurationContext } from "../root/ConfigurationContext";
 import { isAutomaticTask } from "../tasks/taskSource";
 import type { Company, Contact, Deal, Sale, Task } from "../types";
 
-/** Finished work does not need explaining; on-hold work needs it most. */
+/**
+ * Finished work does not need explaining; on-hold work needs it most. Internal
+ * work is not the client's at all: a bundle for a client who also appears on a
+ * Happr or own-project card would have handed them our own project names.
+ */
 const isLive = (deal: Deal) =>
-  deal.archived_at == null && deal.stage !== "won" && deal.stage !== "lost";
+  deal.archived_at == null &&
+  deal.stage !== "won" &&
+  deal.stage !== "lost" &&
+  deal.is_internal !== true;
 
 const firstEmail = (contacts: Contact[]): string | undefined => {
   for (const contact of contacts) {
@@ -39,7 +45,6 @@ const firstEmail = (contacts: Contact[]): string | undefined => {
  */
 export const CompanyStatusUpdate = () => {
   const record = useRecordContext<Company>();
-  const { dealStages } = useConfigurationContext();
   const { identity } = useGetIdentity();
   const [variant, setVariant] = useState<StatusUpdateVariant>("full");
 
@@ -93,22 +98,12 @@ export const CompanyStatusUpdate = () => {
       })),
       now: new Date(),
       senderName,
-      stages: dealStages,
       teamNames: team.map((sale) =>
         `${sale.first_name ?? ""} ${sale.last_name ?? ""}`.trim(),
       ),
       variant,
     });
-  }, [
-    companyName,
-    dealStages,
-    liveDeals,
-    record,
-    senderName,
-    steps,
-    team,
-    variant,
-  ]);
+  }, [companyName, liveDeals, record, senderName, steps, team, variant]);
 
   if (!record || !composed || liveDeals.length === 0) return null;
 

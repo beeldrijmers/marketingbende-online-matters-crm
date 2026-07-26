@@ -116,8 +116,11 @@ const CompanyShowContent = () => {
   if (isPending || !record) return null;
 
   return (
-    <div className="mt-2 flex pb-2 gap-8">
-      <div className="flex-1">
+    // min-w-0 on the growing column: without it the status update panel could not
+    // shrink below its content and pushed the page into a horizontal scroll at
+    // 768px. The aside stacks under the card there instead of being squeezed.
+    <div className="mt-2 flex flex-col gap-8 pb-2 lg:flex-row">
+      <div className="min-w-0 flex-1">
         <Card>
           <CardContent>
             <div className="flex items-center gap-3 mb-4">

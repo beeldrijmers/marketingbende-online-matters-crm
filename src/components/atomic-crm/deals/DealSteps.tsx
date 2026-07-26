@@ -105,8 +105,10 @@ export const DealSteps = () => {
   return (
     <>
       <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-xs text-muted-foreground tracking-wide">
+        {/* min-h so the row keeps the button's height even when it wraps: at
+            narrow widths the button climbed over the heading. */}
+        <div className="flex min-h-8 flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <span className="eyebrow text-ink-3">
             {title}
             {" - "}
             {translate("resources.deals.steps.progress", {

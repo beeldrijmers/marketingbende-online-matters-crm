@@ -29,6 +29,17 @@ type State =
   | { kind: "ready"; update: SharedUpdate }
   | { kind: "gone"; message: string };
 
+/**
+ * The letter's frame belongs to a mail, not to this page: the header already
+ * names the client and the footer already signs off.
+ */
+const withoutLetterFrame = (body: string): string =>
+  body
+    .replace(/^\s*(beste|hallo|goedemiddag|goedemorgen)[^\n]*\n+/i, "")
+    .replace(/\n+(met vriendelijke groet|hartelijke groet|groet)[\s\S]*$/i, "")
+    .replace(/\n+heeft u vragen of aanvullingen\?[^\n]*/i, "")
+    .trim();
+
 const DATE = new Intl.DateTimeFormat("nl-NL", {
   day: "numeric",
   month: "long",
@@ -141,9 +152,11 @@ export const StatusUpdatePage = () => {
                   </section>
                 ))
               ) : (
-                // A body without blocks still has to be readable.
+                // An edited update arrives as plain text, without blocks. The
+                // page has its own greeting-free header and its own footer, so
+                // the letter's opening and sign-off would read twice.
                 <p className="whitespace-pre-line leading-7">
-                  {state.update.body}
+                  {withoutLetterFrame(state.update.body)}
                 </p>
               )}
             </div>

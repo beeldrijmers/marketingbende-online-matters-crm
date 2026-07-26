@@ -177,7 +177,11 @@ export const DealShowBody = ({
             <DealSteps />
           </section>
 
-          {record.archived_at ? null : <DealStatusUpdate />}
+          {/* Nothing to tell a client about work that was archived or called
+              off; a "won" assignment does get its closing update. */}
+          {record.archived_at || record.stage === "lost" ? null : (
+            <DealStatusUpdate />
+          )}
 
           <section className="min-w-0">
             <InfiniteListBase
