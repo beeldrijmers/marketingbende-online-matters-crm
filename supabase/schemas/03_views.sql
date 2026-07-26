@@ -122,6 +122,7 @@ select
     c.revenue,
     c.tax_identifier,
     c.logo,
+    c.vault_url,
     (
         select count(*)
         from public.deals d

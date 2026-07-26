@@ -83,6 +83,8 @@ export type Company = {
   tax_identifier: string;
   country: string;
   context_links?: string[];
+  /** Link naar het item in de wachtwoordkluis, nooit het wachtwoord zelf. */
+  vault_url?: string | null;
   nb_contacts?: number;
   nb_deals?: number;
 } & Pick<RaRecord, "id">;

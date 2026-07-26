@@ -36,6 +36,9 @@ create table public.companies (
     revenue text,
     tax_identifier text,
     logo jsonb,
+    -- Verwijzing naar het item in de wachtwoordkluis. Nooit een geheim zelf:
+    -- alleen de link, zodat inloggegevens buiten deze database blijven.
+    vault_url text,
     constraint companies_activity_source_check
         check (activity_source in ('manual', 'trello'))
 );

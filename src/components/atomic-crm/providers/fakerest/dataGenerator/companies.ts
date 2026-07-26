@@ -59,6 +59,7 @@ export const generateCompanies = (
       tax_identifier: random.alphaNumeric(10),
       country: random.arrayElement(["Nederland", "België", "Duitsland"]),
       context_links: [],
+      vault_url: null,
     };
   });
 };
