@@ -1,4 +1,11 @@
-import type { Deal, DealStage, Task } from "../types";
+import type {
+  Deal,
+  DealStage,
+  SeoMonthlyHeadlineMetric,
+  SeoMonthlyReportSummary,
+  Task,
+} from "../types";
+import { changeLabel, metricValue } from "./inzyte/seoMonthlyReportDocument";
 
 /**
  * The status update a client actually gets.
@@ -22,6 +29,7 @@ export interface StatusUpdateInput {
     | "delivery_date"
     | "expected_closing_date"
     | "client_updated_at"
+    | "revenue_period"
   >;
   companyName: string;
   /** Stage labels from the app configuration, so wording follows the board. */
@@ -36,7 +44,19 @@ export interface StatusUpdateInput {
    * a letter pasted into a chat reads as a form mail.
    */
   variant?: StatusUpdateVariant;
+  /**
+   * Measured results from the Search Console / GA4 connection, when there is
+   * one. Absent for work without a connection, and then the update simply has no
+   * results block — never an empty heading.
+   */
+  results?: StatusUpdateResults;
   now: Date;
+}
+
+export interface StatusUpdateResults {
+  /** The month the figures cover, e.g. "juni". */
+  monthLabel?: string;
+  metrics: SeoMonthlyHeadlineMetric[];
 }
 
 export type StatusUpdateVariant = "full" | "short";
@@ -93,6 +113,110 @@ const STAGE_SENTENCE: Record<string, string> = {
 const sentenceCase = (value: string): string =>
   value.charAt(0).toUpperCase() + value.slice(1);
 
+const MONTHS = [
+  "januari",
+  "februari",
+  "maart",
+  "april",
+  "mei",
+  "juni",
+  "juli",
+  "augustus",
+  "september",
+  "oktober",
+  "november",
+  "december",
+];
+
+const isRecurring = (deal: StatusUpdateInput["deal"]) =>
+  deal.revenue_period === "maandelijks" || deal.stage === "maandelijks";
+
+const isFinished = (deal: StatusUpdateInput["deal"]) =>
+  deal.stage === "facturatie-live" || deal.stage === "won";
+
+/**
+ * Recurring work is reported per month, so the heading says which month — "Gedaan
+ * sinds 30 juni" is technically true and tells a client nothing about the report
+ * they are holding.
+ */
+const workHeading = ({
+  deal,
+  hasSince,
+  lastUpdate,
+}: {
+  deal: StatusUpdateInput["deal"];
+  hasSince: boolean;
+  lastUpdate: Date | null;
+}): string => {
+  if (isRecurring(deal) && lastUpdate) {
+    // The month the reported work belongs to: the one the last update closed off.
+    const month = MONTHS[lastUpdate.getMonth()];
+    return `Wat we in ${month} hebben gedaan`;
+  }
+  return hasSince && lastUpdate
+    ? `Gedaan sinds ${DAY_MONTH.format(lastUpdate)}`
+    : "Wat er is gedaan";
+};
+
+/** What happens next, so the client does not have to ask again. */
+const nextMoment = (
+  deal: StatusUpdateInput["deal"],
+  now: Date,
+): string | null => {
+  if (deal.stage === "facturatie-live") {
+    return "De factuur volgt; daarna sluiten we de opdracht af.";
+  }
+  if (deal.stage === "won") {
+    // A closing update that says only "afgerond" is a dead end. Say what the
+    // client can do next, which is also how follow-up work starts.
+    return "Daarmee is deze opdracht afgerond. Voor vervolg of onderhoud kunt u ons altijd bereiken.";
+  }
+  if (isRecurring(deal)) {
+    const month = MONTHS[(now.getMonth() + 1) % 12];
+    return `Begin ${month} sturen we de volgende maandupdate.`;
+  }
+  return "Bij de volgende stap hoort u weer van ons.";
+};
+
+/** A measured result in a sentence, not a dashboard row. */
+const metricLine = (metric: SeoMonthlyHeadlineMetric): string => {
+  const value = metricValue(metric, metric.current);
+  return metric.changePercent === null
+    ? `${metric.label}: ${value} (eerste meting).`
+    : `${metric.label}: ${value} (${changeLabel(metric)} tegenover de vorige periode).`;
+};
+
+/**
+ * Turn the latest month report into the results block — but only when it is the
+ * report the client is being told about.
+ *
+ * A June report inside a July update is not enrichment, it is a wrong number
+ * with a confident label, so anything older than last month is left out. Metrics
+ * about the site's own traffic and its Google visibility are what a client reads;
+ * the rest of the report stays internal.
+ */
+export const selectStatusUpdateResults = (
+  report: SeoMonthlyReportSummary | null | undefined,
+  now: Date,
+): StatusUpdateResults | undefined => {
+  if (!report?.headline_metrics?.length) return undefined;
+
+  const month = new Date(report.reporting_month);
+  if (Number.isNaN(month.getTime())) return undefined;
+
+  const monthsBehind =
+    (now.getFullYear() - month.getFullYear()) * 12 +
+    (now.getMonth() - month.getMonth());
+  if (monthsBehind < 0 || monthsBehind > 1) return undefined;
+
+  const metrics = report.headline_metrics.filter(
+    (metric) => metric.group === "seo" || metric.group === "website_context",
+  );
+  if (metrics.length === 0) return undefined;
+
+  return { metrics, monthLabel: MONTHS[month.getMonth()] };
+};
+
 /** A step reads as a sentence, not as a checklist entry. */
 const asSentence = (text: string): string => {
   const trimmed = text
@@ -106,6 +230,7 @@ export const buildStatusUpdate = ({
   companyName,
   deal,
   now,
+  results,
   senderName,
   stages,
   steps,
@@ -141,11 +266,24 @@ export const buildStatusUpdate = ({
   const recent = (doneSince.length > 0 ? doneSince : done).slice(0, 6);
   if (recent.length > 0) {
     sections.push({
-      heading:
-        doneSince.length > 0 && lastUpdate
-          ? `Gedaan sinds ${DAY_MONTH.format(lastUpdate)}`
-          : "Wat er is gedaan",
+      heading: workHeading({
+        deal,
+        lastUpdate,
+        hasSince: doneSince.length > 0,
+      }),
       lines: recent.map((step) => asSentence(step.text)).filter(Boolean),
+    });
+  }
+
+  // Measured results, when a Search Console / GA4 connection produced a month
+  // report. Recurring SEO work is judged on numbers, and a monthly update that
+  // only lists activities invites the question the numbers already answer.
+  if (results && results.metrics.length > 0) {
+    sections.push({
+      heading: results.monthLabel
+        ? `Resultaten in ${results.monthLabel}`
+        : "Resultaten",
+      lines: results.metrics.slice(0, 4).map(metricLine),
     });
   }
 
@@ -170,15 +308,24 @@ export const buildStatusUpdate = ({
 
   const delivery = parseDate(deal.delivery_date ?? deal.expected_closing_date);
   const planning = [
-    delivery
-      ? delivery.getTime() < now.getTime()
-        ? "De opgegeven opleverdatum is verstreken; we stemmen een nieuwe datum met u af."
-        : `Oplevering staat gepland op ${DATE.format(delivery)}.`
-      : null,
+    // Finished work has no planning left; it has an invoice and a next moment.
+    isFinished(deal)
+      ? null
+      : delivery
+        ? delivery.getTime() < now.getTime()
+          ? "De opgegeven opleverdatum is verstreken; we stemmen een nieuwe datum met u af."
+          : `Oplevering staat gepland op ${DATE.format(delivery)}.`
+        : null,
     waiting,
+    // An update that ends without a next moment leaves the client guessing
+    // again, which is the whole thing this is meant to stop.
+    nextMoment(deal, now),
   ].filter((line): line is string => Boolean(line));
   if (planning.length > 0) {
-    sections.push({ heading: "Planning", lines: planning });
+    sections.push({
+      heading: isFinished(deal) ? "Hoe verder" : "Planning",
+      lines: planning,
+    });
   }
 
   const subject = `Statusupdate ${companyName} - ${deal.name}`;
@@ -243,21 +390,26 @@ export const buildCompanyStatusUpdate = ({
   variant = "full",
 }: {
   companyName: string;
-  /** Each open assignment with its own steps, in the order they should appear. */
+  /**
+   * Each open assignment with its own steps and, where a connection exists, its
+   * own measured results — in the order they should appear.
+   */
   deals: {
     deal: StatusUpdateInput["deal"];
     steps: StatusUpdateInput["steps"];
+    results?: StatusUpdateResults;
   }[];
   stages: DealStage[];
   senderName?: string;
   variant?: StatusUpdateVariant;
   now: Date;
 }): StatusUpdate => {
-  const perDeal = deals.map(({ deal, steps }) =>
+  const perDeal = deals.map(({ deal, results, steps }) =>
     buildStatusUpdate({
       companyName,
       deal,
       now,
+      results,
       senderName,
       stages,
       steps,

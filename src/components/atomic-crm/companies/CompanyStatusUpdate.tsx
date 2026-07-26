@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 import { StatusUpdateComposer } from "../deals/StatusUpdateComposer";
 import {
   buildCompanyStatusUpdate,
+  selectStatusUpdateResults,
   type StatusUpdateVariant,
 } from "../deals/statusUpdateModel";
 import { useConfigurationContext } from "../root/ConfigurationContext";
@@ -79,6 +80,7 @@ export const CompanyStatusUpdate = () => {
       companyName,
       deals: liveDeals.map((deal) => ({
         deal,
+        results: selectStatusUpdateResults(deal.latest_seo_report, new Date()),
         steps: steps.filter(
           (step) =>
             String(step.deal_id) === String(deal.id) && !isAutomaticTask(step),

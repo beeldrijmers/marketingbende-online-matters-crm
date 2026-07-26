@@ -13,6 +13,7 @@ import type { Company, Contact, Deal, Task } from "../types";
 import { StatusUpdateComposer } from "./StatusUpdateComposer";
 import {
   buildStatusUpdate,
+  selectStatusUpdateResults,
   type StatusUpdateVariant,
 } from "./statusUpdateModel";
 
@@ -69,6 +70,9 @@ export const DealStatusUpdate = () => {
       deal: record,
       now: new Date(),
       senderName,
+      // Search Console / GA4 figures when the assignment has a connection and a
+      // report for the month being told about.
+      results: selectStatusUpdateResults(record.latest_seo_report, new Date()),
       stages: dealStages,
       // Automatic reminder rows are internal bookkeeping, never client-facing.
       steps: steps.filter((step) => !isAutomaticTask(step)),

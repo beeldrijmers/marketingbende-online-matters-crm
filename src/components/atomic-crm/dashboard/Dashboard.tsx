@@ -18,7 +18,7 @@ import { selectAttentionDeals } from "../deals/dashboardDealKanbanModel";
 import { summarizeDealAttention } from "../deals/dealWorkflow";
 import { DashboardStepper } from "./DashboardStepper";
 import { DealActionQueue } from "./DealActionQueue";
-import { SilentClients } from "./SilentClients";
+import { UpdateMoments } from "./UpdateMoments";
 import { TeamWorkload } from "./TeamWorkload";
 import { TasksList } from "./TasksList";
 import { Welcome } from "./Welcome";
@@ -152,7 +152,7 @@ const Today = () => {
         </div>
         <div className="flex min-w-0 flex-col gap-5 xl:col-span-4">
           <TasksList />
-          <SilentClients />
+          <UpdateMoments />
           <TeamWorkload />
         </div>
       </PageBody>

@@ -634,13 +634,14 @@ export const frenchCrmMessages = {
     },
     dashboard: {
       deals_pipeline: "Pipeline des affaires",
-      silent: {
-        title: "Le client attend des nouvelles",
-        subtitle:
-          "Travail ouvert dont le client n'a rien entendu depuis %{days} jours.",
-        never: "jamais informé",
-        days: "%{count} jours de silence",
-        more: "%{count} autres attendent des nouvelles",
+      update_moments: {
+        title: "Clients à informer",
+        subtitle: "À la livraison d'un projet et à la clôture mensuelle.",
+        month: "rapport mensuel %{month}",
+        ready: "livré",
+        done: "clôturé",
+        waiting: "%{count} jours",
+        more: "%{count} autres à informer",
       },
       workload: {
         title: "Qui fait quoi",
