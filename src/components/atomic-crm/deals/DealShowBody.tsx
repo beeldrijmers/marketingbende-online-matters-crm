@@ -1,4 +1,4 @@
-import { Archive, ArchiveRestore, Pencil, X } from "lucide-react";
+import { Archive, ArchiveRestore, CircleSlash, Pencil, X } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   InfiniteListBase,
@@ -14,6 +14,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 
 import { DeleteButton } from "@/components/admin/delete-button";
+import { LOST_STAGE, lostStageLabel } from "../root/appConfiguration";
 import { EditButton } from "@/components/admin/edit-button";
 import { ReferenceArrayField } from "@/components/admin/reference-array-field";
 import { ReferenceField } from "@/components/admin/reference-field";
@@ -124,6 +125,12 @@ export const DealShowBody = ({
             </>
           ) : (
             <>
+              {/* Een opdracht die niet doorgaat verdween tot nu toe via
+                  Archiveren, en dan staat er nergens waarom. Deze knop legt de
+                  uitkomst vast en haalt hem in dezelfde stap van het bord. */}
+              {record.stage !== "won" && record.stage !== LOST_STAGE ? (
+                <MarkLostButton record={record} redirectTo={closeTo} />
+              ) : null}
               <ArchiveButton record={record} redirectTo={closeTo} />
               {/* The desktop EditButton navigates to /deals/:id, a route that
                   only exists in the desktop Admin. On mobile we edit in place
@@ -402,6 +409,57 @@ const ArchiveButton = ({
     <Button onClick={handleClick} size="sm" variant="outline">
       <Archive className="size-4" />
       {translate("resources.deals.archived.action")}
+    </Button>
+  );
+};
+
+/**
+ * Legt vast dat een opdracht niet doorgaat, en archiveert hem meteen.
+ *
+ * Twee dingen in een handeling, want ze horen bij elkaar: de uitkomst is
+ * "niet doorgegaan" en het werk hoort van het bord af. Los archiveren liet de
+ * stap staan waar hij stond, dus las het archief later als onafgemaakt werk.
+ */
+const MarkLostButton = ({
+  record,
+  redirectTo,
+}: {
+  record: Deal;
+  redirectTo?: string;
+}) => {
+  const [update] = useUpdate();
+  const redirect = useRedirect();
+  const notify = useNotify();
+  const refresh = useRefresh();
+  const handleClick = () => {
+    update(
+      "deals",
+      {
+        id: record.id,
+        data: { stage: LOST_STAGE, archived_at: new Date().toISOString() },
+        previousData: record,
+      },
+      {
+        onSuccess: () => {
+          if (redirectTo) redirect(redirectTo);
+          else redirect("list", "deals");
+          notify(`${lostStageLabel}: de opdracht staat in het archief`, {
+            type: "info",
+            undoable: false,
+          });
+          refresh();
+        },
+        onError: () => {
+          notify("De opdracht kon niet worden bijgewerkt", { type: "error" });
+        },
+      },
+    );
+  };
+
+  return (
+    <Button onClick={handleClick} size="sm" variant="outline">
+      <CircleSlash className="size-4" />
+      {lostStageLabel}
     </Button>
   );
 };

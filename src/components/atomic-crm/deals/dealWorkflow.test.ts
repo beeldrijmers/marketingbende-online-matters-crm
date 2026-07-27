@@ -173,4 +173,29 @@ describe("dealWorkflow", () => {
       unplanned: 1,
     });
   });
+  // Wachtend werk hoort niet in de aandachtsrij, maar de datum waarop het hervat
+  // moet wel te zien zijn: elf opdrachten stonden stil zonder dat iemand kon zien
+  // of dat deze week of pas in december speelde.
+  it("houdt de hervatdatum bij wachtend werk, buiten nextTask", () => {
+    const workflow = getDealWorkflow(
+      deal({ stage: "on-hold" }),
+      [
+        task({ id: 2, due_date: "2026-12-01" }),
+        task({ id: 1, due_date: "2026-08-14" }),
+      ],
+      new Date("2026-07-27T10:00:00.000Z"),
+    );
+
+    expect(workflow.kind).toBe("on_hold");
+    // nextTask blijft leeg, zodat geen lezer dit als actie oppakt.
+    expect(workflow.nextTask).toBeNull();
+    expect(workflow.resumeTask?.id).toBe(1);
+    expect(workflow.openTaskCount).toBe(2);
+  });
+
+  it("laat resumeTask leeg als er niets openstaat", () => {
+    const workflow = getDealWorkflow(deal({ stage: "on-hold" }), []);
+    expect(workflow.resumeTask).toBeNull();
+    expect(workflow.openTaskCount).toBe(0);
+  });
 });
