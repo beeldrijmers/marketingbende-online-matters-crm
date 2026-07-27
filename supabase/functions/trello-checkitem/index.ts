@@ -80,7 +80,6 @@ const handler = async (req: Request): Promise<Response> => {
       const checkItemId = await createCheckItem({
         cardId: deal.trello_card_id,
         name,
-        due: task.due_date,
         apiKey,
         token,
       });

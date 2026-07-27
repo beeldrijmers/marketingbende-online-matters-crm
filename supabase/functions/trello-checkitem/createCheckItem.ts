@@ -61,14 +61,12 @@ const call = async (
 export const createCheckItem = async ({
   cardId,
   name,
-  due,
   apiKey,
   token,
   fetchImpl = fetch as unknown as FetchLike,
 }: {
   cardId: string;
   name: string;
-  due?: string | null;
   apiKey: string;
   token: string;
   fetchImpl?: FetchLike;
@@ -92,7 +90,12 @@ export const createCheckItem = async ({
     token,
   );
   item.searchParams.set("name", name);
-  if (due) item.searchParams.set("due", due);
+  // Geen datum meegeven. Vervaldatums op checklistitems zijn een betaalde
+  // Trello-functie: op dit bord neemt de API de waarde niet aan, niet bij het
+  // aanmaken en niet met een PUT erna (nagemeten op een echte kaart, due bleef
+  // null). Meesturen zou suggereren dat de datum meereist. De datum blijft in
+  // Kompas staan; hem in de naam plakken kan niet, want de sync spiegelt die naam
+  // terug naar de taaktekst.
   const result = (await call(fetchImpl, item, "POST")) as { id?: string };
 
   if (!result?.id) throw new Error("Trello returned no checkItem id");
