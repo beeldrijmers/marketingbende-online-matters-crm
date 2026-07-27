@@ -379,7 +379,10 @@ const ReportPreview = ({
             ) : null}
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap gap-2 text-xs">
+        {/* De chips zelf staan op whitespace-nowrap en shrink-0, dus in een
+            dialoog van 374 px werd de rij aan de rand afgeknipt. Binnen de chip
+            mag de tekst nu afbreken; de rij wikkelt al. */}
+        <div className="mt-4 flex flex-wrap gap-2 text-xs [&>*]:whitespace-normal">
           <Badge
             variant="outline"
             className={ga4.ok ? "text-live" : "text-wait"}

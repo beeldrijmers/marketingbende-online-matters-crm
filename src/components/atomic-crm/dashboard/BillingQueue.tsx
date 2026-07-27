@@ -171,6 +171,18 @@ export const BillingQueue = () => {
                           </Link>
                         </div>
                         <BillingStateLabel state={state} />
+                        {/* De kolom Wacht begint pas bij sm, dus op een telefoon
+                            verdween precies het getal waarvoor stage_since is
+                            gemaakt: staat dit al maanden stil. Hier staat het wel. */}
+                        {waiting != null ? (
+                          <span className="num mt-0.5 block text-meta text-ink-3 sm:hidden">
+                            {translate("crm.billing.waiting", { _: "Wacht" })}{" "}
+                            {translate("crm.billing.days", {
+                              smart_count: waiting,
+                              _: `${waiting} d`,
+                            })}
+                          </span>
+                        ) : null}
                       </td>
                       <td className="num whitespace-nowrap px-3 py-2 text-right font-medium text-ink">
                         {deal.amount

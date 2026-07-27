@@ -3,7 +3,7 @@ import { SortButton } from "@/components/admin/sort-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserPlus } from "lucide-react";
+import { Pencil, UserPlus } from "lucide-react";
 import {
   RecordContextProvider,
   ShowBase,
@@ -21,8 +21,11 @@ import {
   useNavigate,
 } from "react-router-dom";
 
+import { useState } from "react";
+
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ActivityLog } from "../activity/ActivityLog";
+import { EditSheet } from "../misc/EditSheet";
 import { Avatar } from "../contacts/Avatar";
 import { TagsList } from "../contacts/TagsList";
 import { findDealLabel } from "../deals/dealUtils";
@@ -44,6 +47,7 @@ import {
   CompanyInfo,
   ContextInfo,
 } from "./CompanyAside";
+import { CompanyInputs } from "./CompanyInputs";
 import { CompanyStatusUpdate } from "./CompanyStatusUpdate";
 import { CompanyAvatar } from "./CompanyAvatar";
 
@@ -60,6 +64,7 @@ export const CompanyShow = () => {
 const CompanyShowContentMobile = () => {
   const translate = useTranslate();
   const { record, isPending } = useShowContext<Company>();
+  const [editOpen, setEditOpen] = useState(false);
   if (isPending || !record) return null;
 
   return (
@@ -75,7 +80,28 @@ const CompanyShowContentMobile = () => {
             </h1>
           </Link>
         </div>
+        {/* Zonder dit was een klant op de telefoon alleen te lezen: de kluislink
+            en "Correspondentie via" stonden er wel, maar invullen kon alleen
+            achter een laptop. */}
+        <Button
+          aria-label={translate("ra.action.edit")}
+          onClick={() => setEditOpen(true)}
+          size="sm"
+          variant="outline"
+        >
+          <Pencil className="size-4" />
+        </Button>
       </MobileHeader>
+      <EditSheet
+        resource="companies"
+        id={record.id}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        mutationMode="pessimistic"
+        redirect={false}
+      >
+        <CompanyInputs />
+      </EditSheet>
 
       <MobileContent>
         <div className="mb-6">
@@ -90,6 +116,11 @@ const CompanyShowContentMobile = () => {
         <AddressInfo record={record} />
         <ContextInfo record={record} />
         <AdditionalInfo record={record} />
+        {/* Stond alleen op de desktop, terwijl dit juist het ding is dat je
+            onderweg wil doen: even laten weten waar we staan. */}
+        <div className="mt-6">
+          <CompanyStatusUpdate />
+        </div>
       </MobileContent>
     </>
   );
