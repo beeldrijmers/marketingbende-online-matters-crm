@@ -15,14 +15,7 @@ import {
   selectStatusUpdateResults,
   type StatusUpdateVariant,
 } from "./statusUpdateModel";
-
-const firstEmail = (contacts: Contact[]): string | undefined => {
-  for (const contact of contacts) {
-    const email = contact.email_jsonb?.find((entry) => entry.email)?.email;
-    if (email) return email;
-  }
-  return undefined;
-};
+import { resolveCorrespondence } from "../companies/correspondence";
 
 /**
  * The status update for one assignment.
@@ -66,6 +59,12 @@ export const DealStatusUpdate = () => {
   );
 
   const companyName = company?.name ?? "";
+  // Loopt de klant via een partner, dan gaat de update naar die partner. Hun
+  // eindklant aanschrijven gaat over het hoofd van de partner heen.
+  const correspondence = resolveCorrespondence({
+    contacts,
+    correspondenceEmail: company?.correspondence_email,
+  });
   const senderName = identity?.fullName ?? undefined;
 
   const composed = useMemo(() => {
@@ -99,7 +98,8 @@ export const DealStatusUpdate = () => {
       lastSharedAt={record.client_updated_at}
       logDealIds={[record.id]}
       onVariantChange={setVariant}
-      recipient={firstEmail(contacts)}
+      recipient={correspondence.email}
+      recipientWarning={correspondence.waarschuwing}
       scope="deal"
       senderName={senderName}
       variant={variant}

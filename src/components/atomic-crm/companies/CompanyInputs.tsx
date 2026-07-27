@@ -15,6 +15,12 @@ import { getTranslatedCompanySizeLabel } from "./getTranslatedCompanySizeLabel";
 import { sizes } from "./sizes";
 import { validateVaultLink } from "./vaultLink";
 
+/** Een adres of niets; half ingevulde adressen leveren stille fouten op. */
+const isEmail = (value?: string) =>
+  !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+    ? undefined
+    : "Vul een geldig e-mailadres in";
+
 const isUrl = (url: string) => {
   if (!url) return;
   const UrlRegex = new RegExp(
@@ -93,6 +99,21 @@ const CompanyContactInputs = () => {
       <TextInput source="phone_number" helperText={false} />
       {/* Alleen de link naar het item in de kluis. Het wachtwoord zelf hoort
           daar te blijven staan en niet in dit veld. */}
+      {/* Loopt het werk via een partner, dan gaat correspondentie daarheen en
+          niet naar de klant zelf. */}
+      <TextInput
+        source="correspondence_email"
+        label={translate("resources.companies.fields.correspondence_email", {
+          _: "Correspondentie via",
+        })}
+        helperText={translate(
+          "resources.companies.helpers.correspondence_email",
+          {
+            _: "Adres waar statusupdates en mail naartoe gaan, bijvoorbeeld info@onlinematters.nl. Leeg laten als de klant zelf het aanspreekpunt is.",
+          },
+        )}
+        validate={isEmail}
+      />
       <TextInput
         source="vault_url"
         label={translate("resources.companies.fields.vault_url", {

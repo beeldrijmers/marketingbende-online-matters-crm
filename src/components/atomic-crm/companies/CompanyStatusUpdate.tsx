@@ -14,6 +14,7 @@ import {
 } from "../deals/statusUpdateModel";
 import { isAutomaticTask } from "../tasks/taskSource";
 import type { Company, Contact, Deal, Sale, Task } from "../types";
+import { resolveCorrespondence } from "./correspondence";
 
 /**
  * Finished work does not need explaining; on-hold work needs it most. Internal
@@ -25,14 +26,6 @@ const isLive = (deal: Deal) =>
   deal.stage !== "won" &&
   deal.stage !== "lost" &&
   deal.is_internal !== true;
-
-const firstEmail = (contacts: Contact[]): string | undefined => {
-  for (const contact of contacts) {
-    const email = contact.email_jsonb?.find((entry) => entry.email)?.email;
-    if (email) return email;
-  }
-  return undefined;
-};
 
 /**
  * One update for everything that runs for this client.
@@ -83,6 +76,11 @@ export const CompanyStatusUpdate = () => {
 
   const senderName = identity?.fullName ?? undefined;
   const companyName = record?.name ?? "";
+  // Loopt deze klant via een partner, dan gaat de update naar die partner.
+  const correspondence = resolveCorrespondence({
+    contacts,
+    correspondenceEmail: record?.correspondence_email,
+  });
 
   const composed = useMemo(() => {
     if (!record || liveDeals.length === 0) return null;
@@ -130,7 +128,8 @@ export const CompanyStatusUpdate = () => {
       lastSharedAt={lastSharedAt}
       logDealIds={liveDeals.map((deal) => deal.id)}
       onVariantChange={setVariant}
-      recipient={firstEmail(contacts)}
+      recipient={correspondence.email}
+      recipientWarning={correspondence.waarschuwing}
       scope="company"
       senderName={senderName}
       variant={variant}

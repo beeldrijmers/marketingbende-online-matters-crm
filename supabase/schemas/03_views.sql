@@ -134,7 +134,8 @@ select
     ) as nb_contacts,
     -- Achteraan, want create or replace view mag kolommen alleen toevoegen aan
     -- het eind; ertussen zetten leest Postgres als het hernoemen van nb_deals.
-    c.vault_url
+    c.vault_url,
+    c.correspondence_email
 from public.companies c;
 
 create or replace view public.contacts_summary with (security_invoker = on) as

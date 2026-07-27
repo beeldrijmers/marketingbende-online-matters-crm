@@ -58,6 +58,15 @@ export const AppointmentDialog = ({
   open,
   task,
 }: {
+  /**
+   * Het adres dat een uitnodiging krijgt als de schakelaar aan gaat.
+   *
+   * Dit moet het adres uit "correspondentie via" van het bedrijf zijn
+   * (companies/correspondence.ts), niet het eerste contact van de klant: werk dat
+   * via Online Matters of Studio Cupido loopt betekent dat wij hun eindklant niet
+   * aanschrijven. Zolang niemand dit meegeeft blijft de schakelaar onzichtbaar en
+   * gaat er dus nooit iets naar buiten.
+   */
   clientEmail?: string;
   onOpenChange: (open: boolean) => void;
   open: boolean;
