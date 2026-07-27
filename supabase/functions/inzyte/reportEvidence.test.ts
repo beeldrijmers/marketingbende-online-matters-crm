@@ -428,3 +428,60 @@ describe("mailbeleefdheden horen niet in een klantrapportage", () => {
     expect(narratief.nextSteps).not.toMatch(/In juni hebben we/);
   });
 });
+
+describe("koppen en getallen aan het begin van een zin", () => {
+  const uitMail = (tekst: string) =>
+    buildDefaultReportNarrative({
+      companyName: "Borg Hekwerk",
+      period,
+      metrics: [],
+      evidence: buildReportEvidence({
+        assignmentDescription: "",
+        currentWork: [],
+        allTimeWork: [],
+        currentNotes: [],
+        allTimeNotes: [],
+        sentMail: [
+          {
+            id: "mail-1",
+            subject: "Maandrapportage juni",
+            date: "2026-06-28T10:00:00Z",
+            text: tekst,
+          },
+        ],
+        gmailStatus: "ok",
+        period,
+      }),
+    });
+
+  it("houdt het aantal in de zin en laat de kop erboven weg", () => {
+    // Letterlijk de opbouw uit de mail die de juni-rapportage voedde.
+    const werk = uitMail(
+      [
+        "*Wat we hebben opgeleverd*",
+        "",
+        "15 nieuwe, volledig geoptimaliseerde pagina's: 13 dienstenpagina's en 2",
+        "informatieve pagina's.",
+      ].join("\n"),
+    ).workSummary;
+
+    expect(werk).toContain(
+      "15 nieuwe, volledig geoptimaliseerde pagina's: 13 dienstenpagina's en 2 informatieve pagina's.",
+    );
+    expect(werk).not.toMatch(/Wat we hebben opgeleverd\./);
+  });
+
+  it("blijft een genummerde opsomming wel als opsomming lezen", () => {
+    const werk = uitMail(
+      [
+        "1. De titels van de dienstenpagina's zijn aangescherpt.",
+        "2. De metadata is gecontroleerd en bijgewerkt.",
+      ].join("\n"),
+    ).workSummary;
+
+    expect(werk).toContain(
+      "De titels van de dienstenpagina's zijn aangescherpt.",
+    );
+    expect(werk).not.toMatch(/^• 1\./m);
+  });
+});
