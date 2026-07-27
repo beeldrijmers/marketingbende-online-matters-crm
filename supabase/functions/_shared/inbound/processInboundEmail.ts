@@ -9,6 +9,7 @@ import { addNoteToContact } from "../../postmark/addNoteToContact.ts";
 import { addNoteToDeal } from "../../postmark/addNoteToDeal.ts";
 import { isBulkMail } from "../../postmark/automatedSenders.ts";
 import { isToolNotification } from "./isToolNotification.ts";
+import { noteDedupeKey } from "./noteDedupeKey.ts";
 import {
   extractForwardedSender,
   getForwardedMailContent,
@@ -118,6 +119,12 @@ export const processInboundEmail = async ({
     });
   }
 
+  // Waarop notities worden ontdubbeld. Niet het provider-id: Resend en de
+  // Gmail-sync hebben elk hun eigen id, dus hetzelfde bericht stond twee keer in
+  // het dossier. De claim in inbound_email_events blijft wel op het provider-id,
+  // want die vraag is "heb ik dit bericht bij deze provider al opgehaald".
+  const noteKey = noteDedupeKey({ emailId, headers: email.headers });
+
   const fromFull = parseEmailContacts(email.from ? [email.from] : []);
   const toFull = parseEmailContacts(email.to);
   const ccFull = parseEmailContacts(email.cc);
@@ -140,7 +147,7 @@ export const processInboundEmail = async ({
       dealId,
       noteContent: dealNoteContent,
       attachments: [],
-      sourceEventId: emailId,
+      sourceEventId: noteKey,
     });
     if (dealResponse.status >= 500) await releaseInboundEmail(emailId);
     return dealResponse;
@@ -256,7 +263,7 @@ export const processInboundEmail = async ({
           salesEmail: forwarderSalesEmail,
           salesId: forwarderSalesId ?? null,
           assigneeIds: involvedSalesIds,
-          sourceEventId: emailId,
+          sourceEventId: noteKey,
         });
         return new Response("OK");
       }
@@ -320,7 +327,7 @@ export const processInboundEmail = async ({
         companyName,
         website,
         createIfMissing: canCreateEntities,
-        sourceEventId: emailId,
+        sourceEventId: noteKey,
       });
       if (errorResponse) {
         failedParticipants += 1;
@@ -336,7 +343,7 @@ export const processInboundEmail = async ({
           salesId: forwarderSalesId,
           noteContent,
           attachments: [],
-          sourceEventId: emailId,
+          sourceEventId: noteKey,
         });
       }
 
@@ -354,7 +361,7 @@ export const processInboundEmail = async ({
         assigneeIds: involvedSalesIds,
         noteContent,
         handledCompanyIds,
-        sourceEventId: emailId,
+        sourceEventId: noteKey,
       });
     } catch (error) {
       failedParticipants += 1;
