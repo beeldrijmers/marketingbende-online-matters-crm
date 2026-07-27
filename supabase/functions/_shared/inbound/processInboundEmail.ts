@@ -8,6 +8,7 @@
 import { addNoteToContact } from "../../postmark/addNoteToContact.ts";
 import { addNoteToDeal } from "../../postmark/addNoteToDeal.ts";
 import { isBulkMail } from "../../postmark/automatedSenders.ts";
+import { isToolNotification } from "./isToolNotification.ts";
 import {
   extractForwardedSender,
   getForwardedMailContent,
@@ -104,6 +105,17 @@ export const processInboundEmail = async ({
   const senderEmail = parseEmailAddress(email.from ?? "");
   if (!senderEmail) {
     return new Response("Could not extract sender email", { status: 200 });
+  }
+
+  // Notificatiemail van Trello en soortgelijke borden hoort niet in een dossier.
+  // Hij heeft geen klant als afzender, dus viel hij in de terugval die een
+  // bedrijfsnaam in de tekst zoekt, en dan belandt "Rick heeft jou genoemd op de
+  // kaart X" bij een willekeurige opdracht. De kaart zelf komt al via de sync
+  // binnen, dus er gaat niets verloren door hier te stoppen.
+  if (isToolNotification({ senderEmail, subject: email.subject })) {
+    return new Response("Skipped: notification mail from a synced tool", {
+      status: 200,
+    });
   }
 
   const fromFull = parseEmailContacts(email.from ? [email.from] : []);
