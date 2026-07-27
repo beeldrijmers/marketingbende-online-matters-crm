@@ -425,8 +425,21 @@ const PLEASANTRY =
  * De tweede is de reden dat alleen op een dubbele punt letten niet genoeg was:
  * een regel die helemaal tussen nadrukstekens staat is opmaak, geen zin.
  */
+/**
+ * Een kop met een getal erin is geen kop maar het feit zelf.
+ *
+ *   *Wat we hebben opgeleverd*            -> aankondiging, weg ermee
+ *   *Opgeleverd: 15 nieuwe landingspagina's* -> dit IS de mededeling
+ *
+ * Zonder dit onderscheid verdween precies de regel die telt: de rapportage van
+ * RT Interieur meldde "geen werkzaamheden vastgelegd" terwijl er vijftien
+ * pagina's in de bronmail stonden.
+ */
+const carriesNumber = (line: string): boolean => /\d/.test(line);
+
 const isHeading = (line: string): boolean => {
   const trimmed = line.trim();
+  if (carriesNumber(trimmed)) return false;
   return /:$/.test(trimmed) || /^\*+[^*]+\*+$/.test(trimmed);
 };
 
@@ -451,6 +464,7 @@ const isPlainHeadingBlock = (block: string): boolean => {
     trimmed.length > 0 &&
     trimmed.length <= 60 &&
     !trimmed.includes("\n") &&
+    !carriesNumber(trimmed) &&
     !/[.!?]$/.test(trimmed)
   );
 };
@@ -566,7 +580,12 @@ export const buildDefaultReportNarrative = ({
 
   const summary: string[] = hasMetrics
     ? [
-        `In ${monthLabel(period.reportingMonth)} hebben we voor ${companyName} verder gewerkt aan de afgesproken digitale doelen. Deze update combineert gecontroleerde meetgegevens met ${currentSourceCount} relevante voortgangsbron${currentSourceCount === 1 ? "" : "nen"} uit de opdracht.`,
+        // Zonder voortgangsbronnen combineert deze update niets: dan stond er
+        // letterlijk "combineert gecontroleerde meetgegevens met 0 relevante
+        // voortgangsbronnen", een zin die zichzelf tegenspreekt.
+        currentSourceCount === 0
+          ? `In ${monthLabel(period.reportingMonth)} hebben we voor ${companyName} verder gewerkt aan de afgesproken digitale doelen. Deze update gaat over de gemeten ontwikkeling; over de werkzaamheden van deze maand is in het dossier niets vastgelegd.`
+          : `In ${monthLabel(period.reportingMonth)} hebben we voor ${companyName} verder gewerkt aan de afgesproken digitale doelen. Deze update combineert gecontroleerde meetgegevens met ${currentSourceCount} relevante voortgangsbron${currentSourceCount === 1 ? "" : "nen"} uit de opdracht.`,
       ]
     : [
         `In ${monthLabel(period.reportingMonth)} hebben we de voortgang voor ${companyName} in kaart gebracht op basis van ${currentSourceCount} relevante voortgangsbron${currentSourceCount === 1 ? "" : "nen"} uit de opdracht. Er was geen volledige gecontroleerde meetreeks beschikbaar; deze update gaat daarom over aantoonbaar uitgevoerd werk en voortgang, niet over verkeers- of rankingresultaten.`,
