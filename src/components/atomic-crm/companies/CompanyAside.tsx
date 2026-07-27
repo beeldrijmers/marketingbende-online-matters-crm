@@ -1,4 +1,4 @@
-import { Globe, KeyRound, Linkedin, Phone } from "lucide-react";
+import { Forward, Globe, KeyRound, Linkedin, Phone } from "lucide-react";
 import {
   useGetIdentity,
   useLocaleState,
@@ -63,11 +63,13 @@ export const CompanyAside = ({ link = "edit" }: CompanyAsideProps) => {
 export const CompanyInfo = ({ record }: { record: Company }) => {
   const translate = useTranslate();
   const vault = parseVaultLink(record.vault_url);
+  const via = record.correspondence_email?.trim();
   if (
     !record.website &&
     !record.linkedin_url &&
     !record.phone_number &&
-    !vault
+    !vault &&
+    !via
   ) {
     return null;
   }
@@ -111,6 +113,19 @@ export const CompanyInfo = ({ record }: { record: Company }) => {
       )}
       {/* Alleen een verwijzing: het CRM bewaart geen inloggegevens, dus dit is
           een sprong naar de kluis en niet een plek om iets te lezen. */}
+      {/* Wie hier staat, is het aanspreekpunt. Niet de klant zelf, en dat is
+          precies waarom het op de kaart hoort en niet alleen in het formulier. */}
+      {via && (
+        <div className="flex flex-row items-start gap-1 min-h-[24px]">
+          <Forward className="mt-0.5 w-4 h-4 shrink-0" />
+          <span>
+            Correspondentie via{" "}
+            <a className="underline hover:no-underline" href={`mailto:${via}`}>
+              {via}
+            </a>
+          </span>
+        </div>
+      )}
       {vault && (
         <div className="flex flex-row items-center gap-1 min-h-[24px]">
           <KeyRound className="w-4 h-4" />

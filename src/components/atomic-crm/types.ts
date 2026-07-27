@@ -85,6 +85,8 @@ export type Company = {
   context_links?: string[];
   /** Link naar het item in de wachtwoordkluis, nooit het wachtwoord zelf. */
   vault_url?: string | null;
+  /** Adres waar correspondentie naartoe gaat, als die via een partner loopt. */
+  correspondence_email?: string | null;
   nb_contacts?: number;
   nb_deals?: number;
 } & Pick<RaRecord, "id">;

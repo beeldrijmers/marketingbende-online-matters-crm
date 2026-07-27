@@ -60,6 +60,7 @@ export const generateCompanies = (
       country: random.arrayElement(["Nederland", "België", "Duitsland"]),
       context_links: [],
       vault_url: null,
+      correspondence_email: null,
     };
   });
 };

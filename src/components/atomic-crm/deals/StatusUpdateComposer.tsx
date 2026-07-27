@@ -7,6 +7,7 @@ import {
   Link2Off,
   Mail,
   MessageSquareShare,
+  TriangleAlert,
 } from "lucide-react";
 import type { Identifier } from "ra-core";
 import {
@@ -74,6 +75,7 @@ export const StatusUpdateComposer = ({
   lastSharedAt,
   logDealIds,
   recipient,
+  recipientWarning,
   scope,
   senderName,
   variant,
@@ -89,6 +91,8 @@ export const StatusUpdateComposer = ({
   /** Every assignment this update speaks for: each gets the note and the stamp. */
   logDealIds: Identifier[];
   recipient?: string;
+  /** Waarom dit adres afwijkt van de klant zelf, als het werk via een partner loopt. */
+  recipientWarning?: string;
   scope: "deal" | "company";
   senderName?: string;
   variant: StatusUpdateVariant;
@@ -385,7 +389,9 @@ export const StatusUpdateComposer = ({
             size="sm"
             title={
               recipient
-                ? `Mail aan ${recipient}`
+                ? [`Mail aan ${recipient}`, recipientWarning]
+                    .filter(Boolean)
+                    .join(". ")
                 : "Deze opdracht heeft nog geen contact met e-mailadres"
             }
             type="button"
@@ -418,6 +424,15 @@ export const StatusUpdateComposer = ({
           Gedeeld
         </Button>
       </div>
+      {/* Zichtbaar, niet alleen in een tooltip: wie hier per ongeluk de eindklant
+          aanschrijft gaat over het hoofd van de partner heen, en dat merk je pas
+          als het al verstuurd is. */}
+      {recipientWarning ? (
+        <p className="flex items-start gap-1.5 text-meta text-wait">
+          <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
+          {recipientWarning}
+        </p>
+      ) : null}
 
       {liveLinks.length > 0 ? (
         <ul className="flex flex-col gap-1 border-t border-line-subtle pt-2.5">
