@@ -366,3 +366,65 @@ describe("bullets uit een hard afgebroken mail", () => {
     }
   });
 });
+
+describe("mailbeleefdheden horen niet in een klantrapportage", () => {
+  const uitMail = (tekst: string) =>
+    buildDefaultReportNarrative({
+      companyName: "Borg Hekwerk",
+      period,
+      metrics: [],
+      evidence: buildReportEvidence({
+        assignmentDescription: "",
+        currentWork: [],
+        allTimeWork: [],
+        currentNotes: [],
+        allTimeNotes: [],
+        sentMail: [
+          {
+            id: "mail-1",
+            subject: "SEO-update juni",
+            date: "2026-06-28T10:00:00Z",
+            text: tekst,
+          },
+        ],
+        gmailStatus: "ok",
+        period,
+      }),
+    });
+
+  it("laat een aanhef en een afsluiting weg", () => {
+    // Beide regels stonden letterlijk in de juni-rapportage van een klant.
+    const narratief = uitMail(
+      [
+        "Hoi John, even een andere focus deze maand voor RT Interieur.",
+        "Er zijn vijftien nieuwe landingspagina's gepubliceerd.",
+        "Laat het weten als je nog iets aangepast wilt zien.",
+      ].join("\n"),
+    );
+    const alles = [narratief.workSummary, narratief.nextSteps].join("\n");
+
+    expect(alles).toContain("vijftien nieuwe landingspagina's gepubliceerd");
+    expect(alles).not.toMatch(/Hoi John/);
+    expect(alles).not.toMatch(/Laat het weten/);
+  });
+
+  it("laat een kopje een kopje", () => {
+    const narratief = uitMail(
+      [
+        "Wat we hebben opgeleverd:",
+        "Elke pagina is uniek geschreven en voorzien van een heldere koppenstructuur.",
+      ].join("\n"),
+    );
+
+    expect(narratief.workSummary).toContain("Elke pagina is uniek geschreven");
+    expect(narratief.workSummary).not.toMatch(/Wat we hebben opgeleverd\./);
+  });
+
+  it("zet geen terugblik onder de vervolgstappen", () => {
+    const narratief = uitMail(
+      "In juni hebben we de strategie voortgezet om de autoriteit rond hellende daken verder op te bouwen.",
+    );
+
+    expect(narratief.nextSteps).not.toMatch(/In juni hebben we/);
+  });
+});

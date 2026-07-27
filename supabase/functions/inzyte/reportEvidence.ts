@@ -403,9 +403,28 @@ const stripEmphasis = (line: string): string =>
     .replace(/(^|\s)_([^_]+)_(?=\s|$)/g, "$1$2")
     .trim();
 
+/**
+ * Beleefdheden uit interne post zijn geen opgeleverd werk.
+ *
+ * Het bronmateriaal is voor een groot deel mail tussen collega's, en daar staat
+ * omheen wat in elke mail staat. Zo kwam "Laat het weten als je nog iets
+ * aangepast wilt zien" in een klantrapportage terecht als werkzaamheid, en
+ * "Hoi John, even een andere focus deze maand" als vervolgstap. De aanhef van
+ * een collega hoort niet in een brief aan de klant.
+ */
+const PLEASANTRY =
+  /^(?:hoi|hallo|hey|hai|beste|geachte|dag)\b|\b(?:met vriendelijke groet|met hartelijke groet|groetjes|alvast bedankt|laat (?:het|maar) weten|hoor ik graag|mocht je nog|als je nog|succes ermee|fijne dag|fijn weekend)\b/i;
+
+/**
+ * Een regel die op een dubbele punt eindigt kondigt iets aan, hij beweert niets:
+ * "Wat we hebben opgeleverd:" werd zo de mededeling "Wat we hebben opgeleverd."
+ */
+const isHeading = (line: string): boolean => /:$/.test(line.trim());
+
 const evidenceLines = (item: ReportEvidenceItem, pattern: RegExp): string[] =>
   unwrapHardBreaks(item.excerpt)
     .split(/\n|(?<=[.!?])\s+/)
+    .filter((line) => !isHeading(line))
     .map((line) =>
       stripEmphasis(
         line
@@ -414,6 +433,7 @@ const evidenceLines = (item: ReportEvidenceItem, pattern: RegExp): string[] =>
           .trim(),
       ),
     )
+    .filter((line) => !PLEASANTRY.test(line))
     .filter((line) => line.length >= 18 && line.length <= 360)
     // Begint hij na dat alles nog met een kleine letter, dan ontbreekt het begin
     // van de zin. Aanvullen kan niet, dus dan is weglaten eerlijker dan een
@@ -441,6 +461,17 @@ const COMPLETED_PATTERN =
   /\b(?:afgerond|aangepast|aangescherpt|gebouwd|gecontroleerd|gecorrigeerd|geïndexeerd|geoptimaliseerd|gepubliceerd|gerepareerd|geschreven|hersteld|ingediend|live gezet|opgeleverd|toegevoegd|uitgevoerd|verholpen|vernieuwd)\b/i;
 const FUTURE_PATTERN =
   /\b(?:aanbevel|blijven monitoren|komende maand|komende periode|daarna|focus|gaan we|inplannen|monitoren|oppakken|uitbreiden|verder|vervolg|zodra)\b/i;
+
+/**
+ * Wat we al gedaan hebben is geen plan.
+ *
+ * "verder" en "focus" zijn zwakke aanwijzingen: ze staan net zo goed in een
+ * terugblik ("In juni hebben we de strategie voortgezet om ... verder op te
+ * bouwen"), en zo belandde een zin over vorige maand onder de kop wat er komende
+ * maand gebeurt. Een zin met een voltooide tijd hoort daar niet.
+ */
+const PAST_TENSE =
+  /\b(?:hebben we|hebben wij|we hebben|wij hebben|is opgeleverd|zijn opgeleverd)\b/i;
 const CAVEAT_PATTERN =
   /\b(?:aandacht|afhankelijk|blokkeer|bug|externe|historisch|kan nog|kritiek|niet|nog geen|onvolledig|risico|spam|wacht|zorgpunt)\b/i;
 
@@ -550,9 +581,9 @@ export const buildDefaultReportNarrative = ({
     4,
   ).join("\n");
 
-  const futureLines = evidence.current.flatMap((item) =>
-    evidenceLines(item, FUTURE_PATTERN),
-  );
+  const futureLines = evidence.current
+    .flatMap((item) => evidenceLines(item, FUTURE_PATTERN))
+    .filter((line) => !PAST_TENSE.test(line));
   const nextSteps = uniqueBullets(
     [
       ...futureLines,
