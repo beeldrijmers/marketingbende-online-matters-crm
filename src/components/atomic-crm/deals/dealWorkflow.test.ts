@@ -150,6 +150,156 @@ describe("dealWorkflow", () => {
     ).toEqual([3, 2, 4]);
   });
 
+  it("ordent werk zonder afspraak op hoelang het al op deze stap staat", () => {
+    // Zonder taak en zonder einddatum viel de volgorde terug op updated_at, en
+    // dat veld werd door niets bijgewerkt: er stond feitelijk de aanmaakdatum.
+    // Opdracht 2 is later aangemaakt maar staat het langst stil, en hoort dus
+    // boven opdracht 1 te komen.
+    const deals = [
+      deal({
+        id: 1,
+        expected_closing_date: null,
+        created_at: "2026-01-01T09:00:00.000Z",
+        stage_since: "2026-07-10T09:00:00.000Z",
+      }),
+      deal({
+        id: 2,
+        expected_closing_date: null,
+        created_at: "2026-06-01T09:00:00.000Z",
+        stage_since: "2026-05-01T09:00:00.000Z",
+      }),
+    ];
+
+    expect(
+      rankDealsForAttention(deals, buildOpenTasksByDeal([]), now).map(
+        ({ deal }) => deal.id,
+      ),
+    ).toEqual([2, 1]);
+  });
+
+  it("valt terug op de aanmaakdatum als de stap nooit is vastgelegd", () => {
+    const deals = [
+      deal({
+        id: 1,
+        expected_closing_date: null,
+        created_at: "2026-06-01T09:00:00.000Z",
+      }),
+      deal({
+        id: 2,
+        expected_closing_date: null,
+        created_at: "2026-02-01T09:00:00.000Z",
+      }),
+    ];
+
+    expect(
+      rankDealsForAttention(deals, buildOpenTasksByDeal([]), now).map(
+        ({ deal }) => deal.id,
+      ),
+    ).toEqual([2, 1]);
+  });
+
+  it("merkt werk op dat al te lang op dezelfde stap staat", () => {
+    // Een geplande taak in de toekomst laat een opdracht er verzorgd uitzien
+    // terwijl hij niet van zijn plaats komt. Dat was de blinde vlek.
+    const stil = deal({
+      stage: "controle-livegang",
+      stage_since: "2026-06-20T09:00:00.000Z",
+      expected_closing_date: "2026-07-31",
+    });
+    const workflow = getDealWorkflow(
+      stil,
+      [task({ due_date: "2026-07-20" })],
+      now,
+    );
+
+    expect(workflow.kind).toBe("stalled");
+    expect(workflow.daysOnStage).toBe(24);
+    // De taak blijft zichtbaar: er is wel iets gepland, het beweegt alleen niet.
+    expect(workflow.nextTask?.id).toBe(10);
+  });
+
+  it("zwijgt bij stappen waar stilstand normaal is", () => {
+    // Vaste klanten staan per definitie maanden op dezelfde stap.
+    expect(
+      getDealWorkflow(
+        deal({ stage: "maandelijks", stage_since: "2026-01-01T09:00:00.000Z" }),
+        [task({ due_date: "2026-07-20" })],
+        now,
+      ).kind,
+    ).toBe("scheduled");
+  });
+
+  it("laat een net verplaatste opdracht met rust", () => {
+    expect(
+      getDealWorkflow(
+        deal({
+          stage: "controle-livegang",
+          stage_since: "2026-07-08T09:00:00.000Z",
+        }),
+        [task({ due_date: "2026-07-20" })],
+        now,
+      ).kind,
+    ).toBe("scheduled");
+  });
+
+  it("noemt geparkeerd werk zonder hervatdatum na anderhalve maand blijven liggen", () => {
+    expect(
+      getDealWorkflow(
+        deal({ stage: "on-hold", stage_since: "2026-05-01T09:00:00.000Z" }),
+        [],
+        now,
+      ).kind,
+    ).toBe("stalled");
+    // Met een hervatdatum blijft het gewoon wachtend werk.
+    expect(
+      getDealWorkflow(
+        deal({ stage: "on-hold", stage_since: "2026-05-01T09:00:00.000Z" }),
+        [task({ due_date: "2026-08-14" })],
+        now,
+      ).kind,
+    ).toBe("on_hold");
+  });
+
+  it("meldt een voorstel dat is verlopen", () => {
+    const workflow = getDealWorkflow(
+      deal({
+        stage: "informatie-pipeline",
+        proposal_sent_at: "2026-06-12",
+        proposal_valid_until: "2026-07-12",
+      }),
+      [task({ due_date: "2026-07-20" })],
+      now,
+    );
+
+    expect(workflow.kind).toBe("proposal_expired");
+    expect(workflow.proposalValidUntil).toBe("2026-07-12");
+  });
+
+  it("zwijgt over de geldigheidsdatum zodra de opdracht bevestigd is", () => {
+    // Dan is het een historisch feit, geen openstaande vraag.
+    expect(
+      getDealWorkflow(
+        deal({ stage: "bezig", proposal_valid_until: "2026-07-12" }),
+        [task({ due_date: "2026-07-20" })],
+        now,
+      ).kind,
+    ).toBe("scheduled");
+  });
+
+  it("laat een voorstel dat nog geldt met rust", () => {
+    expect(
+      getDealWorkflow(
+        deal({
+          stage: "informatie-pipeline",
+          proposal_valid_until: "2026-07-31",
+          stage_since: "2026-07-10T09:00:00.000Z",
+        }),
+        [task({ due_date: "2026-07-20" })],
+        now,
+      ).kind,
+    ).toBe("scheduled");
+  });
+
   it("summarizes the reasons that deals need attention", () => {
     const deals = [
       deal({ id: 1 }),
@@ -168,6 +318,7 @@ describe("dealWorkflow", () => {
     ).toEqual({
       overdue: 1,
       planning: 1,
+      stalled: 0,
       today: 1,
       total: 4,
       unplanned: 1,

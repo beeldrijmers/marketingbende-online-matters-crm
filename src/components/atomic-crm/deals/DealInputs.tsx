@@ -128,6 +128,15 @@ const DealMiscInputs = () => {
       />
       <DateInput source="start_date" helperText={false} />
       <DateInput source="delivery_date" helperText={false} />
+      {/* Wanneer het voorstel de deur uit ging en tot wanneer het geldt. Zonder
+          die tweede datum verloopt een voorstel zonder dat iemand het merkt: de
+          opdracht blijft op "Nog niet bevestigd" staan, net als de opdracht waar
+          volgende week antwoord op komt. */}
+      <DateInput source="proposal_sent_at" helperText={false} />
+      <DateInput
+        source="proposal_valid_until"
+        helperText="resources.deals.fields.proposal_valid_until_helper"
+      />
       <DateInput
         validate={required()}
         source="expected_closing_date"

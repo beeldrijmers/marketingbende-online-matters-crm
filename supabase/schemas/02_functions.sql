@@ -696,6 +696,33 @@ begin
 end;
 $$;
 
+CREATE OR REPLACE FUNCTION "public"."touch_deal_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
+    AS $$
+begin
+  -- "Laatste activiteit" was een aanname: updated_at werd door niets bijgewerkt,
+  -- dus vijf schermen sorteerden op wat feitelijk de aanmaakdatum was.
+  --
+  -- Waarom de vergelijking hier staat en niet in de synchronisatie: de Trello-sync
+  -- doet per kaart een onvoorwaardelijke UPDATE, ook als er niets is veranderd.
+  -- Een kale now()-trigger zou dan bij elke ronde alle opdrachten vers maken, wat
+  -- net zo onwaar is. Door de rij met zichzelf te vergelijken telt alleen een
+  -- echte wijziging, ongeacht wie hem doet: het CRM, de sync of een migratie.
+  --
+  -- Deze trigger hoort als laatste te draaien, na de triggers die NEW nog
+  -- aanpassen (assignee, stage_since, on_hold). Dat is geen toeval maar de
+  -- alfabetische volgorde waarin Postgres triggers van dezelfde soort afvuurt:
+  -- set_* en sync_* komen voor touch_*.
+  if new is distinct from old then
+    new.updated_at := now();
+  else
+    new.updated_at := old.updated_at;
+  end if;
+  return new;
+end;
+$$;
+
 CREATE OR REPLACE FUNCTION "public"."sync_deal_on_hold"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public'

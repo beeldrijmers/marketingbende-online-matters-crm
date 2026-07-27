@@ -168,6 +168,10 @@ export type Deal = {
   won_notified_at?: string | null;
   /** When a status update was last shared with the client from the CRM. */
   client_updated_at?: string | null;
+  /** Wanneer het voorstel de deur uit ging. */
+  proposal_sent_at?: string | null;
+  /** Tot wanneer het voorstel geldt; daarna vraagt de opdracht om een besluit. */
+  proposal_valid_until?: string | null;
   revenue_period?: "maandelijks" | "eenmalig" | null;
   moneybird_estimate_id?: string;
   moneybird_estimate_status?: "pending" | "completed" | "failed";
