@@ -431,6 +431,31 @@ const isHeading = (line: string): boolean => {
 };
 
 /**
+ * De derde vorm: een kop zonder enig teken eromheen.
+ *
+ *   ... en de bestaande reparatiepagina's visueel en inhoudelijk
+ *
+ *   Wat we hebben opgeleverd
+ *
+ *   7 nieuwe, volledig geoptimaliseerde reparatiepagina's per plaats.
+ *
+ * Als losse regel is die niet van een korte zin te onderscheiden, maar als blok
+ * wel: hij staat alleen tussen witregels, is kort en eindigt niet op een punt.
+ * Alleen toepassen op tekst die uit meerdere blokken bestaat, want een
+ * Trello-notitie is vaak één korte regel zonder punt ("Redirectfout verholpen")
+ * en dat is juist wel een mededeling.
+ */
+const isPlainHeadingBlock = (block: string): boolean => {
+  const trimmed = block.trim();
+  return (
+    trimmed.length > 0 &&
+    trimmed.length <= 60 &&
+    !trimmed.includes("\n") &&
+    !/[.!?]$/.test(trimmed)
+  );
+};
+
+/**
  * Alleen echte opsommingstekens weghalen, geen cijfers die bij de zin horen.
  *
  * Dit stond op `^[-*•\d.)\s]+`, en dat at het begin op van "15 nieuwe,
@@ -441,24 +466,34 @@ const isHeading = (line: string): boolean => {
 const stripListMarker = (line: string): string =>
   line.replace(/^\s*(?:[-*•‣]+|\d{1,2}[.)])\s+/, "");
 
-const evidenceLines = (item: ReportEvidenceItem, pattern: RegExp): string[] =>
-  unwrapHardBreaks(item.excerpt)
-    .split(/\n|(?<=[.!?])\s+/)
-    .filter((line) => !isHeading(line))
-    .map((line) =>
-      stripEmphasis(
-        stripListMarker(line)
-          .replace(/^#+\s*/, "")
-          .trim(),
-      ),
-    )
-    .filter((line) => !PLEASANTRY.test(line))
-    .filter((line) => line.length >= 18 && line.length <= 360)
-    // Begint hij na dat alles nog met een kleine letter, dan ontbreekt het begin
-    // van de zin. Aanvullen kan niet, dus dan is weglaten eerlijker dan een
-    // regel die halverwege begint.
-    .filter((line) => !/^[a-z]/.test(line))
-    .filter((line) => pattern.test(line));
+const evidenceLines = (item: ReportEvidenceItem, pattern: RegExp): string[] => {
+  const blocks = unwrapHardBreaks(item.excerpt).split(/\n\s*\n/);
+  const body =
+    blocks.length >= 3
+      ? blocks.filter((block) => !isPlainHeadingBlock(block))
+      : blocks;
+
+  return (
+    body
+      .join("\n\n")
+      .split(/\n|(?<=[.!?])\s+/)
+      .filter((line) => !isHeading(line))
+      .map((line) =>
+        stripEmphasis(
+          stripListMarker(line)
+            .replace(/^#+\s*/, "")
+            .trim(),
+        ),
+      )
+      .filter((line) => !PLEASANTRY.test(line))
+      .filter((line) => line.length >= 18 && line.length <= 360)
+      // Begint hij na dat alles nog met een kleine letter, dan ontbreekt het begin
+      // van de zin. Aanvullen kan niet, dus dan is weglaten eerlijker dan een
+      // regel die halverwege begint.
+      .filter((line) => !/^[a-z]/.test(line))
+      .filter((line) => pattern.test(line))
+  );
+};
 
 const uniqueBullets = (values: string[], maximum: number): string[] => {
   const seen = new Set<string>();
