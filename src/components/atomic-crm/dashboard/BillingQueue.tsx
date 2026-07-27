@@ -34,7 +34,10 @@ const priority: Record<BillingState["kind"], number> = {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const daysWaiting = (deal: Deal): number | null => {
-  const since = deal.updated_at ?? deal.created_at;
+  // stage_since beweegt alleen bij een stapwijziging. updated_at wordt door de
+  // Trello-sync bij elke reactie aangeraakt, dus daarmee stond hier "0 d" bij een
+  // opdracht die al maanden op facturatie wacht.
+  const since = deal.stage_since ?? deal.updated_at ?? deal.created_at;
   if (!since) return null;
   const days = Math.floor((Date.now() - new Date(since).getTime()) / DAY_MS);
   return Number.isFinite(days) && days >= 0 ? days : null;
