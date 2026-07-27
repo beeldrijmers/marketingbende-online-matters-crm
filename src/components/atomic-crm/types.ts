@@ -192,7 +192,7 @@ export type Deal = {
 } & Pick<RaRecord, "id">;
 
 export type IntegrationRun = {
-  integration: "trello" | "gmail";
+  integration: "trello" | "gmail" | "inzyte";
   run_kind: "manual" | "backfill" | "scheduled";
   status: "running" | "success" | "partial" | "failed";
   started_at: string;
