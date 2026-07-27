@@ -9,6 +9,7 @@ import {
   useUpdate,
 } from "ra-core";
 import { CreateSheet } from "../misc/CreateSheet";
+import type { CrmDataProvider } from "../providers/types";
 import { foreignKeyMapping } from "../notes/foreignKeyMapping";
 import { TaskFormContent } from "./TaskFormContent";
 import { useQueryClient } from "@tanstack/react-query";
@@ -37,7 +38,7 @@ export const TaskCreateSheet = ({
     { enabled: contact_id != null },
   );
   const [update] = useUpdate();
-  const dataProvider = useDataProvider();
+  const dataProvider = useDataProvider<CrmDataProvider>();
   const queryClient = useQueryClient();
   const notify = useNotify();
 
@@ -58,6 +59,22 @@ export const TaskCreateSheet = ({
         queryClient.invalidateQueries({
           queryKey: ["contacts", "getOne"],
         });
+      }
+    }
+
+    // Een taak op een opdracht hoort ook op de Trello-kaart te staan, anders is
+    // het bord de bron en Kompas een kijkvenster. Bewust na de melding en zonder
+    // de dialoog open te houden: lukt het spiegelen niet, dan is de taak er wel.
+    if (data?.deal_id != null) {
+      try {
+        await dataProvider.mirrorTaskToTrello(data.id);
+      } catch (error) {
+        notify(
+          error instanceof Error
+            ? error.message
+            : "De taak staat in Kompas, maar niet op de Trello-kaart",
+          { type: "warning" },
+        );
       }
     }
 

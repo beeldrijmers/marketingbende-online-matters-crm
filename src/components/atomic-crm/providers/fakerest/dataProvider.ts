@@ -430,6 +430,8 @@ export const createDataProvider = ({
     },
     // No Trello backend in the demo; ticking a step off simply stays local.
     completeTrelloStep: async () => {},
+    // Demo heeft geen bord om naar te schrijven.
+    mirrorTaskToTrello: async () => {},
     // Demo deals are not linked to live Trello cards.
     moveTrelloDealToStage: async () => {},
     syncTrelloCards: async () => {
