@@ -721,6 +721,28 @@ const getDataProviderWithCustomMethods = () => {
 
       return data.data;
     },
+    // Spiegelt een taak die in Kompas is gemaakt naar de Trello-kaart, zodat het
+    // bord niet langer de enige bron is. Zonder dit zag niemand op de kaart wat
+    // hier gepland werd, en van de 498 taken was er dan ook geen enkele in het CRM
+    // aangemaakt.
+    async mirrorTaskToTrello(taskId: Identifier) {
+      const { error } = await getSupabaseClient().functions.invoke(
+        "trello-checkitem",
+        { method: "POST", body: { taskId, action: "create" } },
+      );
+      if (error) {
+        const errorDetails = await (async () => {
+          try {
+            return (await error?.context?.json()) ?? {};
+          } catch {
+            return {};
+          }
+        })();
+        throw new Error(
+          errorDetails?.message || "Kon de stap niet op de Trello-kaart zetten",
+        );
+      }
+    },
     // Writes a completed/reopened Trello-synced step back to its Trello card, so
     // ticking a step off in the CRM ticks it off in Trello too.
     async completeTrelloStep(taskId: Identifier, complete: boolean) {
