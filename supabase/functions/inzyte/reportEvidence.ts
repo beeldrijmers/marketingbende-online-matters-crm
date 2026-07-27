@@ -416,10 +416,30 @@ const PLEASANTRY =
   /^(?:hoi|hallo|hey|hai|beste|geachte|dag)\b|\b(?:met vriendelijke groet|met hartelijke groet|groetjes|alvast bedankt|laat (?:het|maar) weten|hoor ik graag|mocht je nog|als je nog|succes ermee|fijne dag|fijn weekend)\b/i;
 
 /**
- * Een regel die op een dubbele punt eindigt kondigt iets aan, hij beweert niets:
- * "Wat we hebben opgeleverd:" werd zo de mededeling "Wat we hebben opgeleverd."
+ * Een kop kondigt iets aan, hij beweert niets. Twee vormen komen voor in het
+ * bronmateriaal, en allebei werden ze een mededeling:
+ *
+ *   "Wat we hebben opgeleverd:"   -> "Wat we hebben opgeleverd."
+ *   "*Wat we hebben opgeleverd*"  -> "Wat we hebben opgeleverd."
+ *
+ * De tweede is de reden dat alleen op een dubbele punt letten niet genoeg was:
+ * een regel die helemaal tussen nadrukstekens staat is opmaak, geen zin.
  */
-const isHeading = (line: string): boolean => /:$/.test(line.trim());
+const isHeading = (line: string): boolean => {
+  const trimmed = line.trim();
+  return /:$/.test(trimmed) || /^\*+[^*]+\*+$/.test(trimmed);
+};
+
+/**
+ * Alleen echte opsommingstekens weghalen, geen cijfers die bij de zin horen.
+ *
+ * Dit stond op `^[-*•\d.)\s]+`, en dat at het begin op van "15 nieuwe,
+ * geoptimaliseerde pagina's opgeleverd": wat overbleef begon met een kleine
+ * letter en verdween daarna als brokstuk. Het aantal is juist het enige harde
+ * feit in zo'n zin.
+ */
+const stripListMarker = (line: string): string =>
+  line.replace(/^\s*(?:[-*•‣]+|\d{1,2}[.)])\s+/, "");
 
 const evidenceLines = (item: ReportEvidenceItem, pattern: RegExp): string[] =>
   unwrapHardBreaks(item.excerpt)
@@ -427,8 +447,7 @@ const evidenceLines = (item: ReportEvidenceItem, pattern: RegExp): string[] =>
     .filter((line) => !isHeading(line))
     .map((line) =>
       stripEmphasis(
-        line
-          .replace(/^[-*•\d.)\s]+/, "")
+        stripListMarker(line)
           .replace(/^#+\s*/, "")
           .trim(),
       ),
@@ -457,8 +476,11 @@ const uniqueBullets = (values: string[], maximum: number): string[] => {
   return result;
 };
 
+// De verbogen vorm telt mee: "15 nieuwe, volledig geoptimaliseerde pagina's" is
+// de zin die het meest concreet zegt wat er is opgeleverd, en die viel af omdat
+// alleen "geoptimaliseerd" zonder uitgang werd herkend.
 const COMPLETED_PATTERN =
-  /\b(?:afgerond|aangepast|aangescherpt|gebouwd|gecontroleerd|gecorrigeerd|geïndexeerd|geoptimaliseerd|gepubliceerd|gerepareerd|geschreven|hersteld|ingediend|live gezet|opgeleverd|toegevoegd|uitgevoerd|verholpen|vernieuwd)\b/i;
+  /\b(?:afgerond|aangepast|aangescherpt|gebouwd|gecontroleerd|gecorrigeerd|geïndexeerd|geoptimaliseerd|gepubliceerd|gerepareerd|geschreven|hersteld|ingediend|live gezet|opgeleverd|toegevoegd|uitgevoerd|verholpen|vernieuwd)e?\b/i;
 const FUTURE_PATTERN =
   /\b(?:aanbevel|blijven monitoren|komende maand|komende periode|daarna|focus|gaan we|inplannen|monitoren|oppakken|uitbreiden|verder|vervolg|zodra)\b/i;
 
