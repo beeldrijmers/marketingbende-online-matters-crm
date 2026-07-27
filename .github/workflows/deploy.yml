@@ -45,6 +45,7 @@ jobs:
             GOOGLE_CLIENT_SECRET: ${{secrets.GOOGLE_CLIENT_SECRET}}
             GMAIL_ENC_KEY: ${{secrets.GMAIL_ENC_KEY}}
             GMAIL_SYNC_SECRET: ${{secrets.GMAIL_SYNC_SECRET}}
+            INZYTE_REPORT_SECRET: ${{secrets.INZYTE_REPORT_SECRET}}
             CRM_SMOKE_EMAIL: ${{secrets.CRM_SMOKE_EMAIL}}
             CRM_SMOKE_PASSWORD: ${{secrets.CRM_SMOKE_PASSWORD}}
             RESEND_API_KEY: ${{secrets.RESEND_API_KEY}}
@@ -147,6 +148,10 @@ jobs:
                   npx supabase secrets set GMAIL_ENC_KEY=${{ env.GMAIL_ENC_KEY }}
                   npx supabase secrets set GMAIL_SYNC_SECRET=${{ env.GMAIL_SYNC_SECRET }}
 
+            - if: ${{ env.IS_SUPABASE_CONFIGURED && env.INZYTE_REPORT_SECRET }}
+              name: 📡 Push supabase monthly report secret
+              run: npx supabase secrets set INZYTE_REPORT_SECRET=${{ env.INZYTE_REPORT_SECRET }}
+
             - if: ${{ env.IS_SUPABASE_CONFIGURED && env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET }}
               name: 📡 Push supabase Google OAuth client secrets
               run: |
@@ -230,6 +235,51 @@ jobs:
                     "select created, status_code, timed_out, error_msg, content::jsonb #>> '{data,connections}' as connections, content::jsonb #>> '{data,failed}' as failed from net._http_response where content like '%\"connections\"%' order by created desc limit 1;"
                   npx supabase db query --linked \
                     "select started_at, status, items_processed, failed_count from public.integration_runs where integration = 'gmail' and run_kind = 'scheduled' order by started_at desc limit 1;"
+
+            # De maandrapportage draait binnen Supabase om dezelfde reden als de
+            # Gmail-taak: geen afhankelijkheid van de planner van GitHub Actions.
+            # De project-URL is hier al in de Vault gezet door de stap hierboven.
+            - if: ${{ env.IS_SUPABASE_CONFIGURED && env.INZYTE_REPORT_SECRET }}
+              name: ⏱️ Provision Supabase Monthly Report Cron
+              shell: bash
+              run: |
+                  report_secret_b64=$(printf '%s' "$INZYTE_REPORT_SECRET" | base64 | tr -d '\n')
+                  sql_fifo=$(mktemp)
+                  rm -f "$sql_fifo"
+                  mkfifo -m 600 "$sql_fifo"
+                  trap 'rm -f "$sql_fifo"' EXIT
+                  (
+                    printf '%s\n' \
+                      'do $vault$' \
+                      'declare' \
+                      '  report_secret_id uuid;' \
+                      "  report_secret_value text := convert_from(decode('$report_secret_b64', 'base64'), 'utf8');" \
+                      'begin' \
+                      "  select id into report_secret_id from vault.secrets where name = 'marketingbende_inzyte_report_secret';" \
+                      '  if report_secret_id is null then' \
+                      "    perform vault.create_secret(report_secret_value, 'marketingbende_inzyte_report_secret', 'Authentication for the monthly report Cron Edge Function call');" \
+                      '  else' \
+                      "    perform vault.update_secret(report_secret_id, report_secret_value, 'marketingbende_inzyte_report_secret', 'Authentication for the monthly report Cron Edge Function call');" \
+                      '  end if;' \
+                      '  perform cron.alter_job(' \
+                      "    job_id := (select jobid from cron.job where jobname = 'marketingbende-monthly-reports')," \
+                      '    active := true' \
+                      '  );' \
+                      'end' \
+                      '$vault$;'
+                  ) > "$sql_fifo" &
+                  writer_pid=$!
+                  if ! npx supabase db query --linked --file "$sql_fifo" >/dev/null 2>&1; then
+                    kill "$writer_pid" >/dev/null 2>&1 || true
+                    wait "$writer_pid" 2>/dev/null || true
+                    echo "::error::Could not provision the Monthly Report Cron Vault value"
+                    exit 1
+                  fi
+                  wait "$writer_pid"
+                  rm -f "$sql_fifo"
+                  trap - EXIT
+                  npx supabase db query --linked \
+                    "select jobname, schedule, active from cron.job where jobname = 'marketingbende-monthly-reports';"
 
             # Keep a dedicated, non-admin account for the authenticated
             # production monitor. The service key is fetched ephemerally with

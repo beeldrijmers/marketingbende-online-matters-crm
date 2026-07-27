@@ -40,6 +40,9 @@ export const IntegrationStatus = () => {
     (candidate) => candidate.integration === "trello",
   );
   const gmailRun = data.find((candidate) => candidate.integration === "gmail");
+  const reportRun = data.find(
+    (candidate) => candidate.integration === "inzyte",
+  );
 
   return (
     <section className="flex min-w-0 flex-col gap-2.5">
@@ -69,6 +72,9 @@ export const IntegrationStatus = () => {
           <div className="divide-y">
             {trelloRun ? <RunDetails run={trelloRun} label="Trello" /> : null}
             {gmailRun ? <RunDetails run={gmailRun} label="Gmail" /> : null}
+            {reportRun ? (
+              <RunDetails run={reportRun} label="Maandrapportage" />
+            ) : null}
             {!trelloRun && !gmailRun ? (
               <div className="flex items-start gap-3 p-4">
                 <AlertTriangle className="mt-0.5 size-4 shrink-0 text-wait" />

@@ -3,6 +3,10 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { AuthMiddleware, UserMiddleware } from "../_shared/authentication.ts";
 import { corsHeaders, OptionsMiddleware } from "../_shared/cors.ts";
 import { getUserSale } from "../_shared/getUserSale.ts";
+import {
+  finishIntegrationRun,
+  startIntegrationRun,
+} from "../_shared/integrationRun.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { siblingVerificationMatch } from "./siblingVerification.ts";
 import { verificationFromReport } from "./verificationFromReport.ts";
@@ -32,6 +36,13 @@ import {
   type ReportEvidenceBundle,
   type ReportNarrative,
 } from "./reportEvidence.ts";
+import {
+  pendingReportDeals,
+  RECURRING_STAGE,
+  REPORTS_PER_RUN,
+  runScheduledReports,
+  type SchedulableLink,
+} from "./scheduledReports.ts";
 import { verifySelectedSources } from "./sourceVerification.ts";
 
 type JsonObject = Record<string, unknown>;
@@ -194,15 +205,30 @@ const callInzyte = async (
   }
 };
 
-const getDealContext = async (dealId: number, sale: JsonObject) => {
+const DEAL_REPORT_SELECT =
+  "id, name, company_id, assignee_ids, sales_id, description, category, created_at, revenue_period, moneybird_estimate_id, moneybird_estimate_live_state, moneybird_estimate_checked_at, moneybird_invoice_id, moneybird_invoice_live_state, moneybird_invoice_checked_at, companies(id, name, website)";
+
+/**
+ * De opdracht zoals de rapportage hem nodig heeft, zonder toegangscontrole. De
+ * geplande maandtaak heeft geen ingelogde gebruiker om tegen te toetsen, dus die
+ * controle hoort een laag hoger te zitten dan het ophalen zelf.
+ */
+const loadReportDeal = async (dealId: number): Promise<JsonObject | null> => {
   const { data: deal, error } = await supabaseAdmin
     .from("deals")
-    .select(
-      "id, name, company_id, assignee_ids, sales_id, description, category, created_at, revenue_period, moneybird_estimate_id, moneybird_estimate_live_state, moneybird_estimate_checked_at, moneybird_invoice_id, moneybird_invoice_live_state, moneybird_invoice_checked_at, companies(id, name, website)",
-    )
+    .select(DEAL_REPORT_SELECT)
     .eq("id", dealId)
     .maybeSingle();
-  if (error || !deal) return { error: "not_found" as const };
+  if (error || !deal) return null;
+  const company = Array.isArray(deal.companies)
+    ? deal.companies[0] || null
+    : deal.companies || null;
+  return { ...deal, companies: company };
+};
+
+const getDealContext = async (dealId: number, sale: JsonObject) => {
+  const deal = await loadReportDeal(dealId);
+  if (!deal) return { error: "not_found" as const };
 
   const saleId = Number(sale.id);
   const assignees = Array.isArray(deal.assignee_ids)
@@ -213,10 +239,7 @@ const getDealContext = async (dealId: number, sale: JsonObject) => {
     return { error: "forbidden" as const };
   }
 
-  const company = Array.isArray(deal.companies)
-    ? deal.companies[0] || null
-    : deal.companies || null;
-  return { deal: { ...deal, companies: company } };
+  return { deal };
 };
 
 const getLink = async (dealId: number): Promise<InzyteLink | null> => {
@@ -1620,8 +1643,126 @@ const handleRequest = async (
   }
 };
 
-Deno.serve(async (req: Request) =>
-  OptionsMiddleware(req, async (req) =>
+/**
+ * De maandelijkse ronde: voor elke vaste klant een concept klaarzetten.
+ *
+ * Geen ingelogde gebruiker, dus de opdracht wordt op naam van zijn eigen
+ * eigenaar gegenereerd. Dat is niet alleen administratief netjes: de mailcontext
+ * in de rapportage komt uit de Gmail-koppeling van diezelfde eigenaar.
+ */
+const handleScheduledReports = async (): Promise<Response> => {
+  const startedAt = Date.now();
+  const period = monthlyReportPeriod(undefined);
+  const reportingMonth = period.reportingMonth;
+
+  const { data: recurringDeals, error: dealsError } = await supabaseAdmin
+    .from("deals")
+    .select("id")
+    .eq("stage", RECURRING_STAGE)
+    .is("archived_at", null);
+  if (dealsError) return jsonResponse({ error: dealsError.message }, 500);
+
+  const dealIds = (recurringDeals ?? []).map((row) => Number(row.id));
+  if (dealIds.length === 0) {
+    return jsonResponse({ data: { reportingMonth, generated: 0, pending: 0 } });
+  }
+
+  const [{ data: links, error: linksError }, { data: reported }] =
+    await Promise.all([
+      supabaseAdmin
+        .from("inzyte_links")
+        .select(
+          "deal_id, ga4_connection_id, ga4_property_id, gsc_site_url, gbp_location_id, ads_customer_id",
+        )
+        .in("deal_id", dealIds),
+      supabaseAdmin
+        .from("seo_monthly_reports")
+        .select("deal_id")
+        .eq("reporting_month", reportingMonth)
+        .in("deal_id", dealIds),
+    ]);
+  if (linksError) return jsonResponse({ error: linksError.message }, 500);
+
+  const reportedDealIds = (reported ?? []).map((row) => Number(row.deal_id));
+  const allPending = pendingReportDeals({
+    links: (links ?? []) as SchedulableLink[],
+    reportedDealIds,
+    limit: Number.MAX_SAFE_INTEGER,
+  });
+  const batch = allPending.slice(0, REPORTS_PER_RUN);
+
+  // Niets te doen is de normale uitkomst: de taak draait vaker dan er werk is,
+  // zodat een storing bij Google niet betekent dat een klant een maand mist. Dan
+  // hoort er ook geen statusregel bij te komen, anders verdrinkt de echte ronde
+  // in lege regels.
+  if (batch.length === 0) {
+    return jsonResponse({ data: { reportingMonth, generated: 0, pending: 0 } });
+  }
+
+  const runId = await startIntegrationRun({
+    integration: "inzyte",
+    runKind: "scheduled",
+    startedAt,
+  });
+
+  const outcomes = await runScheduledReports({
+    dealIds: batch,
+    generate: async (dealId) => {
+      const deal = await loadReportDeal(dealId);
+      if (!deal) throw new Error(`Opdracht ${dealId} niet gevonden.`);
+      const ownerId = Number(deal.sales_id);
+      if (!Number.isInteger(ownerId) || ownerId <= 0) {
+        throw new Error(`Opdracht ${dealId} heeft geen eigenaar.`);
+      }
+      const link = await getLink(dealId);
+      await generateMonthlyReport(
+        deal,
+        link,
+        ownerId,
+        reportingMonth.slice(0, 7),
+      );
+    },
+  });
+
+  const failures = outcomes.filter((outcome) => !outcome.ok);
+  await finishIntegrationRun({
+    runId,
+    status: failures.length === 0 ? "success" : "partial",
+    durationMs: Date.now() - startedAt,
+    itemsProcessed: outcomes.length - failures.length,
+    failedCount: failures.length,
+    summary: {
+      reportingMonth,
+      outcomes,
+      remaining: allPending.length - batch.length,
+    },
+    error: failures[0]?.error ?? null,
+  });
+
+  return jsonResponse(
+    {
+      data: {
+        reportingMonth,
+        generated: outcomes.length - failures.length,
+        failed: failures.length,
+        pending: allPending.length - batch.length,
+        outcomes,
+      },
+    },
+    failures.length > 0 ? 207 : 200,
+  );
+};
+
+Deno.serve(async (req: Request) => {
+  const scheduledSecret = Deno.env.get("INZYTE_REPORT_SECRET");
+  if (
+    req.method === "POST" &&
+    scheduledSecret &&
+    req.headers.get("x-inzyte-report-secret") === scheduledSecret
+  ) {
+    return handleScheduledReports();
+  }
+  return OptionsMiddleware(req, async (req) =>
     AuthMiddleware(req, async (req) =>
       UserMiddleware(req, async (req, user) =>
         user
@@ -1629,5 +1770,5 @@ Deno.serve(async (req: Request) =>
           : createErrorResponse(401, "Unauthorized"),
       ),
     ),
-  ),
-);
+  );
+});
