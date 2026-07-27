@@ -489,9 +489,14 @@ export const buildMonthlyHeadlineMetrics = ({
       ),
     }),
   ];
-  const availableMetrics = metrics.filter(
-    (metric): metric is MonthlyHeadlineMetric => metric !== null,
-  );
+  const availableMetrics = metrics
+    .filter((metric): metric is MonthlyHeadlineMetric => metric !== null)
+    // Nul tegenover nul is geen meting maar een leeg antwoord. Hunting XL kreeg
+    // zo "0 sessies, 0 conversies" als vastgesteld feit gerapporteerd, terwijl
+    // de bron gewoon niets teruggaf: de aanroep slaagde, maar coreMetrics en
+    // trafficData waren leeg. Een klant leest dat als "niemand kwam", en dat is
+    // een bewering die we niet kunnen doen.
+    .filter((metric) => metric.current !== 0 || metric.previous !== 0);
   const detailedBusinessProfileActions = new Set([
     "businessProfileWebsiteClicks",
     "businessProfileCalls",

@@ -178,3 +178,25 @@ describe("hasSuccessfulMonthlyComparison", () => {
     ).toBe(true);
   });
 });
+
+describe("een leeg antwoord is geen nulmeting", () => {
+  it("laat een kerncijfer weg dat in beide maanden nul is", () => {
+    // Hunting XL: de aanroep slaagde, maar coreMetrics en trafficData waren
+    // leeg. Het rapport meldde daarop "0 sessies" en "0 conversies" als
+    // vastgesteld feit, en een klant leest dat als "er kwam niemand".
+    const leeg = { goalMetrics: { conversions: 0 }, coreMetrics: {} };
+
+    expect(
+      buildMonthlyHeadlineMetrics({ ga4Current: leeg, ga4Previous: leeg }),
+    ).toEqual([]);
+  });
+
+  it("houdt een echte nul wel vast als er beweging in zit", () => {
+    const metrics = buildMonthlyHeadlineMetrics({
+      ga4Current: { goalMetrics: { conversions: 0 } },
+      ga4Previous: { goalMetrics: { conversions: 4 } },
+    });
+
+    expect(metrics.map((metric) => metric.key)).toContain("conversions");
+  });
+});

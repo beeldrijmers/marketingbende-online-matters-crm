@@ -543,3 +543,41 @@ describe("een kop zonder opmaak", () => {
     expect(uitMail).not.toMatch(/Wat we hebben opgeleverd\./);
   });
 });
+
+describe("een kop die het feit zelf draagt", () => {
+  it("houdt het aantal, en laat de lege aankondiging weg", () => {
+    // Uit de juni-mail van RT Interieur. De rapportage meldde "geen
+    // werkzaamheden vastgelegd" terwijl deze regel er letterlijk stond.
+    const werk = buildDefaultReportNarrative({
+      companyName: "RT Interieur",
+      period,
+      metrics: [],
+      evidence: buildReportEvidence({
+        assignmentDescription: "",
+        currentWork: [],
+        allTimeWork: [],
+        currentNotes: [],
+        allTimeNotes: [],
+        sentMail: [
+          {
+            id: "mail-1",
+            subject: "Statusupdate juni",
+            date: "2026-06-22T10:00:00Z",
+            text: [
+              "*Wat we hebben opgeleverd*",
+              "",
+              "*Opgeleverd: 15 nieuwe landingspagina's*",
+              "",
+              "Slaapkamer",
+            ].join("\n"),
+          },
+        ],
+        gmailStatus: "ok",
+        period,
+      }),
+    }).workSummary;
+
+    expect(werk).toContain("Opgeleverd: 15 nieuwe landingspagina's");
+    expect(werk).not.toMatch(/Wat we hebben opgeleverd\./);
+  });
+});
