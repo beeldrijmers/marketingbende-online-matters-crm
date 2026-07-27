@@ -143,4 +143,69 @@ describe("TaskCreateSheet", () => {
         text: "Offerte nabellen",
       });
   });
+  // De laatste schakel van het terugschrijven naar Trello: dat de knop de functie
+  // ook echt aanroept, met het id van de net gemaakte taak, en alleen bij werk dat
+  // aan een opdracht hangt.
+  it("spiegelt een taak op een opdracht naar Trello, en een losse contacttaak niet", async () => {
+    const mirrored: unknown[] = [];
+    const mirrorTaskToTrello = async (taskId: unknown) => {
+      mirrored.push(taskId);
+    };
+
+    const screen = await render(
+      <StoryWrapper
+        data={{ tasks: [] }}
+        dataProvider={{ mirrorTaskToTrello } as never}
+      >
+        <TaskCreateSheet open deal_id={42} onOpenChange={() => undefined} />
+      </StoryWrapper>,
+    );
+
+    await screen.getByLabelText(/description/i).fill("Akkoord ophalen");
+    await screen.getByRole("button", { name: /^save$/i }).click();
+
+    await expect.element(screen.getByText("Task added")).toBeInTheDocument();
+    await expect.poll(() => mirrored.length).toBe(1);
+    expect(mirrored[0]).not.toBeUndefined();
+  });
+
+  it("laat de taak staan als het spiegelen naar Trello mislukt", async () => {
+    // Trello kan plat liggen of de kaart kan weg zijn. De taak is dan al gemaakt,
+    // en stil falen zou de indruk geven dat het bord bij is.
+    const mirrorTaskToTrello = async () => {
+      throw new Error("Trello kon niet worden bijgewerkt.");
+    };
+    let dataProvider: DataProvider | null = null;
+    const DataProviderListener = () => {
+      dataProvider = useDataProvider();
+      return null;
+    };
+
+    const screen = await render(
+      <StoryWrapper
+        data={{ tasks: [] }}
+        dataProvider={{ mirrorTaskToTrello } as never}
+      >
+        <TaskCreateSheet open deal_id={42} onOpenChange={() => undefined} />
+        <DataProviderListener />
+      </StoryWrapper>,
+    );
+
+    await screen.getByLabelText(/description/i).fill("Bellen over akkoord");
+    await screen.getByRole("button", { name: /^save$/i }).click();
+
+    await expect
+      .element(screen.getByText("Trello kon niet worden bijgewerkt."))
+      .toBeInTheDocument();
+    await expect
+      .poll(async () => {
+        const { data } = await dataProvider!.getList("tasks", {
+          filter: {},
+          pagination: { page: 1, perPage: 10 },
+          sort: { field: "id", order: "ASC" },
+        });
+        return data.some((task) => task.text === "Bellen over akkoord");
+      })
+      .toBe(true);
+  });
 });
