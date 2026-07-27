@@ -4,6 +4,7 @@ import { AuthMiddleware, UserMiddleware } from "../_shared/authentication.ts";
 import { corsHeaders, OptionsMiddleware } from "../_shared/cors.ts";
 import { getUserSale } from "../_shared/getUserSale.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
+import { siblingVerificationMatch } from "./siblingVerification.ts";
 import { createErrorResponse } from "../_shared/utils.ts";
 import {
   buildRemoteRequest,
@@ -620,6 +621,31 @@ const runRemoteAction = async (
         updated_at: verifiedAt,
       })
       .eq("id", link.id);
+
+    // Dezelfde bron bij dezelfde klant hoeft niet nog eens gecontroleerd te
+    // worden. Hunting XL had vier opdrachten met exact deze GA4-property, dus
+    // moest je vier keer hetzelfde bevestigen en liet elke rapportage tot dan de
+    // cijfers weg. Alleen bij een identieke bron, want een andere property is een
+    // andere meting en verdient zijn eigen controle.
+    if (verificationField) {
+      const sibling = siblingVerificationMatch(link, verificationField);
+      if (sibling) {
+        const { error: siblingError } = await supabaseAdmin
+          .from("inzyte_links")
+          .update({ [verificationField]: verifiedAt, updated_at: verifiedAt })
+          .eq("company_id", sibling.companyId)
+          .eq(sibling.column, sibling.value)
+          .is(verificationField, null);
+        if (siblingError) {
+          // Geen harde fout: deze opdracht is bevestigd, de rest volgt bij een
+          // volgende controle.
+          console.error(
+            "Inzyte sibling verification failed",
+            siblingError.code,
+          );
+        }
+      }
+    }
     return { result, runId };
   } catch (error) {
     const message = safeRunError(error, action);
