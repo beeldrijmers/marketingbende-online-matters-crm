@@ -478,6 +478,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/misc/googleScopes.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/misc/fetchWithTimeout.ts",
           "type": "registry:component"
         },
