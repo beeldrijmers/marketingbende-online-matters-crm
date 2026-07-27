@@ -588,7 +588,13 @@ export const buildDefaultReportNarrative = ({
           : `In ${monthLabel(period.reportingMonth)} hebben we voor ${companyName} verder gewerkt aan de afgesproken digitale doelen. Deze update combineert gecontroleerde meetgegevens met ${currentSourceCount} relevante voortgangsbron${currentSourceCount === 1 ? "" : "nen"} uit de opdracht.`,
       ]
     : [
-        `In ${monthLabel(period.reportingMonth)} hebben we de voortgang voor ${companyName} in kaart gebracht op basis van ${currentSourceCount} relevante voortgangsbron${currentSourceCount === 1 ? "" : "nen"} uit de opdracht. Er was geen volledige gecontroleerde meetreeks beschikbaar; deze update gaat daarom over aantoonbaar uitgevoerd werk en voortgang, niet over verkeers- of rankingresultaten.`,
+        // Geen cijfers en geen bronnen: dan is er niets om te rapporteren, en
+        // dat hoort er te staan. Anders belooft de openingszin een update "op
+        // basis van 0 voortgangsbronnen" over "aantoonbaar uitgevoerd werk" dat
+        // er niet is -- een rapportage die alleen zichzelf beschrijft.
+        currentSourceCount === 0
+          ? `Over ${monthLabel(period.reportingMonth)} is voor ${companyName} geen gecontroleerde meetreeks beschikbaar en zijn er geen werkzaamheden vastgelegd. Er is dus nog niets dat we verantwoord met de klant kunnen delen; controleer de meetbron of leg de werkzaamheden van deze maand vast.`
+          : `In ${monthLabel(period.reportingMonth)} hebben we de voortgang voor ${companyName} in kaart gebracht op basis van ${currentSourceCount} relevante voortgangsbron${currentSourceCount === 1 ? "" : "nen"} uit de opdracht. Er was geen volledige gecontroleerde meetreeks beschikbaar; deze update gaat daarom over aantoonbaar uitgevoerd werk en voortgang, niet over verkeers- of rankingresultaten.`,
       ];
   if (favourable) {
     summary.push(
