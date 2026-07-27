@@ -40,6 +40,13 @@ create or replace trigger sync_deal_on_hold_trigger
     before insert or update on public.deals
     for each row execute function public.sync_deal_on_hold();
 
+-- Maakt "laatste activiteit" waar. De naam moet alfabetisch na set_* en sync_*
+-- komen: Postgres vuurt triggers van dezelfde soort in die volgorde af, en deze
+-- vergelijkt de rij met zichzelf nadat de andere triggers NEW hebben aangepast.
+create or replace trigger touch_deal_updated_at_trigger
+    before update on public.deals
+    for each row execute function public.touch_deal_updated_at();
+
 -- Keep every actionable deal supplied with one dated next step. A concrete
 -- manual or Trello task replaces the generic automatic reminder.
 create or replace trigger ensure_deal_next_action_trigger

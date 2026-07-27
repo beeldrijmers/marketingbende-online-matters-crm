@@ -3,6 +3,7 @@ import {
   CalendarClock,
   CircleDot,
   Clock3,
+  Hourglass,
   ListTodo,
   Search,
   X,
@@ -57,6 +58,13 @@ const filters: {
     label: "Niet gepland",
     icon: ListTodo,
     count: (counts) => counts.unplanned,
+    tone: "quiet",
+  },
+  {
+    key: "stalled",
+    label: "Blijft liggen",
+    icon: Hourglass,
+    count: (counts) => counts.stalled,
     tone: "quiet",
   },
 ];

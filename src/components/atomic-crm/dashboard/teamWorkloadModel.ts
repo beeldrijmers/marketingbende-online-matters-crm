@@ -25,6 +25,7 @@ const isOpenDeal = (deal: Deal) =>
 const EMPTY_COUNTS: DealAttentionCounts = {
   overdue: 0,
   planning: 0,
+  stalled: 0,
   today: 0,
   total: 0,
   unplanned: 0,
@@ -51,7 +52,10 @@ const countWorkflow = (
   kind: string,
 ): DealAttentionCounts => ({
   overdue: counts.overdue + (kind === "overdue" ? 1 : 0),
-  planning: counts.planning + (kind === "overdue_closing" ? 1 : 0),
+  planning:
+    counts.planning +
+    (kind === "overdue_closing" || kind === "proposal_expired" ? 1 : 0),
+  stalled: counts.stalled + (kind === "stalled" ? 1 : 0),
   today: counts.today + (kind === "today" ? 1 : 0),
   total: counts.total + 1,
   unplanned:

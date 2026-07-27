@@ -37,13 +37,21 @@ export const generateDeals = (
       .toISOString()
       .split("T")[0];
 
+    // Een voorstel bestaat alleen zolang een opdracht nog niet bevestigd is; de
+    // helft ervan is verlopen, zodat de demo dat signaal ook echt laat zien.
+    const stage = random.arrayElement(dealStages).value;
+    const proposalSentAt =
+      stage === "informatie-pipeline"
+        ? randomDate(new Date(created_at)).toISOString().split("T")[0]
+        : null;
+
     return {
       id,
       name: lowercaseName[0].toUpperCase() + lowercaseName.slice(1),
       company_id: company.id,
       contact_ids: contacts.map((contact) => contact.id),
       category: random.arrayElement(dealCategories).value,
-      stage: random.arrayElement(dealStages).value,
+      stage,
       description: lorem.paragraphs(datatype.number({ min: 1, max: 4 })),
       amount: datatype.number(1000) * 100,
       revenue_period: random.arrayElement(["maandelijks", "eenmalig"]) as
@@ -55,6 +63,12 @@ export const generateDeals = (
       created_at,
       updated_at: randomDate(new Date(created_at)).toISOString(),
       stage_since: randomDate(new Date(created_at)).toISOString(),
+      proposal_sent_at: proposalSentAt,
+      proposal_valid_until: proposalSentAt
+        ? add(new Date(proposalSentAt), { days: 30 })
+            .toISOString()
+            .split("T")[0]
+        : null,
       expected_closing_date,
       sales_id: company.sales_id!,
       index: 0,

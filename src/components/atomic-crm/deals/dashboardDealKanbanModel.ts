@@ -10,7 +10,8 @@ export type AttentionPipelineFilter =
   | "overdue"
   | "today"
   | "planning"
-  | "unplanned";
+  | "unplanned"
+  | "stalled";
 
 const attentionPipelineFilters: readonly AttentionPipelineFilter[] = [
   "all",
@@ -18,6 +19,7 @@ const attentionPipelineFilters: readonly AttentionPipelineFilter[] = [
   "today",
   "planning",
   "unplanned",
+  "stalled",
 ];
 
 export const parseAttentionPipelineFilter = (
@@ -40,8 +42,14 @@ export const matchesAttentionPipelineFilter = (
   if (filter === "all") return true;
   if (filter === "overdue") return rankedDeal.workflow.kind === "overdue";
   if (filter === "today") return rankedDeal.workflow.kind === "today";
+  // Een verlopen voorstel is dezelfde soort afwijking als een verlopen
+  // planning: een datum die is gepasseerd zonder dat iemand iets deed.
   if (filter === "planning")
-    return rankedDeal.workflow.kind === "overdue_closing";
+    return (
+      rankedDeal.workflow.kind === "overdue_closing" ||
+      rankedDeal.workflow.kind === "proposal_expired"
+    );
+  if (filter === "stalled") return rankedDeal.workflow.kind === "stalled";
   return (
     rankedDeal.workflow.kind === "missing" ||
     rankedDeal.workflow.kind === "unscheduled"

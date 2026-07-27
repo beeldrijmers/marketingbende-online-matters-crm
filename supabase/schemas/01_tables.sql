@@ -140,6 +140,11 @@ create table public.deals (
     -- zegt dus niets over hoe lang iets al wacht.
     stage_since timestamp with time zone not null default now(),
     client_updated_at timestamp with time zone,
+    -- Wanneer het voorstel de deur uit ging en tot wanneer het geldt. Een
+    -- voorstel dat verloopt is een verloren opdracht die niemand ziet gebeuren:
+    -- de opdracht blijft gewoon op "Nog niet bevestigd" staan.
+    proposal_sent_at date,
+    proposal_valid_until date,
     moneybird_estimate_id text,
     moneybird_estimate_status text,
     moneybird_estimate_claimed_at timestamp with time zone,

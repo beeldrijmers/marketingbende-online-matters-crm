@@ -1,4 +1,10 @@
-import { CalendarClock, CircleAlert, Clock3, ListTodo } from "lucide-react";
+import {
+  CalendarClock,
+  CircleAlert,
+  Clock3,
+  Hourglass,
+  ListTodo,
+} from "lucide-react";
 import { useTranslate } from "ra-core";
 
 import { cn } from "@/lib/utils";
@@ -25,6 +31,10 @@ const toneOf = (workflow: DealWorkflow): WorkflowTone => {
   // so it stays quiet — otherwise red would mean "a deal exists".
   if (workflow.kind === "overdue") return "late";
   if (workflow.kind === "today") return "wait";
+  // Een verlopen voorstel is een besluit dat vandaag genomen moet worden: er
+  // ligt een prijs die niet meer geldt. Stilstand is minder acuut en blijft
+  // stil, anders is de helft van het bord weer gekleurd.
+  if (workflow.kind === "proposal_expired") return "wait";
   // Wachtend werk waarvan de eigen vervolgdatum al verstreken is: het wacht niet
   // meer op iemand anders, het is vergeten.
   if (workflow.kind === "on_hold") {
@@ -56,6 +66,20 @@ const useWorkflowLabel = (workflow: DealWorkflow): string => {
       return translate("resources.deals.workflow.plan_overdue", {
         _: "Planning verlopen",
       });
+    case "proposal_expired": {
+      const validUntil = workflow.proposalValidUntil?.slice(0, 10);
+      return validUntil
+        ? `Voorstel verlopen ${formatISODateString(validUntil)}`
+        : translate("resources.deals.workflow.proposal_expired", {
+            _: "Voorstel verlopen",
+          });
+    }
+    case "stalled": {
+      const days = workflow.daysOnStage;
+      return days == null
+        ? translate("resources.deals.workflow.stalled", { _: "Blijft liggen" })
+        : `Blijft liggen, ${days} dagen`;
+    }
     case "missing":
       return translate("resources.deals.workflow.plan_next", {
         _: "Plan volgende stap",
@@ -81,8 +105,15 @@ const useWorkflowLabel = (workflow: DealWorkflow): string => {
 };
 
 const WorkflowIcon = ({ workflow }: { workflow: DealWorkflow }) => {
-  if (workflow.kind === "overdue" || workflow.kind === "overdue_closing") {
+  if (
+    workflow.kind === "overdue" ||
+    workflow.kind === "overdue_closing" ||
+    workflow.kind === "proposal_expired"
+  ) {
     return <CircleAlert className="size-3.5 shrink-0" />;
+  }
+  if (workflow.kind === "stalled") {
+    return <Hourglass className="size-3.5 shrink-0" />;
   }
   if (workflow.kind === "today") {
     return <Clock3 className="size-3.5 shrink-0" />;

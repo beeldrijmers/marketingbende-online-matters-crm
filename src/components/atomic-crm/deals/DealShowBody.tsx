@@ -79,6 +79,14 @@ export const DealShowBody = ({
   // "past" (new Date("YYYY-MM-DD") parses as UTC midnight, which incorrectly
   // flagged today's deals for almost the whole day).
   const closingIsPast = isBeforeToday(record.expected_closing_date);
+  const proposalSentLabel = formatISODateString(record.proposal_sent_at);
+  const proposalValidLabel = formatISODateString(record.proposal_valid_until);
+  // Een voorstel dat verloopt terwijl de opdracht nog niet bevestigd is, is een
+  // besluit dat genomen moet worden. Is de opdracht wel bevestigd, dan is de
+  // datum een historisch feit en hoort er geen kleur bij.
+  const proposalIsExpired =
+    record.stage === "informatie-pipeline" &&
+    isBeforeToday(record.proposal_valid_until);
   const clientUpdateLabel = formatTimestampDate(record.client_updated_at);
   // Three weeks of silence on live work is the thing a client complains about,
   // so it is marked like an overdue date rather than shown as a neutral fact.
@@ -258,6 +266,26 @@ export const DealShowBody = ({
                 })}
               >
                 {deliveryLabel}
+              </Fact>
+            ) : null}
+            {proposalSentLabel ? (
+              <Fact
+                label={translate("resources.deals.fields.proposal_sent_at", {
+                  _: "Voorstel verstuurd",
+                })}
+              >
+                {proposalSentLabel}
+              </Fact>
+            ) : null}
+            {proposalValidLabel ? (
+              <Fact
+                label={translate(
+                  "resources.deals.fields.proposal_valid_until",
+                  { _: "Voorstel geldig tot" },
+                )}
+                tone={proposalIsExpired ? "late" : undefined}
+              >
+                {proposalValidLabel}
               </Fact>
             ) : null}
             {/* Whether the client knows where things stand is a fact about the
