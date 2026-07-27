@@ -40,6 +40,13 @@ import {
   ONLINE_MATTERS_LOGO_URL,
   type SeoReportBrand,
 } from "./seoMonthlyReportDocument";
+import { getInzyteSourceStates } from "./inzyteVerification";
+import {
+  monthlySourceLabel,
+  type MonthlySourceKey,
+  type SourceLink,
+  verificationKeyFor,
+} from "./monthlySourceLabel";
 import type { InzyteWorkspaceController } from "./useInzyteWorkspaceController";
 
 const maxReportingMonth = (): string => {
@@ -50,7 +57,8 @@ const maxReportingMonth = (): string => {
 
 const sourceState = (
   report: SeoMonthlyReport,
-  source: "ga4" | "searchConsole" | "businessProfile" | "googleAds",
+  source: MonthlySourceKey,
+  links?: Partial<Record<MonthlySourceKey, SourceLink>>,
 ): { ok: boolean; label: string } => {
   const sources = report.report_data?.sources as
     | Record<
@@ -60,30 +68,27 @@ const sourceState = (
     | undefined;
   const current = sources?.[source]?.current?.status;
   const previous = sources?.[source]?.previous?.status;
-  if (current === "success" && previous === "success") {
-    const metricSource = {
-      ga4: "GA4",
-      searchConsole: "Search Console",
-      businessProfile: "Google Bedrijfsprofiel",
-      googleAds: "Google Ads",
-    }[source];
-    const hasUsableMetrics = report.headline_metrics.some(
+  const metricSource: string = {
+    ga4: "GA4",
+    searchConsole: "Search Console",
+    businessProfile: "Google Bedrijfsprofiel",
+    googleAds: "Google Ads",
+  }[source];
+
+  return monthlySourceLabel({
+    link: links?.[source],
+    // "unavailable" in beide maanden betekende hetzelfde als niets: de generator
+    // heeft de bron niet opgehaald.
+    hasStatus: Boolean(
+      (current || previous) &&
+        !(current === "unavailable" && previous === "unavailable"),
+    ),
+    bothMonthsMeasured: current === "success" && previous === "success",
+    hasUsableMetrics: report.headline_metrics.some(
       (metric) => metric.source === metricSource,
-    );
-    return hasUsableMetrics
-      ? { ok: true, label: "Beide maanden gemeten" }
-      : { ok: false, label: "Geen bruikbare kerncijfers" };
-  }
-  if (
-    (!current && !previous) ||
-    (current === "unavailable" && previous === "unavailable")
-  ) {
-    return { ok: false, label: "Niet gekoppeld" };
-  }
-  if (current === "failed" || previous === "failed") {
-    return { ok: false, label: "Tijdelijk niet beschikbaar" };
-  }
-  return { ok: false, label: "Onvolledig" };
+    ),
+    failed: current === "failed" || previous === "failed",
+  });
 };
 
 const metricGroupLabel = (group: SeoMonthlyHeadlineMetric["group"]): string =>
@@ -298,6 +303,7 @@ const ReportPreview = ({
   setCaveats,
   nextSteps,
   setNextSteps,
+  sourceLinks,
 }: {
   report: SeoMonthlyReport;
   companyName: string;
@@ -312,11 +318,13 @@ const ReportPreview = ({
   setCaveats: (value: string) => void;
   nextSteps: string;
   setNextSteps: (value: string) => void;
+  /** Koppelstatus per bron, zodat een chip niet "niet gekoppeld" zegt over een bron die er wel hangt. */
+  sourceLinks?: Partial<Record<MonthlySourceKey, SourceLink>>;
 }) => {
-  const ga4 = sourceState(report, "ga4");
-  const gsc = sourceState(report, "searchConsole");
-  const gbp = sourceState(report, "businessProfile");
-  const ads = sourceState(report, "googleAds");
+  const ga4 = sourceState(report, "ga4", sourceLinks);
+  const gsc = sourceState(report, "searchConsole", sourceLinks);
+  const gbp = sourceState(report, "businessProfile", sourceLinks);
+  const ads = sourceState(report, "googleAds", sourceLinks);
   const hasMeasurement =
     hasCompleteMeasurementPair(report) && report.headline_metrics.length > 0;
   const isOnlineMatters = brand === "online_matters";
@@ -532,6 +540,27 @@ const SeoMonthlyReportEditor = ({
   companyName: string;
   controller: InzyteWorkspaceController;
 }) => {
+  // De koppelstatus per bron, zodat een chip niet "niet gekoppeld" zegt over een
+  // property die wel aan de opdracht hangt maar nog niet bevestigd is.
+  const sourceLinks = useMemo(() => {
+    const link = controller.bootstrap?.link ?? null;
+    const states = getInzyteSourceStates(link);
+    const byKey = new Map(states.map((state) => [state.key, state]));
+    const forSource = (key: MonthlySourceKey): SourceLink => {
+      const state = byKey.get(verificationKeyFor(key));
+      return {
+        configured: Boolean(state?.configured),
+        verified: Boolean(state?.verified),
+      };
+    };
+    return {
+      ga4: forSource("ga4"),
+      searchConsole: forSource("searchConsole"),
+      businessProfile: forSource("businessProfile"),
+      googleAds: forSource("googleAds"),
+    };
+  }, [controller.bootstrap?.link]);
+
   const [clientSummary, setClientSummary] = useState(() =>
     customerFacingText(report.client_summary || ""),
   );
@@ -709,6 +738,7 @@ const SeoMonthlyReportEditor = ({
       <ReportPreview
         report={report}
         companyName={companyName}
+        sourceLinks={sourceLinks}
         brand={brand}
         clientSummary={clientSummary}
         setClientSummary={(value) => {
