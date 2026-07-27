@@ -28,6 +28,20 @@ const isLive = (deal: Deal) =>
   deal.is_internal !== true;
 
 /**
+ * Waarover je een klant iets kunt vertellen, ook als er niets meer loopt.
+ *
+ * Zonder lopend werk verdween dit blok helemaal, en dan kon je een klant bij wie
+ * alles is opgeleverd niets meer sturen. "Waar staan we nu" is juist dan een
+ * eerlijke vraag: het antwoord is dat het af is. Niet doorgegaan werk blijft
+ * eruit, en intern werk is niet van de klant.
+ */
+const isReportable = (deal: Deal) =>
+  deal.stage !== "lost" && deal.is_internal !== true;
+
+/** Hoeveel afgeronde opdrachten er hoogstens in zo'n terugblik gaan. */
+const MAX_AFGEROND = 3;
+
+/**
  * One update for everything that runs for this client.
  *
  * Hunting XL has four open assignments. Four separate updates about one
@@ -50,7 +64,20 @@ export const CompanyStatusUpdate = () => {
     },
     { enabled: record?.id != null },
   );
-  const liveDeals = useMemo(() => deals.filter(isLive), [deals]);
+  const liveDeals = useMemo(() => {
+    const lopend = deals.filter(isLive);
+    if (lopend.length > 0) return lopend;
+    // Niets loopt: val terug op het recentst afgeronde werk, zodat er altijd een
+    // update te sturen is.
+    return [...deals]
+      .filter(isReportable)
+      .sort((links, rechts) =>
+        String(rechts.updated_at ?? rechts.created_at ?? "").localeCompare(
+          String(links.updated_at ?? links.created_at ?? ""),
+        ),
+      )
+      .slice(0, MAX_AFGEROND);
+  }, [deals]);
 
   const { data: steps = [] } = useGetList<Task>(
     "tasks",
