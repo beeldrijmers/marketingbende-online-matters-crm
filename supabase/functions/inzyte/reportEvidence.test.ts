@@ -485,3 +485,61 @@ describe("koppen en getallen aan het begin van een zin", () => {
     expect(werk).not.toMatch(/^• 1\./m);
   });
 });
+
+describe("een kop zonder opmaak", () => {
+  it("herkent hem aan zijn plaats, en laat een korte notitie met rust", () => {
+    // Letterlijk de opbouw uit de mail achter de juni-rapportage van TPP Dijkstra.
+    const uitMail = buildDefaultReportNarrative({
+      companyName: "TPP Dijkstra",
+      period,
+      metrics: [],
+      evidence: buildReportEvidence({
+        assignmentDescription: "",
+        currentWork: [],
+        allTimeWork: [],
+        // Een losse Trello-notitie is óók kort en zonder punt, maar dat is wel
+        // degelijk een mededeling. Die moet blijven staan. De aanroep geeft hem
+        // in beide lijsten mee, net als in productie: allTimeNotes levert het
+        // bewijsmateriaal, currentNotes markeert wat in de maand valt.
+        currentNotes: [
+          {
+            id: 1,
+            text: "Redirectfout op de reparatiepagina verholpen",
+            date: "2026-06-15T10:00:00Z",
+            activity_source: "trello",
+          },
+        ],
+        allTimeNotes: [
+          {
+            id: 1,
+            text: "Redirectfout op de reparatiepagina verholpen",
+            date: "2026-06-15T10:00:00Z",
+            activity_source: "trello",
+          },
+        ],
+        sentMail: [
+          {
+            id: "mail-1",
+            subject: "Maandrapportage juni",
+            date: "2026-06-28T10:00:00Z",
+            text: [
+              "Deze maand hebben we de lokale vindbaarheid uitgebouwd.",
+              "",
+              "Wat we hebben opgeleverd",
+              "",
+              "7 nieuwe, volledig geoptimaliseerde reparatiepagina's per plaats.",
+            ].join("\n"),
+          },
+        ],
+        gmailStatus: "ok",
+        period,
+      }),
+    }).workSummary;
+
+    expect(uitMail).toContain(
+      "7 nieuwe, volledig geoptimaliseerde reparatiepagina's per plaats.",
+    );
+    expect(uitMail).toContain("Redirectfout op de reparatiepagina verholpen");
+    expect(uitMail).not.toMatch(/Wat we hebben opgeleverd\./);
+  });
+});
