@@ -380,16 +380,45 @@ const MONTH_FORMATTER = new Intl.DateTimeFormat("nl-NL", {
 const monthLabel = (date: string): string =>
   MONTH_FORMATTER.format(new Date(`${date.slice(0, 7)}-01T00:00:00Z`));
 
+/**
+ * Platte-tekstmail is hard afgebroken, meestal rond de tweeënzeventig tekens.
+ * Elk regeleinde als zinseinde lezen levert dan halve zinnen op, en die kwamen
+ * zo in een klantrapportage terecht:
+ *
+ *   "de website rond hellende daken en pannendaken verder op te bouwen."
+ *   "We hebben 15 nieuwe landingspagina's gepubliceerd: 12."
+ *
+ * Een regel die niet op leesteken eindigt en wordt gevolgd door een regel die
+ * met kleine letter of cijfer begint, is geen alinea maar een doorloop. Lijsten
+ * en koppen blijven wel gescheiden: die beginnen met een streepje, een bolletje
+ * of een hoofdletter.
+ */
+export const unwrapHardBreaks = (text: string): string =>
+  text.replace(/([^\s.!?])[ \t]*\n[ \t]*(?=[a-z0-9(])/g, "$1 ");
+
+/** Markdown-nadruk hoort niet in een zin die een klant leest. */
+const stripEmphasis = (line: string): string =>
+  line
+    .replace(/\*+/g, "")
+    .replace(/(^|\s)_([^_]+)_(?=\s|$)/g, "$1$2")
+    .trim();
+
 const evidenceLines = (item: ReportEvidenceItem, pattern: RegExp): string[] =>
-  item.excerpt
+  unwrapHardBreaks(item.excerpt)
     .split(/\n|(?<=[.!?])\s+/)
     .map((line) =>
-      line
-        .replace(/^[-*•\d.)\s]+/, "")
-        .replace(/^#+\s*/, "")
-        .trim(),
+      stripEmphasis(
+        line
+          .replace(/^[-*•\d.)\s]+/, "")
+          .replace(/^#+\s*/, "")
+          .trim(),
+      ),
     )
     .filter((line) => line.length >= 18 && line.length <= 360)
+    // Begint hij na dat alles nog met een kleine letter, dan ontbreekt het begin
+    // van de zin. Aanvullen kan niet, dus dan is weglaten eerlijker dan een
+    // regel die halverwege begint.
+    .filter((line) => !/^[a-z]/.test(line))
     .filter((line) => pattern.test(line));
 
 const uniqueBullets = (values: string[], maximum: number): string[] => {
