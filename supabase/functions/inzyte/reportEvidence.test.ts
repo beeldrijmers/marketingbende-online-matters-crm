@@ -8,6 +8,7 @@ import {
   isNarrativeSupportedByMetrics,
   mergeInzyteNarrative,
   sanitizeReportEvidenceText,
+  unwrapHardBreaks,
 } from "./reportEvidence.ts";
 
 const period = {
@@ -270,5 +271,98 @@ describe("brononderbouwde SEO-maandrapportage", () => {
       evidence: evidence(),
     });
     expect(context).not.toMatch(/Geheim123|info@voorbeeld|Trello|Inzyte|CRM/);
+  });
+});
+
+describe("halve zinnen uit hard afgebroken mail", () => {
+  // De maandrapportage draait sinds vandaag vanzelf, dus deze tekst ontstaat
+  // zes keer per maand zonder dat iemand ernaar kijkt. Wat er stond:
+  //   "de website rond hellende daken en pannendaken verder op te bouwen."
+  const gewrapteMail = [
+    "In juni hebben we de strategie voortgezet om de thematische autoriteit van",
+    "de website rond hellende daken en pannendaken verder op te bouwen. Waar de",
+    "voorgaande maanden sterk op locatiepagina's gericht waren, hebben we deze",
+    "ronde bewust gekozen voor diepgang.",
+  ].join("\n");
+
+  it("plakt doorlopende regels weer aan elkaar", () => {
+    expect(unwrapHardBreaks(gewrapteMail)).toBe(
+      "In juni hebben we de strategie voortgezet om de thematische autoriteit van " +
+        "de website rond hellende daken en pannendaken verder op te bouwen. Waar de " +
+        "voorgaande maanden sterk op locatiepagina's gericht waren, hebben we deze " +
+        "ronde bewust gekozen voor diepgang.",
+    );
+  });
+
+  it("laat een opsomming een opsomming", () => {
+    const lijst = [
+      "Opgeleverd deze maand:",
+      "- vijftien pagina's",
+      "- metadata",
+    ].join("\n");
+    expect(unwrapHardBreaks(lijst)).toBe(lijst);
+  });
+
+  it("laat een nieuwe zin met hoofdletter op zijn eigen regel staan", () => {
+    const twee = "Vijftien pagina's opgeleverd\nDe metadata is bijgewerkt";
+    expect(unwrapHardBreaks(twee)).toBe(twee);
+  });
+});
+
+describe("bullets uit een hard afgebroken mail", () => {
+  const narratief = () =>
+    buildDefaultReportNarrative({
+      companyName: "MB Roofing",
+      period,
+      metrics: [],
+      evidence: buildReportEvidence({
+        assignmentDescription: "",
+        currentWork: [],
+        allTimeWork: [],
+        currentNotes: [],
+        allTimeNotes: [],
+        sentMail: [
+          {
+            id: "mail-1",
+            subject: "SEO-statusupdate juni",
+            date: "2026-06-28T10:00:00Z",
+            text: [
+              "**Wat is opgeleverd**",
+              "We hebben 15 nieuwe, geoptimaliseerde landingspagina's gepubliceerd: 12",
+              "over pannendaken en 3 over daklekkages.",
+              "In juni hebben we de strategie voortgezet om de thematische autoriteit",
+              "van de website rond hellende daken verder op te bouwen.",
+            ].join("\n"),
+          },
+        ],
+        gmailStatus: "ok",
+        period,
+      }),
+    });
+
+  it("levert hele zinnen, geen brokstukken", () => {
+    const regels = narratief()
+      .workSummary.split("\n")
+      .map((regel) => regel.replace(/^•\s*/, ""));
+
+    expect(regels).toContain(
+      "We hebben 15 nieuwe, geoptimaliseerde landingspagina's gepubliceerd: 12 over pannendaken en 3 over daklekkages.",
+    );
+    // Precies de regels die in productie in de juni-rapportage stonden.
+    expect(regels).not.toContain("Wat is opgeleverd*.");
+    expect(regels).not.toContain(
+      "We hebben 15 nieuwe, geoptimaliseerde landingspagina's gepubliceerd: 12.",
+    );
+  });
+
+  it("laat geen enkele regel met een kleine letter beginnen", () => {
+    const alles = [
+      narratief().workSummary,
+      narratief().nextSteps,
+      narratief().caveats,
+    ].join("\n");
+    for (const regel of alles.split("\n").filter(Boolean)) {
+      expect(regel.replace(/^•\s*/, "")).toMatch(/^[^a-z]/);
+    }
   });
 });

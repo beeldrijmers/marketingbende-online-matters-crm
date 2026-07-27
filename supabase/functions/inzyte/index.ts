@@ -779,10 +779,18 @@ const loadMonthlyWorkContext = async (
     currentNotes.error;
   if (error) throw error;
 
+  // Ook hier opschonen, niet alleen in het bewijsmateriaal dat naar de AI gaat.
+  // Deze rijen worden namelijk óók onbewerkt in het rapport bewaard, en daar
+  // stond zo de complete mailhandtekening van een collega in, telefoonnummer en
+  // adres incluis. Een rapportage hoort geen doorslag van interne post te zijn.
   const compactActivity = (rows: JsonObject[]) =>
     rows.map((note) => ({
       ...note,
-      text: optionalText(note.text, 1_500) || "Notitie zonder tekst",
+      text:
+        sanitizeReportEvidenceText(
+          optionalText(note.text, 4_000) || "",
+          1_500,
+        ) || "Notitie zonder tekst",
     }));
 
   return {
