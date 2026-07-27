@@ -17,6 +17,17 @@ export type DealWorkflow = {
   kind: DealWorkflowKind;
   nextTask: Task | null;
   openTaskCount: number;
+  /**
+   * De eerstvolgende open taak van werk dat stilstaat, alleen om te tonen.
+   *
+   * Een opdracht op "wacht op input" hoort niet in de aandachtsrij, en daarvoor
+   * werd `nextTask` op null gezet. Daarmee verdween ook de datum, en dus stond
+   * op de kaart alleen "wacht" zonder te zeggen of dat deze week is of pas in
+   * december. Elf opdrachten stonden zo stil, samen met vijfentwintig verlopen
+   * taken die niemand zag. Bewust een eigen veld: `nextTask` blijft leeg, zodat
+   * geen enkele bestaande lezer plots wachtend werk als actie behandelt.
+   */
+  resumeTask: Task | null;
 };
 
 const dayKey = (value: string | null | undefined): string | null => {
@@ -25,7 +36,8 @@ const dayKey = (value: string | null | undefined): string | null => {
   return match?.[0] ?? null;
 };
 
-const localTodayKey = (now: Date): string => {
+/** De dag van vandaag als yyyy-MM-dd in de eigen tijdzone, om datums te vergelijken. */
+export const localTodayKey = (now: Date): string => {
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
@@ -66,14 +78,27 @@ export const getDealWorkflow = (
   now: Date = new Date(),
 ): DealWorkflow => {
   if (deal.stage === "won") {
-    return { kind: "complete", nextTask: null, openTaskCount: 0 };
+    return {
+      kind: "complete",
+      nextTask: null,
+      openTaskCount: 0,
+      resumeTask: null,
+    };
   }
 
   // A consciously paused deal should not pollute the attention queue, even if
   // an older open task is still attached to it. It becomes actionable again
   // when the deal is resumed.
   if (deal.on_hold || deal.stage === "on-hold") {
-    return { kind: "on_hold", nextTask: null, openTaskCount: 0 };
+    const waiting = [...openTasks]
+      .filter((task) => !task.done_date && !isAutomaticTask(task))
+      .sort(compareTasks);
+    return {
+      kind: "on_hold",
+      nextTask: null,
+      openTaskCount: waiting.length,
+      resumeTask: waiting[0] ?? null,
+    };
   }
 
   // The DB maintains an `auto` row as a fallback while a deal has no concrete
@@ -101,14 +126,29 @@ export const getDealWorkflow = (
             : !due
               ? "unscheduled"
               : "scheduled";
-    return { kind, nextTask, openTaskCount: sortedTasks.length };
+    return {
+      kind,
+      nextTask,
+      openTaskCount: sortedTasks.length,
+      resumeTask: null,
+    };
   }
 
   if (closingDate && closingDate < today) {
-    return { kind: "overdue_closing", nextTask: null, openTaskCount: 0 };
+    return {
+      kind: "overdue_closing",
+      nextTask: null,
+      openTaskCount: 0,
+      resumeTask: null,
+    };
   }
 
-  return { kind: "missing", nextTask: null, openTaskCount: 0 };
+  return {
+    kind: "missing",
+    nextTask: null,
+    openTaskCount: 0,
+    resumeTask: null,
+  };
 };
 
 const workflowPriority: Record<DealWorkflowKind, number> = {

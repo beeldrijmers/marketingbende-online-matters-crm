@@ -35,10 +35,25 @@ export const dealStages = [
   { value: "maandelijks", label: "Vaste klanten", shortLabel: "Maandelijks" },
 ];
 
+/**
+ * "Niet doorgegaan" is een uitkomst, geen kolom.
+ *
+ * De code kent `lost` al (geen statusupdate, geen taken plannen, niet meegeteld
+ * als omzet), maar het stond niet in `dealStages`, dus was het nergens te kiezen:
+ * een opdracht die niet doorging bleef in de pijplijn hangen of werd gearchiveerd
+ * zonder reden. Bewust niet aan `dealStages` toegevoegd, want dan komt er een
+ * negende bordkolom bij voor werk dat juist weg moet.
+ */
+export const LOST_STAGE = "lost";
+export const lostStageLabel = "Niet doorgegaan";
+
 /** Compact labels keyed by stage value, for chips and one-line summaries. */
-export const dealStageShortLabels: Record<string, string> = Object.fromEntries(
-  dealStages.map((stage) => [stage.value, stage.shortLabel ?? stage.label]),
-);
+export const dealStageShortLabels: Record<string, string> = {
+  ...Object.fromEntries(
+    dealStages.map((stage) => [stage.value, stage.shortLabel ?? stage.label]),
+  ),
+  [LOST_STAGE]: lostStageLabel,
+};
 
 export const dealPipelineStatuses = ["won"];
 

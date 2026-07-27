@@ -1,5 +1,5 @@
 import type { CrmDataProvider } from "../providers/types";
-import { dealStageShortLabels } from "../root/appConfiguration";
+import { dealStages, dealStageShortLabels } from "../root/appConfiguration";
 
 type TrelloSyncSummary = Awaited<
   ReturnType<CrmDataProvider["syncTrelloCards"]>
@@ -18,10 +18,16 @@ export const formatTrelloStageCounts = (
 ): string =>
   // One vocabulary for the stages: the short labels live with the stage
   // definitions instead of being retyped per component.
-  Object.entries(dealStageShortLabels)
+  //
+  // Bewust langs `dealStages` en niet langs de labelmap: die map bevat ook
+  // "Niet doorgegaan", en dat is een uitkomst en geen bordkolom, dus die hoort
+  // niet in een telling van wat er op het bord staat.
+  dealStages
     .map(
-      ([value, label]) =>
-        `${label} ${(stageCounts as Record<string, number>)[value] ?? 0}`,
+      (stage) =>
+        `${dealStageShortLabels[stage.value] ?? stage.label} ${
+          (stageCounts as Record<string, number>)[stage.value] ?? 0
+        }`,
     )
     .join(" · ");
 

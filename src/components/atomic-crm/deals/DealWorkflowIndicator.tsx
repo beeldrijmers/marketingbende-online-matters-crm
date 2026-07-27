@@ -4,7 +4,11 @@ import { useTranslate } from "ra-core";
 import { cn } from "@/lib/utils";
 import type { Deal, Task } from "../types";
 import { formatISODateString } from "./dealUtils";
-import { getDealWorkflow, type DealWorkflow } from "./dealWorkflow";
+import {
+  getDealWorkflow,
+  localTodayKey,
+  type DealWorkflow,
+} from "./dealWorkflow";
 
 /**
  * How a deal's next step is doing.
@@ -21,6 +25,12 @@ const toneOf = (workflow: DealWorkflow): WorkflowTone => {
   // so it stays quiet — otherwise red would mean "a deal exists".
   if (workflow.kind === "overdue") return "late";
   if (workflow.kind === "today") return "wait";
+  // Wachtend werk waarvan de eigen vervolgdatum al verstreken is: het wacht niet
+  // meer op iemand anders, het is vergeten.
+  if (workflow.kind === "on_hold") {
+    const due = workflow.resumeTask?.due_date?.slice(0, 10);
+    return due && due < localTodayKey(new Date()) ? "wait" : "quiet";
+  }
   return "quiet";
 };
 
@@ -50,8 +60,21 @@ const useWorkflowLabel = (workflow: DealWorkflow): string => {
       return translate("resources.deals.workflow.plan_next", {
         _: "Plan volgende stap",
       });
-    case "on_hold":
-      return translate("resources.deals.fields.on_hold", { _: "In de wacht" });
+    case "on_hold": {
+      // "In de wacht" zegt niets over de vraag die je echt hebt: speelt dit deze
+      // week of pas in december. De datum van de eerstvolgende open taak is het
+      // enige dat dat antwoordt, en die stond er wel maar werd weggegooid.
+      const resumeDue = workflow.resumeTask?.due_date?.slice(0, 10);
+      if (!resumeDue) {
+        return translate("resources.deals.fields.on_hold", {
+          _: "In de wacht",
+        });
+      }
+      const label = formatISODateString(resumeDue);
+      return resumeDue < localTodayKey(new Date())
+        ? `Wacht, sinds ${label}`
+        : `Wacht tot ${label}`;
+    }
     case "complete":
       return translate("resources.deals.workflow.complete", { _: "Klaar" });
   }
@@ -113,13 +136,15 @@ export const DealWorkflowIndicator = ({
   const workflow = getDealWorkflow(deal, openTasks);
   if (
     workflow.kind === "complete" ||
-    workflow.kind === "on_hold" ||
+    (workflow.kind === "on_hold" && workflow.resumeTask == null) ||
     workflow.kind === "missing"
   ) {
     return null;
   }
 
-  const nextTask = workflow.nextTask;
+  // Bij wachtend werk is de hervattaak wat je wil lezen. Hij blijft buiten
+  // `nextTask`, zodat de aandachtsrij hem niet als actie oppakt.
+  const nextTask = workflow.nextTask ?? workflow.resumeTask;
   const dueLabel = nextTask?.due_date
     ? formatISODateString(nextTask.due_date.slice(0, 10))
     : null;
