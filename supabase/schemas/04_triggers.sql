@@ -29,6 +29,12 @@ create or replace trigger set_deal_assignee_default_trigger
     before insert or update on public.deals
     for each row execute function public.set_deal_assignee_default();
 
+-- Houdt bij wanneer een opdracht op zijn huidige stap kwam, zodat "wacht al X
+-- dagen" over de stap gaat en niet over de laatste aanraking door de sync.
+create or replace trigger set_deal_stage_since_trigger
+    before insert or update on public.deals
+    for each row execute function public.set_deal_stage_since();
+
 -- Keeps deals.on_hold in sync with the "In de wacht" stage.
 create or replace trigger sync_deal_on_hold_trigger
     before insert or update on public.deals

@@ -146,6 +146,8 @@ export type Deal = {
   amount: number | null;
   created_at: string;
   updated_at: string;
+  /** Wanneer de opdracht op zijn huidige stap kwam; alleen door de database gezet. */
+  stage_since?: string;
   archived_at?: string;
   expected_closing_date: string | null;
   start_date?: string | null;

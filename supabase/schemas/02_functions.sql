@@ -675,6 +675,27 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION "public"."set_deal_stage_since"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
+    AS $$
+begin
+  -- Alleen bij een echte stapwijziging. Bewust niet updated_at hergebruiken: de
+  -- Trello-sync doet bij elke reactie, label of bijlage een onvoorwaardelijke
+  -- UPDATE, waardoor een opdracht die maanden stilstaat vers lijkt.
+  if tg_op = 'INSERT' then
+    new.stage_since := coalesce(new.stage_since, now());
+    return new;
+  end if;
+  if new.stage is distinct from old.stage then
+    new.stage_since := now();
+  else
+    new.stage_since := coalesce(old.stage_since, new.stage_since, now());
+  end if;
+  return new;
+end;
+$$;
+
 CREATE OR REPLACE FUNCTION "public"."sync_deal_on_hold"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public'

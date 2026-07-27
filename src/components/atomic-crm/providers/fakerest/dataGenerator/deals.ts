@@ -54,6 +54,7 @@ export const generateDeals = (
       is_internal: false,
       created_at,
       updated_at: randomDate(new Date(created_at)).toISOString(),
+      stage_since: randomDate(new Date(created_at)).toISOString(),
       expected_closing_date,
       sales_id: company.sales_id!,
       index: 0,

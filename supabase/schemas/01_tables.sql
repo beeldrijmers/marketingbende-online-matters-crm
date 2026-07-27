@@ -135,6 +135,10 @@ create table public.deals (
     -- When the client was last sent a status update from the CRM. Answers the
     -- question a board cannot: not "what is the state" but "does the client
     -- know". The shared text itself is kept as a deal note.
+    -- Wanneer de opdracht op zijn huidige stap kwam. Een trigger houdt dit bij,
+    -- want updated_at wordt door de Trello-sync bij elke reactie aangeraakt en
+    -- zegt dus niets over hoe lang iets al wacht.
+    stage_since timestamp with time zone not null default now(),
     client_updated_at timestamp with time zone,
     moneybird_estimate_id text,
     moneybird_estimate_status text,
