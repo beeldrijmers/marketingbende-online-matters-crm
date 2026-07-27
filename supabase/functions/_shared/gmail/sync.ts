@@ -10,7 +10,7 @@ import {
   getGmailProfile,
   GoogleApiError,
   listGmailHistoryMessageIds,
-  refreshGmailAccessToken,
+  refreshGmailToken,
 } from "./client.ts";
 import { normalizeGmailMessage } from "./messageParser.ts";
 import {
@@ -139,7 +139,10 @@ export const syncGmailConnection = async ({
       encKey,
       gmailConnectionAad(connection.sales_id),
     );
-    const accessToken = await refreshGmailAccessToken({
+    // De refresh geeft de toegekende scopes mee. Zo weet het CRM binnen een
+    // kwartier of de agenda-toegang er is, zonder dat iemand een afspraak hoeft te
+    // proberen, ook voor koppelingen die al bestonden.
+    const { accessToken, scope: grantedScopes } = await refreshGmailToken({
       refreshToken,
       clientId,
       clientSecret,
@@ -279,6 +282,9 @@ export const syncGmailConnection = async ({
         last_synced_at: new Date().toISOString(),
         last_error: null,
         updated_at: new Date().toISOString(),
+        // Wat Google bij deze refresh toekende. Hierdoor vult een bestaande
+        // koppeling zichzelf in en is te zien of de agenda-toegang erbij zit.
+        ...(grantedScopes ? { granted_scopes: grantedScopes } : {}),
       };
       if (summary.remaining === 0) connectionUpdate.history_id = historyId;
       const { error: connectionUpdateError } = await supabaseAdmin

@@ -26,7 +26,21 @@ const googleFetch = async <T>(url: string, accessToken: string): Promise<T> => {
   return (await response.json()) as T;
 };
 
-export const refreshGmailAccessToken = async ({
+/**
+ * De scopes die Google bij deze refresh meegaf, of null als hij ze niet noemde.
+ *
+ * Waarom dit bewaard wordt: of iemand bij het koppelen ook toegang tot zijn agenda
+ * heeft gegeven was tot nu toe onzichtbaar. Je kwam er pas achter door een
+ * afspraak te proberen en dan een foutmelding te krijgen. Google zet de toegekende
+ * scopes in elk tokenantwoord, dus na een kwartier (de sync-cadans) weet het CRM
+ * het gewoon, zonder dat iemand iets hoeft te proberen.
+ */
+export type GoogleTokenRefresh = {
+  accessToken: string;
+  scope: string | null;
+};
+
+export const refreshGmailToken = async ({
   refreshToken,
   clientId,
   clientSecret,
@@ -34,7 +48,7 @@ export const refreshGmailAccessToken = async ({
   refreshToken: string;
   clientId: string;
   clientSecret: string;
-}): Promise<string> => {
+}): Promise<GoogleTokenRefresh> => {
   const response = await fetch(GOOGLE_TOKEN_ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -51,10 +65,23 @@ export const refreshGmailAccessToken = async ({
       `Google OAuth token refresh returned HTTP ${response.status}`,
     );
   }
-  const body = (await response.json()) as { access_token?: string };
+  const body = (await response.json()) as {
+    access_token?: string;
+    scope?: string;
+  };
   if (!body.access_token) throw new Error("Google returned no access token");
-  return body.access_token;
+  return {
+    accessToken: body.access_token,
+    scope: typeof body.scope === "string" && body.scope ? body.scope : null,
+  };
 };
+
+/** Alleen het token, voor de aanroepers die de scopes niet nodig hebben. */
+export const refreshGmailAccessToken = async (params: {
+  refreshToken: string;
+  clientId: string;
+  clientSecret: string;
+}): Promise<string> => (await refreshGmailToken(params)).accessToken;
 
 export const getGmailProfile = (
   accessToken: string,
