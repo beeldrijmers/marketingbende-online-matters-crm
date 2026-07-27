@@ -1078,6 +1078,10 @@
           "type": "registry:component"
         },
         {
+          "path": "src/components/atomic-crm/companies/correspondence.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "src/components/atomic-crm/companies/MobileCompaniesList.tsx",
           "type": "registry:component"
         },

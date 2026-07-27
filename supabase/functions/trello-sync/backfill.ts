@@ -32,7 +32,10 @@ import {
   startTrelloIntegrationRun,
   type TrelloRunKind,
 } from "./integrationRun.ts";
-import { isIgnoredTrelloList } from "./trelloListMaps.ts";
+import {
+  isIgnoredTrelloList,
+  shouldBackfillArchivedCard,
+} from "./trelloListMaps.ts";
 import { ensureTrelloCardDeadline } from "./deadline.ts";
 
 const BOARD_ID = "6979f9a8a825b6ff46306e8a"; // SEO - Online Matters
@@ -87,9 +90,26 @@ const backfillCard = async (
 // gets no tasks (steps of a finished project are noise).
 const backfillArchivedCardWithUploads = async (
   card: Awaited<ReturnType<typeof fetchTrelloBoardCards>>[number],
-): Promise<{ attachmentCount: number }> => {
+): Promise<{ attachmentCount: number; skipped: boolean }> => {
+  // Only ever ENRICH an archived card that the CRM already knows. This phase
+  // exists to pull historical files and comments in, not to introduce clients.
+  //
+  // It used to upsert unconditionally, and that made every cleanup temporary:
+  // resolveCompanyName ran again on the card title, so a company that had just
+  // been merged away or renamed reappeared within the next four hours, and the
+  // deal was moved back under it. Anything that was ever open while a sync ran
+  // already has a deal from the first phase, so the loss here is only the rare
+  // card that was archived before it was ever synced.
+  const { data: knownDeal } = await supabaseAdmin
+    .from("deals")
+    .select("id")
+    .eq("trello_card_id", card.id)
+    .maybeSingle();
+  if (!knownDeal) return { attachmentCount: 0, skipped: true };
+
   const fullCard = await fetchTrelloCardWithComments(card.id);
-  if (!fullCard.uploadedAttachments.length) return { attachmentCount: 0 };
+  if (!fullCard.uploadedAttachments.length)
+    return { attachmentCount: 0, skipped: false };
 
   // Strip the checklist items so no tasks are created for archived projects.
   const dealId = await upsertDealFromCard(fullCard, { syncSteps: false });
@@ -113,7 +133,7 @@ const backfillArchivedCardWithUploads = async (
   // No-op when the deal is already archived (re-runs).
   await archiveDealByCardId(card.id);
 
-  return { attachmentCount };
+  return { attachmentCount, skipped: false };
 };
 
 // Cards are processed with bounded concurrency rather than one at a time:
@@ -258,23 +278,18 @@ const executeTrelloSync = async (
     token,
     state: "closed",
   });
-  const archivedWithUploads = archivedCards.filter(
-    (card) => card.uploadedAttachments.length > 0,
-  );
-  // Same company pre-create as above, for the same concurrency reason.
-  const archivedCompanyNames = [
-    ...new Set(archivedWithUploads.map((card) => resolveCompanyName(card))),
-  ];
-  for (const name of archivedCompanyNames) {
-    await findOrCreateCompany({ name, salesId });
-  }
+  const archivedWithUploads = archivedCards.filter(shouldBackfillArchivedCard);
+  // Deliberately no company pre-create here: this phase no longer introduces
+  // deals, so there is nothing to hang a new company on.
   let archivedAttachments = 0;
+  let archivedSkipped = 0;
   await runWithConcurrency(
     archivedWithUploads,
     async (card) => {
       try {
         const result = await backfillArchivedCardWithUploads(card);
         archivedAttachments += result.attachmentCount;
+        if (result.skipped) archivedSkipped += 1;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         failed.push({ cardId: card.id, cardName: card.name, error: message });
@@ -292,7 +307,7 @@ const executeTrelloSync = async (
 
   // eslint-disable-next-line no-console
   console.log(
-    `Done in ${durationMs}ms. Synced ${synced} deals, ignored ${ignoredCards.length} reference cards, ${totalComments} comments, ${totalAttachments} new attachments, ${archivedAttachments} attachments from ${archivedWithUploads.length} archived cards, ${failed.length} failures.`,
+    `Done in ${durationMs}ms. Synced ${synced} deals, ignored ${ignoredCards.length} reference cards, ${totalComments} comments, ${totalAttachments} new attachments, ${archivedAttachments} attachments from ${archivedWithUploads.length} archived cards (${archivedSkipped} skipped as unknown), ${failed.length} failures.`,
   );
   return {
     cardCount: cards.length,
