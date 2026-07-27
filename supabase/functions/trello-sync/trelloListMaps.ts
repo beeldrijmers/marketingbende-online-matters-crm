@@ -66,3 +66,17 @@ export const isIgnoredTrelloList = (listId: string): boolean =>
 // silently misclassifying every card in that list.
 export const isKnownTrelloList = (listId: string): boolean =>
   listId in LIST_TO_STAGE || isIgnoredTrelloList(listId);
+
+/**
+ * Of een gesloten kaart nog verrijkt mag worden met zijn bijlagen.
+ *
+ * Twee voorwaarden. Zonder uploads is er niets te halen. En kaarten uit de
+ * naslag- en templatelijsten zijn borddocumentatie: de open fase slaat die al
+ * over, deze fase niet, waardoor een gesloten template met een schermafbeelding
+ * erop een klant "Werkwijze" opleverde.
+ */
+export const shouldBackfillArchivedCard = (card: {
+  idList: string;
+  uploadedAttachments: unknown[];
+}): boolean =>
+  card.uploadedAttachments.length > 0 && !isIgnoredTrelloList(card.idList);
