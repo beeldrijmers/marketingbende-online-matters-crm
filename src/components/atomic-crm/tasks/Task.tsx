@@ -127,9 +127,13 @@ export const Task = ({
             here, so only the checkbox completes it. Tapping the row used to
             tick it off silently - including taps meant for the contact link. */}
         <div className="flex items-start gap-2 flex-1">
+          {/* Het vakje zelf is 17 px; het raakvlak was daarmee 34 en dat is te
+              klein voor de handeling die je op een telefoon het vaakst doet.
+              Negatieve marge houdt de rij op zijn plek, de padding maakt het
+              raakvlak 44 zoals het hoort op een touchscreen. */}
           <label
             htmlFor={labelId}
-            className="-m-2 flex cursor-pointer items-start p-2"
+            className="-m-3 flex cursor-pointer items-start p-3"
           >
             <Checkbox
               id={labelId}

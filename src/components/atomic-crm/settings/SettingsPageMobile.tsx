@@ -615,8 +615,14 @@ const CopyPasteRow = ({ value }: { value: string }) => {
             className="cursor-pointer flex-nowrap"
             onClick={handleCopy}
           >
-            <ItemContent className="overflow-hidden">
-              <ItemTitle className="font-normal truncate">{value}</ItemTitle>
+            <ItemContent className="min-w-0 overflow-hidden">
+              {/* Laten afbreken en niet afkappen: truncate deed hier niets omdat
+                  de titel een w-fit flexregel is, dus liep het adres 117 px
+                  buiten beeld en was het op een telefoon niet te lezen. Dit is
+                  het adres dat je in een Cc zet, dus je moet het kunnen zien. */}
+              <ItemTitle className="w-full min-w-0 font-normal break-all whitespace-normal">
+                {value}
+              </ItemTitle>
             </ItemContent>
             <ItemActions className="shrink-0">
               {copied ? (
