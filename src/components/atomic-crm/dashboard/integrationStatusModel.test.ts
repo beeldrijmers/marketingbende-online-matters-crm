@@ -51,4 +51,22 @@ describe("getIntegrationHealth", () => {
         .description,
     ).toBe("12 berichten verwerkt zonder fouten.");
   });
+
+  it("noemt de maandrapportage bij naam in plaats van Trello", () => {
+    expect(
+      getIntegrationHealth(run({ integration: "inzyte", items_processed: 6 }))
+        .description,
+    ).toBe("6 rapportages verwerkt zonder fouten.");
+    expect(
+      getIntegrationHealth(run({ integration: "inzyte", status: "failed" }))
+        .description,
+    ).toBe("De maandrapportage is niet volledig bijgewerkt.");
+  });
+
+  it("houdt enkelvoud enkelvoud, ook bij een geslaagde run", () => {
+    expect(
+      getIntegrationHealth(run({ integration: "inzyte", items_processed: 1 }))
+        .description,
+    ).toBe("1 rapportage verwerkt zonder fouten.");
+  });
 });
