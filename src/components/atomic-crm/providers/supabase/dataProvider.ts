@@ -580,7 +580,7 @@ const getDataProviderWithCustomMethods = () => {
       const { data, error } = await getSupabaseClient()
         .from("gmail_connections")
         .select(
-          "id, sales_id, email, sync_label_id, sync_label_name, sync_status, last_synced_at, last_error, created_at, updated_at",
+          "id, sales_id, email, sync_label_id, sync_label_name, sync_status, last_synced_at, last_error, created_at, updated_at, granted_scopes",
         )
         .maybeSingle();
       if (error) {
@@ -599,6 +599,7 @@ const getDataProviderWithCustomMethods = () => {
             syncLabelName: (data.sync_label_name as string | null) ?? null,
             lastSyncedAt: (data.last_synced_at as string | null) ?? null,
             lastError: (data.last_error as string | null) ?? null,
+            grantedScopes: (data.granted_scopes as string | null) ?? null,
           }
         : null;
     },

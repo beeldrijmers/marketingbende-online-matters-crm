@@ -283,6 +283,10 @@ create table public.gmail_connections (
     sync_label_id text,
     sync_label_name text,
     sync_status text not null default 'needs_label' check (sync_status in ('connected', 'syncing', 'error', 'needs_label')),
+    -- De scopes die Google werkelijk heeft toegekend, zoals ze in elk
+    -- tokenantwoord staan. Zonder dit is niet te zien of iemand ook toegang tot
+    -- zijn agenda heeft gegeven; dat bleek pas als een afspraak mislukte.
+    granted_scopes text,
     last_synced_at timestamp with time zone,
     last_error text,
     created_at timestamp with time zone not null default now(),

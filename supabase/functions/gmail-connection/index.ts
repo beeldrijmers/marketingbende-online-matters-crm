@@ -289,6 +289,10 @@ const handleCallback = async (req: Request): Promise<Response> => {
   const tokens = (await tokenResponse.json()) as {
     access_token?: string;
     refresh_token?: string;
+    // Wat Google werkelijk heeft toegekend. Vroeg een gebruiker de agenda niet
+    // toe, dan staat calendar.events hier simpelweg niet in, en dat is de enige
+    // manier om dat te weten zonder een afspraak te proberen.
+    scope?: string;
   };
   if (!tokens.access_token || !tokens.refresh_token) {
     console.error("Gmail OAuth response did not include offline access");
@@ -320,6 +324,7 @@ const handleCallback = async (req: Request): Promise<Response> => {
           refreshTokenEncrypted: encrypted,
           now: new Date().toISOString(),
         }),
+        granted_scopes: tokens.scope ?? null,
       },
       { onConflict: "sales_id" },
     );

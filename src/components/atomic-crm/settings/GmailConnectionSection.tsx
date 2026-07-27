@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { calendarAccessLabel } from "../misc/googleScopes";
 import {
   GMAIL_CONNECTION_QUERY_KEY,
   useGmailConnection,
@@ -156,6 +157,7 @@ export const GmailConnectionContent = () => {
     );
   }
 
+  const calendarAccess = calendarAccessLabel(connection.grantedScopes);
   const lastSync = connection.lastSyncedAt
     ? new Intl.DateTimeFormat(undefined, {
         dateStyle: "medium",
@@ -186,6 +188,19 @@ export const GmailConnectionContent = () => {
             {translate("crm.profile.gmail.sync_label_required")}
           </p>
         )}
+        {/* Of Google ook toegang tot de agenda gaf. Dat was tot nu toe alleen te
+            merken door een afspraak te proberen en dan een foutmelding te krijgen. */}
+        <p
+          className={
+            calendarAccess.state === "granted"
+              ? "text-live"
+              : calendarAccess.state === "missing"
+                ? "text-wait"
+                : "text-muted-foreground"
+          }
+        >
+          {calendarAccess.label}
+        </p>
         {connection.status === "error" && connection.lastError ? (
           <p className="text-destructive">
             {translate("crm.profile.gmail.sync_error", {
