@@ -50,4 +50,16 @@ describe("tijdstip in de afspraakdialoog", () => {
       new Date("2026-07-30T09:00:00.000Z").toISOString().slice(0, 16),
     ).toBe("2026-07-30T09:00");
   });
+
+  it("volgt de gezette zone, en niet die van de machine", async () => {
+    // Een zone die geen enkele ontwikkelmachine hier heeft. Zonder deze assertie
+    // slaagde de test hierboven ook als het zetten van de zone niets deed: hij
+    // viel dan terug op de zone van de machine, en die staat hier al op
+    // Amsterdam. In CI (UTC) kwam dat wel uit.
+    await commands.setTimezone("Asia/Tokyo");
+    expect(convertDateToString(new Date("2026-07-30T09:00:00.000Z"))).toBe(
+      "2026-07-30T18:00",
+    );
+    await commands.setTimezone("Europe/Amsterdam");
+  });
 });
