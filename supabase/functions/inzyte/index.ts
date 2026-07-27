@@ -5,6 +5,7 @@ import { corsHeaders, OptionsMiddleware } from "../_shared/cors.ts";
 import { getUserSale } from "../_shared/getUserSale.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { siblingVerificationMatch } from "./siblingVerification.ts";
+import { verificationFromReport } from "./verificationFromReport.ts";
 import { createErrorResponse } from "../_shared/utils.ts";
 import {
   buildRemoteRequest,
@@ -567,12 +568,11 @@ const runRemoteAction = async (
       409,
     );
   }
-  if (verificationField && !link[verificationField]) {
-    throw userError(
-      "Deze meetbron is nog niet live gecontroleerd voor deze opdracht. Open Koppelingen en sla de bron opnieuw op.",
-      409,
-    );
-  }
+  // Bewust geen eis meer dat de bron al bevestigd is. Dezelfde cirkel als bij de
+  // rapportage: bevestigen kon alleen door een geslaagde ophaling, en een ophaling
+  // mocht alleen bij een bevestigde bron. Een geconfigureerde bron wordt nu
+  // geprobeerd; mislukt het, dan komt de echte fout van Google terug in plaats van
+  // een verwijzing naar een knop die niets oplost.
 
   const range = normalizeDateRange(body.startDate, body.endDate);
   let runId: number | null = null;
@@ -952,12 +952,16 @@ const generateMonthlyReport = async (
   saleId: number,
   requestedMonth: unknown,
 ) => {
-  const hasGa4 = Boolean(
-    link?.ga4_connection_id && link.ga4_property_id && link.ga4_verified_at,
-  );
-  const hasGsc = Boolean(link?.gsc_site_url && link.gsc_verified_at);
-  const hasGbp = Boolean(link?.gbp_location_id && link.gbp_verified_at);
-  const hasAds = Boolean(link?.ads_customer_id && link.ads_verified_at);
+  // Geconfigureerd is genoeg om te proberen. Eerder moest een bron eerst met de
+  // hand bevestigd zijn, en bevestigen kon alleen door hem opnieuw op te slaan.
+  // Voor koppelingen uit een import sloot die cirkel nooit: achttien koppelingen
+  // met een echte property, nul bevestigd, en dus rapportages zonder cijfers
+  // terwijl de gegevens er waren. Mislukt een bron, dan meldt de rapportage dat
+  // per bron; dat is eerlijker dan stil overslaan.
+  const hasGa4 = Boolean(link?.ga4_connection_id && link.ga4_property_id);
+  const hasGsc = Boolean(link?.gsc_site_url);
+  const hasGbp = Boolean(link?.gbp_location_id);
+  const hasAds = Boolean(link?.ads_customer_id);
 
   const period = monthlyReportPeriod(requestedMonth);
   const dealId = Number(deal.id);
@@ -1023,6 +1027,49 @@ const generateMonthlyReport = async (
     { current: gbpCurrent, previous: gbpPrevious },
     { current: adsCurrent, previous: adsPrevious },
   ]);
+
+  // Data teruggekregen betekent bevestigd. Zo wordt het stempel een uitkomst van
+  // een echte ophaling in plaats van een voorwaarde ervoor, en geldt hij meteen
+  // voor de andere opdrachten van dezelfde klant met exact dezelfde bron.
+  if (link) {
+    const earned = verificationFromReport({
+      link: link as unknown as Record<string, unknown>,
+      ga4: { current: ga4Current, previous: ga4Previous },
+      gsc: { current: gscCurrent, previous: gscPrevious },
+      gbp: { current: gbpCurrent, previous: gbpPrevious },
+      ads: { current: adsCurrent, previous: adsPrevious },
+    });
+    if (earned.length > 0) {
+      const verifiedAt = new Date().toISOString();
+      const stamps = Object.fromEntries(
+        earned.map((field) => [field, verifiedAt]),
+      );
+      const { error: stampError } = await supabaseAdmin
+        .from("inzyte_links")
+        .update({
+          ...stamps,
+          last_verified_at: verifiedAt,
+          updated_at: verifiedAt,
+        })
+        .eq("id", link.id);
+      if (stampError) {
+        console.error(
+          "Inzyte report verification stamp failed",
+          stampError.code,
+        );
+      }
+      for (const field of earned) {
+        const sibling = siblingVerificationMatch(link, field);
+        if (!sibling) continue;
+        await supabaseAdmin
+          .from("inzyte_links")
+          .update({ [field]: verifiedAt, updated_at: verifiedAt })
+          .eq("company_id", sibling.companyId)
+          .eq(sibling.column, sibling.value)
+          .is(field, null);
+      }
+    }
+  }
 
   const sourceData = (source: MonthlySourceResult): unknown =>
     source.status === "success" ? source.data : undefined;
