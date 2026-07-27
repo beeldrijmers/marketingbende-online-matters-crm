@@ -581,3 +581,30 @@ describe("een kop die het feit zelf draagt", () => {
     expect(werk).not.toMatch(/Wat we hebben opgeleverd\./);
   });
 });
+
+describe("een maand zonder cijfers en zonder bronnen", () => {
+  it("zegt dat er niets te rapporteren is in plaats van 0 bronnen op te sommen", () => {
+    // Hunting XL: lege meting én geen vastgelegde werkzaamheden. De openingszin
+    // beloofde een update "op basis van 0 relevante voortgangsbronnen" over
+    // "aantoonbaar uitgevoerd werk", dat er niet was.
+    const samenvatting = buildDefaultReportNarrative({
+      companyName: "Hunting XL",
+      period,
+      metrics: [],
+      evidence: buildReportEvidence({
+        assignmentDescription: "",
+        currentWork: [],
+        allTimeWork: [],
+        currentNotes: [],
+        allTimeNotes: [],
+        sentMail: [],
+        gmailStatus: "ok",
+        period,
+      }),
+    }).clientSummary;
+
+    expect(samenvatting).not.toMatch(/0 relevante voortgangsbron/);
+    expect(samenvatting).toMatch(/nog niets dat we verantwoord/);
+    expect(samenvatting).toMatch(/controleer de meetbron/i);
+  });
+});
