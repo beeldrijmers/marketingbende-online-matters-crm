@@ -117,7 +117,11 @@ export const DealShowBody = ({
             <h2 className="text-title text-ink">{record.name}</h2>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        {/* Mag afbreken. Met shrink-0 hield deze rij 459 px vast in een dialoog
+            van 312, en dan gaat de hele opdracht op een telefoon horizontaal
+            schuiven: verwarrend, want verticaal scrollen is hier het enige dat
+            hoort te kunnen. Drie knoppen naast elkaar passen daar simpelweg niet. */}
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
           {record.archived_at ? (
             <>
               <UnarchiveButton record={record} redirectTo={closeTo} />
@@ -139,9 +143,11 @@ export const DealShowBody = ({
                 <MobileEditButton record={record} />
               ) : editTo ? (
                 <Button asChild size="sm" variant="outline">
-                  <Link to={editTo}>
+                  <Link aria-label={translate("ra.action.edit")} to={editTo}>
                     <Pencil className="size-4" />
-                    {translate("ra.action.edit")}
+                    <span className="hidden sm:inline">
+                      {translate("ra.action.edit")}
+                    </span>
                   </Link>
                 </Button>
               ) : (
@@ -346,9 +352,16 @@ const MobileEditButton = ({ record }: { record: Deal }) => {
   const [editOpen, setEditOpen] = useState(false);
   return (
     <>
-      <Button onClick={() => setEditOpen(true)} size="sm" variant="outline">
+      <Button
+        aria-label={translate("ra.action.edit")}
+        onClick={() => setEditOpen(true)}
+        size="sm"
+        variant="outline"
+      >
         <Pencil className="size-4" />
-        {translate("ra.action.edit")}
+        {/* Op een telefoon passen drie knoppen met tekst niet naast elkaar; dan
+            duwen ze de inhoud een halve schermhoogte omlaag. */}
+        <span className="hidden sm:inline">{translate("ra.action.edit")}</span>
       </Button>
       <DealEditSheet
         open={editOpen}
@@ -406,9 +419,16 @@ const ArchiveButton = ({
   };
 
   return (
-    <Button onClick={handleClick} size="sm" variant="outline">
+    <Button
+      aria-label={translate("resources.deals.archived.action")}
+      onClick={handleClick}
+      size="sm"
+      variant="outline"
+    >
       <Archive className="size-4" />
-      {translate("resources.deals.archived.action")}
+      <span className="hidden sm:inline">
+        {translate("resources.deals.archived.action")}
+      </span>
     </Button>
   );
 };
@@ -457,9 +477,14 @@ const MarkLostButton = ({
   };
 
   return (
-    <Button onClick={handleClick} size="sm" variant="outline">
+    <Button
+      aria-label={lostStageLabel}
+      onClick={handleClick}
+      size="sm"
+      variant="outline"
+    >
       <CircleSlash className="size-4" />
-      {lostStageLabel}
+      <span className="hidden sm:inline">{lostStageLabel}</span>
     </Button>
   );
 };

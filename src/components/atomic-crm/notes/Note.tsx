@@ -92,7 +92,10 @@ export const Note = ({
 
   const content = (
     <div className="mb-4 group">
-      <div className="flex items-center space-x-4 w-full">
+      {/* Mag afbreken en krimpen. Op een telefoon paste auteur plus knoppen plus
+          datum niet op een regel, en omdat niets mocht wijken stak de datum 47 px
+          buiten de kolom: dan schuift de hele opdracht horizontaal. */}
+      <div className="flex w-full min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
         <NoteAuthorLine note={note} showStatus={showStatus} />
         {/* Always shown on touch/mobile (no hover there); on desktop the buttons
             fade in on hover and on keyboard focus so they stay reachable. */}
@@ -141,7 +144,7 @@ export const Note = ({
           </TooltipProvider>
         </span>
         <div className="flex-1"></div>
-        <span className="text-sm text-muted-foreground">
+        <span className="shrink-0 text-sm text-muted-foreground">
           <RelativeDate date={note.date} />
         </span>
       </div>
