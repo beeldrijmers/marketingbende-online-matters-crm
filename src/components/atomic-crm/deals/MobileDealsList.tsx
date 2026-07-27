@@ -10,7 +10,13 @@ import {
   useNotify,
   useTranslate,
 } from "ra-core";
-import { Link, matchPath, useLocation } from "react-router";
+import {
+  Link,
+  matchPath,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router";
 import { NumberField } from "@/components/admin/number-field";
 import { SearchInput } from "@/components/admin/search-input";
 import { ReferenceField } from "@/components/admin/reference-field";
@@ -19,6 +25,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 import { CompanyAvatar } from "../companies/CompanyAvatar";
+import { DealEditSheet } from "./DealEditSheet";
+import { ownerScopeFilter, parseOwnerScope } from "./ownerScope";
 import MobileHeader from "../layout/MobileHeader";
 import { MobileContent } from "../layout/MobileContent";
 import { useConfigurationContext } from "../root/ConfigurationContext";
@@ -62,19 +70,26 @@ export const MobileDealsList = ({
   hideHeader?: boolean;
 } = {}) => {
   const { identity } = useGetIdentity();
+  // "Wie doet wat" op Vandaag stuurt je hierheen met ?owner=. Dat werd op de
+  // telefoon genegeerd, dus tikte je op Rick en kreeg je het hele bord: het
+  // tegenovergestelde van wat je vroeg. Het bord op de desktop leest dezelfde
+  // parameter, dus dit houdt beide kanten op dezelfde URL-taal.
+  const [zoekparameters] = useSearchParams();
+  const owner = parseOwnerScope(zoekparameters.get("owner"));
   if (!identity) return null;
   return (
     <InfiniteListBase
       perPage={1000}
       filter={{
         "archived_at@is": null,
+        ...ownerScopeFilter(owner),
         ...getDashboardDealSelectionFilter(dashboardSelection ?? null),
       }}
       sort={{ field: "index", order: "ASC" }}
       storeKey={
         dashboardSelection
           ? `deals.mobile.${dashboardSelection.kind}`
-          : "deals.mobile.full-workboard.v1"
+          : `deals.mobile.full-workboard.v1${owner ? `.${owner}` : ""}`
       }
     >
       <DealsLayoutMobile
@@ -152,6 +167,14 @@ const DealsLayoutMobile = ({
   // The deal detail is a URL-driven dialog (same pattern as the desktop board):
   // tapping a row navigates to /deals/:id/show, which this list matches and
   // opens over itself; closing redirects back to the list.
+  // Ook zonder dashboardselectie: de facturatierij op Financieel linkt naar
+  // /deals?deal=<id> en /deals?edit=<id>. Die parameters werden hier alleen
+  // gelezen als je via het dashboard binnenkwam, en ?edit= helemaal niet, dus op
+  // een telefoon landde je op het kale bord en gebeurde er verder niets.
+  const navigate = useNavigate();
+  const zoekparameters = new URLSearchParams(location.search);
+  const dealParameter = zoekparameters.get("deal");
+  const editParameter = zoekparameters.get("edit");
   const matchShow = dashboardSelection
     ? null
     : matchPath("/deals/:id/show", location.pathname);
@@ -161,9 +184,10 @@ const DealsLayoutMobile = ({
   const dashboardReturnPath = detailBasePath
     ? getDashboardDealReturnPath(detailBasePath, location.search)
     : undefined;
-  const dashboardDealId = dashboardSelection
-    ? new URLSearchParams(location.search).get("deal")
-    : null;
+  const dashboardDealId = dashboardSelection ? dealParameter : null;
+  // Het te openen dossier: uit het pad, uit de dashboardselectie, of uit ?deal=.
+  const openDealId =
+    dashboardDealId ?? matchShow?.params.id ?? dealParameter ?? undefined;
 
   const fallbackLabel = translate("resources.deals.other_stage", {
     _: "Overig",
@@ -202,8 +226,17 @@ const DealsLayoutMobile = ({
     <div>
       <DealShow
         closeTo={dashboardReturnPath ?? "/deals"}
-        open={dashboardSelection ? !!dashboardDealId : !!matchShow}
-        id={dashboardDealId ?? matchShow?.params.id}
+        open={!!openDealId}
+        id={openDealId}
+      />
+      {/* ?edit= komt van de knop Aanvullen in de facturatierij. De sheet bestaat
+          al en wordt op de opdrachtpagina precies zo aangestuurd. */}
+      <DealEditSheet
+        open={!!editParameter}
+        onOpenChange={(open) => {
+          if (!open) navigate("/deals", { replace: true });
+        }}
+        dealId={editParameter ?? ""}
       />
       <TaskCreateSheet
         open={taskDeal != null}
