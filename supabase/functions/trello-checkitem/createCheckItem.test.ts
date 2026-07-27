@@ -49,7 +49,6 @@ describe("createCheckItem", () => {
     const id = await createCheckItem({
       cardId: "kaart-1",
       name: "Akkoord ophalen",
-      due: "2026-08-01T09:00:00.000Z",
       apiKey: "k",
       token: "t",
       fetchImpl: fetchImpl as never,
@@ -61,7 +60,9 @@ describe("createCheckItem", () => {
     const post = calls.find((c) => c.method === "POST")!;
     expect(post.url).toContain("/checklists/lijst-1/checkItems");
     expect(post.url).toContain("name=Akkoord+ophalen");
-    expect(post.url).toContain("due=2026-08-01");
+    // Geen due meesturen: dat is een betaalde Trello-functie en de API negeert
+    // hem stil, dus meesturen zou suggereren dat de datum op de kaart landt.
+    expect(post.url).not.toContain("due=");
   });
 
   it("maakt een lijst als de kaart er geen heeft", async () => {
