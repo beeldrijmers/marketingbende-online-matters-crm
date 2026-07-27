@@ -12,6 +12,14 @@ import react from "@vitejs/plugin-react";
 //                  installed npm equivalents. Aliases are scoped to this project.
 // Run everything with `npm run test:unit:app`, or a single suite with
 // `npm run test:unit:claude` / `npm run test:unit:functions` (neither boots a browser).
+// Eén CDP-sessie per pagina, zodat een gezette tijdzone blijft staan zolang de
+// tests draaien.
+const cdpSessions = new WeakMap<object, { send: CdpSend }>();
+type CdpSend = (
+  method: string,
+  params: Record<string, unknown>,
+) => Promise<unknown>;
+
 export default defineConfig({
   test: {
     projects: [
@@ -44,12 +52,21 @@ export default defineConfig({
             commands: {
               // Uses Chrome DevTools Protocol to override the timezone at runtime,
               // since process.env.TZ has no effect in a real browser environment.
+              //
+              // De sessie blijft bewust open. Een emulatie-override hoort bij de
+              // CDP-sessie die hem heeft gezet: bij detach vervalt hij weer. Met
+              // de detach erin hing het van de timing af of de override nog stond
+              // als de assertie draaide, en op een machine die zelf al in
+              // Amsterdam staat slaagde de test toch. In CI (UTC) viel hij om.
               async setTimezone({ context, page }, timezoneId: string) {
-                const session = await context.newCDPSession(page);
+                let session = cdpSessions.get(page);
+                if (!session) {
+                  session = await context.newCDPSession(page);
+                  cdpSessions.set(page, session);
+                }
                 await session.send("Emulation.setTimezoneOverride", {
                   timezoneId,
                 });
-                await session.detach();
               },
             },
           },
