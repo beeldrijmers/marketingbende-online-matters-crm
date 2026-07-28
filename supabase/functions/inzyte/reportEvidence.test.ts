@@ -645,3 +645,42 @@ describe("mergeInzyteNarrative met echte regeleindes", () => {
     expect(result.clientSummary).toBe("terugval");
   });
 });
+
+describe("mergeInzyteNarrative met opsommingen als array", () => {
+  const fallback = {
+    clientSummary: "terugval",
+    interpretation: "terugval",
+    workSummary: "terugval",
+    caveats: "terugval",
+    nextSteps: "terugval",
+    generatedBy: "evidence_rules" as const,
+  };
+
+  it("leest arrays als opsomming in plaats van ze te laten vervallen", () => {
+    // Zo levert het model het aan zodra je om bullets vraagt. Voorheen gaf
+    // asText() hier "" terug en viel het veld terug op de lege standaardtekst.
+    const antwoord = {
+      answer: JSON.stringify({
+        clientSummary:
+          "Een volwaardige samenvatting van de maand voor de klant.",
+        interpretation:
+          "De cijfers passen bij het uitgevoerde werk deze maand.",
+        workSummary: [
+          "15 nieuwe paginas gepubliceerd over pannendaken",
+          "- FAQ-schema toegevoegd op elke pagina",
+        ],
+        caveats: ["Search Console was in juni nog niet gekoppeld"],
+        nextSteps: ["Resultaten van de nieuwe paginas volgen"],
+      }),
+    };
+    const result = mergeInzyteNarrative(antwoord, fallback);
+    expect(result.generatedBy).toBe("inzyte_ai");
+    expect(result.workSummary).toContain("- 15 nieuwe paginas");
+    // Een regel die al een streepje heeft krijgt er geen tweede bij.
+    expect(result.workSummary).toContain("- FAQ-schema");
+    expect(result.workSummary).not.toContain("- - ");
+    expect(result.caveats).toBe(
+      "- Search Console was in juni nog niet gekoppeld",
+    );
+  });
+});
