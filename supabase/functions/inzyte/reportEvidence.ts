@@ -1111,6 +1111,9 @@ Noem het werk expliciet en met naam. Staan er in het bronmateriaal opgeleverde p
 OMVANG
 Schrijf uitgebreid en volledig; dit is geen korte notitie. clientSummary telt vier tot zes alinea's van elk drie tot zes zinnen. interpretation telt twee tot vier alinea's. workSummary bevat minimaal zes opsommingsregels, elk een volledige zin met het concrete resultaat, en groepeer per soort werk als dat helpt. caveats en nextSteps bevatten elk minimaal drie opsommingsregels met een toelichtende zin, niet slechts een steekwoord.
 
+CIJFERS: ALLEEN UIT KERNCIJFERS
+Noem uitsluitend getallen en percentages die letterlijk in het blok kerncijfers staan. Zie je in het bronmateriaal andere cijfers, zoals een engagementpercentage, een bouncepercentage of een gemiddelde duur, laat die dan weg. Ze worden automatisch afgekeurd en dan verdwijnt de hele sectie waarin ze staan. Aantallen die geleverd werk beschrijven, zoals het aantal gepubliceerde pagina's of veelgestelde vragen, mag je wel gewoon noemen.
+
 EERLIJKHEID
 Gebruik uitsluitend aantoonbare feiten uit het bronmateriaal en verzin niets bij. Gebruik meetcijfers alleen als ze werkelijk zijn aangeleverd; zonder cijfers mag je geen groei, stabiliteit, verkeers-, advertentie-, conversie- of rankingresultaat suggereren. Ontbreekt een meetbron, benoem dat dan als beperking in caveats in plaats van eromheen te schrijven. Formuleer positief waar de feiten dat toelaten, maar benoem tegenvallers en onzekerheden expliciet. Maak geen oorzakelijke claims die niet zijn bewezen: cijfers kunnen het werk ondersteunen, niet bewijzen.
 
