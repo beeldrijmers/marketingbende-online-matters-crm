@@ -1000,6 +1000,35 @@ export const isNarrativeSupportedByMetrics = (
  * samenvatting een percentage staat dat we niet kunnen staven. Alleen de sectie
  * die het betreft valt terug op de regelgebaseerde tekst; de rest blijft staan.
  */
+/**
+ * Secties die beschrijven WAT er is opgeleverd, niet wat er is gemeten.
+ *
+ * De cijfercontrole kan "15 gepubliceerde pagina's" niet onderscheiden van
+ * "15 sessies": elk getal in een zin met een SEO-woord telt als meetclaim. Juist
+ * de opsomming van geleverd werk wordt daardoor gegarandeerd afgekeurd, en dat is
+ * precies de sectie waar de klant om vraagt.
+ *
+ * Voor deze twee secties controleren we daarom alleen percentages. Een geclaimde
+ * groei blijft dus gedekt, maar "15 pagina's" mag gewoon blijven staan.
+ */
+const DELIVERABLE_FIELDS = new Set(["workSummary", "nextSteps"]);
+
+const isFieldSupported = (
+  veld: (typeof NARRATIVE_FIELDS)[number],
+  tekst: string,
+  metrics: MonthlyHeadlineMetric[],
+): boolean => {
+  if (!DELIVERABLE_FIELDS.has(veld)) {
+    return isTextSupportedByMetrics(tekst, metrics);
+  }
+  const percentages = Array.from(
+    tekst.matchAll(/(-?\d+(?:[.,]\d+)?)\s*%/g),
+    (match) => Math.abs(Number(match[1].replace(",", "."))),
+  ).filter(Number.isFinite);
+  if (percentages.length === 0) return true;
+  return isTextSupportedByMetrics(tekst, metrics);
+};
+
 export const withSupportedFieldsOnly = (
   narrative: ReportNarrative,
   fallback: ReportNarrative,
@@ -1008,7 +1037,7 @@ export const withSupportedFieldsOnly = (
   const resultaat = { ...narrative };
   let behouden = 0;
   for (const veld of NARRATIVE_FIELDS) {
-    if (isTextSupportedByMetrics(narrative[veld] || "", metrics)) {
+    if (isFieldSupported(veld, narrative[veld] || "", metrics)) {
       behouden += 1;
       continue;
     }
