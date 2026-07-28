@@ -1039,33 +1039,20 @@ const isFieldSupported = (
   return geclaimd.every((claim) => metricNumberMatches(claim, toegestaan));
 };
 
-export type NarrativeFieldDecision = {
-  veld: string;
-  binnengekomen: number;
-  behouden: boolean;
-};
-
-export let laatsteVeldbeslissingen: NarrativeFieldDecision[] = [];
-
 export const withSupportedFieldsOnly = (
   narrative: ReportNarrative,
   fallback: ReportNarrative,
   metrics: MonthlyHeadlineMetric[],
 ): ReportNarrative => {
   const resultaat = { ...narrative };
-  const beslissingen: NarrativeFieldDecision[] = [];
   let behouden = 0;
   for (const veld of NARRATIVE_FIELDS) {
-    const binnen = narrative[veld] || "";
-    const ok = isFieldSupported(veld, binnen, metrics);
-    beslissingen.push({ veld, binnengekomen: binnen.length, behouden: ok });
-    if (ok) {
+    if (isFieldSupported(veld, narrative[veld] || "", metrics)) {
       behouden += 1;
       continue;
     }
     resultaat[veld] = fallback[veld];
   }
-  laatsteVeldbeslissingen = beslissingen;
   // Overleeft geen enkele sectie, dan is de hele tekst onbetrouwbaar en nemen we
   // de terugval inclusief herkomst, zodat niemand denkt dat dit AI-tekst is.
   return behouden === 0 ? fallback : resultaat;
