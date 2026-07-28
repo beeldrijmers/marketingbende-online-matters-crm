@@ -25,6 +25,18 @@ export type SourceLink = {
   verified: boolean;
 };
 
+/**
+ * `tone` bestaat omdat "niet gekoppeld" geen waarschuwing is. Een bron die nooit
+ * is aangesloten hoort er rustig bij te staan, niet oranje te schreeuwen naast de
+ * bronnen die wel gemeten zijn. Oranje reserveren we voor iets dat aandacht
+ * vraagt: een koppeling die er wel is maar geen cijfers geeft, of die faalt.
+ */
+export type MonthlySourceStatus = {
+  ok: boolean;
+  tone: "ok" | "warn" | "idle";
+  label: string;
+};
+
 const VERIFICATION_KEY: Record<MonthlySourceKey, InzyteSourceKey> = {
   ga4: "ga4",
   searchConsole: "gsc",
@@ -49,25 +61,32 @@ export const monthlySourceLabel = ({
   bothMonthsMeasured: boolean;
   hasUsableMetrics: boolean;
   failed: boolean;
-}): { ok: boolean; label: string } => {
+}): MonthlySourceStatus => {
   if (bothMonthsMeasured) {
     return hasUsableMetrics
-      ? { ok: true, label: "Beide maanden gemeten" }
-      : { ok: false, label: "Geen bruikbare kerncijfers" };
+      ? { ok: true, tone: "ok", label: "Beide maanden gemeten" }
+      : { ok: false, tone: "warn", label: "Geen bruikbare kerncijfers" };
   }
-  if (failed) return { ok: false, label: "Tijdelijk niet beschikbaar" };
+  if (failed) {
+    return { ok: false, tone: "warn", label: "Tijdelijk niet beschikbaar" };
+  }
 
   if (!hasStatus) {
     // Zonder koppelstatus weten we het niet beter dan voorheen.
-    if (!link) return { ok: false, label: "Niet gekoppeld" };
-    if (!link.configured) return { ok: false, label: "Niet gekoppeld" };
+    if (!link || !link.configured) {
+      return { ok: false, tone: "idle", label: "Niet gekoppeld" };
+    }
     return link.verified
-      ? { ok: false, label: "Gekoppeld, geen cijfers in deze maand" }
-      : { ok: false, label: "Gekoppeld, nog niet bevestigd" };
+      ? {
+          ok: false,
+          tone: "warn",
+          label: "Gekoppeld, geen cijfers in deze maand",
+        }
+      : { ok: false, tone: "warn", label: "Gekoppeld, nog niet bevestigd" };
   }
 
   if (link && link.configured && !link.verified) {
-    return { ok: false, label: "Gekoppeld, nog niet bevestigd" };
+    return { ok: false, tone: "warn", label: "Gekoppeld, nog niet bevestigd" };
   }
-  return { ok: false, label: "Onvolledig" };
+  return { ok: false, tone: "warn", label: "Onvolledig" };
 };

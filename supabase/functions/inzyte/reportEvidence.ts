@@ -926,20 +926,37 @@ export const buildNarrativePromptContext = ({
       gunstig: metric.favourable,
       definitie: metric.definition,
     })),
-    huidigeMaand: evidence.current.slice(0, 35).map((item) => ({
+    huidigeMaand: evidence.current.slice(0, 60).map((item) => ({
       soort: item.kind,
       datum: item.date,
-      tekst: item.excerpt.slice(0, 900),
+      tekst: item.excerpt.slice(0, 2_200),
     })),
-    voorgeschiedenis: evidence.allTime.slice(0, 45).map((item) => ({
+    voorgeschiedenis: evidence.allTime.slice(0, 60).map((item) => ({
       soort: item.kind,
       datum: item.date,
-      tekst: item.excerpt.slice(0, 550),
+      tekst: item.excerpt.slice(0, 1_100),
     })),
     bronTellingen: {
       rapportagemaand: evidence.currentCounts,
       volledigDossier: evidence.allTimeCounts,
     },
-  }).slice(0, 28_000);
+  }).slice(0, 90_000);
 
-export const MONTHLY_NARRATIVE_QUESTION = `Schrijf op basis van het aangeleverde bronmateriaal een klantklare Nederlandse maandupdate in de toon van een persoonlijke, deskundige statusmail. Gebruik uitsluitend aantoonbare feiten uit het bronmateriaal. De uitgevoerde werkzaamheden en vastgelegde voortgang vormen altijd de basis. Gebruik meetcijfers alleen als ze werkelijk zijn aangeleverd; zonder cijfers mag je geen groei, stabiliteit, verkeers-, advertentie-, conversie- of rankingresultaat suggereren. Formuleer positief waar de feiten dat toelaten, benoem minder gunstige ontwikkelingen en onzekerheden eerlijk, en eindig met concreet toekomstperspectief. Maak geen oorzakelijke claims die niet zijn bewezen. Noem geen interne systemen, kaartsoftware, mailboxsoftware, CRM of analyseplatform. Neem werkzaamheden uit de rapportagemaand op; gebruik oudere informatie alleen als relevante context. Geef uitsluitend geldige JSON terug met exact deze velden: {"clientSummary":"2-4 korte alinea's","interpretation":"wat de voortgang of gemeten ontwikkeling praktisch betekent","workSummary":"bullets met concreet uitgevoerd werk","caveats":"bullets met eerlijke aandachtspunten en eventuele meetbeperking","nextSteps":"bullets met focus voor komende maand"}.`;
+export const MONTHLY_NARRATIVE_QUESTION = `Schrijf op basis van het aangeleverde bronmateriaal een klantklare Nederlandse maandupdate in de toon van een persoonlijke, deskundige statusmail van de vaste SEO-specialist aan zijn opdrachtgever.
+
+BRONNEN COMBINEREN
+Het bronmateriaal bevat kerncijfers uit de meetbronnen, de opdrachtomschrijving, opmerkingen bij de opdrachtkaart, verzonden statusmails, voortgangsnotities en afgeronde werkzaamheden, plus voorgeschiedenis uit eerdere maanden. Gebruik ze in samenhang. Cijfers zonder het bijbehorende werk zijn betekenisloos, en werk zonder duiding is een opsomming. Verwijs waar het kan naar wat er in eerdere maanden is gedaan, zodat de klant de lijn over meerdere maanden ziet.
+
+CONCREETHEID IS DE KERN
+Noem het werk expliciet en met naam. Staan er in het bronmateriaal opgeleverde pagina's, URL's, plaatsnamen, aantallen, onderwerpen of paginatypes, neem die dan letterlijk op. Schrijf dus niet "er zijn pagina's toegevoegd" maar benoem hoeveel, welk type en waarover, met de URL's als die er zijn. Een lezer moet na het lezen precies weten wat hij heeft gekregen. Vage samenvattingen zijn een fout.
+
+OMVANG
+Schrijf uitgebreid en volledig; dit is geen korte notitie. clientSummary telt vier tot zes alinea's van elk drie tot zes zinnen. interpretation telt twee tot vier alinea's. workSummary bevat minimaal zes opsommingsregels, elk een volledige zin met het concrete resultaat, en groepeer per soort werk als dat helpt. caveats en nextSteps bevatten elk minimaal drie opsommingsregels met een toelichtende zin, niet slechts een steekwoord.
+
+EERLIJKHEID
+Gebruik uitsluitend aantoonbare feiten uit het bronmateriaal en verzin niets bij. Gebruik meetcijfers alleen als ze werkelijk zijn aangeleverd; zonder cijfers mag je geen groei, stabiliteit, verkeers-, advertentie-, conversie- of rankingresultaat suggereren. Ontbreekt een meetbron, benoem dat dan als beperking in caveats in plaats van eromheen te schrijven. Formuleer positief waar de feiten dat toelaten, maar benoem tegenvallers en onzekerheden expliciet. Maak geen oorzakelijke claims die niet zijn bewezen: cijfers kunnen het werk ondersteunen, niet bewijzen.
+
+VORM
+Nederlands, je-vorm richting de opdrachtgever, geen emoji, geen gedachtestreepjes. Noem geen interne systemen, kaartsoftware, mailboxsoftware, CRM of analyseplatform. Werk uit de rapportagemaand staat centraal; oudere informatie gebruik je als context en markeer je als zodanig.
+
+Geef uitsluitend geldige JSON terug met exact deze velden: {"clientSummary":"4-6 alinea's","interpretation":"2-4 alinea's over wat de voortgang en cijfers praktisch betekenen","workSummary":"minimaal 6 opsommingsregels met concreet uitgevoerd werk, inclusief namen, aantallen en URL's","caveats":"minimaal 3 opsommingsregels met eerlijke aandachtspunten en meetbeperkingen","nextSteps":"minimaal 3 opsommingsregels met de focus voor komende maand"}.`;
