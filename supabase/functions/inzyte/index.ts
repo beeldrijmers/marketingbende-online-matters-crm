@@ -43,7 +43,11 @@ import {
   runScheduledReports,
   type SchedulableLink,
 } from "./scheduledReports.ts";
-import { verifySelectedSources } from "./sourceVerification.ts";
+import {
+  searchConsoleRows,
+  verifySelectedSources,
+} from "./sourceVerification.ts";
+import { matchSearchConsoleSite } from "./autoMatchSources.ts";
 
 type JsonObject = Record<string, unknown>;
 
@@ -466,11 +470,20 @@ const saveLink = async (
   }
 
   const websiteUrl = optionalWebsite(body.websiteUrl);
-  const gscSiteUrl = optionalText(body.gscSiteUrl, 2_000);
+  const requestedGscSiteUrl = optionalText(body.gscSiteUrl, 2_000);
   const gbpLocationId = optionalText(body.gbpLocationId);
   const adsCustomerId =
     optionalText(body.adsCustomerId, 40)?.replace(/-/g, "") || null;
   const setupSources = await loadSetupSources(inzyteUserId, connectionId);
+  // Niets gekozen? Dan koppelen we de Search Console-property zelf, mits de
+  // website van de opdracht er onmiskenbaar naar wijst. Zo blijft die bron niet
+  // maandenlang leeg staan puur omdat niemand de keuzelijst heeft opengeklapt.
+  const gscSiteUrl =
+    requestedGscSiteUrl ||
+    matchSearchConsoleSite(
+      websiteUrl,
+      searchConsoleRows(setupSources.searchConsole),
+    ).siteUrl;
   let verifiedSources: ReturnType<typeof verifySelectedSources>;
   try {
     verifiedSources = verifySelectedSources(

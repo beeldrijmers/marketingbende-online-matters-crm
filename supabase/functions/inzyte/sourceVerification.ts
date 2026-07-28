@@ -83,6 +83,18 @@ const liveRows = (
   return findNamedArray(settled.data, preferredKeys);
 };
 
+/**
+ * De Search Console-sites zoals Inzyte ze teruggeeft, of een lege lijst wanneer de
+ * bron niet opgehaald kon worden. Bewust zonder throw: dit wordt gebruikt om
+ * automatisch te matchen, en dan is "geen kandidaten" een geldige uitkomst die de
+ * koppeling gewoon leeg laat, geen fout die het opslaan blokkeert.
+ */
+export const searchConsoleRows = (source: unknown): VerificationRecord[] => {
+  const settled = isRecord(source) ? (source as SettledSource) : null;
+  if (!settled || settled.ok !== true) return [];
+  return findNamedArray(settled.data, ["sites", "items"]);
+};
+
 const normalizedCustomerId = (value: string): string =>
   value.replaceAll("-", "").trim();
 

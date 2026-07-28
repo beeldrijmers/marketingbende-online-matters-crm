@@ -19,7 +19,11 @@ describe("monthlySourceLabel", () => {
         ...basis,
         link: { configured: true, verified: false },
       }),
-    ).toEqual({ ok: false, label: "Gekoppeld, nog niet bevestigd" });
+    ).toEqual({
+      ok: false,
+      tone: "warn",
+      label: "Gekoppeld, nog niet bevestigd",
+    });
   });
 
   it("zegt wel 'niet gekoppeld' als er echt niets hangt", () => {
@@ -28,10 +32,11 @@ describe("monthlySourceLabel", () => {
         ...basis,
         link: { configured: false, verified: false },
       }),
-    ).toEqual({ ok: false, label: "Niet gekoppeld" });
+    ).toEqual({ ok: false, tone: "idle", label: "Niet gekoppeld" });
     // Zonder bekende koppelstatus blijft het oude antwoord staan.
     expect(monthlySourceLabel(basis)).toEqual({
       ok: false,
+      tone: "idle",
       label: "Niet gekoppeld",
     });
   });
@@ -42,7 +47,11 @@ describe("monthlySourceLabel", () => {
         ...basis,
         link: { configured: true, verified: true },
       }),
-    ).toEqual({ ok: false, label: "Gekoppeld, geen cijfers in deze maand" });
+    ).toEqual({
+      ok: false,
+      tone: "warn",
+      label: "Gekoppeld, geen cijfers in deze maand",
+    });
   });
 
   it("laat gemeten maanden en fouten voorgaan op de koppelstatus", () => {
@@ -53,7 +62,7 @@ describe("monthlySourceLabel", () => {
         hasUsableMetrics: true,
         link: { configured: true, verified: false },
       }),
-    ).toEqual({ ok: true, label: "Beide maanden gemeten" });
+    ).toEqual({ ok: true, tone: "ok", label: "Beide maanden gemeten" });
 
     expect(
       monthlySourceLabel({
@@ -62,7 +71,11 @@ describe("monthlySourceLabel", () => {
         hasUsableMetrics: false,
         link: { configured: true, verified: true },
       }),
-    ).toEqual({ ok: false, label: "Geen bruikbare kerncijfers" });
+    ).toEqual({
+      ok: false,
+      tone: "warn",
+      label: "Geen bruikbare kerncijfers",
+    });
 
     expect(
       monthlySourceLabel({
@@ -70,7 +83,18 @@ describe("monthlySourceLabel", () => {
         failed: true,
         link: { configured: true, verified: true },
       }),
-    ).toEqual({ ok: false, label: "Tijdelijk niet beschikbaar" });
+    ).toEqual({
+      ok: false,
+      tone: "warn",
+      label: "Tijdelijk niet beschikbaar",
+    });
+  });
+
+  it("markeert 'niet gekoppeld' als rustig, niet als waarschuwing", () => {
+    // Een bron die nooit is aangesloten hoorde oranje te schreeuwen naast de
+    // bronnen die wel gemeten zijn. Dat is geen aandachtspunt maar afwezigheid.
+    expect(monthlySourceLabel(basis).tone).toBe("idle");
+    expect(monthlySourceLabel({ ...basis, failed: true }).tone).toBe("warn");
   });
 
   it("houdt 'onvolledig' voor een half gemeten bevestigde bron", () => {
@@ -80,6 +104,6 @@ describe("monthlySourceLabel", () => {
         hasStatus: true,
         link: { configured: true, verified: true },
       }),
-    ).toEqual({ ok: false, label: "Onvolledig" });
+    ).toEqual({ ok: false, tone: "warn", label: "Onvolledig" });
   });
 });

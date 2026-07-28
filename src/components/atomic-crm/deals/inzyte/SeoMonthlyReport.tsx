@@ -44,6 +44,7 @@ import { getInzyteSourceStates } from "./inzyteVerification";
 import {
   monthlySourceLabel,
   type MonthlySourceKey,
+  type MonthlySourceStatus,
   type SourceLink,
   verificationKeyFor,
 } from "./monthlySourceLabel";
@@ -59,7 +60,7 @@ const sourceState = (
   report: SeoMonthlyReport,
   source: MonthlySourceKey,
   links?: Partial<Record<MonthlySourceKey, SourceLink>>,
-): { ok: boolean; label: string } => {
+): MonthlySourceStatus => {
   const sources = report.report_data?.sources as
     | Record<
         string,
@@ -383,30 +384,28 @@ const ReportPreview = ({
             dialoog van 374 px werd de rij aan de rand afgeknipt. Binnen de chip
             mag de tekst nu afbreken; de rij wikkelt al. */}
         <div className="mt-4 flex flex-wrap gap-2 text-xs [&>*]:whitespace-normal">
-          <Badge
-            variant="outline"
-            className={ga4.ok ? "text-live" : "text-wait"}
-          >
-            GA4 · {ga4.label}
-          </Badge>
-          <Badge
-            variant="outline"
-            className={gsc.ok ? "text-live" : "text-wait"}
-          >
-            Search Console · {gsc.label}
-          </Badge>
-          <Badge
-            variant="outline"
-            className={ads.ok ? "text-live" : "text-wait"}
-          >
-            Google Ads · {ads.label}
-          </Badge>
-          <Badge
-            variant="outline"
-            className={gbp.ok ? "text-live" : "text-wait"}
-          >
-            Bedrijfsprofiel · {gbp.label}
-          </Badge>
+          {(
+            [
+              ["GA4", ga4],
+              ["Search Console", gsc],
+              ["Google Ads", ads],
+              ["Bedrijfsprofiel", gbp],
+            ] as const
+          ).map(([naam, status]) => (
+            <Badge
+              key={naam}
+              variant="outline"
+              className={
+                status.tone === "ok"
+                  ? "text-live"
+                  : status.tone === "warn"
+                    ? "text-wait"
+                    : "text-muted-foreground"
+              }
+            >
+              {naam} · {status.label}
+            </Badge>
+          ))}
           <Badge variant="outline">
             {hasMeasurement && report.data_through
               ? `Meetdata t/m ${dateLabel(report.data_through)}`
@@ -422,8 +421,7 @@ const ReportPreview = ({
               Samenvatting voor de klant
             </span>
             <span className="mt-1 block text-xs text-muted-foreground">
-              De conclusie staat bewust vóór de cijfers. Controleer de
-              automatisch opgebouwde tekst voordat u deze deelt.
+              Staat bewust vóór de cijfers. Je kunt de tekst hier aanpassen.
             </span>
             <Textarea
               className="mt-3 min-h-36 resize-y"
@@ -633,15 +631,15 @@ const SeoMonthlyReportEditor = ({
 
   return (
     <>
+      {/*
+        De werkbalk bevat alleen nog handelingen. De bevestiging dat de tekst is
+        gecontroleerd stond hier ook, naast een opmaakschakelaar die er precies
+        hetzelfde uitzag maar iets volstrekt anders doet. Erger nog: de melding
+        eronder zei "bevestig daarna bovenaan", dus je moest terug omhoog. Die
+        bevestiging staat nu in de melding zelf, op de plek waar je hem leest.
+      */}
       <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm">
-        <div className="mr-auto">
-          <div className="text-sm font-semibold">Rapport gebruiken</div>
-          <div className="text-xs text-muted-foreground">
-            Controleer eerst het voorbeeld hieronder; de PDF gebruikt exact deze
-            inhoud.
-          </div>
-        </div>
-        <label className="flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-medium">
+        <label className="mr-auto flex h-9 items-center gap-2 text-xs font-medium text-muted-foreground">
           <Palette className="size-4 text-lime-600" />
           Online Matters-stijl
           <Switch
@@ -650,15 +648,6 @@ const SeoMonthlyReportEditor = ({
               setBrand(checked ? "online_matters" : "neutral")
             }
             aria-label="Online Matters-huisstijl gebruiken"
-          />
-        </label>
-        <label className="flex h-9 items-center gap-2 rounded-lg border border-live/25 bg-emerald-500/[0.05] px-3 text-xs font-medium">
-          <CheckCircle2 className="size-4 text-live" />
-          Tekst en bronnen gecontroleerd
-          <Switch
-            checked={reviewConfirmed}
-            onCheckedChange={setReviewConfirmed}
-            aria-label="Bevestigen dat tekst en bronnen zijn gecontroleerd"
           />
         </label>
         <Button
@@ -719,23 +708,34 @@ const SeoMonthlyReportEditor = ({
           </div>
         </div>
       ) : !reviewConfirmed ? (
-        <div className="flex items-start gap-3 rounded-xl border border-wait/30 bg-wait-tint px-4 py-3 text-sm text-amber-800 ">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-          <div>
-            <div className="font-semibold">
-              Inhoud compleet, broncontrole nodig
-            </div>
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-wait/30 bg-wait-tint px-4 py-3 text-sm text-amber-800">
+          <AlertTriangle className="size-4 shrink-0" />
+          <div className="mr-auto">
+            <div className="font-semibold">Nog niet vrijgegeven</div>
             <div className="mt-0.5 text-xs leading-5">
-              Controleer de werkzaamheden, meetcijfers en klanttekst in het
-              voorbeeld. Bevestig daarna bovenaan dat tekst en bronnen zijn
-              gecontroleerd.
+              Lees het voorbeeld hieronder na: kloppen de werkzaamheden, de
+              cijfers en de klanttekst?
             </div>
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setReviewConfirmed(true)}
+          >
+            <CheckCircle2 className="size-4" /> Gecontroleerd, geef vrij
+          </Button>
         </div>
       ) : (
-        <div className="flex items-center gap-2 rounded-xl border border-live/25 bg-emerald-500/[0.06] px-4 py-2.5 text-xs font-medium text-live ">
-          <CheckCircle2 className="size-4" /> Klantversie en brongegevens zijn
-          gecontroleerd en gereed om te delen.
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-live/25 bg-emerald-500/[0.06] px-4 py-2.5 text-xs font-medium text-live">
+          <CheckCircle2 className="size-4 shrink-0" />
+          <span className="mr-auto">Gecontroleerd en klaar om te delen.</span>
+          <button
+            type="button"
+            className="underline underline-offset-2 hover:no-underline"
+            onClick={() => setReviewConfirmed(false)}
+          >
+            Toch nog nakijken
+          </button>
         </div>
       )}
       <ReportPreview
