@@ -730,11 +730,13 @@ describe("withSupportedFieldsOnly", () => {
   it("neemt de volledige terugval als geen enkele sectie standhoudt", () => {
     const narrative = {
       ...fallback,
+      // Ook de opleveringssecties moeten hier zakken, en die worden alleen op
+      // percentages gecontroleerd; losse aantallen mogen daar juist blijven staan.
       clientSummary: "Sessies stegen 88%.",
       interpretation: "Sessies daalden 77%.",
-      workSummary: "Sessies waren 999.",
+      workSummary: "Sessies groeiden met 66%.",
       caveats: "Sessies 555.",
-      nextSteps: "Sessies 111.",
+      nextSteps: "Sessies stijgen verder met 44%.",
       generatedBy: "inzyte_ai" as const,
     };
     const result = withSupportedFieldsOnly(narrative, fallback, metrics);
@@ -749,5 +751,56 @@ describe("withSupportedFieldsOnly", () => {
     };
     const result = withSupportedFieldsOnly(narrative, fallback, metrics);
     expect(result.clientSummary).toContain("29,4%");
+  });
+});
+
+describe("opleveringssecties met aantallen", () => {
+  const metrics = [
+    {
+      key: "sessions",
+      label: "Website-sessies",
+      source: "GA4",
+      group: "website_context" as const,
+      format: "number" as const,
+      current: 317,
+      previous: 245,
+      change: 72,
+      changePercent: 29.4,
+      favourable: true,
+      definition: "Alle sessies.",
+    },
+  ];
+  const fallback = {
+    clientSummary: "terugval",
+    interpretation: "terugval",
+    workSummary: "",
+    caveats: "terugval",
+    nextSteps: "",
+    generatedBy: "evidence_rules" as const,
+  };
+
+  it("laat opgeleverde aantallen staan, ook naast een SEO-woord", () => {
+    // Dit is de kern: "15 paginas ... vindbaarheid" werd gelezen als meetclaim
+    // van 15 sessies en dus weggegooid. Het is een oplevering, geen meting.
+    const narrative = {
+      ...fallback,
+      workSummary:
+        "- 15 nieuwe paginas gepubliceerd om de vindbaarheid te vergroten",
+      nextSteps: "- 7 vragen per pagina uitbreiden",
+      generatedBy: "inzyte_ai" as const,
+    };
+    const result = withSupportedFieldsOnly(narrative, fallback, metrics);
+    expect(result.workSummary).toContain("15 nieuwe paginas");
+    expect(result.nextSteps).toContain("7 vragen");
+  });
+
+  it("blijft een ongedekt groeipercentage in de werksectie weigeren", () => {
+    const narrative = {
+      ...fallback,
+      workSummary: "- De sessies stegen met 88% door dit werk",
+      generatedBy: "inzyte_ai" as const,
+    };
+    const result = withSupportedFieldsOnly(narrative, fallback, metrics);
+    expect(result.workSummary).toBe("");
   });
 });
