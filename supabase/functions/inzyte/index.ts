@@ -977,6 +977,12 @@ const enhanceReportNarrative = async ({
           endDate: period.currentEnd,
         },
         language: "nl",
+        // Dit is geen gesprek maar een gegevensopdracht. Zonder deze twee regels
+        // beantwoordt het chatmodel hem als chat: proza in plaats van JSON, en
+        // afgebroken op 1500 tokens middenin een tekstveld. Beide maakten de
+        // uitkomst onleesbaar, waarna het rapport terugviel op lege secties.
+        responseFormat: "json",
+        maxTokens: 6000,
       },
     });
     const enhanced = mergeInzyteNarrative(response, fallback);
