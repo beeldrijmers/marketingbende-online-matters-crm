@@ -1013,6 +1013,12 @@ export const isNarrativeSupportedByMetrics = (
  */
 const DELIVERABLE_FIELDS = new Set(["workSummary", "nextSteps"]);
 
+const allowedPercentagesFor = (metrics: MonthlyHeadlineMetric[]): number[] =>
+  metrics.flatMap((metric) => [
+    ...(metric.format === "percent" ? [metric.current, metric.previous] : []),
+    ...(metric.changePercent === null ? [] : [Math.abs(metric.changePercent)]),
+  ]);
+
 const isFieldSupported = (
   veld: (typeof NARRATIVE_FIELDS)[number],
   tekst: string,
@@ -1021,12 +1027,16 @@ const isFieldSupported = (
   if (!DELIVERABLE_FIELDS.has(veld)) {
     return isTextSupportedByMetrics(tekst, metrics);
   }
-  const percentages = Array.from(
+  // ALLEEN percentages toetsen, en niet terugvallen op de volledige controle
+  // zodra er eentje in staat. Dat deed de vorige versie wel, waardoor een enkel
+  // keurig onderbouwd percentage de uitzondering ongedaan maakte en "15
+  // gepubliceerde paginas" alsnog als meetclaim werd afgekeurd.
+  const toegestaan = allowedPercentagesFor(metrics);
+  const geclaimd = Array.from(
     tekst.matchAll(/(-?\d+(?:[.,]\d+)?)\s*%/g),
     (match) => Math.abs(Number(match[1].replace(",", "."))),
   ).filter(Number.isFinite);
-  if (percentages.length === 0) return true;
-  return isTextSupportedByMetrics(tekst, metrics);
+  return geclaimd.every((claim) => metricNumberMatches(claim, toegestaan));
 };
 
 export const withSupportedFieldsOnly = (

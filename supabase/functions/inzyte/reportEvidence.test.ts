@@ -804,3 +804,43 @@ describe("opleveringssecties met aantallen", () => {
     expect(result.workSummary).toBe("");
   });
 });
+
+describe("opleveringssectie met zowel aantallen als een gedekt percentage", () => {
+  const metrics = [
+    {
+      key: "conversions",
+      label: "Websiteconversies",
+      source: "GA4",
+      group: "website_context" as const,
+      format: "number" as const,
+      current: 17,
+      previous: 28,
+      change: -11,
+      changePercent: -39.3,
+      favourable: false,
+      definition: "Alle conversies.",
+    },
+  ];
+  const fallback = {
+    clientSummary: "terugval",
+    interpretation: "terugval",
+    workSummary: "",
+    caveats: "terugval",
+    nextSteps: "",
+    generatedBy: "evidence_rules" as const,
+  };
+
+  it("houdt de sectie ook als er een onderbouwd percentage in staat", () => {
+    // De vorige versie viel bij het eerste percentage terug op de volledige
+    // controle, waardoor de uitzondering voor aantallen weer verdween.
+    const narrative = {
+      ...fallback,
+      workSummary:
+        "- 15 nieuwe paginas gepubliceerd voor de vindbaarheid\n- Conversies daalden met 39,3%",
+      generatedBy: "inzyte_ai" as const,
+    };
+    const result = withSupportedFieldsOnly(narrative, fallback, metrics);
+    expect(result.workSummary).toContain("15 nieuwe paginas");
+    expect(result.workSummary).toContain("39,3%");
+  });
+});
