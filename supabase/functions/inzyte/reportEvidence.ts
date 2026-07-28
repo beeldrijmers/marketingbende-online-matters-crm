@@ -778,12 +778,42 @@ const readNarrativeJson = (value: string): Record<string, unknown> | null => {
   }
 };
 
+/**
+ * Zet wat het model teruggeeft om naar tekst.
+ *
+ * Vraag je om "bullets met concreet uitgevoerd werk", dan levert het model dat
+ * als JSON-array aan, niet als string met regeleindes. Dat is een even redelijke
+ * lezing van de opdracht, maar `asText` gaf voor een array gewoon "" terug.
+ * Gevolg: precies de velden waar we om opsommingen vroegen (werkzaamheden,
+ * aandachtspunten, vooruitblik) vielen leeg terug, terwijl de JSON zelf klopte.
+ */
+const narrativeText = (value: unknown): string => {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => {
+        const regel = narrativeText(item).trim();
+        if (!regel) return "";
+        // Al voorzien van een opsommingsteken? Dan niet dubbelop zetten.
+        return /^[-*\u2022]/.test(regel) ? regel : `- ${regel}`;
+      })
+      .filter(Boolean)
+      .join("\n");
+  }
+  if (value && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>)
+      .map((item) => narrativeText(item).trim())
+      .filter(Boolean)
+      .join("\n");
+  }
+  return asText(value);
+};
+
 const safeNarrativeField = (
   value: unknown,
   fallback: string,
   minimum: number,
 ): string => {
-  const sanitized = sanitizeReportEvidenceText(asText(value), 12_000);
+  const sanitized = sanitizeReportEvidenceText(narrativeText(value), 12_000);
   return sanitized.length >= minimum ? sanitized : fallback;
 };
 
