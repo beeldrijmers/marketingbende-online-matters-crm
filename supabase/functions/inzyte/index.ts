@@ -30,6 +30,7 @@ import {
   buildNarrativePromptContext,
   buildReportEvidence,
   withSupportedFieldsOnly,
+  laatsteVeldbeslissingen,
   mergeInzyteNarrative,
   MONTHLY_NARRATIVE_QUESTION,
   sanitizeReportEvidenceText,
@@ -997,7 +998,10 @@ const enhanceReportNarrative = async ({
     // Per sectie beoordelen. Eerder gooide een enkel ongedekt percentage de hele
     // klanttekst weg en kreeg de klant lege kopjes zonder uitleg.
     void NARRATIVE_PIPELINE_VERSION;
-    return withSupportedFieldsOnly(enhanced, fallback, metrics);
+    const uitkomst = withSupportedFieldsOnly(enhanced, fallback, metrics);
+    (uitkomst as unknown as Record<string, unknown>).diagnose =
+      laatsteVeldbeslissingen;
+    return uitkomst;
   } catch {
     // The source-backed deterministic narrative remains available if AI is
     // temporarily unavailable or returns an unusable response.
