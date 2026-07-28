@@ -714,6 +714,45 @@ const narrativeCandidate = (value: unknown): string | null => {
   return null;
 };
 
+/**
+ * Escapet echte regeleindes en tabs BINNEN JSON-tekstwaarden.
+ *
+ * Dit is de reden dat rijke rapportteksten stilletjes wegvielen. Zodra je een
+ * model om alinea's en opsommingen vraagt, zet het letterlijke regeleindes in de
+ * stringwaarden. Dat is ongeldige JSON (controltekens moeten `\n` zijn), dus
+ * `JSON.parse` gooide, kwam er een fallback terug, en de klant kreeg een rapport
+ * met lege secties zonder dat er ergens een fout zichtbaar werd. Hoe beter het
+ * antwoord, hoe groter de kans dat het sneuvelde.
+ */
+export const repairJsonControlChars = (value: string): string => {
+  let inString = false;
+  let escaped = false;
+  let result = "";
+  for (const char of value) {
+    if (escaped) {
+      result += char;
+      escaped = false;
+      continue;
+    }
+    if (char === "\\" && inString) {
+      result += char;
+      escaped = true;
+      continue;
+    }
+    if (char === '"') {
+      inString = !inString;
+      result += char;
+      continue;
+    }
+    if (inString && (char === "\n" || char === "\r" || char === "\t")) {
+      result += char === "\n" ? "\\n" : char === "\r" ? "\\r" : "\\t";
+      continue;
+    }
+    result += char;
+  }
+  return result;
+};
+
 const readNarrativeJson = (value: string): Record<string, unknown> | null => {
   const withoutFence = value
     .replace(/^```(?:json)?\s*/i, "")
@@ -722,13 +761,20 @@ const readNarrativeJson = (value: string): Record<string, unknown> | null => {
   const start = withoutFence.indexOf("{");
   const end = withoutFence.lastIndexOf("}");
   if (start < 0 || end <= start) return null;
-  try {
-    const parsed = JSON.parse(withoutFence.slice(start, end + 1));
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+  const kandidaat = withoutFence.slice(start, end + 1);
+  const asObject = (parsed: unknown): Record<string, unknown> | null =>
+    parsed && typeof parsed === "object" && !Array.isArray(parsed)
       ? (parsed as Record<string, unknown>)
       : null;
+  try {
+    return asObject(JSON.parse(kandidaat));
   } catch {
-    return null;
+    // Tweede poging met herstelde controltekens; blijft het stuk, dan pas opgeven.
+    try {
+      return asObject(JSON.parse(repairJsonControlChars(kandidaat)));
+    } catch {
+      return null;
+    }
   }
 };
 
