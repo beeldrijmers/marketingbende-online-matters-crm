@@ -30,7 +30,6 @@ import {
   buildNarrativePromptContext,
   buildReportEvidence,
   withSupportedFieldsOnly,
-  laatsteVeldbeslissingen,
   mergeInzyteNarrative,
   MONTHLY_NARRATIVE_QUESTION,
   sanitizeReportEvidenceText,
@@ -930,14 +929,6 @@ const settleMonthlyPair = async ({
   return { current, previous };
 };
 
-/**
- * Versiemarkering. Live gedroeg deze functie zich als een oudere bundel terwijl de
- * deploy succes meldde: dezelfde AI-tekst gaf lokaal 1009 tekens werkzaamheden en
- * live 0. Deze constante verandert de inhoud van het bestand, zodat een volgende
- * deploy gegarandeerd een nieuwe bundel oplevert.
- */
-const NARRATIVE_PIPELINE_VERSION = "2026-07-29-veldcontrole";
-
 const enhanceReportNarrative = async ({
   companyName,
   period,
@@ -997,11 +988,7 @@ const enhanceReportNarrative = async ({
     const enhanced = mergeInzyteNarrative(response, fallback);
     // Per sectie beoordelen. Eerder gooide een enkel ongedekt percentage de hele
     // klanttekst weg en kreeg de klant lege kopjes zonder uitleg.
-    void NARRATIVE_PIPELINE_VERSION;
-    const uitkomst = withSupportedFieldsOnly(enhanced, fallback, metrics);
-    (uitkomst as unknown as Record<string, unknown>).diagnose =
-      laatsteVeldbeslissingen;
-    return uitkomst;
+    return withSupportedFieldsOnly(enhanced, fallback, metrics);
   } catch {
     // The source-backed deterministic narrative remains available if AI is
     // temporarily unavailable or returns an unusable response.
