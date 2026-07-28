@@ -608,3 +608,40 @@ describe("een maand zonder cijfers en zonder bronnen", () => {
     expect(samenvatting).toMatch(/controleer de meetbron/i);
   });
 });
+
+describe("mergeInzyteNarrative met echte regeleindes", () => {
+  const fallback = {
+    clientSummary: "terugval",
+    interpretation: "terugval",
+    workSummary: "terugval",
+    caveats: "terugval",
+    nextSteps: "terugval",
+    generatedBy: "evidence_rules" as const,
+  };
+
+  it("herstelt JSON waarin het model letterlijke regeleindes zette", () => {
+    // Precies wat er live gebeurde: zodra je om alinea's vraagt, komen er echte
+    // regeleindes in de stringwaarden en is de JSON ongeldig.
+    const antwoord = {
+      answer:
+        '{"clientSummary":"Eerste alinea over de maand.\n\nTweede alinea met meer uitleg over wat er is gebeurd.",' +
+        '"interpretation":"De cijfers laten een stijging zien die past bij het werk.",' +
+        '"workSummary":"- 15 paginas gepubliceerd\n- FAQ-schema toegevoegd",' +
+        '"caveats":"- Search Console was nog niet gekoppeld",' +
+        '"nextSteps":"- Resultaten van de nieuwe paginas volgen"}',
+    };
+    const result = mergeInzyteNarrative(antwoord, fallback);
+    expect(result.generatedBy).toBe("inzyte_ai");
+    expect(result.clientSummary).toContain("Tweede alinea");
+    expect(result.workSummary).toContain("15 paginas");
+  });
+
+  it("valt nog steeds terug als er echt geen JSON in zit", () => {
+    const result = mergeInzyteNarrative(
+      { answer: "Geen JSON, gewoon proza." },
+      fallback,
+    );
+    expect(result.generatedBy).toBe("evidence_rules");
+    expect(result.clientSummary).toBe("terugval");
+  });
+});
