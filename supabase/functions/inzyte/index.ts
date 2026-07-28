@@ -29,7 +29,7 @@ import {
   buildDefaultReportNarrative,
   buildNarrativePromptContext,
   buildReportEvidence,
-  isNarrativeSupportedByMetrics,
+  withSupportedFieldsOnly,
   mergeInzyteNarrative,
   MONTHLY_NARRATIVE_QUESTION,
   sanitizeReportEvidenceText,
@@ -986,9 +986,9 @@ const enhanceReportNarrative = async ({
       },
     });
     const enhanced = mergeInzyteNarrative(response, fallback);
-    return isNarrativeSupportedByMetrics(enhanced, metrics)
-      ? enhanced
-      : fallback;
+    // Per sectie beoordelen. Eerder gooide een enkel ongedekt percentage de hele
+    // klanttekst weg en kreeg de klant lege kopjes zonder uitleg.
+    return withSupportedFieldsOnly(enhanced, fallback, metrics);
   } catch {
     // The source-backed deterministic narrative remains available if AI is
     // temporarily unavailable or returns an unusable response.

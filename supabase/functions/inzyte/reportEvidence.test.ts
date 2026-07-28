@@ -7,6 +7,7 @@ import {
   buildReportEvidence,
   isNarrativeSupportedByMetrics,
   mergeInzyteNarrative,
+  withSupportedFieldsOnly,
   sanitizeReportEvidenceText,
   unwrapHardBreaks,
 } from "./reportEvidence.ts";
@@ -682,5 +683,71 @@ describe("mergeInzyteNarrative met opsommingen als array", () => {
     expect(result.caveats).toBe(
       "- Search Console was in juni nog niet gekoppeld",
     );
+  });
+});
+
+describe("withSupportedFieldsOnly", () => {
+  const metrics = [
+    {
+      key: "sessions",
+      label: "Website-sessies",
+      source: "GA4",
+      group: "website_context" as const,
+      format: "number" as const,
+      current: 317,
+      previous: 245,
+      change: 72,
+      changePercent: 29.4,
+      favourable: true,
+      definition: "Alle sessies.",
+    },
+  ];
+  const fallback = {
+    clientSummary: "terugval samenvatting",
+    interpretation: "terugval duiding",
+    workSummary: "terugval werk",
+    caveats: "terugval punten",
+    nextSteps: "terugval vooruitblik",
+    generatedBy: "evidence_rules" as const,
+  };
+
+  it("laat een onderbouwde sectie staan als een andere sectie een ongedekt cijfer bevat", () => {
+    // Dit was het echte defect: een enkel percentage dat we niet konden staven
+    // gooide de complete klanttekst weg, inclusief secties zonder cijfers.
+    const narrative = {
+      ...fallback,
+      clientSummary: "De sessies stegen met 88% deze maand.",
+      workSummary: "- 15 paginas gepubliceerd over pannendaken",
+      nextSteps: "- Resultaten van de nieuwe paginas volgen",
+      generatedBy: "inzyte_ai" as const,
+    };
+    const result = withSupportedFieldsOnly(narrative, fallback, metrics);
+    expect(result.clientSummary).toBe("terugval samenvatting");
+    expect(result.workSummary).toContain("15 paginas");
+    expect(result.nextSteps).toContain("Resultaten");
+  });
+
+  it("neemt de volledige terugval als geen enkele sectie standhoudt", () => {
+    const narrative = {
+      ...fallback,
+      clientSummary: "Sessies stegen 88%.",
+      interpretation: "Sessies daalden 77%.",
+      workSummary: "Sessies waren 999.",
+      caveats: "Sessies 555.",
+      nextSteps: "Sessies 111.",
+      generatedBy: "inzyte_ai" as const,
+    };
+    const result = withSupportedFieldsOnly(narrative, fallback, metrics);
+    expect(result.generatedBy).toBe("evidence_rules");
+  });
+
+  it("accepteert een percentage dat wel gemeten is", () => {
+    const narrative = {
+      ...fallback,
+      clientSummary: "De sessies stegen met 29,4% naar 317.",
+      generatedBy: "inzyte_ai" as const,
+    };
+    const result = withSupportedFieldsOnly(narrative, fallback, metrics);
+    expect(result.clientSummary).toContain("29,4%");
   });
 });

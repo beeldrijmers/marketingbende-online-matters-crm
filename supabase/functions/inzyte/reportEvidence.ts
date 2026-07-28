@@ -921,18 +921,18 @@ const metricsForRequirement = (
  * that is absent from the normalized, verified month comparison. The
  * deterministic evidence narrative remains the safe fallback.
  */
-export const isNarrativeSupportedByMetrics = (
-  narrative: ReportNarrative,
+/**
+ * Controleert of alle getallen in EEN tekst gedekt worden door de meetcijfers.
+ *
+ * Was eerder alles-of-niets over de hele rapportage: een enkel percentage dat
+ * niet exact overeenkwam met een gemeten waarde gooide de complete klanttekst
+ * weg, waarna de klant lege secties kreeg zonder enige melding. De bedoeling
+ * klopt (geen verzonnen cijfers naar een klant), de reikwijdte niet.
+ */
+export const isTextSupportedByMetrics = (
+  text: string,
   metrics: MonthlyHeadlineMetric[],
 ): boolean => {
-  const text = [
-    narrative.clientSummary,
-    narrative.interpretation,
-    narrative.workSummary,
-    narrative.caveats,
-    narrative.nextSteps,
-  ].join("\n");
-
   for (const requirement of METRIC_TOPIC_REQUIREMENTS) {
     if (!requirement.pattern.test(text)) continue;
     const supportingMetrics = metricsForRequirement(requirement, metrics);
@@ -974,6 +974,49 @@ export const isNarrativeSupportedByMetrics = (
   return percentageClaims.every((claim) =>
     metricNumberMatches(claim, allowedPercentages),
   );
+};
+
+const NARRATIVE_FIELDS = [
+  "clientSummary",
+  "interpretation",
+  "workSummary",
+  "caveats",
+  "nextSteps",
+] as const;
+
+export const isNarrativeSupportedByMetrics = (
+  narrative: ReportNarrative,
+  metrics: MonthlyHeadlineMetric[],
+): boolean =>
+  isTextSupportedByMetrics(
+    NARRATIVE_FIELDS.map((veld) => narrative[veld]).join("\n"),
+    metrics,
+  );
+
+/**
+ * Houdt per sectie alleen wat door de cijfers gedekt wordt.
+ *
+ * Een onderbouwde vooruitblik hoort niet te sneuvelen omdat er in de
+ * samenvatting een percentage staat dat we niet kunnen staven. Alleen de sectie
+ * die het betreft valt terug op de regelgebaseerde tekst; de rest blijft staan.
+ */
+export const withSupportedFieldsOnly = (
+  narrative: ReportNarrative,
+  fallback: ReportNarrative,
+  metrics: MonthlyHeadlineMetric[],
+): ReportNarrative => {
+  const resultaat = { ...narrative };
+  let behouden = 0;
+  for (const veld of NARRATIVE_FIELDS) {
+    if (isTextSupportedByMetrics(narrative[veld] || "", metrics)) {
+      behouden += 1;
+      continue;
+    }
+    resultaat[veld] = fallback[veld];
+  }
+  // Overleeft geen enkele sectie, dan is de hele tekst onbetrouwbaar en nemen we
+  // de terugval inclusief herkomst, zodat niemand denkt dat dit AI-tekst is.
+  return behouden === 0 ? fallback : resultaat;
 };
 
 export const buildNarrativePromptContext = ({
