@@ -10,7 +10,11 @@ import createHtmlPlugin from "vite-plugin-simple-html";
 export default defineConfig({
   server: {
     port: 5173,
-    host: true,
+    // Localhost only. `host: true` bound the dev server to every interface, so
+    // a long-running `npm run dev` left the app and its sources readable by
+    // anyone on the same network. Pass `--host` when you actually need LAN
+    // access (testing the PWA on a phone): npm run dev -- --host
+    host: false,
   },
   plugins: [
     react(),

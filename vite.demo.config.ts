@@ -9,7 +9,10 @@ import createHtmlPlugin from "vite-plugin-simple-html";
 export default defineConfig({
   server: {
     port: 5174,
-    host: true,
+    // Localhost only, matching the main dev config. Pass `--host` when the demo
+    // genuinely has to be reachable from another device on the network (showing
+    // it on a tablet): npm run dev:demo -- --host
+    host: false,
   },
   plugins: [
     react(),
